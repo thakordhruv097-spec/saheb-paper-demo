@@ -1,0 +1,2487 @@
+import React, { useState, useEffect, useMemo, useRef } from 'react';
+import { useAuth } from '../auth/AuthContext';
+import { useTranslation } from 'react-i18next';
+import { useLocation } from 'react-router-dom';
+import {
+  getProducts,
+  saveProduct,
+  getParties,
+  saveParty,
+  getVendors,
+  saveVendor,
+  getVehicles,
+  saveVehicle,
+  getLogs,
+  exportBackup,
+  restoreBackup,
+  getUsers,
+  saveUser,
+  clearAllDemoData,
+  deleteProduct,
+  deleteParty,
+  deleteVendor,
+  deleteVehicle,
+  deleteUser,
+} from '../../data/index';
+import type {
+  ProductItem,
+  PartyItem,
+  VendorItem,
+  VehicleItem,
+  TransactionLog,
+  User,
+  UserRole,
+} from '../../data/types';
+import * as XLSX from 'xlsx';
+import { Settings, Plus, Users, Truck, ShoppingBag, Database, ShieldAlert, FileSpreadsheet, Download, Upload, Search, RotateCw, MoreVertical, Trash2, CheckCircle2, Pencil, Eye, X, ListFilter } from 'lucide-react';
+
+export const AdminMasters: React.FC = () => {
+  const { t } = useTranslation();
+  const { user } = useAuth();
+  const location = useLocation();
+
+  const [activeTab, setActiveTab] = useState<'products' | 'parties' | 'vendors' | 'vehicles' | 'users' | 'roles' | 'backup' | 'logs'>(() => {
+    if (location.state && (location.state as any).tab) {
+      return (location.state as any).tab;
+    }
+    return 'products';
+  });
+
+  useEffect(() => {
+    if (location.state && (location.state as any).tab) {
+      setActiveTab((location.state as any).tab);
+    }
+  }, [location.state]);
+
+  // Master Data States
+  const [products, setProducts] = useState<ProductItem[]>(() => getProducts());
+  const [parties, setParties] = useState<PartyItem[]>(() => getParties());
+  const [vendors, setVendors] = useState<VendorItem[]>(() => getVendors());
+  const [vehicles, setVehicles] = useState<VehicleItem[]>(() => getVehicles());
+  const [logs, setLogs] = useState<TransactionLog[]>(() => getLogs());
+  const [usersList, setUsersList] = useState<User[]>(() => getUsers());
+  const [mastersSearchQuery, setMastersSearchQuery] = useState('');
+
+  const filteredProducts = useMemo(() => {
+    const q = mastersSearchQuery.toLowerCase().trim();
+    if (!q) return products;
+    return products.filter(p =>
+      p.name.toLowerCase().includes(q) ||
+      p.grade.toLowerCase().includes(q) ||
+      String(p.gsm).includes(q) ||
+      String(p.size).includes(q) ||
+      String(p.ply).includes(q)
+    );
+  }, [products, mastersSearchQuery]);
+
+  const filteredParties = useMemo(() => {
+    const q = mastersSearchQuery.toLowerCase().trim();
+    if (!q) return parties;
+    return parties.filter(pt =>
+      pt.name.toLowerCase().includes(q) ||
+      (pt.contact && pt.contact.toLowerCase().includes(q)) ||
+      (pt.address && pt.address.toLowerCase().includes(q))
+    );
+  }, [parties, mastersSearchQuery]);
+
+  const filteredVendors = useMemo(() => {
+    const q = mastersSearchQuery.toLowerCase().trim();
+    if (!q) return vendors;
+    return vendors.filter(v =>
+      v.name.toLowerCase().includes(q) ||
+      (v.contact && v.contact.toLowerCase().includes(q)) ||
+      (v.address && v.address.toLowerCase().includes(q))
+    );
+  }, [vendors, mastersSearchQuery]);
+
+  const filteredVehicles = useMemo(() => {
+    const q = mastersSearchQuery.toLowerCase().trim();
+    if (!q) return vehicles;
+    return vehicles.filter(vh =>
+      vh.vehicleNo.toLowerCase().includes(q) ||
+      (vh.driverName && vh.driverName.toLowerCase().includes(q)) ||
+      (vh.driverContact && vh.driverContact.toLowerCase().includes(q))
+    );
+  }, [vehicles, mastersSearchQuery]);
+
+  const filteredUsersList = useMemo(() => {
+    const q = mastersSearchQuery.toLowerCase().trim();
+    if (!q) return usersList;
+    return usersList.filter(u =>
+      u.username.toLowerCase().includes(q) ||
+      u.displayName.toLowerCase().includes(q) ||
+      u.role.toLowerCase().includes(q)
+    );
+  }, [usersList, mastersSearchQuery]);
+
+  // User Form States
+  const [usrUsername, setUsrUsername] = useState('');
+  const [usrDisplayName, setUsrDisplayName] = useState('');
+  const [usrPin, setUsrPin] = useState('');
+  const [usrRole, setUsrRole] = useState<UserRole>('PulpOperator');
+  const [usrEmail, setUsrEmail] = useState('');
+  const [usrPhone, setUsrPhone] = useState('');
+
+  // Row Action Menu, Modals, and Toast States
+  const [openMenuFor, setOpenMenuFor] = useState<string | null>(null);
+  const [menuPos, setMenuPos] = useState<{ top?: number; bottom?: number; right: number } | null>(null);
+  const [editingItem, setEditingItem] = useState<{ type: 'product' | 'party' | 'vendor' | 'vehicle' | 'user'; data: any } | null>(null);
+  const [viewingItem, setViewingItem] = useState<{ type: 'product' | 'party' | 'vendor' | 'vehicle' | 'user'; data: any } | null>(null);
+  const [toast, setToast] = useState<{ text: string; undoType?: 'product' | 'party' | 'vendor' | 'vehicle' | 'user'; undoData?: any } | null>(null);
+  const menuRef = useRef<HTMLDivElement | null>(null);
+  const toastTimerRef = useRef<number | null>(null);
+
+  const handleOpenMenu = (e: React.MouseEvent, id: string) => {
+    e.stopPropagation();
+    e.preventDefault();
+    if (openMenuFor === id) {
+      setOpenMenuFor(null);
+    } else {
+      const rect = e.currentTarget.getBoundingClientRect();
+      const spaceBelow = window.innerHeight - rect.bottom;
+      const menuHeight = 180;
+
+      if (spaceBelow < menuHeight && rect.top > menuHeight) {
+        setMenuPos({
+          bottom: window.innerHeight - rect.top + 4,
+          right: window.innerWidth - rect.right,
+        });
+      } else {
+        setMenuPos({
+          top: rect.bottom + 4,
+          right: window.innerWidth - rect.right,
+        });
+      }
+      setOpenMenuFor(id);
+    }
+  };
+
+  // Click outside menu listener
+  useEffect(() => {
+    function handleClickOutside(e: MouseEvent) {
+      if (menuRef.current && !menuRef.current.contains(e.target as Node)) {
+        setOpenMenuFor(null);
+      }
+    }
+    document.addEventListener('click', handleClickOutside);
+    return () => document.removeEventListener('click', handleClickOutside);
+  }, []);
+
+  // Cleanup toast timer on unmount
+  useEffect(() => {
+    return () => {
+      if (toastTimerRef.current) window.clearTimeout(toastTimerRef.current);
+    };
+  }, []);
+
+  // Lock body & main scroll when editing or viewing modals are open
+  useEffect(() => {
+    const isModalOpen = !!editingItem || !!viewingItem;
+    const mainEl = document.querySelector('main');
+    if (isModalOpen) {
+      document.body.style.overflow = 'hidden';
+      if (mainEl) mainEl.style.overflow = 'hidden';
+    } else {
+      document.body.style.overflow = '';
+      if (mainEl) mainEl.style.overflow = '';
+    }
+    return () => {
+      document.body.style.overflow = '';
+      if (mainEl) mainEl.style.overflow = '';
+    };
+  }, [editingItem, viewingItem]);
+
+  const triggerToast = (text: string, undoType?: 'product' | 'party' | 'vendor' | 'vehicle' | 'user', undoData?: any) => {
+    if (toastTimerRef.current) window.clearTimeout(toastTimerRef.current);
+    setToast({ text, undoType, undoData });
+    toastTimerRef.current = window.setTimeout(() => {
+      setToast(null);
+    }, 4000);
+  };
+
+  const handleExportMasterItem = (type: string, item: any) => {
+    const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(item, null, 2));
+    const downloadAnchor = document.createElement('a');
+    downloadAnchor.setAttribute("href", dataStr);
+    downloadAnchor.setAttribute("download", `${type}_${item.id || item.username}.json`);
+    document.body.appendChild(downloadAnchor);
+    downloadAnchor.click();
+    downloadAnchor.remove();
+    triggerToast(`Exported details for "${item.name || item.displayName || item.vehicleNo}"`);
+  };
+
+  const handleDeleteMasterItem = (type: 'product' | 'party' | 'vendor' | 'vehicle' | 'user', item: any) => {
+    if (type === 'user') {
+      if (item.username === user?.username) {
+        alert("You cannot delete your own account.");
+        return;
+      }
+      deleteUser(item.username);
+      setUsersList(getUsers());
+      triggerToast(`User "${item.displayName}" removed`, 'user', item);
+    } else if (type === 'product') {
+      deleteProduct(item.id);
+      setProducts(getProducts());
+      triggerToast(`Product "${item.name}" deleted`, 'product', item);
+    } else if (type === 'party') {
+      deleteParty(item.id);
+      setParties(getParties());
+      triggerToast(`Party "${item.name}" deleted`, 'party', item);
+    } else if (type === 'vendor') {
+      deleteVendor(item.id);
+      setVendors(getVendors());
+      triggerToast(`Vendor "${item.name}" deleted`, 'vendor', item);
+    } else if (type === 'vehicle') {
+      deleteVehicle(item.id);
+      setVehicles(getVehicles());
+      triggerToast(`Vehicle "${item.vehicleNo}" deleted`, 'vehicle', item);
+    }
+  };
+
+  const handleUndoMasterDelete = () => {
+    if (!toast || !toast.undoType || !toast.undoData) return;
+    const { undoType, undoData } = toast;
+
+    if (undoType === 'user') {
+      saveUser(undoData);
+      setUsersList(getUsers());
+      triggerToast(`Restored user "${undoData.displayName}"`);
+    } else if (undoType === 'product') {
+      saveProduct(undoData);
+      setProducts(getProducts());
+      triggerToast(`Restored product "${undoData.name}"`);
+    } else if (undoType === 'party') {
+      saveParty(undoData);
+      setParties(getParties());
+      triggerToast(`Restored party "${undoData.name}"`);
+    } else if (undoType === 'vendor') {
+      saveVendor(undoData);
+      setVendors(getVendors());
+      triggerToast(`Restored vendor "${undoData.name}"`);
+    } else if (undoType === 'vehicle') {
+      saveVehicle(undoData);
+      setVehicles(getVehicles());
+      triggerToast(`Restored vehicle "${undoData.vehicleNo}"`);
+    }
+    setToast(null);
+  };
+
+  const handleSaveEditMasterItem = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!editingItem) return;
+
+    const { type, data } = editingItem;
+
+    if (type === 'product') {
+      if (!data.name || !data.gsm || !data.size || !data.ply) {
+        alert("All fields are required");
+        return;
+      }
+      const prevData = products.find(p => p.id === data.id);
+      saveProduct({
+        ...data,
+        gsm: parseFloat(data.gsm),
+        size: parseFloat(data.size),
+        ply: parseInt(data.ply)
+      });
+      setProducts(getProducts());
+      triggerToast(`Product "${data.name}" updated`, 'product', prevData);
+    } else if (type === 'party') {
+      if (!data.name || !data.contact || !data.address) {
+        alert("All fields are required");
+        return;
+      }
+      if (String(data.contact).length !== 10) {
+        alert("Contact number must be exactly 10 digits");
+        return;
+      }
+      const prevData = parties.find(p => p.id === data.id);
+      saveParty(data);
+      setParties(getParties());
+      triggerToast(`Party "${data.name}" updated`, 'party', prevData);
+    } else if (type === 'vendor') {
+      if (!data.name || !data.contact || !data.address) {
+        alert("All fields are required");
+        return;
+      }
+      if (String(data.contact).length !== 10) {
+        alert("Contact number must be exactly 10 digits");
+        return;
+      }
+      const prevData = vendors.find(v => v.id === data.id);
+      saveVendor(data);
+      setVendors(getVendors());
+      triggerToast(`Vendor "${data.name}" updated`, 'vendor', prevData);
+    } else if (type === 'vehicle') {
+      if (!data.vehicleNo || !data.driverName || !data.driverContact) {
+        alert("All fields are required");
+        return;
+      }
+      if (String(data.driverContact).length !== 10) {
+        alert("Driver contact number must be exactly 10 digits");
+        return;
+      }
+      const prevData = vehicles.find(v => v.id === data.id);
+      saveVehicle(data);
+      setVehicles(getVehicles());
+      triggerToast(`Vehicle "${data.vehicleNo}" updated`, 'vehicle', prevData);
+    } else if (type === 'user') {
+      if (!data.displayName || !data.email || !data.phone) {
+        alert("All fields are required");
+        return;
+      }
+      if (String(data.phone).length !== 10) {
+        alert("Phone number must be exactly 10 digits");
+        return;
+      }
+      const prevData = usersList.find(u => u.username === data.username);
+      saveUser(data);
+      setUsersList(getUsers());
+      triggerToast(`User "${data.displayName}" updated`, 'user', prevData);
+    }
+
+    setEditingItem(null);
+  };
+
+  const handleUserSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    setSuccessMsg('');
+    setErrorMsg('');
+
+    if (!usrUsername || !usrDisplayName || !usrPin || !usrEmail || !usrPhone) {
+      setErrorMsg('All user fields are required');
+      return;
+    }
+
+    if (usrPhone.trim().length !== 10) {
+      setErrorMsg('Mobile number must be exactly 10 digits');
+      return;
+    }
+
+    if (!/^\d{4}$/.test(usrPin)) {
+      setErrorMsg('PIN must be exactly 4 numeric digits');
+      return;
+    }
+
+    const users = getUsers();
+    if (users.some(u => u.username.toLowerCase() === usrUsername.toLowerCase())) {
+      setErrorMsg(`Username "${usrUsername}" is already taken.`);
+      return;
+    }
+
+    const newUser: User = {
+      username: usrUsername.trim(),
+      displayName: usrDisplayName.trim(),
+      pin: usrPin.trim(),
+      role: usrRole,
+      email: usrEmail.trim(),
+      phone: usrPhone.trim(),
+      active: true,
+    };
+
+    saveUser(newUser);
+    setUsersList(getUsers());
+    setSuccessMsg(`User "${usrUsername}" created successfully!`);
+    setUsrUsername('');
+    setUsrDisplayName('');
+    setUsrPin('');
+    setUsrEmail('');
+    setUsrPhone('');
+  };
+
+  const handleToggleUserActive = (username: string) => {
+    if (!window.confirm(`Are you sure you want to change the active status of user "${username}"?`)) {
+      return;
+    }
+    const users = getUsers();
+    const targetUser = users.find(u => u.username === username);
+    if (targetUser) {
+      targetUser.active = targetUser.active === false ? true : false;
+      saveUser(targetUser);
+      setUsersList(getUsers());
+      setSuccessMsg(`User "${username}" status updated!`);
+    }
+  };
+
+  const handleResetUserPin = (username: string) => {
+    const newPin = prompt(`Enter new 4-digit PIN for ${username}:`);
+    if (newPin === null) return;
+    if (!/^\d{4}$/.test(newPin)) {
+      alert('PIN must be exactly 4 numeric digits');
+      return;
+    }
+    const users = getUsers();
+    const targetUser = users.find(u => u.username === username);
+    if (targetUser) {
+      targetUser.pin = newPin;
+      saveUser(targetUser);
+      setUsersList(getUsers());
+      alert(`PIN for ${username} reset successfully to ${newPin}!`);
+    }
+  };
+
+  // Form Success / Error States
+  const [successMsg, setSuccessMsg] = useState('');
+  const [errorMsg, setErrorMsg] = useState('');
+
+  // Backup file state
+  const [backupFileText, setBackupFileText] = useState('');
+
+  // 1. Product Form States
+  const [pName, setPName] = useState('');
+  const [pGrade, setPGrade] = useState<'A' | 'B'>('A');
+  const [pGsm, setPGsm] = useState('');
+  const [pSize, setPSize] = useState('');
+  const [pPly, setPPly] = useState('');
+
+  const handleProductSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    setSuccessMsg('');
+    setErrorMsg('');
+
+    if (!pName || !pGsm || !pSize || !pPly) {
+      setErrorMsg('All product fields are required');
+      return;
+    }
+
+    const newProd: ProductItem = {
+      id: `p-${Date.now()}`,
+      name: pName,
+      grade: pGrade,
+      gsm: parseFloat(pGsm),
+      size: parseFloat(pSize),
+      ply: parseInt(pPly),
+    };
+
+    saveProduct(newProd);
+    setProducts(getProducts());
+    setSuccessMsg('Product added successfully!');
+    setPName('');
+    setPGsm('');
+    setPSize('');
+    setPPly('');
+  };
+
+  // 2. Party Form States
+  const [ptName, setPtName] = useState('');
+  const [ptContact, setPtContact] = useState('');
+  const [ptAddress, setPtAddress] = useState('');
+
+  const handlePartySubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    setSuccessMsg('');
+    setErrorMsg('');
+
+    if (!ptName || !ptContact || !ptAddress) {
+      setErrorMsg('All party fields are required');
+      return;
+    }
+
+    if (ptContact.trim().length !== 10) {
+      setErrorMsg('Contact number must be exactly 10 digits');
+      return;
+    }
+
+    const newParty: PartyItem = {
+      id: `pt-${Date.now()}`,
+      name: ptName,
+      contact: ptContact,
+      address: ptAddress,
+    };
+
+    saveParty(newParty);
+    setParties(getParties());
+    setSuccessMsg('Party customer registered successfully!');
+    setPtName('');
+    setPtContact('');
+    setPtAddress('');
+  };
+
+  // 3. Vendor Form States
+  const [vdName, setVdName] = useState('');
+  const [vdContact, setVdContact] = useState('');
+  const [vdAddress, setVdAddress] = useState('');
+
+  const handleVendorSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    setSuccessMsg('');
+    setErrorMsg('');
+
+    if (!vdName || !vdContact || !vdAddress) {
+      setErrorMsg('All vendor fields are required');
+      return;
+    }
+
+    if (vdContact.trim().length !== 10) {
+      setErrorMsg('Contact number must be exactly 10 digits');
+      return;
+    }
+
+    const newVendor: VendorItem = {
+      id: `vd-${Date.now()}`,
+      name: vdName,
+      contact: vdContact,
+      address: vdAddress,
+    };
+
+    saveVendor(newVendor);
+    setVendors(getVendors());
+    setSuccessMsg('Vendor supplier registered successfully!');
+    setVdName('');
+    setVdContact('');
+    setVdAddress('');
+  };
+
+  // 4. Vehicle Form States
+  const [vhNo, setVhNo] = useState('');
+  const [vhDriver, setVhDriver] = useState('');
+  const [vhContact, setVhContact] = useState('');
+
+  const handleVehicleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    setSuccessMsg('');
+    setErrorMsg('');
+
+    if (!vhNo || !vhDriver || !vhContact) {
+      setErrorMsg('All vehicle fields are required');
+      return;
+    }
+
+    if (vhContact.trim().length !== 10) {
+      setErrorMsg('Driver contact number must be exactly 10 digits');
+      return;
+    }
+
+    const newVehicle: VehicleItem = {
+      id: `vh-${Date.now()}`,
+      vehicleNo: vhNo,
+      driverName: vhDriver,
+      driverContact: vhContact,
+    };
+
+    saveVehicle(newVehicle);
+    setVehicles(getVehicles());
+    setSuccessMsg('Vehicle dispatch master registered successfully!');
+    setVhNo('');
+    setVhDriver('');
+    setVhContact('');
+  };
+
+  // --- BACKUP & RESTORE ACTIONS ---
+  const handleExportBackup = () => {
+    try {
+      const dataStr = exportBackup();
+      const blob = new Blob([dataStr], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = `saheb_paper_backup_${new Date().toISOString().substring(0, 10)}.json`;
+      link.click();
+      URL.revokeObjectURL(url);
+      setSuccessMsg('System database backup file generated and downloaded successfully.');
+    } catch (err: any) {
+      setErrorMsg('Backup export failed: ' + err.message);
+    }
+  };
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onload = (event) => {
+        const text = event.target?.result as string;
+        setBackupFileText(text);
+      };
+      reader.readAsText(file);
+    }
+  };
+
+  const handleRestoreBackup = (e: React.FormEvent) => {
+    e.preventDefault();
+    setSuccessMsg('');
+    setErrorMsg('');
+
+    if (!backupFileText) {
+      setErrorMsg('Please select a valid backup JSON file first.');
+      return;
+    }
+
+    try {
+      restoreBackup(backupFileText, user?.displayName || 'Admin');
+      setSuccessMsg('Database backup restored successfully! Reloading listings...');
+
+      // Reload states
+      setProducts(getProducts());
+      setParties(getParties());
+      setVendors(getVendors());
+      setVehicles(getVehicles());
+      setLogs(getLogs());
+      setBackupFileText('');
+
+      // Reload page to re-seed and refresh Layout configs
+      setTimeout(() => window.location.reload(), 1000);
+    } catch (err: any) {
+      setErrorMsg(err.message || 'Failed to restore backup');
+    }
+  };
+
+  const handleResetDemoData = () => {
+    if (!window.confirm("Are you sure you want to clear all transactions and reset all databases back to default seed data? This cannot be undone.")) {
+      return;
+    }
+    try {
+      clearAllDemoData();
+      setSuccessMsg("Demo data cleared successfully! Restoring defaults and reloading...");
+      setTimeout(() => {
+        window.location.reload();
+      }, 1500);
+    } catch (err: any) {
+      setErrorMsg("Failed to reset database: " + err.message);
+    }
+  };
+
+  // --- LOG EXPORT ---
+  const handleExportLogsExcel = () => {
+    const data = logs.map(l => ({
+      'Timestamp': new Date(l.timestamp).toLocaleString(),
+      'Module': l.module,
+      'Action': l.action,
+      'Details': l.details,
+      'Operator': l.user,
+    }));
+    const worksheet = XLSX.utils.json_to_sheet(data);
+    const workbook = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(workbook, worksheet, "System Logs");
+    XLSX.writeFile(workbook, `Saheb_Paper_System_Logs_${new Date().toISOString().substring(0, 10)}.xlsx`);
+  };
+
+  return (
+    <div className="space-y-6 font-sans pb-12">
+
+      {/* 1. HERO GRADIENT HEADER BANNER */}
+      <div className="bg-gradient-to-r from-blue-700 via-indigo-600 to-slate-900 rounded-3xl p-6 sm:p-8 text-white shadow-xl relative overflow-hidden">
+        <div className="absolute -top-16 -right-16 w-64 h-64 rounded-full bg-white/10 blur-xl pointer-events-none" />
+        <div className="absolute -bottom-20 -left-20 w-80 h-80 rounded-full bg-blue-400/10 blur-2xl pointer-events-none" />
+
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-6 relative z-10">
+          <div className="flex items-center gap-4">
+            <div className="p-3.5 rounded-2xl bg-white/15 backdrop-blur-md border border-white/20 text-white shadow-lg shrink-0">
+              <Settings className="h-8 w-8" />
+            </div>
+            <div>
+              <div className="flex flex-wrap items-center gap-3">
+                <h2 className="text-2xl sm:text-3xl font-black tracking-tight">{t('masters.title')}</h2>
+              </div>
+              <p className="text-xs sm:text-sm text-blue-100/90 font-medium mt-1">
+                Maintain registry listings, manage system backups, and review audit trails.
+              </p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+
+
+      {/* 3. NAVIGATION TABS PILLS */}
+      <div className="flex bg-slate-100/90 dark:bg-slate-800/90 p-1.5 rounded-2xl border border-slate-200/80 dark:border-slate-700 overflow-x-auto gap-1">
+        <button
+          onClick={() => { setActiveTab('products'); setSuccessMsg(''); setErrorMsg(''); }}
+          className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-black transition-all cursor-pointer whitespace-nowrap ${activeTab === 'products' ? 'bg-gradient-to-r from-blue-600 to-indigo-600 text-white shadow-md' : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
+            }`}
+        >
+          <ShoppingBag className="h-4 w-4" />
+          <span>{t('masters.products')}</span>
+        </button>
+        <button
+          onClick={() => { setActiveTab('parties'); setSuccessMsg(''); setErrorMsg(''); }}
+          className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-black transition-all cursor-pointer whitespace-nowrap ${activeTab === 'parties' ? 'bg-gradient-to-r from-blue-600 to-indigo-600 text-white shadow-md' : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
+            }`}
+        >
+          <Users className="h-4 w-4" />
+          <span>{t('masters.parties')}</span>
+        </button>
+        <button
+          onClick={() => { setActiveTab('vendors'); setSuccessMsg(''); setErrorMsg(''); }}
+          className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-black transition-all cursor-pointer whitespace-nowrap ${activeTab === 'vendors' ? 'bg-gradient-to-r from-blue-600 to-indigo-600 text-white shadow-md' : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
+            }`}
+        >
+          <Users className="h-4 w-4" />
+          <span>{t('masters.vendors')}</span>
+        </button>
+        <button
+          onClick={() => { setActiveTab('vehicles'); setSuccessMsg(''); setErrorMsg(''); }}
+          className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-black transition-all cursor-pointer whitespace-nowrap ${activeTab === 'vehicles' ? 'bg-gradient-to-r from-blue-600 to-indigo-600 text-white shadow-md' : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
+            }`}
+        >
+          <Truck className="h-4 w-4" />
+          <span>{t('masters.vehicles')}</span>
+        </button>
+
+        <button
+          onClick={() => { setActiveTab('roles'); setSuccessMsg(''); setErrorMsg(''); }}
+          className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-black transition-all cursor-pointer whitespace-nowrap ${activeTab === 'roles' ? 'bg-gradient-to-r from-blue-600 to-indigo-600 text-white shadow-md' : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
+            }`}
+        >
+          <ShieldAlert className="h-4 w-4" />
+          <span>Roles & Permissions</span>
+        </button>
+        <button
+          onClick={() => { setActiveTab('backup'); setSuccessMsg(''); setErrorMsg(''); }}
+          className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-black transition-all cursor-pointer whitespace-nowrap ${activeTab === 'backup' ? 'bg-gradient-to-r from-blue-600 to-indigo-600 text-white shadow-md' : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
+            }`}
+        >
+          <Database className="h-4 w-4" />
+          <span>Backup / Restore</span>
+        </button>
+        <button
+          onClick={() => { setActiveTab('logs'); setSuccessMsg(''); setErrorMsg(''); }}
+          className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-black transition-all cursor-pointer whitespace-nowrap ${activeTab === 'logs' ? 'bg-gradient-to-r from-blue-600 to-indigo-600 text-white shadow-md' : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
+            }`}
+        >
+          <ShieldAlert className="h-4 w-4" />
+          <span>Audit Log History</span>
+        </button>
+      </div>
+
+      {/* Main Grid View */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 items-start">
+
+        {/* Left List Pane (2/3 width) */}
+        <div className="lg:col-span-2 space-y-4">
+
+          {successMsg && (
+            <div className="p-3.5 bg-emerald-50 dark:bg-emerald-950/20 text-emerald-600 dark:text-emerald-400 text-xs rounded-2xl border border-emerald-200 dark:border-emerald-800 font-bold">
+              {successMsg}
+            </div>
+          )}
+          {errorMsg && (
+            <div className="p-3.5 bg-red-50 dark:bg-red-950/20 text-red-600 dark:text-red-400 text-xs rounded-2xl border border-red-200 dark:border-red-800 font-bold">
+              {errorMsg}
+            </div>
+          )}
+
+          <div className="bg-white dark:bg-surface-dark border border-slate-200 dark:border-slate-700/80 rounded-3xl p-6 shadow-sm">
+
+            {/* Live Search Box */}
+            {activeTab !== 'backup' && activeTab !== 'logs' && activeTab !== 'roles' && (
+              <div className="mb-5 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-2xl p-3 flex items-center gap-3">
+                <Search className="h-4 w-4 text-slate-400 shrink-0" />
+                <input
+                  type="text"
+                  value={mastersSearchQuery}
+                  onChange={e => setMastersSearchQuery(e.target.value)}
+                  placeholder={`Search ${activeTab === 'products' ? 'products' : activeTab === 'parties' ? 'parties' : activeTab === 'vendors' ? 'vendors' : activeTab === 'vehicles' ? 'vehicles' : activeTab === 'users' ? 'users' : 'master records'}...`}
+                  className="bg-transparent border-none text-xs font-semibold focus:outline-none w-full dark:text-white placeholder-slate-400"
+                />
+                <div className="p-1.5 rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-500 shrink-0">
+                  <ListFilter className="h-4 w-4" />
+                </div>
+              </div>
+            )}
+
+            {/* Products Listing */}
+            {activeTab === 'products' && (
+              <>
+                {/* Desktop View */}
+                <div className="hidden md:block overflow-x-auto min-h-[280px] pb-16">
+                  <table className="w-full text-left text-xs border-collapse">
+                    <thead>
+                      <tr className="border-b border-slate-100 dark:border-slate-800 text-slate-400 uppercase text-[10px] font-black tracking-wider">
+                        <th className="py-3 px-3">Product Name</th>
+                        <th className="py-3 px-3">Grade</th>
+                        <th className="py-3 px-3">GSM</th>
+                        <th className="py-3 px-3">Size (cm)</th>
+                        <th className="py-3 px-3">Ply</th>
+                        <th className="py-3 px-3 text-right">Actions</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-slate-100 dark:divide-slate-800 font-semibold">
+                      {filteredProducts.map(p => (
+                        <tr key={p.id} className="hover:bg-blue-50/50 dark:hover:bg-slate-800/40 transition">
+                          <td className="py-3 px-3 font-bold text-slate-900 dark:text-white">{p.name}</td>
+                          <td className="py-3 px-3">
+                            <span className={`px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase whitespace-nowrap ${p.grade === 'A' ? 'bg-emerald-100 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300' : 'bg-amber-100 dark:bg-amber-950/40 text-amber-700 dark:text-amber-300'
+                              }`}>
+                              Grade {p.grade}
+                            </span>
+                          </td>
+                          <td className="py-3 px-3 font-mono font-bold text-slate-700 dark:text-slate-200">{p.gsm}</td>
+                          <td className="py-3 px-3 font-mono font-bold text-slate-700 dark:text-slate-200">{p.size}</td>
+                          <td className="py-3 px-3 font-mono font-bold text-slate-700 dark:text-slate-200">{p.ply}</td>
+                          <td className="py-3 px-3 text-right">
+                            <div className={`inline-block text-left ${openMenuFor === p.id ? 'relative z-50' : 'relative'}`}>
+                              <button
+                                onClick={(e) => handleOpenMenu(e, p.id)}
+                                className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 rounded-lg p-1.5 cursor-pointer relative"
+                              >
+                                <MoreVertical size={15} />
+                              </button>
+                              {openMenuFor === p.id && (
+                                <>
+                                  <div
+                                    className="fixed inset-0 bg-black/10 dark:bg-black/30 backdrop-blur-[0.5px] z-40"
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      setOpenMenuFor(null);
+                                    }}
+                                  />
+                                  <div
+                                    ref={menuRef}
+                                    style={{
+                                      position: 'fixed',
+                                      top: menuPos?.top !== undefined ? `${menuPos.top}px` : undefined,
+                                      bottom: menuPos?.bottom !== undefined ? `${menuPos.bottom}px` : undefined,
+                                      right: menuPos?.right !== undefined ? `${menuPos.right}px` : undefined,
+                                    }}
+                                    className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl shadow-2xl py-1 w-44 z-[9999] text-left font-sans animate-in fade-in zoom-in-95 duration-150"
+                                    onClick={(e) => e.stopPropagation()}
+                                  >
+                                    <button
+                                      onMouseDown={(e) => { e.preventDefault(); e.stopPropagation(); setViewingItem({ type: 'product', data: p }); setOpenMenuFor(null); }}
+                                      onClick={(e) => { e.preventDefault(); e.stopPropagation(); setViewingItem({ type: 'product', data: p }); setOpenMenuFor(null); }}
+                                      className="w-full flex items-center gap-2 px-3 py-1.5 text-[11px] font-semibold text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-700/60 text-left transition cursor-pointer"
+                                    >
+                                      <Eye size={13} className="text-slate-500" />
+                                      View Details
+                                    </button>
+                                    <button
+                                      onMouseDown={(e) => { e.preventDefault(); e.stopPropagation(); setEditingItem({ type: 'product', data: { ...p } }); setOpenMenuFor(null); }}
+                                      onClick={(e) => { e.preventDefault(); e.stopPropagation(); setEditingItem({ type: 'product', data: { ...p } }); setOpenMenuFor(null); }}
+                                      className="w-full flex items-center gap-2 px-3 py-1.5 text-[11px] font-semibold text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-700/60 text-left transition cursor-pointer"
+                                    >
+                                      <Pencil size={13} className="text-slate-500" />
+                                      Edit Details
+                                    </button>
+                                    <button
+                                      onMouseDown={(e) => { e.preventDefault(); e.stopPropagation(); handleExportMasterItem('product', p); setOpenMenuFor(null); }}
+                                      onClick={(e) => { e.preventDefault(); e.stopPropagation(); handleExportMasterItem('product', p); setOpenMenuFor(null); }}
+                                      className="w-full flex items-center gap-2 px-3 py-1.5 text-[11px] font-semibold text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-700/60 text-left transition cursor-pointer"
+                                    >
+                                      <Download size={13} className="text-slate-500" />
+                                      Export Details
+                                    </button>
+                                    <div className="border-t border-slate-100 dark:border-slate-700 my-1" />
+                                    <button
+                                      onMouseDown={(e) => { e.preventDefault(); e.stopPropagation(); handleDeleteMasterItem('product', p); setOpenMenuFor(null); }}
+                                      onClick={(e) => { e.preventDefault(); e.stopPropagation(); handleDeleteMasterItem('product', p); setOpenMenuFor(null); }}
+                                      className="w-full flex items-center gap-2 px-3 py-1.5 text-[11px] font-semibold text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/20 text-left transition cursor-pointer"
+                                    >
+                                      <Trash2 size={13} className="text-red-500" />
+                                      Delete Product
+                                    </button>
+                                  </div>
+                                </>
+                              )}
+                            </div>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+
+                {/* Mobile View Cards */}
+                <div className="block md:hidden space-y-2.5 pb-16">
+                  {filteredProducts.map(p => (
+                    <div key={p.id} className="p-3.5 bg-slate-50 dark:bg-slate-900/60 border border-slate-200/80 dark:border-slate-800 rounded-2xl flex items-center justify-between gap-3 text-xs">
+                      <div className="space-y-1 min-w-0 flex-1">
+                        <div className="flex items-center gap-2">
+                          <span className="font-bold text-slate-800 dark:text-white text-xs">{p.name}</span>
+                          <span className={`px-2 py-0.5 rounded-full text-[9px] font-black uppercase whitespace-nowrap shrink-0 ${p.grade === 'A' ? 'bg-emerald-100 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300' : 'bg-amber-100 dark:bg-amber-950/40 text-amber-700 dark:text-amber-300'}`}>
+                            Grade {p.grade}
+                          </span>
+                        </div>
+                        <div className="flex items-center gap-3 text-[11px] text-slate-500 dark:text-slate-400 font-mono">
+                          <span>GSM: <strong className="text-slate-800 dark:text-slate-200">{p.gsm}</strong></span>
+                          <span>Size: <strong className="text-slate-800 dark:text-slate-200">{p.size} cm</strong></span>
+                          <span>Ply: <strong className="text-slate-800 dark:text-slate-200">{p.ply}</strong></span>
+                        </div>
+                      </div>
+                      <div className={`inline-block text-left ${openMenuFor === p.id ? 'relative z-50' : 'relative'}`}>
+                        <button
+                          onClick={(e) => handleOpenMenu(e, p.id)}
+                          className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 rounded-lg p-1.5 cursor-pointer relative"
+                        >
+                          <MoreVertical size={16} />
+                        </button>
+                        {openMenuFor === p.id && (
+                          <>
+                            <div
+                              className="fixed inset-0 bg-black/10 dark:bg-black/30 backdrop-blur-[0.5px] z-40"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setOpenMenuFor(null);
+                              }}
+                            />
+                            <div
+                              ref={menuRef}
+                              style={{
+                                position: 'fixed',
+                                top: menuPos?.top !== undefined ? `${menuPos.top}px` : undefined,
+                                bottom: menuPos?.bottom !== undefined ? `${menuPos.bottom}px` : undefined,
+                                right: menuPos?.right !== undefined ? `${menuPos.right}px` : undefined,
+                              }}
+                              className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl shadow-2xl py-1 w-44 z-[9999] text-left font-sans animate-in fade-in zoom-in-95 duration-150"
+                              onClick={(e) => e.stopPropagation()}
+                            >
+                              <button
+                                onMouseDown={(e) => { e.preventDefault(); e.stopPropagation(); setViewingItem({ type: 'product', data: p }); setOpenMenuFor(null); }}
+                                onClick={(e) => { e.preventDefault(); e.stopPropagation(); setViewingItem({ type: 'product', data: p }); setOpenMenuFor(null); }}
+                                className="w-full flex items-center gap-2 px-3 py-1.5 text-[11px] font-semibold text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-700/60 text-left transition cursor-pointer"
+                              >
+                                <Eye size={13} className="text-slate-500" />
+                                View Details
+                              </button>
+                              <button
+                                onMouseDown={(e) => { e.preventDefault(); e.stopPropagation(); setEditingItem({ type: 'product', data: { ...p } }); setOpenMenuFor(null); }}
+                                onClick={(e) => { e.preventDefault(); e.stopPropagation(); setEditingItem({ type: 'product', data: { ...p } }); setOpenMenuFor(null); }}
+                                className="w-full flex items-center gap-2 px-3 py-1.5 text-[11px] font-semibold text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-700/60 text-left transition cursor-pointer"
+                              >
+                                <Pencil size={13} className="text-slate-500" />
+                                Edit Details
+                              </button>
+                              <button
+                                onMouseDown={(e) => { e.preventDefault(); e.stopPropagation(); handleExportMasterItem('product', p); setOpenMenuFor(null); }}
+                                onClick={(e) => { e.preventDefault(); e.stopPropagation(); handleExportMasterItem('product', p); setOpenMenuFor(null); }}
+                                className="w-full flex items-center gap-2 px-3 py-1.5 text-[11px] font-semibold text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-700/60 text-left transition cursor-pointer"
+                              >
+                                <Download size={13} className="text-slate-500" />
+                                Export Details
+                              </button>
+                              <div className="border-t border-slate-100 dark:border-slate-700 my-1" />
+                              <button
+                                onMouseDown={(e) => { e.preventDefault(); e.stopPropagation(); handleDeleteMasterItem('product', p); setOpenMenuFor(null); }}
+                                onClick={(e) => { e.preventDefault(); e.stopPropagation(); handleDeleteMasterItem('product', p); setOpenMenuFor(null); }}
+                                className="w-full flex items-center gap-2 px-3 py-1.5 text-[11px] font-semibold text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/20 text-left transition cursor-pointer"
+                              >
+                                <Trash2 size={13} className="text-red-500" />
+                                Delete Product
+                              </button>
+                            </div>
+                          </>
+                        )}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </>
+            )}
+
+            {/* Parties Listing */}
+            {activeTab === 'parties' && (
+              <>
+                {/* Desktop View */}
+                <div className="hidden md:block overflow-x-auto min-h-[280px] pb-16">
+                  <table className="w-full text-left text-xs border-collapse">
+                    <thead>
+                      <tr className="border-b border-slate-100 dark:border-slate-700 text-text-light-secondary dark:text-slate-400">
+                        <th className="py-2.5 px-3 font-bold uppercase">Party Name</th>
+                        <th className="py-2.5 px-3 font-bold uppercase">Contact</th>
+                        <th className="py-2.5 px-3 font-bold uppercase">Address</th>
+                        <th className="py-2.5 px-3 font-bold uppercase text-right">Actions</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-slate-100 dark:divide-slate-700">
+                      {filteredParties.map(pt => (
+                        <tr key={pt.id} className="hover:bg-slate-50 dark:hover:bg-slate-800/30">
+                          <td className="py-2.5 px-3 font-semibold text-slate-800 dark:text-white">{pt.name}</td>
+                          <td className="py-2.5 px-3 font-mono text-text-light-secondary dark:text-slate-400">{pt.contact}</td>
+                          <td className="py-2.5 px-3 text-text-light-secondary dark:text-slate-400">{pt.address}</td>
+                          <td className="py-2.5 px-3 text-right">
+                            <div className={`inline-block text-left ${openMenuFor === pt.id ? 'relative z-50' : 'relative'}`}>
+                              <button
+                                onClick={(e) => handleOpenMenu(e, pt.id)}
+                                className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 rounded-lg p-1.5 cursor-pointer relative"
+                              >
+                                <MoreVertical size={15} />
+                              </button>
+                              {openMenuFor === pt.id && (
+                                <>
+                                  <div
+                                    className="fixed inset-0 bg-black/10 dark:bg-black/30 backdrop-blur-[0.5px] z-40"
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      setOpenMenuFor(null);
+                                    }}
+                                  />
+                                  <div
+                                    ref={menuRef}
+                                    style={{
+                                      position: 'fixed',
+                                      top: menuPos?.top !== undefined ? `${menuPos.top}px` : undefined,
+                                      bottom: menuPos?.bottom !== undefined ? `${menuPos.bottom}px` : undefined,
+                                      right: menuPos?.right !== undefined ? `${menuPos.right}px` : undefined,
+                                    }}
+                                    className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl shadow-2xl py-1 w-44 z-[9999] text-left font-sans animate-in fade-in zoom-in-95 duration-150"
+                                    onClick={(e) => e.stopPropagation()}
+                                  >
+                                    <button
+                                      onMouseDown={(e) => { e.preventDefault(); e.stopPropagation(); setViewingItem({ type: 'party', data: pt }); setOpenMenuFor(null); }}
+                                      onClick={(e) => { e.preventDefault(); e.stopPropagation(); setViewingItem({ type: 'party', data: pt }); setOpenMenuFor(null); }}
+                                      className="w-full flex items-center gap-2 px-3 py-1.5 text-[11px] font-semibold text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-700/60 text-left transition cursor-pointer"
+                                    >
+                                      <Eye size={13} className="text-slate-500" />
+                                      View Details
+                                    </button>
+                                    <button
+                                      onMouseDown={(e) => { e.preventDefault(); e.stopPropagation(); setEditingItem({ type: 'party', data: { ...pt } }); setOpenMenuFor(null); }}
+                                      onClick={(e) => { e.preventDefault(); e.stopPropagation(); setEditingItem({ type: 'party', data: { ...pt } }); setOpenMenuFor(null); }}
+                                      className="w-full flex items-center gap-2 px-3 py-1.5 text-[11px] font-semibold text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-700/60 text-left transition cursor-pointer"
+                                    >
+                                      <Pencil size={13} className="text-slate-500" />
+                                      Edit Details
+                                    </button>
+                                    <button
+                                      onMouseDown={(e) => { e.preventDefault(); e.stopPropagation(); handleExportMasterItem('party', pt); setOpenMenuFor(null); }}
+                                      onClick={(e) => { e.preventDefault(); e.stopPropagation(); handleExportMasterItem('party', pt); setOpenMenuFor(null); }}
+                                      className="w-full flex items-center gap-2 px-3 py-1.5 text-[11px] font-semibold text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-700/60 text-left transition cursor-pointer"
+                                    >
+                                      <Download size={13} className="text-slate-500" />
+                                      Export Details
+                                    </button>
+                                    <div className="border-t border-slate-100 dark:border-slate-700 my-1" />
+                                    <button
+                                      onMouseDown={(e) => { e.preventDefault(); e.stopPropagation(); handleDeleteMasterItem('party', pt); setOpenMenuFor(null); }}
+                                      onClick={(e) => { e.preventDefault(); e.stopPropagation(); handleDeleteMasterItem('party', pt); setOpenMenuFor(null); }}
+                                      className="w-full flex items-center gap-2 px-3 py-1.5 text-[11px] font-semibold text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/20 text-left transition cursor-pointer"
+                                    >
+                                      <Trash2 size={13} className="text-red-500" />
+                                      Delete Party
+                                    </button>
+                                  </div>
+                                </>
+                              )}
+                            </div>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+
+                {/* Mobile View Cards */}
+                <div className="block md:hidden space-y-2.5 pb-16">
+                  {filteredParties.map(pt => (
+                    <div key={pt.id} className="p-3.5 bg-slate-50 dark:bg-slate-900/60 border border-slate-200/80 dark:border-slate-800 rounded-2xl flex items-center justify-between gap-3 text-xs">
+                      <div className="space-y-1 min-w-0 flex-1">
+                        <div className="font-bold text-slate-800 dark:text-white truncate">{pt.name}</div>
+                        <div className="font-mono text-[11px] text-slate-500 dark:text-slate-400">{pt.contact || 'No contact'}</div>
+                        <div className="text-[10px] text-slate-400 truncate">{pt.address || 'No address'}</div>
+                      </div>
+                      <div className={`inline-block text-left ${openMenuFor === pt.id ? 'relative z-50' : 'relative'}`}>
+                        <button
+                          onClick={(e) => handleOpenMenu(e, pt.id)}
+                          className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 rounded-lg p-1.5 cursor-pointer relative"
+                        >
+                          <MoreVertical size={16} />
+                        </button>
+                        {openMenuFor === pt.id && (
+                          <>
+                            <div
+                              className="fixed inset-0 bg-black/10 dark:bg-black/30 backdrop-blur-[0.5px] z-40"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setOpenMenuFor(null);
+                              }}
+                            />
+                            <div
+                              ref={menuRef}
+                              style={{
+                                position: 'fixed',
+                                top: menuPos?.top !== undefined ? `${menuPos.top}px` : undefined,
+                                bottom: menuPos?.bottom !== undefined ? `${menuPos.bottom}px` : undefined,
+                                right: menuPos?.right !== undefined ? `${menuPos.right}px` : undefined,
+                              }}
+                              className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl shadow-2xl py-1 w-44 z-[9999] text-left font-sans animate-in fade-in zoom-in-95 duration-150"
+                              onClick={(e) => e.stopPropagation()}
+                            >
+                              <button
+                                onMouseDown={(e) => { e.preventDefault(); e.stopPropagation(); setViewingItem({ type: 'party', data: pt }); setOpenMenuFor(null); }}
+                                onClick={(e) => { e.preventDefault(); e.stopPropagation(); setViewingItem({ type: 'party', data: pt }); setOpenMenuFor(null); }}
+                                className="w-full flex items-center gap-2 px-3 py-1.5 text-[11px] font-semibold text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-700/60 text-left transition cursor-pointer"
+                              >
+                                <Eye size={13} className="text-slate-500" />
+                                View Details
+                              </button>
+                              <button
+                                onMouseDown={(e) => { e.preventDefault(); e.stopPropagation(); setEditingItem({ type: 'party', data: { ...pt } }); setOpenMenuFor(null); }}
+                                onClick={(e) => { e.preventDefault(); e.stopPropagation(); setEditingItem({ type: 'party', data: { ...pt } }); setOpenMenuFor(null); }}
+                                className="w-full flex items-center gap-2 px-3 py-1.5 text-[11px] font-semibold text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-700/60 text-left transition cursor-pointer"
+                              >
+                                <Pencil size={13} className="text-slate-500" />
+                                Edit Details
+                              </button>
+                              <button
+                                onMouseDown={(e) => { e.preventDefault(); e.stopPropagation(); handleExportMasterItem('party', pt); setOpenMenuFor(null); }}
+                                onClick={(e) => { e.preventDefault(); e.stopPropagation(); handleExportMasterItem('party', pt); setOpenMenuFor(null); }}
+                                className="w-full flex items-center gap-2 px-3 py-1.5 text-[11px] font-semibold text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-700/60 text-left transition cursor-pointer"
+                              >
+                                <Download size={13} className="text-slate-500" />
+                                Export Details
+                              </button>
+                              <div className="border-t border-slate-100 dark:border-slate-700 my-1" />
+                              <button
+                                onMouseDown={(e) => { e.preventDefault(); e.stopPropagation(); handleDeleteMasterItem('party', pt); setOpenMenuFor(null); }}
+                                onClick={(e) => { e.preventDefault(); e.stopPropagation(); handleDeleteMasterItem('party', pt); setOpenMenuFor(null); }}
+                                className="w-full flex items-center gap-2 px-3 py-1.5 text-[11px] font-semibold text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/20 text-left transition cursor-pointer"
+                              >
+                                <Trash2 size={13} className="text-red-500" />
+                                Delete Party
+                              </button>
+                            </div>
+                          </>
+                        )}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </>
+            )}
+
+            {/* Vendors Listing */}
+            {activeTab === 'vendors' && (
+              <>
+                {/* Desktop View */}
+                <div className="hidden md:block overflow-x-auto min-h-[280px] pb-16">
+                  <table className="w-full text-left text-xs border-collapse">
+                    <thead>
+                      <tr className="border-b border-slate-100 dark:border-slate-700 text-text-light-secondary dark:text-slate-400">
+                        <th className="py-2.5 px-3 font-bold uppercase">Vendor Name</th>
+                        <th className="py-2.5 px-3 font-bold uppercase">Contact</th>
+                        <th className="py-2.5 px-3 font-bold uppercase">Address</th>
+                        <th className="py-2.5 px-3 font-bold uppercase text-right">Actions</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-slate-100 dark:divide-slate-700">
+                      {filteredVendors.map(vd => (
+                        <tr key={vd.id} className="hover:bg-slate-50 dark:hover:bg-slate-800/30">
+                          <td className="py-2.5 px-3 font-semibold text-slate-800 dark:text-white">{vd.name}</td>
+                          <td className="py-2.5 px-3 font-mono text-text-light-secondary dark:text-slate-400">{vd.contact}</td>
+                          <td className="py-2.5 px-3 text-text-light-secondary dark:text-slate-400">{vd.address}</td>
+                          <td className="py-2.5 px-3 text-right">
+                            <div className={`inline-block text-left ${openMenuFor === vd.id ? 'relative z-50' : 'relative'}`}>
+                              <button
+                                onClick={(e) => handleOpenMenu(e, vd.id)}
+                                className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 rounded-lg p-1.5 cursor-pointer relative"
+                              >
+                                <MoreVertical size={15} />
+                              </button>
+                              {openMenuFor === vd.id && (
+                                <>
+                                  <div
+                                    className="fixed inset-0 bg-black/10 dark:bg-black/30 backdrop-blur-[0.5px] z-40"
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      setOpenMenuFor(null);
+                                    }}
+                                  />
+                                  <div
+                                    ref={menuRef}
+                                    style={{
+                                      position: 'fixed',
+                                      top: menuPos?.top !== undefined ? `${menuPos.top}px` : undefined,
+                                      bottom: menuPos?.bottom !== undefined ? `${menuPos.bottom}px` : undefined,
+                                      right: menuPos?.right !== undefined ? `${menuPos.right}px` : undefined,
+                                    }}
+                                    className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl shadow-2xl py-1 w-44 z-[9999] text-left font-sans animate-in fade-in zoom-in-95 duration-150"
+                                    onClick={(e) => e.stopPropagation()}
+                                  >
+                                    <button
+                                      onMouseDown={(e) => { e.preventDefault(); e.stopPropagation(); setViewingItem({ type: 'vendor', data: vd }); setOpenMenuFor(null); }}
+                                      onClick={(e) => { e.preventDefault(); e.stopPropagation(); setViewingItem({ type: 'vendor', data: vd }); setOpenMenuFor(null); }}
+                                      className="w-full flex items-center gap-2 px-3 py-1.5 text-[11px] font-semibold text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-700/60 text-left transition cursor-pointer"
+                                    >
+                                      <Eye size={13} className="text-slate-500" />
+                                      View Details
+                                    </button>
+                                    <button
+                                      onMouseDown={(e) => { e.preventDefault(); e.stopPropagation(); setEditingItem({ type: 'vendor', data: { ...vd } }); setOpenMenuFor(null); }}
+                                      onClick={(e) => { e.preventDefault(); e.stopPropagation(); setEditingItem({ type: 'vendor', data: { ...vd } }); setOpenMenuFor(null); }}
+                                      className="w-full flex items-center gap-2 px-3 py-1.5 text-[11px] font-semibold text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-700/60 text-left transition cursor-pointer"
+                                    >
+                                      <Pencil size={13} className="text-slate-500" />
+                                      Edit Details
+                                    </button>
+                                    <button
+                                      onMouseDown={(e) => { e.preventDefault(); e.stopPropagation(); handleExportMasterItem('vendor', vd); setOpenMenuFor(null); }}
+                                      onClick={(e) => { e.preventDefault(); e.stopPropagation(); handleExportMasterItem('vendor', vd); setOpenMenuFor(null); }}
+                                      className="w-full flex items-center gap-2 px-3 py-1.5 text-[11px] font-semibold text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-700/60 text-left transition cursor-pointer"
+                                    >
+                                      <Download size={13} className="text-slate-500" />
+                                      Export Details
+                                    </button>
+                                    <div className="border-t border-slate-100 dark:border-slate-700 my-1" />
+                                    <button
+                                      onMouseDown={(e) => { e.preventDefault(); e.stopPropagation(); handleDeleteMasterItem('vendor', vd); setOpenMenuFor(null); }}
+                                      onClick={(e) => { e.preventDefault(); e.stopPropagation(); handleDeleteMasterItem('vendor', vd); setOpenMenuFor(null); }}
+                                      className="w-full flex items-center gap-2 px-3 py-1.5 text-[11px] font-semibold text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/20 text-left transition cursor-pointer"
+                                    >
+                                      <Trash2 size={13} className="text-red-500" />
+                                      Delete Vendor
+                                    </button>
+                                  </div>
+                                </>
+                              )}
+                            </div>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+
+                {/* Mobile View Cards */}
+                <div className="block md:hidden space-y-2.5 pb-16">
+                  {filteredVendors.map(vd => (
+                    <div key={vd.id} className="p-3.5 bg-slate-50 dark:bg-slate-900/60 border border-slate-200/80 dark:border-slate-800 rounded-2xl flex items-center justify-between gap-3 text-xs">
+                      <div className="space-y-1 min-w-0 flex-1">
+                        <div className="font-bold text-slate-800 dark:text-white truncate">{vd.name}</div>
+                        <div className="font-mono text-[11px] text-slate-500 dark:text-slate-400">{vd.contact || 'No contact'}</div>
+                        <div className="text-[10px] text-slate-400 truncate">{vd.address || 'No address'}</div>
+                      </div>
+                      <div className={`inline-block text-left ${openMenuFor === vd.id ? 'relative z-50' : 'relative'}`}>
+                        <button
+                          onClick={(e) => handleOpenMenu(e, vd.id)}
+                          className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 rounded-lg p-1.5 cursor-pointer relative"
+                        >
+                          <MoreVertical size={16} />
+                        </button>
+                        {openMenuFor === vd.id && (
+                          <>
+                            <div
+                              className="fixed inset-0 bg-black/10 dark:bg-black/30 backdrop-blur-[0.5px] z-40"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setOpenMenuFor(null);
+                              }}
+                            />
+                            <div
+                              ref={menuRef}
+                              style={{
+                                position: 'fixed',
+                                top: menuPos?.top !== undefined ? `${menuPos.top}px` : undefined,
+                                bottom: menuPos?.bottom !== undefined ? `${menuPos.bottom}px` : undefined,
+                                right: menuPos?.right !== undefined ? `${menuPos.right}px` : undefined,
+                              }}
+                              className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl shadow-2xl py-1 w-44 z-[9999] text-left font-sans animate-in fade-in zoom-in-95 duration-150"
+                              onClick={(e) => e.stopPropagation()}
+                            >
+                              <button
+                                onMouseDown={(e) => { e.preventDefault(); e.stopPropagation(); setViewingItem({ type: 'vendor', data: vd }); setOpenMenuFor(null); }}
+                                onClick={(e) => { e.preventDefault(); e.stopPropagation(); setViewingItem({ type: 'vendor', data: vd }); setOpenMenuFor(null); }}
+                                className="w-full flex items-center gap-2 px-3 py-1.5 text-[11px] font-semibold text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-700/60 text-left transition cursor-pointer"
+                              >
+                                <Eye size={13} className="text-slate-500" />
+                                View Details
+                              </button>
+                              <button
+                                onMouseDown={(e) => { e.preventDefault(); e.stopPropagation(); setEditingItem({ type: 'vendor', data: { ...vd } }); setOpenMenuFor(null); }}
+                                onClick={(e) => { e.preventDefault(); e.stopPropagation(); setEditingItem({ type: 'vendor', data: { ...vd } }); setOpenMenuFor(null); }}
+                                className="w-full flex items-center gap-2 px-3 py-1.5 text-[11px] font-semibold text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-700/60 text-left transition cursor-pointer"
+                              >
+                                <Pencil size={13} className="text-slate-500" />
+                                Edit Details
+                              </button>
+                              <button
+                                onMouseDown={(e) => { e.preventDefault(); e.stopPropagation(); handleExportMasterItem('vendor', vd); setOpenMenuFor(null); }}
+                                onClick={(e) => { e.preventDefault(); e.stopPropagation(); handleExportMasterItem('vendor', vd); setOpenMenuFor(null); }}
+                                className="w-full flex items-center gap-2 px-3 py-1.5 text-[11px] font-semibold text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-700/60 text-left transition cursor-pointer"
+                              >
+                                <Download size={13} className="text-slate-500" />
+                                Export Details
+                              </button>
+                              <div className="border-t border-slate-100 dark:border-slate-700 my-1" />
+                              <button
+                                onMouseDown={(e) => { e.preventDefault(); e.stopPropagation(); handleDeleteMasterItem('vendor', vd); setOpenMenuFor(null); }}
+                                onClick={(e) => { e.preventDefault(); e.stopPropagation(); handleDeleteMasterItem('vendor', vd); setOpenMenuFor(null); }}
+                                className="w-full flex items-center gap-2 px-3 py-1.5 text-[11px] font-semibold text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/20 text-left transition cursor-pointer"
+                              >
+                                <Trash2 size={13} className="text-red-500" />
+                                Delete Vendor
+                              </button>
+                            </div>
+                          </>
+                        )}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </>
+            )}
+
+            {/* Vehicles Listing */}
+            {activeTab === 'vehicles' && (
+              <>
+                {/* Desktop View */}
+                <div className="hidden md:block overflow-x-auto min-h-[280px] pb-16">
+                  <table className="w-full text-left text-xs border-collapse">
+                    <thead>
+                      <tr className="border-b border-slate-100 dark:border-slate-700 text-text-light-secondary dark:text-slate-400">
+                        <th className="py-2.5 px-3 font-bold uppercase">Vehicle Number</th>
+                        <th className="py-2.5 px-3 font-bold uppercase">Driver Name</th>
+                        <th className="py-2.5 px-3 font-bold uppercase">Contact</th>
+                        <th className="py-2.5 px-3 font-bold uppercase text-right">Actions</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-slate-100 dark:divide-slate-700">
+                      {filteredVehicles.map(vh => (
+                        <tr key={vh.id} className="hover:bg-slate-50 dark:hover:bg-slate-800/30">
+                          <td className="py-2.5 px-3 font-bold text-primary dark:text-blue-400 font-mono">{vh.vehicleNo}</td>
+                          <td className="py-2.5 px-3 font-semibold text-slate-800 dark:text-white">{vh.driverName}</td>
+                          <td className="py-2.5 px-3 font-mono text-text-light-secondary dark:text-slate-400">{vh.driverContact}</td>
+                          <td className="py-2.5 px-3 text-right">
+                            <div className={`inline-block text-left ${openMenuFor === vh.id ? 'relative z-50' : 'relative'}`}>
+                              <button
+                                onClick={(e) => handleOpenMenu(e, vh.id)}
+                                className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 rounded-lg p-1.5 cursor-pointer relative"
+                              >
+                                <MoreVertical size={15} />
+                              </button>
+                              {openMenuFor === vh.id && (
+                                <>
+                                  <div
+                                    className="fixed inset-0 bg-black/10 dark:bg-black/30 backdrop-blur-[0.5px] z-40"
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      setOpenMenuFor(null);
+                                    }}
+                                  />
+                                  <div
+                                    ref={menuRef}
+                                    style={{
+                                      position: 'fixed',
+                                      top: menuPos?.top !== undefined ? `${menuPos.top}px` : undefined,
+                                      bottom: menuPos?.bottom !== undefined ? `${menuPos.bottom}px` : undefined,
+                                      right: menuPos?.right !== undefined ? `${menuPos.right}px` : undefined,
+                                    }}
+                                    className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl shadow-2xl py-1 w-44 z-[9999] text-left font-sans animate-in fade-in zoom-in-95 duration-150"
+                                    onClick={(e) => e.stopPropagation()}
+                                  >
+                                    <button
+                                      onMouseDown={(e) => { e.preventDefault(); e.stopPropagation(); setViewingItem({ type: 'vehicle', data: vh }); setOpenMenuFor(null); }}
+                                      onClick={(e) => { e.preventDefault(); e.stopPropagation(); setViewingItem({ type: 'vehicle', data: vh }); setOpenMenuFor(null); }}
+                                      className="w-full flex items-center gap-2 px-3 py-1.5 text-[11px] font-semibold text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-700/60 text-left transition cursor-pointer"
+                                    >
+                                      <Eye size={13} className="text-slate-500" />
+                                      View Details
+                                    </button>
+                                    <button
+                                      onMouseDown={(e) => { e.preventDefault(); e.stopPropagation(); setEditingItem({ type: 'vehicle', data: { ...vh } }); setOpenMenuFor(null); }}
+                                      onClick={(e) => { e.preventDefault(); e.stopPropagation(); setEditingItem({ type: 'vehicle', data: { ...vh } }); setOpenMenuFor(null); }}
+                                      className="w-full flex items-center gap-2 px-3 py-1.5 text-[11px] font-semibold text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-700/60 text-left transition cursor-pointer"
+                                    >
+                                      <Pencil size={13} className="text-slate-500" />
+                                      Edit Details
+                                    </button>
+                                    <button
+                                      onMouseDown={(e) => { e.preventDefault(); e.stopPropagation(); handleExportMasterItem('vehicle', vh); setOpenMenuFor(null); }}
+                                      onClick={(e) => { e.preventDefault(); e.stopPropagation(); handleExportMasterItem('vehicle', vh); setOpenMenuFor(null); }}
+                                      className="w-full flex items-center gap-2 px-3 py-1.5 text-[11px] font-semibold text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-700/60 text-left transition cursor-pointer"
+                                    >
+                                      <Download size={13} className="text-slate-500" />
+                                      Export Details
+                                    </button>
+                                    <div className="border-t border-slate-100 dark:border-slate-700 my-1" />
+                                    <button
+                                      onMouseDown={(e) => { e.preventDefault(); e.stopPropagation(); handleDeleteMasterItem('vehicle', vh); setOpenMenuFor(null); }}
+                                      onClick={(e) => { e.preventDefault(); e.stopPropagation(); handleDeleteMasterItem('vehicle', vh); setOpenMenuFor(null); }}
+                                      className="w-full flex items-center gap-2 px-3 py-1.5 text-[11px] font-semibold text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/20 text-left transition cursor-pointer"
+                                    >
+                                      <Trash2 size={13} className="text-red-500" />
+                                      Delete Vehicle
+                                    </button>
+                                  </div>
+                                </>
+                              )}
+                            </div>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+
+                {/* Mobile View Cards */}
+                <div className="block md:hidden space-y-2.5 pb-16">
+                  {filteredVehicles.map(vh => (
+                    <div key={vh.id} className="p-3.5 bg-slate-50 dark:bg-slate-900/60 border border-slate-200/80 dark:border-slate-800 rounded-2xl flex items-center justify-between gap-3 text-xs">
+                      <div className="space-y-1 min-w-0 flex-1">
+                        <div className="font-mono font-black text-primary dark:text-blue-400 text-xs">{vh.vehicleNo}</div>
+                        <div className="font-bold text-slate-800 dark:text-white truncate">{vh.driverName}</div>
+                        <div className="font-mono text-[11px] text-slate-500 dark:text-slate-400">{vh.driverContact || 'No contact'}</div>
+                      </div>
+                      <div className={`inline-block text-left ${openMenuFor === vh.id ? 'relative z-50' : 'relative'}`}>
+                        <button
+                          onClick={(e) => handleOpenMenu(e, vh.id)}
+                          className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 rounded-lg p-1.5 cursor-pointer relative"
+                        >
+                          <MoreVertical size={16} />
+                        </button>
+                        {openMenuFor === vh.id && (
+                          <>
+                            <div
+                              className="fixed inset-0 bg-black/10 dark:bg-black/30 backdrop-blur-[0.5px] z-40"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setOpenMenuFor(null);
+                              }}
+                            />
+                            <div
+                              ref={menuRef}
+                              style={{
+                                position: 'fixed',
+                                top: menuPos?.top !== undefined ? `${menuPos.top}px` : undefined,
+                                bottom: menuPos?.bottom !== undefined ? `${menuPos.bottom}px` : undefined,
+                                right: menuPos?.right !== undefined ? `${menuPos.right}px` : undefined,
+                              }}
+                              className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl shadow-2xl py-1 w-44 z-[9999] text-left font-sans animate-in fade-in zoom-in-95 duration-150"
+                              onClick={(e) => e.stopPropagation()}
+                            >
+                              <button
+                                onMouseDown={(e) => { e.preventDefault(); e.stopPropagation(); setViewingItem({ type: 'vehicle', data: vh }); setOpenMenuFor(null); }}
+                                onClick={(e) => { e.preventDefault(); e.stopPropagation(); setViewingItem({ type: 'vehicle', data: vh }); setOpenMenuFor(null); }}
+                                className="w-full flex items-center gap-2 px-3 py-1.5 text-[11px] font-semibold text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-700/60 text-left transition cursor-pointer"
+                              >
+                                <Eye size={13} className="text-slate-500" />
+                                View Details
+                              </button>
+                              <button
+                                onMouseDown={(e) => { e.preventDefault(); e.stopPropagation(); setEditingItem({ type: 'vehicle', data: { ...vh } }); setOpenMenuFor(null); }}
+                                onClick={(e) => { e.preventDefault(); e.stopPropagation(); setEditingItem({ type: 'vehicle', data: { ...vh } }); setOpenMenuFor(null); }}
+                                className="w-full flex items-center gap-2 px-3 py-1.5 text-[11px] font-semibold text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-700/60 text-left transition cursor-pointer"
+                              >
+                                <Pencil size={13} className="text-slate-500" />
+                                Edit Details
+                              </button>
+                              <button
+                                onMouseDown={(e) => { e.preventDefault(); e.stopPropagation(); handleExportMasterItem('vehicle', vh); setOpenMenuFor(null); }}
+                                onClick={(e) => { e.preventDefault(); e.stopPropagation(); handleExportMasterItem('vehicle', vh); setOpenMenuFor(null); }}
+                                className="w-full flex items-center gap-2 px-3 py-1.5 text-[11px] font-semibold text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-700/60 text-left transition cursor-pointer"
+                              >
+                                <Download size={13} className="text-slate-500" />
+                                Export Details
+                              </button>
+                              <div className="border-t border-slate-100 dark:border-slate-700 my-1" />
+                              <button
+                                onMouseDown={(e) => { e.preventDefault(); e.stopPropagation(); handleDeleteMasterItem('vehicle', vh); setOpenMenuFor(null); }}
+                                onClick={(e) => { e.preventDefault(); e.stopPropagation(); handleDeleteMasterItem('vehicle', vh); setOpenMenuFor(null); }}
+                                className="w-full flex items-center gap-2 px-3 py-1.5 text-[11px] font-semibold text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/20 text-left transition cursor-pointer"
+                              >
+                                <Trash2 size={13} className="text-red-500" />
+                                Delete Vehicle
+                              </button>
+                            </div>
+                          </>
+                        )}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </>
+            )}
+
+            {/* Users Listing */}
+            {activeTab === 'users' && (
+              <div className="overflow-x-auto min-h-[280px] pb-16">
+                <table className="w-full text-left text-xs border-collapse">
+                  <thead>
+                    <tr className="border-b border-slate-100 dark:border-slate-700 text-text-light-secondary dark:text-slate-400">
+                      <th className="py-2.5 font-bold uppercase">Display Name</th>
+                      <th className="py-2.5 font-bold uppercase">Username</th>
+                      <th className="py-2.5 font-bold uppercase">Role</th>
+                      <th className="py-2.5 font-bold uppercase">Status</th>
+                      <th className="py-2.5 font-bold uppercase text-right">Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-slate-100 dark:divide-slate-700">
+                    {filteredUsersList.map(u => (
+                      <tr key={u.username} className="hover:bg-slate-50 dark:hover:bg-slate-800/30">
+                        <td className="py-2.5 font-semibold text-slate-800 dark:text-white">{u.displayName}</td>
+                        <td className="py-2.5 font-mono text-text-light-secondary dark:text-slate-400">@{u.username}</td>
+                        <td className="py-2.5">
+                          <span className="px-2 py-0.5 rounded bg-blue-50 dark:bg-blue-950/40 text-[10px] font-bold text-blue-700 dark:text-blue-300">
+                            {u.role}
+                          </span>
+                        </td>
+                        <td className="py-2.5">
+                          <span className={`px-2 py-0.5 rounded text-[10px] font-bold ${u.active !== false
+                              ? 'bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300'
+                              : 'bg-red-50 dark:bg-red-950/40 text-red-700 dark:text-red-300'
+                            }`}>
+                            {u.active !== false ? 'Active' : 'Deactivated'}
+                          </span>
+                        </td>
+                        <td className="py-2.5 text-right">
+                          <div className={`inline-block text-left ${openMenuFor === u.username ? 'relative z-50' : 'relative'}`}>
+                            <button
+                              onClick={(e) => handleOpenMenu(e, u.username)}
+                              className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 rounded-lg p-1.5 cursor-pointer relative"
+                            >
+                              <MoreVertical size={15} />
+                            </button>
+                            {openMenuFor === u.username && (
+                              <>
+                                <div
+                                  className="fixed inset-0 bg-black/10 dark:bg-black/30 backdrop-blur-[0.5px] z-40"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    setOpenMenuFor(null);
+                                  }}
+                                />
+                                <div
+                                  ref={menuRef}
+                                  style={{
+                                    position: 'fixed',
+                                    top: menuPos?.top !== undefined ? `${menuPos.top}px` : undefined,
+                                    bottom: menuPos?.bottom !== undefined ? `${menuPos.bottom}px` : undefined,
+                                    right: menuPos?.right !== undefined ? `${menuPos.right}px` : undefined,
+                                  }}
+                                  className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl shadow-2xl py-1 w-44 z-[9999] text-left font-sans animate-in fade-in zoom-in-95 duration-150"
+                                  onClick={(e) => e.stopPropagation()}
+                                >
+                                  <button
+                                    onMouseDown={(e) => { e.preventDefault(); e.stopPropagation(); setViewingItem({ type: 'user', data: u }); setOpenMenuFor(null); }}
+                                    onClick={(e) => { e.preventDefault(); e.stopPropagation(); setViewingItem({ type: 'user', data: u }); setOpenMenuFor(null); }}
+                                    className="w-full flex items-center gap-2 px-3 py-1.5 text-[11px] font-semibold text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-700/60 text-left transition cursor-pointer"
+                                  >
+                                    <Eye size={13} className="text-slate-500" />
+                                    View Profile
+                                  </button>
+                                  <button
+                                    onMouseDown={(e) => { e.preventDefault(); e.stopPropagation(); setEditingItem({ type: 'user', data: { ...u } }); setOpenMenuFor(null); }}
+                                    onClick={(e) => { e.preventDefault(); e.stopPropagation(); setEditingItem({ type: 'user', data: { ...u } }); setOpenMenuFor(null); }}
+                                    className="w-full flex items-center gap-2 px-3 py-1.5 text-[11px] font-semibold text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-700/60 text-left transition cursor-pointer"
+                                  >
+                                    <Pencil size={13} className="text-slate-500" />
+                                    Edit Details
+                                  </button>
+                                  <button
+                                    onMouseDown={(e) => { e.preventDefault(); e.stopPropagation(); handleResetUserPin(u.username); setOpenMenuFor(null); }}
+                                    onClick={(e) => { e.preventDefault(); e.stopPropagation(); handleResetUserPin(u.username); setOpenMenuFor(null); }}
+                                    className="w-full flex items-center gap-2 px-3 py-1.5 text-[11px] font-semibold text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-700/60 text-left transition cursor-pointer"
+                                  >
+                                    <RotateCw size={13} className="text-slate-500" />
+                                    Reset PIN
+                                  </button>
+                                  <button
+                                    onMouseDown={(e) => { e.preventDefault(); e.stopPropagation(); handleToggleUserActive(u.username); setOpenMenuFor(null); }}
+                                    onClick={(e) => { e.preventDefault(); e.stopPropagation(); handleToggleUserActive(u.username); setOpenMenuFor(null); }}
+                                    className="w-full flex items-center gap-2 px-3 py-1.5 text-[11px] font-semibold text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-700/60 text-left transition cursor-pointer"
+                                  >
+                                    <ShieldAlert size={13} className="text-slate-500" />
+                                    {u.active !== false ? 'Deactivate' : 'Activate'}
+                                  </button>
+                                  <button
+                                    onMouseDown={(e) => { e.preventDefault(); e.stopPropagation(); handleExportMasterItem('user', u); setOpenMenuFor(null); }}
+                                    onClick={(e) => { e.preventDefault(); e.stopPropagation(); handleExportMasterItem('user', u); setOpenMenuFor(null); }}
+                                    className="w-full flex items-center gap-2 px-3 py-1.5 text-[11px] font-semibold text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-700/60 text-left transition cursor-pointer"
+                                  >
+                                    <Download size={13} className="text-slate-500" />
+                                    Export Details
+                                  </button>
+                                  <div className="border-t border-slate-100 dark:border-slate-700 my-1" />
+                                  <button
+                                    onMouseDown={(e) => { e.preventDefault(); e.stopPropagation(); handleDeleteMasterItem('user', u); setOpenMenuFor(null); }}
+                                    onClick={(e) => { e.preventDefault(); e.stopPropagation(); handleDeleteMasterItem('user', u); setOpenMenuFor(null); }}
+                                    className="w-full flex items-center gap-2 px-3 py-1.5 text-[11px] font-semibold text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/20 text-left transition cursor-pointer"
+                                  >
+                                    <Trash2 size={13} className="text-red-500" />
+                                    Delete User
+                                  </button>
+                                </div>
+                              </>
+                            )}
+                          </div>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
+
+            {/* Roles & Permissions Listing */}
+            {activeTab === 'roles' && (
+              <div className="space-y-5">
+                <div className="flex items-center gap-3 bg-blue-50/80 dark:bg-blue-950/30 p-4 rounded-2xl border border-blue-200/60 dark:border-blue-900/40">
+                  <div className="p-2 rounded-xl bg-blue-600 text-white shadow-md shadow-blue-500/25">
+                    <ShieldAlert className="h-4 w-4" />
+                  </div>
+                  <div>
+                    <h4 className="text-xs font-black text-slate-900 dark:text-white uppercase tracking-wider">
+                      Role-Based Access Control (RBAC) Permissions Matrix
+                    </h4>
+                    <p className="text-xs text-slate-500 dark:text-slate-400 font-medium mt-0.5">
+                      System roles strictly dictate accessible modules, action controls, and date filtering privileges.
+                    </p>
+                  </div>
+                </div>
+
+                <div className="overflow-x-auto">
+                  <table className="w-full text-left text-xs border-collapse">
+                    <thead>
+                      <tr className="border-b border-slate-100 dark:border-slate-800 text-slate-400 uppercase text-[10px] font-black tracking-wider">
+                        <th className="py-3 px-3 w-1/4">System Role</th>
+                        <th className="py-3 px-3">Accessible Modules / Views</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-slate-100 dark:divide-slate-800 font-semibold">
+                      {[
+                        { role: 'Admin', color: 'bg-indigo-100 dark:bg-indigo-950/50 text-indigo-700 dark:text-indigo-300 border-indigo-300 dark:border-indigo-800', modules: ['Dashboard', 'Raw Material Stock', 'Pulp Mill Operations', 'Machine Production', 'Rewinder Section', 'Utilities and ETP', 'Finished Stock and Dispatch', 'Store Inventory', 'Reports', 'Settings'] },
+                        { role: 'Management', color: 'bg-emerald-100 dark:bg-emerald-950/50 text-emerald-700 dark:text-emerald-300 border-emerald-300 dark:border-emerald-800', modules: ['Dashboard', 'Raw Material Stock', 'Pulp Mill Operations', 'Machine Production', 'Rewinder Section', 'Utilities and ETP', 'Finished Stock and Dispatch', 'Store Inventory', 'Reports', 'Settings'] },
+                        { role: 'PulpOperator', color: 'bg-blue-100 dark:bg-blue-950/50 text-blue-700 dark:text-blue-300 border-blue-300 dark:border-blue-800', modules: ['Dashboard', 'Pulp Mill Operations', 'Machine Production'] },
+                        { role: 'MachineOperator', color: 'bg-cyan-100 dark:bg-cyan-950/50 text-cyan-700 dark:text-cyan-300 border-cyan-300 dark:border-cyan-800', modules: ['Dashboard', 'Pulp Mill Operations', 'Machine Production'] },
+                        { role: 'RewinderOperator', color: 'bg-violet-100 dark:bg-violet-950/50 text-violet-700 dark:text-violet-300 border-violet-300 dark:border-violet-800', modules: ['Dashboard', 'Rewinder Section'] },
+                        { role: 'BoilerOperator', color: 'bg-amber-100 dark:bg-amber-950/50 text-amber-700 dark:text-amber-300 border-amber-300 dark:border-amber-800', modules: ['Dashboard', 'Utilities and ETP (Boiler Room logs)'] },
+                        { role: 'EtpOperator', color: 'bg-teal-100 dark:bg-teal-950/50 text-teal-700 dark:text-teal-300 border-teal-300 dark:border-teal-800', modules: ['Dashboard', 'Utilities and ETP (ETP Plant logs)'] },
+                        { role: 'WarehouseStaff', color: 'bg-sky-100 dark:bg-sky-950/50 text-sky-700 dark:text-sky-300 border-sky-300 dark:border-sky-800', modules: ['Dashboard', 'Finished Stock and Dispatch', 'Rewinder Section'] },
+                        { role: 'StoreManager', color: 'bg-purple-100 dark:bg-purple-950/50 text-purple-700 dark:text-purple-300 border-purple-300 dark:border-purple-800', modules: ['Dashboard', 'Store Inventory'] },
+                      ].map(r => (
+                        <tr key={r.role} className="hover:bg-blue-50/50 dark:hover:bg-slate-800/40 transition">
+                          <td className="py-3.5 px-3 align-top">
+                            <span className={`px-3 py-1 rounded-full text-xs font-mono font-black uppercase tracking-wider border shadow-2xs inline-block ${r.color}`}>
+                              {r.role}
+                            </span>
+                          </td>
+                          <td className="py-3.5 px-3">
+                            <div className="flex flex-wrap gap-1.5">
+                              {r.modules.map(mod => (
+                                <span
+                                  key={mod}
+                                  className="px-2.5 py-1 rounded-xl bg-slate-100 dark:bg-slate-800/90 text-[11px] font-bold text-slate-700 dark:text-slate-200 border border-slate-200 dark:border-slate-700 shadow-2xs hover:border-blue-400 transition"
+                                >
+                                  {mod}
+                                </span>
+                              ))}
+                            </div>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            )}
+
+            {/* Backup / Restore Controls */}
+            {activeTab === 'backup' && (
+              <div className="space-y-6">
+                {/* 1. Export Card */}
+                <div className="bg-slate-50 dark:bg-slate-900/60 border border-slate-200 dark:border-slate-800 rounded-3xl p-6 space-y-3">
+                  <div className="flex items-center gap-3">
+                    <div className="p-2.5 rounded-2xl bg-blue-100 dark:bg-blue-950/60 text-primary dark:text-blue-400">
+                      <Download className="h-5 w-5" />
+                    </div>
+                    <div>
+                      <h4 className="text-xs font-black text-slate-900 dark:text-white uppercase tracking-wider">Export Data Backup</h4>
+                      <p className="text-xs text-slate-500 dark:text-slate-400 font-medium mt-0.5">
+                        Download full state of localStorage (15 mill modules, transaction ledgers, formulas, and masters) as a single JSON file.
+                      </p>
+                    </div>
+                  </div>
+                  <button
+                    onClick={handleExportBackup}
+                    className="px-5 py-3 bg-gradient-to-r from-blue-600 via-indigo-600 to-blue-700 hover:from-blue-700 hover:to-indigo-700 text-white rounded-2xl text-xs font-black uppercase tracking-wider shadow-lg shadow-blue-500/25 transition-all hover:scale-[1.01] active:scale-[0.99] flex items-center gap-2 cursor-pointer"
+                  >
+                    <Download className="h-4 w-4" />
+                    <span>Download Database Backup (JSON)</span>
+                  </button>
+                </div>
+
+                {/* 2. Restore Card */}
+                <div className="bg-slate-50 dark:bg-slate-900/60 border border-slate-200 dark:border-slate-800 rounded-3xl p-6 space-y-3">
+                  <div className="flex items-center gap-3">
+                    <div className="p-2.5 rounded-2xl bg-indigo-100 dark:bg-indigo-950/60 text-indigo-600 dark:text-indigo-400">
+                      <Upload className="h-5 w-5" />
+                    </div>
+                    <div>
+                      <h4 className="text-xs font-black text-slate-900 dark:text-white uppercase tracking-wider">Restore Data Backup</h4>
+                      <p className="text-xs text-slate-500 dark:text-slate-400 font-medium mt-0.5">
+                        Upload a previously exported backup file to restore all databases.
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="p-3 bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800/60 rounded-2xl text-xs font-bold text-amber-800 dark:text-amber-300 flex items-center gap-2">
+                    <ShieldAlert className="h-4 w-4 shrink-0 text-amber-600 dark:text-amber-400" />
+                    <span>WARNING: Restoring will overwrite all current system data.</span>
+                  </div>
+
+                  <form onSubmit={handleRestoreBackup} className="flex flex-col sm:flex-row gap-3 items-stretch sm:items-center pt-1">
+                    <input
+                      type="file"
+                      accept=".json"
+                      onChange={handleFileChange}
+                      className="text-xs block w-full text-slate-500 file:mr-4 file:py-2.5 file:px-4 file:rounded-2xl file:border-0 file:text-xs file:font-black file:bg-blue-100 dark:file:bg-blue-950/60 file:text-primary dark:file:text-blue-400 hover:file:bg-blue-200"
+                    />
+                    <button
+                      type="submit"
+                      disabled={!backupFileText}
+                      className={`px-5 py-3 rounded-2xl text-xs font-black uppercase tracking-wider shadow-lg flex items-center justify-center gap-2 transition-all shrink-0 cursor-pointer ${backupFileText
+                          ? 'bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white shadow-emerald-500/25 hover:scale-[1.01]'
+                          : 'bg-slate-200 dark:bg-slate-800 text-slate-400 dark:text-slate-500 cursor-not-allowed'
+                        }`}
+                    >
+                      <Upload className="h-4 w-4" />
+                      <span>Upload & Restore</span>
+                    </button>
+                  </form>
+                </div>
+
+                {/* 3. Reset Seeds Danger Card */}
+                <div className="bg-rose-50/60 dark:bg-rose-950/20 border border-rose-200/80 dark:border-rose-900/40 rounded-3xl p-6 space-y-3">
+                  <div className="flex items-center gap-3">
+                    <div className="p-2.5 rounded-2xl bg-rose-100 dark:bg-rose-950/60 text-rose-600 dark:text-rose-400">
+                      <RotateCw className="h-5 w-5" />
+                    </div>
+                    <div>
+                      <h4 className="text-xs font-black text-rose-700 dark:text-rose-300 uppercase tracking-wider">Reset Demo Data</h4>
+                      <p className="text-xs text-rose-900/80 dark:text-rose-200/80 font-medium mt-0.5">
+                        Restores all databases (User accounts, Raw Materials, Converted Reels, Formulas, Boiler logs) back to default seed data.
+                      </p>
+                    </div>
+                  </div>
+
+                  <button
+                    onClick={handleResetDemoData}
+                    className="px-5 py-3 bg-gradient-to-r from-rose-600 via-red-600 to-rose-700 hover:from-rose-700 hover:to-red-700 text-white rounded-2xl text-xs font-black uppercase tracking-wider shadow-lg shadow-rose-500/25 transition-all hover:scale-[1.01] active:scale-[0.99] flex items-center gap-2 cursor-pointer"
+                  >
+                    <RotateCw className="h-4 w-4 text-white" />
+                    <span>Reset All Data to Seeds</span>
+                  </button>
+                </div>
+              </div>
+            )}
+
+            {/* Audit Logs Register */}
+            {activeTab === 'logs' && (
+              <div className="space-y-4">
+                <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 border-b border-slate-100 dark:border-slate-800 pb-4">
+                  <span className="text-xs text-slate-900 dark:text-white font-black uppercase tracking-wider flex items-center gap-2">
+                    <ShieldAlert className="h-4 w-4 text-primary" />
+                    Full System Transaction Trail ({logs.length} entries)
+                  </span>
+                  <button
+                    onClick={handleExportLogsExcel}
+                    className="px-4 py-2 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white rounded-2xl text-xs font-black uppercase tracking-wider shadow-md shadow-emerald-500/20 flex items-center gap-2 transition cursor-pointer"
+                  >
+                    <FileSpreadsheet className="h-4 w-4" />
+                    <span>Export Logs to Excel</span>
+                  </button>
+                </div>
+
+                <div className="overflow-x-auto max-h-[550px]">
+                  <table className="w-full text-left text-xs border-collapse">
+                    <thead>
+                      <tr className="border-b border-slate-100 dark:border-slate-800 text-slate-400 uppercase text-[10px] font-black tracking-wider">
+                        <th className="py-3 px-3">Timestamp</th>
+                        <th className="py-3 px-3">Module</th>
+                        <th className="py-3 px-3">Action</th>
+                        <th className="py-3 px-3">Details</th>
+                        <th className="py-3 px-3 text-right">User</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-slate-100 dark:divide-slate-800 font-semibold">
+                      {logs.map(log => (
+                        <tr key={log.id} className="hover:bg-blue-50/50 dark:hover:bg-slate-800/40 transition">
+                          <td className="py-3 px-3 font-mono text-[11px] text-slate-500 dark:text-slate-400 whitespace-nowrap">
+                            {new Date(log.timestamp).toLocaleString()}
+                          </td>
+                          <td className="py-3 px-3">
+                            <span className="px-2.5 py-0.5 rounded-full bg-slate-100 dark:bg-slate-800 text-[10px] font-black uppercase text-slate-800 dark:text-slate-200 border border-slate-200 dark:border-slate-700">
+                              {log.module}
+                            </span>
+                          </td>
+                          <td className="py-3 px-3 font-black text-slate-900 dark:text-white">{log.action}</td>
+                          <td className="py-3 px-3 text-slate-600 dark:text-slate-300 max-w-md font-medium text-xs leading-relaxed" title={log.details}>
+                            {log.details}
+                          </td>
+                          <td className="py-3 px-3 text-right font-mono text-xs font-bold text-primary dark:text-blue-400 whitespace-nowrap">
+                            {log.user}
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            )}
+
+          </div>
+        </div>
+
+        {/* Right Action Panel (1/3 width) - Only show if adding Masters (not backup/logs/roles) */}
+        {activeTab !== 'backup' && activeTab !== 'logs' && activeTab !== 'roles' && (
+          <div className="bg-white dark:bg-surface-dark border border-slate-200 dark:border-slate-700/80 rounded-3xl p-6 shadow-sm">
+
+            {/* Add User Form */}
+            {activeTab === 'users' && (
+              <form onSubmit={handleUserSubmit} className="space-y-4">
+                <h3 className="text-xs font-black text-slate-900 dark:text-white uppercase tracking-wider mb-4 border-b border-slate-100 dark:border-slate-800 pb-3 flex items-center gap-2">
+                  <Plus className="h-4 w-4 text-primary" />
+                  Create New User
+                </h3>
+
+                <div>
+                  <label className="block text-[11px] font-black text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-1.5">Username (ID)</label>
+                  <input
+                    type="text"
+                    value={usrUsername}
+                    onChange={e => setUsrUsername(e.target.value)}
+                    className="block w-full py-2.5 px-3.5 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-2xl text-xs font-bold focus:outline-none focus:ring-2 focus:ring-primary dark:text-white font-mono"
+                    placeholder="e.g. operator_john"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-[11px] font-black text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-1.5">Display Name</label>
+                  <input
+                    type="text"
+                    value={usrDisplayName}
+                    onChange={e => setUsrDisplayName(e.target.value)}
+                    className="block w-full py-2.5 px-3.5 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-2xl text-xs font-bold focus:outline-none focus:ring-2 focus:ring-primary dark:text-white"
+                    placeholder="e.g. John Doe"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-[11px] font-black text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-1.5">4-Digit Security PIN</label>
+                  <input
+                    type="text"
+                    maxLength={4}
+                    value={usrPin}
+                    onChange={e => setUsrPin(e.target.value.replace(/\D/g, ''))}
+                    className="block w-full py-2.5 px-3.5 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-2xl text-xs font-bold focus:outline-none focus:ring-2 focus:ring-primary dark:text-white font-mono"
+                    placeholder="e.g. 1234"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-[11px] font-black text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-1.5">System Role</label>
+                  <select
+                    value={usrRole}
+                    onChange={e => setUsrRole(e.target.value as UserRole)}
+                    className="block w-full py-2.5 px-3.5 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-2xl text-xs font-bold focus:outline-none focus:ring-2 focus:ring-primary dark:text-white cursor-pointer"
+                  >
+                    <option value="Admin">Admin (Full Control)</option>
+                    <option value="Management">Management (Reports/Read-Only)</option>
+                    <option value="PulpOperator">Pulp Operator</option>
+                    <option value="MachineOperator">Machine Operator</option>
+                    <option value="RewinderOperator">Rewinder Operator</option>
+                    <option value="BoilerOperator">Boiler Operator</option>
+                    <option value="EtpOperator">ETP Operator</option>
+                    <option value="WarehouseStaff">Warehouse/Dispatch Staff</option>
+                    <option value="StoreManager">Store Manager</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block text-[11px] font-black text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-1.5">Email Address</label>
+                  <input
+                    type="email"
+                    value={usrEmail}
+                    onChange={e => setUsrEmail(e.target.value)}
+                    className="block w-full py-2.5 px-3.5 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-2xl text-xs font-bold focus:outline-none focus:ring-2 focus:ring-primary dark:text-white"
+                    placeholder="e.g. user@sahebpaper.com"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-[11px] font-black text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-1.5">Mobile Number</label>
+                  <input
+                    type="text"
+                    value={usrPhone}
+                    onChange={e => setUsrPhone(e.target.value)}
+                    className="block w-full py-2.5 px-3.5 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-2xl text-xs font-bold focus:outline-none focus:ring-2 focus:ring-primary dark:text-white"
+                    placeholder="e.g. 9876543210"
+                  />
+                </div>
+
+                <button
+                  type="submit"
+                  className="w-full bg-gradient-to-r from-blue-600 via-indigo-600 to-blue-700 hover:from-blue-700 hover:to-indigo-700 text-white font-black py-3 rounded-2xl text-xs uppercase tracking-wider shadow-lg shadow-blue-500/25 transition-all hover:scale-[1.01] active:scale-[0.99] cursor-pointer"
+                >
+                  Create User Account
+                </button>
+              </form>
+            )}
+
+            {/* Add Product Form */}
+            {activeTab === 'products' && (
+              <form onSubmit={handleProductSubmit} className="space-y-4">
+                <h3 className="text-xs font-black text-slate-900 dark:text-white uppercase tracking-wider mb-4 border-b border-slate-100 dark:border-slate-800 pb-3 flex items-center gap-2">
+                  <Plus className="h-4 w-4 text-primary" />
+                  {t('masters.add_product')}
+                </h3>
+
+                <div>
+                  <label className="block text-[11px] font-black text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-1.5">Product Name</label>
+                  <input
+                    type="text"
+                    value={pName}
+                    onChange={e => setPName(e.target.value)}
+                    className="block w-full py-2.5 px-3.5 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-2xl text-xs font-bold focus:outline-none focus:ring-2 focus:ring-primary dark:text-white"
+                    placeholder="e.g. Napkin Tissue"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-[11px] font-black text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-1.5">QC Grade</label>
+                  <select
+                    value={pGrade}
+                    onChange={e => setPGrade(e.target.value as 'A' | 'B')}
+                    className="block w-full py-2.5 px-3.5 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-2xl text-xs font-bold focus:outline-none focus:ring-2 focus:ring-primary dark:text-white cursor-pointer"
+                  >
+                    <option value="A">Grade A (Standard)</option>
+                    <option value="B">Grade B (B-Grade/Off-spec)</option>
+                  </select>
+                </div>
+
+                <div className="grid grid-cols-3 gap-2">
+                  <div>
+                    <label className="block text-[11px] font-black text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-1.5">{t('common.gsm')}</label>
+                    <input
+                      type="number"
+                      value={pGsm}
+                      onChange={e => setPGsm(e.target.value)}
+                      className="block w-full py-2.5 px-2 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-2xl text-xs font-bold focus:outline-none focus:ring-2 focus:ring-primary dark:text-white font-mono"
+                      placeholder="18"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-[11px] font-black text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-1.5">{t('common.size')}</label>
+                    <input
+                      type="number"
+                      value={pSize}
+                      onChange={e => setPSize(e.target.value)}
+                      className="block w-full py-2.5 px-2 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-2xl text-xs font-bold focus:outline-none focus:ring-2 focus:ring-primary dark:text-white font-mono"
+                      placeholder="30"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-[11px] font-black text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-1.5">{t('common.ply')}</label>
+                    <input
+                      type="number"
+                      value={pPly}
+                      onChange={e => setPPly(e.target.value)}
+                      className="block w-full py-2.5 px-2 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-2xl text-xs font-bold focus:outline-none focus:ring-2 focus:ring-primary dark:text-white font-mono"
+                      placeholder="2"
+                    />
+                  </div>
+                </div>
+
+                <button
+                  type="submit"
+                  className="w-full bg-gradient-to-r from-blue-600 via-indigo-600 to-blue-700 hover:from-blue-700 hover:to-indigo-700 text-white font-black py-3 rounded-2xl text-xs uppercase tracking-wider shadow-lg shadow-blue-500/25 transition-all hover:scale-[1.01] active:scale-[0.99] cursor-pointer"
+                >
+                  Add Master Product
+                </button>
+              </form>
+            )}
+
+            {/* Add Party Form */}
+            {activeTab === 'parties' && (
+              <form onSubmit={handlePartySubmit} className="space-y-4">
+                <h3 className="text-xs font-black text-slate-900 dark:text-white uppercase tracking-wider mb-4 border-b border-slate-100 dark:border-slate-800 pb-3 flex items-center gap-2">
+                  <Plus className="h-4 w-4 text-primary" />
+                  {t('masters.add_party')}
+                </h3>
+
+                <div>
+                  <label className="block text-[11px] font-black text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-1.5">Company Name</label>
+                  <input
+                    type="text"
+                    value={ptName}
+                    onChange={e => setPtName(e.target.value)}
+                    className="block w-full py-2.5 px-3.5 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-2xl text-xs font-bold focus:outline-none focus:ring-2 focus:ring-primary dark:text-white"
+                    placeholder="e.g. Ambika Traders"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-[11px] font-black text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-1.5">Contact Number (10 Digits)</label>
+                  <input
+                    type="text"
+                    maxLength={10}
+                    value={ptContact}
+                    onChange={e => setPtContact(e.target.value.replace(/\D/g, '').slice(0, 10))}
+                    className="block w-full py-2.5 px-3.5 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-2xl text-xs font-bold focus:outline-none focus:ring-2 focus:ring-primary dark:text-white font-mono"
+                    placeholder="e.g. 9876543210"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-[11px] font-black text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-1.5">Company Address</label>
+                  <textarea
+                    value={ptAddress}
+                    onChange={e => setPtAddress(e.target.value)}
+                    rows={3}
+                    className="block w-full py-2.5 px-3.5 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-2xl text-xs font-bold focus:outline-none focus:ring-2 focus:ring-primary dark:text-white"
+                    placeholder="e.g. Surat, Gujarat"
+                  />
+                </div>
+
+                <button
+                  type="submit"
+                  className="w-full bg-gradient-to-r from-blue-600 via-indigo-600 to-blue-700 hover:from-blue-700 hover:to-indigo-700 text-white font-black py-3 rounded-2xl text-xs uppercase tracking-wider shadow-lg shadow-blue-500/25 transition-all hover:scale-[1.01] active:scale-[0.99] cursor-pointer"
+                >
+                  Add Customer Party
+                </button>
+              </form>
+            )}
+
+            {/* Add Vendor Form */}
+            {activeTab === 'vendors' && (
+              <form onSubmit={handleVendorSubmit} className="space-y-4">
+                <h3 className="text-xs font-black text-slate-900 dark:text-white uppercase tracking-wider mb-4 border-b border-slate-100 dark:border-slate-800 pb-3 flex items-center gap-2">
+                  <Plus className="h-4 w-4 text-primary" />
+                  {t('masters.add_vendor')}
+                </h3>
+
+                <div>
+                  <label className="block text-[11px] font-black text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-1.5">Vendor Name</label>
+                  <input
+                    type="text"
+                    value={vdName}
+                    onChange={e => setVdName(e.target.value)}
+                    className="block w-full py-2.5 px-3.5 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-2xl text-xs font-bold focus:outline-none focus:ring-2 focus:ring-primary dark:text-white"
+                    placeholder="e.g. Gujarat Waste"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-[11px] font-black text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-1.5">Contact Number (10 Digits)</label>
+                  <input
+                    type="text"
+                    maxLength={10}
+                    value={vdContact}
+                    onChange={e => setVdContact(e.target.value.replace(/\D/g, '').slice(0, 10))}
+                    className="block w-full py-2.5 px-3.5 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-2xl text-xs font-bold focus:outline-none focus:ring-2 focus:ring-primary dark:text-white font-mono"
+                    placeholder="e.g. 9998887770"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-[11px] font-black text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-1.5">Supplier Address</label>
+                  <textarea
+                    value={vdAddress}
+                    onChange={e => setVdAddress(e.target.value)}
+                    rows={3}
+                    className="block w-full py-2.5 px-3.5 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-2xl text-xs font-bold focus:outline-none focus:ring-2 focus:ring-primary dark:text-white"
+                    placeholder="e.g. Baroda, Gujarat"
+                  />
+                </div>
+
+                <button
+                  type="submit"
+                  className="w-full bg-gradient-to-r from-blue-600 via-indigo-600 to-blue-700 hover:from-blue-700 hover:to-indigo-700 text-white font-black py-3 rounded-2xl text-xs uppercase tracking-wider shadow-lg shadow-blue-500/25 transition-all hover:scale-[1.01] active:scale-[0.99] cursor-pointer"
+                >
+                  Add Supplier Vendor
+                </button>
+              </form>
+            )}
+
+            {/* Add Vehicle Form */}
+            {activeTab === 'vehicles' && (
+              <form onSubmit={handleVehicleSubmit} className="space-y-4">
+                <h3 className="text-xs font-black text-slate-900 dark:text-white uppercase tracking-wider mb-4 border-b border-slate-100 dark:border-slate-800 pb-3 flex items-center gap-2">
+                  <Plus className="h-4 w-4 text-primary" />
+                  {t('masters.add_vehicle')}
+                </h3>
+
+                <div>
+                  <label className="block text-[11px] font-black text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-1.5">Vehicle Number</label>
+                  <input
+                    type="text"
+                    value={vhNo}
+                    onChange={e => setVhNo(e.target.value)}
+                    className="block w-full py-2.5 px-3.5 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-2xl text-xs font-bold focus:outline-none focus:ring-2 focus:ring-primary dark:text-white font-mono"
+                    placeholder="e.g. GJ-05-BY-1234"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-[11px] font-black text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-1.5">Driver Name</label>
+                  <input
+                    type="text"
+                    value={vhDriver}
+                    onChange={e => setVhDriver(e.target.value)}
+                    className="block w-full py-2.5 px-3.5 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-2xl text-xs font-bold focus:outline-none focus:ring-2 focus:ring-primary dark:text-white"
+                    placeholder="Driver name"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-[11px] font-black text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-1.5">Driver Contact (10 Digits)</label>
+                  <input
+                    type="text"
+                    maxLength={10}
+                    value={vhContact}
+                    onChange={e => setVhContact(e.target.value.replace(/\D/g, '').slice(0, 10))}
+                    className="block w-full py-2.5 px-3.5 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-2xl text-xs font-bold focus:outline-none focus:ring-2 focus:ring-primary dark:text-white font-mono"
+                    placeholder="e.g. 9988776655"
+                  />
+                </div>
+
+                <button
+                  type="submit"
+                  className="w-full bg-gradient-to-r from-blue-600 via-indigo-600 to-blue-700 hover:from-blue-700 hover:to-indigo-700 text-white font-black py-3 rounded-2xl text-xs uppercase tracking-wider shadow-lg shadow-blue-500/25 transition-all hover:scale-[1.01] active:scale-[0.99] cursor-pointer"
+                >
+                  Add Vehicle Record
+                </button>
+              </form>
+            )}
+
+          </div>
+        )}
+
+      </div>
+
+      {/* Edit Details Modal overlay */}
+      {editingItem && (
+        <div className="fixed inset-0 z-50 flex items-end md:items-center md:justify-center p-0 md:p-4">
+          <div className="absolute inset-0 bg-black/45 backdrop-blur-xs" onClick={() => setEditingItem(null)} />
+          <div className="relative bg-white dark:bg-slate-800 w-full md:max-w-md md:rounded-2xl rounded-t-2xl max-h-[85vh] flex flex-col overflow-hidden shadow-2xl transition-all duration-300 z-50">
+            <div className="flex justify-between items-center px-5 py-4 border-b border-slate-100 dark:border-slate-700">
+              <h3 className="text-sm font-bold text-slate-800 dark:text-white uppercase tracking-wider">
+                Edit {editingItem.type === 'user' ? 'User Details' : editingItem.type.toUpperCase()}
+              </h3>
+              <button onClick={() => setEditingItem(null)} className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 cursor-pointer">
+                <X className="h-5 w-5" />
+              </button>
+            </div>
+
+            <form onSubmit={handleSaveEditMasterItem} className="p-5 space-y-4 overflow-y-auto flex-1 text-left">
+              {editingItem.type === 'product' && (
+                <>
+                  <div>
+                    <label className="block text-[11px] font-semibold text-text-light-secondary dark:text-slate-300 uppercase mb-1">Product Name</label>
+                    <input
+                      type="text"
+                      required
+                      value={editingItem.data.name}
+                      onChange={e => setEditingItem({ ...editingItem, data: { ...editingItem.data, name: e.target.value } })}
+                      className="block w-full py-1.5 px-3 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-md text-xs dark:text-white focus:ring-1 focus:ring-primary focus:outline-none"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-[11px] font-semibold text-text-light-secondary dark:text-slate-300 uppercase mb-1">QC Grade</label>
+                    <select
+                      value={editingItem.data.grade}
+                      onChange={e => setEditingItem({ ...editingItem, data: { ...editingItem.data, grade: e.target.value as 'A' | 'B' } })}
+                      className="block w-full py-1.5 px-3 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-md text-xs dark:text-white focus:ring-1 focus:ring-primary focus:outline-none"
+                    >
+                      <option value="A">Grade A</option>
+                      <option value="B">Grade B</option>
+                    </select>
+                  </div>
+                  <div className="grid grid-cols-3 gap-2">
+                    <div>
+                      <label className="block text-[11px] font-semibold text-text-light-secondary dark:text-slate-300 uppercase mb-1">GSM</label>
+                      <input
+                        type="number"
+                        required
+                        value={editingItem.data.gsm}
+                        onChange={e => setEditingItem({ ...editingItem, data: { ...editingItem.data, gsm: e.target.value } })}
+                        className="block w-full py-1.5 px-2 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-md text-xs dark:text-white font-mono focus:ring-1 focus:ring-primary focus:outline-none"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-[11px] font-semibold text-text-light-secondary dark:text-slate-300 uppercase mb-1">Size (cm)</label>
+                      <input
+                        type="number"
+                        required
+                        value={editingItem.data.size}
+                        onChange={e => setEditingItem({ ...editingItem, data: { ...editingItem.data, size: e.target.value } })}
+                        className="block w-full py-1.5 px-2 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-md text-xs dark:text-white font-mono focus:ring-1 focus:ring-primary focus:outline-none"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-[11px] font-semibold text-text-light-secondary dark:text-slate-300 uppercase mb-1">Ply</label>
+                      <input
+                        type="number"
+                        required
+                        value={editingItem.data.ply}
+                        onChange={e => setEditingItem({ ...editingItem, data: { ...editingItem.data, ply: e.target.value } })}
+                        className="block w-full py-1.5 px-2 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-md text-xs dark:text-white font-mono focus:ring-1 focus:ring-primary focus:outline-none"
+                      />
+                    </div>
+                  </div>
+                </>
+              )}
+
+              {(editingItem.type === 'party' || editingItem.type === 'vendor') && (
+                <>
+                  <div>
+                    <label className="block text-[11px] font-semibold text-text-light-secondary dark:text-slate-300 uppercase mb-1">Name</label>
+                    <input
+                      type="text"
+                      required
+                      value={editingItem.data.name}
+                      onChange={e => setEditingItem({ ...editingItem, data: { ...editingItem.data, name: e.target.value } })}
+                      className="block w-full py-1.5 px-3 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-md text-xs dark:text-white focus:ring-1 focus:ring-primary focus:outline-none"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-[11px] font-semibold text-text-light-secondary dark:text-slate-300 uppercase mb-1">Contact Number (10 Digits)</label>
+                    <input
+                      type="text"
+                      required
+                      maxLength={10}
+                      value={editingItem.data.contact}
+                      onChange={e => setEditingItem({ ...editingItem, data: { ...editingItem.data, contact: e.target.value.replace(/\D/g, '').slice(0, 10) } })}
+                      className="block w-full py-1.5 px-3 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-md text-xs dark:text-white font-mono focus:ring-1 focus:ring-primary focus:outline-none"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-[11px] font-semibold text-text-light-secondary dark:text-slate-300 uppercase mb-1">Address</label>
+                    <textarea
+                      required
+                      rows={3}
+                      value={editingItem.data.address}
+                      onChange={e => setEditingItem({ ...editingItem, data: { ...editingItem.data, address: e.target.value } })}
+                      className="block w-full py-1.5 px-3 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-md text-xs dark:text-white focus:ring-1 focus:ring-primary focus:outline-none"
+                    />
+                  </div>
+                </>
+              )}
+
+              {editingItem.type === 'vehicle' && (
+                <>
+                  <div>
+                    <label className="block text-[11px] font-semibold text-text-light-secondary dark:text-slate-300 uppercase mb-1">Vehicle Number</label>
+                    <input
+                      type="text"
+                      required
+                      value={editingItem.data.vehicleNo}
+                      onChange={e => setEditingItem({ ...editingItem, data: { ...editingItem.data, vehicleNo: e.target.value } })}
+                      className="block w-full py-1.5 px-3 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-md text-xs dark:text-white font-mono focus:ring-1 focus:ring-primary focus:outline-none"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-[11px] font-semibold text-text-light-secondary dark:text-slate-300 uppercase mb-1">Driver Name</label>
+                    <input
+                      type="text"
+                      required
+                      value={editingItem.data.driverName}
+                      onChange={e => setEditingItem({ ...editingItem, data: { ...editingItem.data, driverName: e.target.value } })}
+                      className="block w-full py-1.5 px-3 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-md text-xs dark:text-white focus:ring-1 focus:ring-primary focus:outline-none"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-[11px] font-semibold text-text-light-secondary dark:text-slate-300 uppercase mb-1">Driver Contact (10 Digits)</label>
+                    <input
+                      type="text"
+                      required
+                      maxLength={10}
+                      value={editingItem.data.driverContact}
+                      onChange={e => setEditingItem({ ...editingItem, data: { ...editingItem.data, driverContact: e.target.value.replace(/\D/g, '').slice(0, 10) } })}
+                      className="block w-full py-1.5 px-3 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-md text-xs dark:text-white font-mono focus:ring-1 focus:ring-primary focus:outline-none"
+                    />
+                  </div>
+                </>
+              )}
+
+              {editingItem.type === 'user' && (
+                <>
+                  <div>
+                    <label className="block text-[11px] font-semibold text-text-light-secondary dark:text-slate-300 uppercase mb-1">Display Name</label>
+                    <input
+                      type="text"
+                      required
+                      value={editingItem.data.displayName}
+                      onChange={e => setEditingItem({ ...editingItem, data: { ...editingItem.data, displayName: e.target.value } })}
+                      className="block w-full py-1.5 px-3 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-md text-xs dark:text-white focus:ring-1 focus:ring-primary focus:outline-none"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-[11px] font-semibold text-text-light-secondary dark:text-slate-300 uppercase mb-1">Email Address</label>
+                    <input
+                      type="email"
+                      required
+                      value={editingItem.data.email}
+                      onChange={e => setEditingItem({ ...editingItem, data: { ...editingItem.data, email: e.target.value } })}
+                      className="block w-full py-1.5 px-3 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-md text-xs dark:text-white focus:ring-1 focus:ring-primary focus:outline-none"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-[11px] font-semibold text-text-light-secondary dark:text-slate-300 uppercase mb-1">Mobile Number (10 Digits)</label>
+                    <input
+                      type="text"
+                      required
+                      maxLength={10}
+                      value={editingItem.data.phone}
+                      onChange={e => setEditingItem({ ...editingItem, data: { ...editingItem.data, phone: e.target.value.replace(/\D/g, '').slice(0, 10) } })}
+                      className="block w-full py-1.5 px-3 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-md text-xs dark:text-white focus:ring-1 focus:ring-primary focus:outline-none"
+                    />
+                  </div>
+                </>
+              )}
+
+              <div className="flex justify-end gap-2.5 pt-3 border-t dark:border-slate-700">
+                <button
+                  type="button"
+                  onClick={() => setEditingItem(null)}
+                  className="px-4 py-2 border border-slate-200 dark:border-slate-700 rounded-lg text-xs font-semibold text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 cursor-pointer"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  className="px-4 py-2 bg-primary hover:bg-blue-800 text-white rounded-lg text-xs font-semibold shadow transition cursor-pointer"
+                >
+                  Save Changes
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* View Details Modal overlay */}
+      {viewingItem && (
+        <div className="fixed inset-0 bg-black/40 backdrop-blur-xs flex items-end md:items-center md:justify-center z-50 p-0 md:p-4">
+          <div className="absolute inset-0" onClick={() => setViewingItem(null)} />
+          <div className="relative bg-white dark:bg-slate-800 w-full md:max-w-md md:rounded-2xl rounded-t-2xl max-h-[85vh] flex flex-col overflow-hidden shadow-2xl z-50 transition-all animate-[slideUp_0.2s_ease-out]">
+            <div className="flex justify-between items-center px-5 py-4 border-b border-slate-100 dark:border-slate-700">
+              <h3 className="text-sm font-bold text-slate-800 dark:text-white uppercase tracking-wider">
+                {viewingItem.type.toUpperCase()} Details
+              </h3>
+              <button onClick={() => setViewingItem(null)} className="text-slate-400 hover:text-slate-655 dark:hover:text-slate-350 cursor-pointer">
+                <X className="h-5 w-5" />
+              </button>
+            </div>
+            <div className="p-5 space-y-4 text-left text-xs">
+              {viewingItem.type === 'product' && (
+                <div className="space-y-3">
+                  <div>
+                    <span className="block text-[10px] uppercase font-bold text-slate-400 mb-0.5">Product Name</span>
+                    <span className="font-semibold text-slate-800 dark:text-slate-200">{viewingItem.data.name}</span>
+                  </div>
+                  <div>
+                    <span className="block text-[10px] uppercase font-bold text-slate-400 mb-0.5">Grade</span>
+                    <span className="font-semibold text-slate-800 dark:text-slate-200">Grade {viewingItem.data.grade}</span>
+                  </div>
+                  <div className="grid grid-cols-3 gap-2 pt-2 border-t dark:border-slate-700">
+                    <div>
+                      <span className="block text-[10px] uppercase font-bold text-slate-400 mb-0.5">GSM</span>
+                      <span className="font-semibold text-slate-800 dark:text-slate-200 font-mono">{viewingItem.data.gsm}</span>
+                    </div>
+                    <div>
+                      <span className="block text-[10px] uppercase font-bold text-slate-400 mb-0.5">Size (cm)</span>
+                      <span className="font-semibold text-slate-800 dark:text-slate-200 font-mono">{viewingItem.data.size}</span>
+                    </div>
+                    <div>
+                      <span className="block text-[10px] uppercase font-bold text-slate-400 mb-0.5">Ply</span>
+                      <span className="font-semibold text-slate-800 dark:text-slate-200 font-mono">{viewingItem.data.ply}</span>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {(viewingItem.type === 'party' || viewingItem.type === 'vendor') && (
+                <div className="space-y-3">
+                  <div>
+                    <span className="block text-[10px] uppercase font-bold text-slate-400 mb-0.5">Company Name</span>
+                    <span className="font-semibold text-slate-800 dark:text-slate-200">{viewingItem.data.name}</span>
+                  </div>
+                  <div>
+                    <span className="block text-[10px] uppercase font-bold text-slate-400 mb-0.5">Contact Number</span>
+                    <span className="font-semibold text-slate-800 dark:text-slate-200 font-mono">{viewingItem.data.contact}</span>
+                  </div>
+                  <div>
+                    <span className="block text-[10px] uppercase font-bold text-slate-400 mb-0.5">Address</span>
+                    <span className="font-semibold text-slate-800 dark:text-slate-200 whitespace-pre-line">{viewingItem.data.address}</span>
+                  </div>
+                </div>
+              )}
+
+              {viewingItem.type === 'vehicle' && (
+                <div className="space-y-3">
+                  <div>
+                    <span className="block text-[10px] uppercase font-bold text-slate-400 mb-0.5">Vehicle Number</span>
+                    <span className="font-semibold text-primary dark:text-blue-400 font-mono">{viewingItem.data.vehicleNo}</span>
+                  </div>
+                  <div>
+                    <span className="block text-[10px] uppercase font-bold text-slate-400 mb-0.5">Driver Name</span>
+                    <span className="font-semibold text-slate-800 dark:text-slate-200">{viewingItem.data.driverName}</span>
+                  </div>
+                  <div>
+                    <span className="block text-[10px] uppercase font-bold text-slate-400 mb-0.5">Driver Contact</span>
+                    <span className="font-semibold text-slate-800 dark:text-slate-200 font-mono">{viewingItem.data.driverContact}</span>
+                  </div>
+                </div>
+              )}
+
+              {viewingItem.type === 'user' && (
+                <div className="space-y-3">
+                  <div className="flex items-center gap-3 border-b pb-4 dark:border-slate-700">
+                    <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center text-primary font-bold text-sm shrink-0">
+                      {viewingItem.data.displayName.substring(0, 2).toUpperCase()}
+                    </div>
+                    <div>
+                      <h4 className="font-bold text-slate-900 dark:text-white">{viewingItem.data.displayName}</h4>
+                      <p className="text-xs text-slate-500 dark:text-slate-400 font-mono">@{viewingItem.data.username}</p>
+                    </div>
+                  </div>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <span className="block text-[10px] uppercase font-bold text-slate-400 mb-0.5">System Role</span>
+                      <span className="font-semibold text-slate-800 dark:text-slate-200">{viewingItem.data.role}</span>
+                    </div>
+                    <div>
+                      <span className="block text-[10px] uppercase font-bold text-slate-400 mb-0.5">Status</span>
+                      <span className={`font-semibold ${viewingItem.data.active !== false ? 'text-emerald-600' : 'text-red-500'}`}>
+                        {viewingItem.data.active !== false ? 'Active' : 'Inactive'}
+                      </span>
+                    </div>
+                    <div className="col-span-2">
+                      <span className="block text-[10px] uppercase font-bold text-slate-400 mb-0.5">Email Address</span>
+                      <span className="font-semibold text-slate-800 dark:text-slate-200 font-mono">{viewingItem.data.email || 'N/A'}</span>
+                    </div>
+                    <div className="col-span-2">
+                      <span className="block text-[10px] uppercase font-bold text-slate-400 mb-0.5">Mobile Number</span>
+                      <span className="font-semibold text-slate-800 dark:text-slate-200 font-mono">{viewingItem.data.phone || 'N/A'}</span>
+                    </div>
+                  </div>
+                </div>
+              )}
+            </div>
+            <div className="bg-slate-50 dark:bg-slate-900/60 px-5 py-3.5 border-t border-slate-100 dark:border-slate-700 flex justify-end">
+              <button
+                type="button"
+                onClick={() => setViewingItem(null)}
+                className="px-4 py-2 border border-slate-200 dark:border-slate-700 rounded-lg text-xs font-semibold text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 cursor-pointer"
+              >
+                Close Details
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Toast Notification element */}
+      {toast && (
+        <div className="fixed bottom-4 left-4 right-4 md:left-auto md:right-6 md:bottom-6 md:w-auto z-50 animate-[slideUp_0.2s_ease-out]">
+          <div className="bg-slate-900 dark:bg-slate-950 text-white rounded-xl px-4 py-3 flex items-center gap-3 shadow-lg md:min-w-[340px]">
+            <CheckCircle2 size={18} className="text-emerald-400 shrink-0" />
+            <span className="text-xs font-semibold flex-1">{toast.text}</span>
+            {toast.undoType && toast.undoData && (
+              <button
+                onClick={handleUndoMasterDelete}
+                className="text-xs font-bold text-blue-400 hover:text-blue-300 cursor-pointer ml-2 hover:underline shrink-0"
+              >
+                Undo
+              </button>
+            )}
+            <button onClick={() => setToast(null)} className="text-slate-400 hover:text-white cursor-pointer ml-1 shrink-0">
+              <X size={15} />
+            </button>
+          </div>
+        </div>
+      )}
+
+    </div>
+  );
+};
+export default AdminMasters;

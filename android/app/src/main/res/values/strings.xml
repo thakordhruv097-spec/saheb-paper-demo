@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">Saheb Paper</string>
+    <string name="title_activity_main">Saheb Paper</string>
+    <string name="package_name">com.sahebpaper.app</string>
+    <string name="custom_url_scheme">com.sahebpaper.app</string>
+</resources>

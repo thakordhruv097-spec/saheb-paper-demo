@@ -1,0 +1,548 @@
+import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { useAuth } from './AuthContext';
+import { useTranslation } from 'react-i18next';
+import { getUsers, updateRawUserPin } from '../../data/index';
+import { Eye, EyeOff, ShieldAlert } from 'lucide-react';
+
+export const LoginView: React.FC = () => {
+  const { login, resetPin } = useAuth();
+  const { t } = useTranslation();
+  const navigate = useNavigate();
+
+  // Mode: 'login' or 'forgot_step_1' or 'forgot_step_2' or 'forgot_step_3' or 'force_reset_pin'
+  const [mode, setMode] = useState<'login' | 'forgot_step_1' | 'forgot_step_2' | 'forgot_step_3' | 'force_reset_pin'>('login');
+  
+  // Login Form States
+  const [username, setUsername] = useState('');
+  const [pin, setPin] = useState('');
+  const [showPin, setShowPin] = useState(false);
+  const [loginError, setLoginError] = useState('');
+
+  // Forgot / Force Password States
+  const [forgotUser, setForgotUser] = useState<any>(null);
+  const [contactInput, setContactInput] = useState('');
+  const [otpInput, setOtpInput] = useState('');
+  const [generatedOtp, setGeneratedOtp] = useState('');
+  const [newPin, setNewPin] = useState('');
+  const [resetError, setResetError] = useState('');
+
+  const handleLoginSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setLoginError('');
+    
+    if (!username || !pin) {
+      setLoginError('Username and PIN are required');
+      return;
+    }
+
+    const users = getUsers();
+    const found = users.find(u => u.username.toLowerCase() === username.trim().toLowerCase() && u.pin === pin);
+    if (found) {
+      if (found.active === false) {
+        setLoginError(t('login.invalid_credentials'));
+        return;
+      }
+      if (found.needsPinReset) {
+        setForgotUser(found);
+        setNewPin('');
+        setResetError('');
+        setMode('force_reset_pin');
+      } else {
+        const success = await login(username, pin);
+        if (success) {
+          navigate('/');
+        } else {
+          setLoginError(t('login.invalid_credentials'));
+        }
+      }
+    } else {
+      setLoginError(t('login.invalid_credentials'));
+    }
+  };
+
+  const handleForceResetSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setResetError('');
+
+    if (!newPin.trim()) {
+      setResetError('New PIN is required');
+      return;
+    }
+
+    if (newPin.length !== 4 || isNaN(Number(newPin))) {
+      setResetError('PIN must be exactly 4 digits');
+      return;
+    }
+
+    if (newPin === pin) {
+      setResetError('New PIN cannot be the same as the current temporary PIN.');
+      return;
+    }
+
+    const success = updateRawUserPin(forgotUser.username, newPin);
+    if (success) {
+      const loggedIn = await login(forgotUser.username, newPin);
+      if (loggedIn) {
+        navigate('/');
+      } else {
+        setResetError('Error logging in. Please try again.');
+      }
+    } else {
+      setResetError('Error updating PIN');
+    }
+  };
+
+  const handleForgotStep1Submit = (e: React.FormEvent) => {
+    e.preventDefault();
+    setResetError('');
+    
+    if (!contactInput.trim()) {
+      setResetError('Email or registered mobile number is required');
+      return;
+    }
+    
+    const users = getUsers();
+    const found = users.find(u => 
+      (u.email && u.email.toLowerCase() === contactInput.trim().toLowerCase()) ||
+      (u.phone && u.phone.replace(/\s+/g, '') === contactInput.trim().replace(/\s+/g, ''))
+    );
+    
+    if (found) {
+      const otp = String(Math.floor(100000 + Math.random() * 900000));
+      setGeneratedOtp(otp);
+      setForgotUser(found);
+      setOtpInput('');
+      setNewPin('');
+      setMode('forgot_step_2');
+    } else {
+      setResetError('No account found with this email or phone number.');
+    }
+  };
+
+  const handleOtpVerifySubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    setResetError('');
+    
+    if (otpInput.trim() !== generatedOtp) {
+      setResetError('Invalid 6-digit OTP code. Please try again.');
+      return;
+    }
+    
+    setResetError('');
+    setMode('forgot_step_3');
+  };
+
+  const handleNewPinSaveSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setResetError('');
+    
+    if (!newPin.trim()) {
+      setResetError('New PIN is required');
+      return;
+    }
+    
+    if (newPin.length !== 4 || isNaN(Number(newPin))) {
+      setResetError('PIN must be exactly 4 digits');
+      return;
+    }
+    
+    const success = await resetPin(forgotUser.username, newPin);
+    if (success) {
+      navigate('/');
+    } else {
+      setResetError('Failed to reset PIN. Please try again.');
+    }
+  };
+
+  return (
+    <div className="min-h-screen bg-[#0066FF] flex items-center justify-center p-4 relative overflow-hidden font-sans">
+      
+      {/* Background Decorative Circles */}
+      <div className="absolute -top-16 -left-16 w-64 h-64 rounded-full bg-white/10 blur-sm pointer-events-none" />
+      <div className="absolute top-1/4 right-8 w-16 h-16 rounded-full bg-white/15 blur-xs pointer-events-none" />
+      <div className="absolute bottom-12 left-10 w-24 h-24 rounded-full bg-white/15 blur-xs pointer-events-none" />
+      <div className="absolute -bottom-20 -right-20 w-80 h-80 rounded-full bg-sky-300/20 blur-md pointer-events-none" />
+      
+      {/* Main Floating White Card (Exact UI match to design image) */}
+      <div className="w-full max-w-[380px] bg-white rounded-[32px] shadow-2xl p-8 sm:p-9 relative z-10 my-auto">
+        
+        {/* Title & Subtitle with Official Logo */}
+        <div className="flex items-center justify-between mb-7 border-b border-slate-100 pb-4">
+          <div>
+            <h2 className="text-3xl font-extrabold text-[#1E293B] tracking-tight">
+              Login
+            </h2>
+            <p className="text-xs text-slate-400 font-medium mt-1">
+              Welcome to Saheb Paper ERP
+            </p>
+          </div>
+          <img src="/logo.png" alt="Saheb Paper Logo" className="h-12 w-12 object-contain rounded-2xl shadow-sm border border-slate-200/80 bg-white p-0.5" />
+        </div>
+
+        {/* 1. Login Mode */}
+        {mode === 'login' && (
+          <form onSubmit={handleLoginSubmit} className="space-y-4">
+            {loginError && (
+              <div className="p-3 bg-red-50 text-red-600 text-xs rounded-xl border border-red-200 text-center font-medium">
+                {loginError}
+              </div>
+            )}
+
+            {/* Username Pill Input */}
+            <div>
+              <input
+                type="text"
+                value={username}
+                onChange={e => setUsername(e.target.value)}
+                className="w-full px-6 py-3.5 bg-white border-2 border-[#2563EB]/80 focus:border-[#0066FF] rounded-full text-sm text-slate-800 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-400/40 transition"
+                placeholder="Username"
+                autoComplete="username"
+              />
+            </div>
+
+            {/* Password / PIN Pill Input */}
+            <div>
+              <div className="relative">
+                <input
+                  type={showPin ? 'text' : 'password'}
+                  value={pin}
+                  onChange={e => setPin(e.target.value)}
+                  maxLength={4}
+                  className="w-full px-6 py-3.5 bg-white border-2 border-[#2563EB]/80 focus:border-[#0066FF] rounded-full text-sm text-slate-800 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-400/40 tracking-wider transition pr-12"
+                  placeholder="Password"
+                  inputMode="numeric"
+                  autoComplete="current-password"
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPin(!showPin)}
+                  className="absolute inset-y-0 right-0 pr-4 flex items-center text-slate-400 hover:text-slate-600"
+                >
+                  {showPin ? <EyeOff className="h-4.5 w-4.5" /> : <Eye className="h-4.5 w-4.5" />}
+                </button>
+              </div>
+
+              {/* Forgot Password Link Right Aligned */}
+              <div className="text-right mt-2">
+                <button
+                  type="button"
+                  onClick={() => setMode('forgot_step_1')}
+                  className="text-xs text-[#2563EB] hover:underline font-semibold"
+                >
+                  Forgot Password?
+                </button>
+              </div>
+            </div>
+
+            {/* Pill Login Button */}
+            <div className="pt-3">
+              <button
+                type="submit"
+                className="w-full bg-[#0066FF] hover:bg-blue-700 text-white font-bold py-3.5 px-6 rounded-full shadow-lg shadow-blue-500/30 transition duration-200 text-sm tracking-wide cursor-pointer"
+              >
+                Login
+              </button>
+            </div>
+
+            {/* Quick Demo Credentials Bar */}
+            <div className="pt-5 border-t border-slate-100 text-center space-y-2">
+              <span className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest">
+                Quick Demo Access (6 Master Accounts)
+              </span>
+              <div className="flex justify-center flex-wrap gap-1.5">
+                <button
+                  type="button"
+                  onClick={async () => {
+                    setUsername('admin');
+                    setPin('1234');
+                    await login('admin', '1234');
+                    navigate('/');
+                  }}
+                  className="px-2.5 py-1 bg-red-50 hover:bg-red-100 text-[10px] font-extrabold text-red-600 rounded-full transition cursor-pointer"
+                >
+                  👑 Admin (1234)
+                </button>
+                <button
+                  type="button"
+                  onClick={async () => {
+                    setUsername('plant_manager');
+                    setPin('1111');
+                    await login('plant_manager', '1111');
+                    navigate('/');
+                  }}
+                  className="px-2.5 py-1 bg-indigo-50 hover:bg-indigo-100 text-[10px] font-extrabold text-indigo-600 rounded-full transition cursor-pointer"
+                >
+                  🏭 Plant Manager (1111)
+                </button>
+                <button
+                  type="button"
+                  onClick={async () => {
+                    setUsername('lab_operator');
+                    setPin('1234');
+                    await login('lab_operator', '1234');
+                    navigate('/');
+                  }}
+                  className="px-2.5 py-1 bg-purple-50 hover:bg-purple-100 text-[10px] font-extrabold text-purple-600 rounded-full transition cursor-pointer"
+                >
+                  🔬 Lab (1234)
+                </button>
+                <button
+                  type="button"
+                  onClick={async () => {
+                    setUsername('shopper');
+                    setPin('1234');
+                    await login('shopper', '1234');
+                    navigate('/');
+                  }}
+                  className="px-2.5 py-1 bg-emerald-50 hover:bg-emerald-100 text-[10px] font-extrabold text-emerald-600 rounded-full transition cursor-pointer"
+                >
+                  🛒 Shopper (1234)
+                </button>
+                <button
+                  type="button"
+                  onClick={async () => {
+                    setUsername('dispatcher');
+                    setPin('1234');
+                    await login('dispatcher', '1234');
+                    navigate('/');
+                  }}
+                  className="px-2.5 py-1 bg-amber-50 hover:bg-amber-100 text-[10px] font-extrabold text-amber-600 rounded-full transition cursor-pointer"
+                >
+                  🚚 Dispatcher (1234)
+                </button>
+                <button
+                  type="button"
+                  onClick={async () => {
+                    setUsername('viewer');
+                    setPin('1234');
+                    await login('viewer', '1234');
+                    navigate('/');
+                  }}
+                  className="px-2.5 py-1 bg-slate-100 hover:bg-slate-200 text-[10px] font-extrabold text-slate-600 rounded-full transition cursor-pointer"
+                >
+                  👁️ Viewer (1234)
+                </button>
+              </div>
+            </div>
+          </form>
+        )}
+
+        {/* 2. Forgot Password Step 1 */}
+        {mode === 'forgot_step_1' && (
+          <form onSubmit={handleForgotStep1Submit} className="space-y-4">
+            <div className="text-left space-y-1 mb-4">
+              <h3 className="text-sm font-bold text-slate-800 uppercase tracking-wider">
+                Reset Password Request
+              </h3>
+              <p className="text-xs text-slate-500">
+                Enter your registered email or mobile number to receive an OTP code.
+              </p>
+            </div>
+
+            {resetError && (
+              <div className="p-3 bg-red-50 text-red-600 text-xs rounded-xl border border-red-200 text-center font-medium">
+                {resetError}
+              </div>
+            )}
+
+            <div>
+              <input
+                type="text"
+                value={contactInput}
+                onChange={e => {
+                  const val = e.target.value;
+                  // If user is typing numeric phone number, cap at 10 digits
+                  if (/^\d+$/.test(val)) {
+                    setContactInput(val.slice(0, 10));
+                  } else {
+                    setContactInput(val);
+                  }
+                }}
+                maxLength={50}
+                className="w-full px-6 py-3.5 bg-white border-2 border-[#2563EB]/80 focus:border-[#0066FF] rounded-full text-sm text-slate-800 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-400/40 transition"
+                placeholder="Email or Mobile Number (10 Digits)"
+                required
+              />
+            </div>
+
+            <div className="flex gap-2 pt-2">
+              <button
+                type="button"
+                onClick={() => {
+                  setMode('login');
+                  setResetError('');
+                  setContactInput('');
+                }}
+                className="flex-1 border border-slate-300 hover:bg-slate-50 text-slate-600 font-semibold py-3 px-4 rounded-full text-xs transition"
+              >
+                Cancel
+              </button>
+              <button
+                type="submit"
+                className="flex-1 bg-[#0066FF] hover:bg-blue-700 text-white font-bold py-3 px-4 rounded-full text-xs shadow-md transition"
+              >
+                Send OTP
+              </button>
+            </div>
+          </form>
+        )}
+
+        {/* 3. Forgot Password Step 2: OTP Verification Input */}
+        {mode === 'forgot_step_2' && forgotUser && (
+          <form onSubmit={handleOtpVerifySubmit} className="space-y-4">
+            <div className="text-left space-y-1 mb-2">
+              <h3 className="text-sm font-bold text-slate-800 uppercase tracking-wider">
+                Verify OTP
+              </h3>
+              <p className="text-xs text-slate-500">
+                Enter the 6-digit verification code sent to your contact details.
+              </p>
+            </div>
+
+            <div className="p-3 bg-emerald-50 text-emerald-800 rounded-2xl border border-emerald-200 text-xs text-left leading-relaxed">
+              🔑 **SIMULATION OTP CODE**: <span className="font-mono font-bold tracking-widest bg-white px-2 py-0.5 rounded shadow-xs">{generatedOtp}</span>
+            </div>
+
+            {resetError && (
+              <div className="p-3 bg-red-50 text-red-600 text-xs rounded-xl border border-red-200 text-center font-medium">
+                {resetError}
+              </div>
+            )}
+
+            <div>
+              <input
+                type="text"
+                maxLength={6}
+                value={otpInput}
+                onChange={e => setOtpInput(e.target.value)}
+                className="w-full px-6 py-3.5 bg-white border-2 border-[#2563EB]/80 text-center tracking-widest font-mono font-bold text-slate-800 focus:outline-none rounded-full text-base"
+                placeholder="000000"
+                inputMode="numeric"
+                required
+              />
+            </div>
+
+            <div className="flex gap-2 pt-2">
+              <button
+                type="button"
+                onClick={() => {
+                  setMode('forgot_step_1');
+                  setResetError('');
+                  setOtpInput('');
+                }}
+                className="flex-1 border border-slate-300 hover:bg-slate-50 text-slate-600 font-semibold py-3 px-4 rounded-full text-xs transition"
+              >
+                Back
+              </button>
+              <button
+                type="submit"
+                className="flex-1 bg-[#0066FF] hover:bg-blue-700 text-white font-bold py-3 px-4 rounded-full text-xs shadow-md transition"
+              >
+                Verify Code
+              </button>
+            </div>
+          </form>
+        )}
+
+        {/* 4. Forgot Password Step 3: Set New PIN */}
+        {mode === 'forgot_step_3' && forgotUser && (
+          <form onSubmit={handleNewPinSaveSubmit} className="space-y-4">
+            <div className="text-left space-y-1 mb-2">
+              <h3 className="text-sm font-bold text-slate-800 uppercase tracking-wider">
+                Set New Password
+              </h3>
+              <p className="text-xs text-slate-500">
+                OTP verified for <span className="font-bold">@{forgotUser.username}</span>. Enter your new 4-digit PIN below.
+              </p>
+            </div>
+
+            {resetError && (
+              <div className="p-3 bg-red-50 text-red-600 text-xs rounded-xl border border-red-200 text-center font-medium">
+                {resetError}
+              </div>
+            )}
+
+            <div>
+              <input
+                type="password"
+                maxLength={4}
+                value={newPin}
+                onChange={e => setNewPin(e.target.value)}
+                className="w-full px-6 py-3.5 bg-white border-2 border-[#2563EB]/80 tracking-widest text-center text-slate-800 focus:outline-none rounded-full text-base"
+                placeholder="••••"
+                inputMode="numeric"
+                required
+              />
+            </div>
+
+            <button
+              type="submit"
+              className="w-full bg-[#0066FF] hover:bg-blue-700 text-white font-bold py-3.5 px-6 rounded-full shadow-lg text-xs tracking-wide transition"
+            >
+              Reset Password & Log In
+            </button>
+          </form>
+        )}
+
+        {/* 5. Force Reset PIN Mode */}
+        {mode === 'force_reset_pin' && forgotUser && (
+          <form onSubmit={handleForceResetSubmit} className="space-y-4">
+            <div className="text-center space-y-1 mb-2">
+              <ShieldAlert className="h-9 w-9 text-amber-500 mx-auto mb-1 animate-bounce" />
+              <h3 className="text-sm font-bold text-slate-800">
+                Password Change Required
+              </h3>
+              <p className="text-xs text-slate-500">
+                Your PIN was reset by an admin. Please set your new personal 4-digit PIN.
+              </p>
+            </div>
+
+            {resetError && (
+              <div className="p-3 bg-red-50 text-red-600 text-xs rounded-xl border border-red-200 text-center font-medium">
+                {resetError}
+              </div>
+            )}
+
+            <div>
+              <input
+                type="password"
+                maxLength={4}
+                value={newPin}
+                onChange={e => setNewPin(e.target.value)}
+                className="w-full px-6 py-3.5 bg-white border-2 border-[#2563EB]/80 tracking-widest text-center text-slate-800 focus:outline-none rounded-full text-base"
+                placeholder="••••"
+                inputMode="numeric"
+                required
+              />
+            </div>
+
+            <div className="flex gap-2 pt-2">
+              <button
+                type="button"
+                onClick={() => {
+                  setMode('login');
+                  setResetError('');
+                  setForgotUser(null);
+                  setNewPin('');
+                }}
+                className="flex-1 border border-slate-300 hover:bg-slate-50 text-slate-600 font-semibold py-3 px-4 rounded-full text-xs transition"
+              >
+                Back
+              </button>
+              <button
+                type="submit"
+                className="flex-1 bg-[#0066FF] hover:bg-blue-700 text-white font-bold py-3 px-4 rounded-full text-xs shadow-md transition"
+              >
+                Save & Enter
+              </button>
+            </div>
+          </form>
+        )}
+
+      </div>
+    </div>
+  );
+};
+
+export default LoginView;

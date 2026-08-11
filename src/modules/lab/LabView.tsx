@@ -1,0 +1,803 @@
+import React, { useState, useMemo } from 'react';
+import { useAuth } from '../auth/AuthContext';
+import { useTranslation } from 'react-i18next';
+import { getLabReports, saveLabReport, deleteLabReport, getRolls } from '../../data/index';
+import type { PaperTestReport } from '../../data/types';
+import { printPaperTestReport } from '../../utils/labPdfGenerator';
+import { CustomDatePickerModal } from '../../components/CustomDatePickerModal';
+import {
+  Beaker,
+  Plus,
+  Search,
+  CheckCircle2,
+  AlertTriangle,
+  FileText,
+  Printer,
+  Trash2,
+  Calendar,
+  Layers,
+  Sparkles,
+  ChevronRight,
+  TrendingUp,
+  Activity,
+  Sliders,
+  Scale,
+  Clock,
+  Gauge,
+  X,
+} from 'lucide-react';
+
+export const LabView: React.FC = () => {
+  const { user } = useAuth();
+  const { t } = useTranslation();
+
+  const [reports, setReports] = useState<PaperTestReport[]>(() => getLabReports());
+  const [searchTerm, setSearchTerm] = useState('');
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [selectedReportForView, setSelectedReportForView] = useState<PaperTestReport | null>(null);
+
+  // Success / Error Feedback
+  const [successMsg, setSuccessMsg] = useState('');
+  const [errorMsg, setErrorMsg] = useState('');
+
+  // Form State initialized matching Sahab Paper Limited Paper Test Report
+  const [dateStr, setDateStr] = useState(() => {
+    const d = new Date();
+    const yyyy = d.getFullYear();
+    const mm = String(d.getMonth() + 1).padStart(2, '0');
+    const dd = String(d.getDate()).padStart(2, '0');
+    return `${yyyy}-${mm}-${dd}`;
+  });
+  const [openDatePicker, setOpenDatePicker] = useState(false);
+
+  const [product, setProduct] = useState('NAPKIN');
+  const [rollNo, setRollNo] = useState('11');
+  const [shift, setShift] = useState<'A' | 'B' | 'C'>('A');
+  const [time, setTime] = useState('07:50');
+  const [targetGsm, setTargetGsm] = useState<number>(16);
+  const [weight, setWeight] = useState<number>(500);
+  const [speed, setSpeed] = useState<number>(130);
+  const [crepingPct, setCrepingPct] = useState<number>(18.00);
+
+  // 14 GSM sample readings across roll width
+  const [gsmSamples, setGsmSamples] = useState<number[]>([
+    16.1, 16.6, 16.5, 16.7, 16.9, 17.1, 16.5, 16.6, 16.4, 16.4, 16.6, 16.3, 16.1, 16.1
+  ]);
+
+  const [breakageCount, setBreakageCount] = useState<number>(0);
+
+  // 13 Lab Test Parameters
+  const [labResultGsm, setLabResultGsm] = useState<number>(16.5);
+  const [moisturePct, setMoisturePct] = useState<number>(5.60);
+  const [caliperMm, setCaliperMm] = useState<number>(80);
+  const [bulkCcGm, setBulkCcGm] = useState<number>(4.85);
+  const [breakingLengthMd, setBreakingLengthMd] = useState<number>(1.867);
+  const [breakingLengthCd, setBreakingLengthCd] = useState<number>(0.701);
+  const [brightnessPct, setBrightnessPct] = useState<number>(81.4);
+  const [tearMd, setTearMd] = useState<number>(8.00);
+  const [tearCd, setTearCd] = useState<number>(1.80);
+  const [tensileDryMd, setTensileDryMd] = useState<number>(302.20);
+  const [tensileDryCd, setTensileDryCd] = useState<number>(113.47);
+  const [stretchDryMd, setStretchDryMd] = useState<number>(2.70);
+  const [stretchDryCd, setStretchDryCd] = useState<number>(1.60);
+
+  const [qcStatus, setQcStatus] = useState<'GRADE_A' | 'GRADE_B' | 'REJECTED'>('GRADE_A');
+  const [remarks, setRemarks] = useState('Sample meets all physical strength, moisture & GSM quality benchmarks.');
+
+  // Real-time calculation of 14 GSM Sample Stats
+  const gsmStats = useMemo(() => {
+    const validNums = gsmSamples.map(v => Number(v) || 0).filter(v => v > 0);
+    if (validNums.length === 0) return { avg: 0, max: 0, min: 0, range: 0 };
+
+    const sum = validNums.reduce((acc, v) => acc + v, 0);
+    const avg = parseFloat((sum / validNums.length).toFixed(1));
+    const max = parseFloat(Math.max(...validNums).toFixed(1));
+    const min = parseFloat(Math.min(...validNums).toFixed(1));
+    const range = parseFloat((max - min).toFixed(2));
+
+    return { avg, max, min, range };
+  }, [gsmSamples]);
+
+  const handleGsmSampleChange = (index: number, val: string) => {
+    const num = parseFloat(val) || 0;
+    setGsmSamples(prev => {
+      const updated = [...prev];
+      updated[index] = num;
+      return updated;
+    });
+  };
+
+  const handleSaveReport = (e: React.FormEvent) => {
+    e.preventDefault();
+    setSuccessMsg('');
+    setErrorMsg('');
+
+    if (!rollNo.trim()) {
+      setErrorMsg('Roll Number is required');
+      return;
+    }
+
+    const reportObj: PaperTestReport = {
+      id: `PTR-${dateStr.replace(/-/g, '')}-${rollNo.trim()}`,
+      product: product.toUpperCase().trim(),
+      rollNo: rollNo.trim(),
+      shift,
+      date: dateStr,
+      time,
+      targetGsm,
+      weight,
+      speed,
+      crepingPct,
+      gsmSamples,
+      avgGsm: gsmStats.avg,
+      maxGsm: gsmStats.max,
+      minGsm: gsmStats.min,
+      rangeGsm: gsmStats.range,
+      breakageCount,
+      labResultGsm: labResultGsm || gsmStats.avg,
+      moisturePct,
+      caliperMm,
+      bulkCcGm,
+      breakingLengthMd,
+      breakingLengthCd,
+      brightnessPct,
+      tearMd,
+      tearCd,
+      tensileDryMd,
+      tensileDryCd,
+      stretchDryMd,
+      stretchDryCd,
+      qcStatus,
+      remarks,
+      inspector: user?.displayName || 'lab_operator',
+      timestamp: new Date().toISOString().substring(0, 16).replace('T', ' '),
+    };
+
+    saveLabReport(reportObj, user?.displayName || 'System');
+    setReports(getLabReports());
+    setIsModalOpen(false);
+    setSuccessMsg(`Paper Test Report for Roll #${rollNo} saved successfully!`);
+    setTimeout(() => setSuccessMsg(''), 4000);
+  };
+
+  const handleDeleteReport = (id: string, e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (window.confirm('Are you sure you want to delete this lab report record?')) {
+      deleteLabReport(id, user?.displayName || 'System');
+      setReports(getLabReports());
+      setSuccessMsg('Lab report deleted.');
+      setTimeout(() => setSuccessMsg(''), 3000);
+    }
+  };
+
+  const filteredReports = useMemo(() => {
+    const q = searchTerm.toLowerCase().trim();
+    if (!q) return reports;
+    return reports.filter(r => {
+      return (
+        r.rollNo.toLowerCase().includes(q) ||
+        r.product.toLowerCase().includes(q) ||
+        r.date.includes(q) ||
+        r.inspector.toLowerCase().includes(q)
+      );
+    });
+  }, [reports, searchTerm]);
+
+  // Overall KPI Metrics
+  const totalReportsCount = reports.length;
+  const avgTestedGsm = useMemo(() => {
+    if (reports.length === 0) return 16.5;
+    const sum = reports.reduce((acc, r) => acc + r.avgGsm, 0);
+    return (sum / reports.length).toFixed(1);
+  }, [reports]);
+
+  const avgTestedMoisture = useMemo(() => {
+    if (reports.length === 0) return 5.6;
+    const sum = reports.reduce((acc, r) => acc + r.moisturePct, 0);
+    return (sum / reports.length).toFixed(2);
+  }, [reports]);
+
+  const gradeAPassPct = useMemo(() => {
+    if (reports.length === 0) return 100;
+    const passCount = reports.filter(r => r.qcStatus === 'GRADE_A').length;
+    return Math.round((passCount / reports.length) * 100);
+  }, [reports]);
+
+  return (
+    <div className="space-y-6 font-sans">
+      
+      {/* Top Banner Header with Saheb Paper Branding */}
+      <div className="bg-white dark:bg-surface-dark border border-slate-200 dark:border-slate-700/80 rounded-3xl p-6 shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-4">
+        <div className="flex items-center gap-3">
+          <div className="p-2.5 rounded-2xl bg-gradient-to-tr from-purple-600 to-indigo-600 text-white shadow-md shadow-purple-500/20">
+            <Beaker className="w-5 h-5" />
+          </div>
+          <div>
+            <h2 className="text-base font-black text-slate-900 dark:text-white uppercase tracking-wider font-heading">
+              Sahab Paper Limited — Quality Control Laboratory
+            </h2>
+            <p className="text-xs text-slate-500 dark:text-slate-400 font-medium tracking-tight">
+              Log paper test reports, 14-sample GSM profiles, tensile/tear strength & generate official COA certificates.
+            </p>
+          </div>
+        </div>
+
+        {(user?.role === 'Admin' || user?.role === 'PlantManager' || user?.role === 'LabOperator') && (
+          <button
+            onClick={() => {
+              setSuccessMsg('');
+              setErrorMsg('');
+              setIsModalOpen(true);
+            }}
+            className="px-6 py-3 bg-gradient-to-r from-purple-600 via-indigo-600 to-blue-600 hover:from-purple-700 hover:to-indigo-700 text-white font-black rounded-2xl text-xs uppercase tracking-wider shadow-lg shadow-purple-500/25 transition-all hover:scale-[1.01] active:scale-[0.99] cursor-pointer flex items-center justify-center gap-2"
+          >
+            <Plus className="h-4 w-4" />
+            <span>Create New Paper Test Report</span>
+          </button>
+        )}
+      </div>
+
+      {successMsg && (
+        <div className="p-4 bg-emerald-50 dark:bg-emerald-950/30 text-emerald-700 dark:text-emerald-300 text-xs rounded-2xl border border-emerald-200 dark:border-emerald-800 font-bold flex items-center gap-2 animate-in fade-in">
+          <CheckCircle2 className="h-4 w-4 text-emerald-600 dark:text-emerald-400 shrink-0" />
+          <span>{successMsg}</span>
+        </div>
+      )}
+
+      {/* Top Banner KPI Cards */}
+      <div className="grid grid-cols-1 sm:grid-cols-4 gap-4 sm:gap-5 w-full">
+        <div className="bg-white dark:bg-surface-dark border border-slate-200 dark:border-slate-700/80 rounded-3xl p-5 shadow-sm space-y-1">
+          <div className="flex items-center justify-between">
+            <span className="text-[11px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-wider">Total Reports</span>
+            <div className="p-2 rounded-xl bg-purple-50 dark:bg-purple-950/40 text-purple-600 dark:text-purple-400">
+              <FileText className="h-4 w-4" />
+            </div>
+          </div>
+          <p className="text-xl font-black font-mono text-slate-900 dark:text-white">
+            {totalReportsCount} Reports
+          </p>
+          <p className="text-[11px] text-slate-500 dark:text-slate-400 font-medium">Logged in Lab System</p>
+        </div>
+
+        <div className="bg-white dark:bg-surface-dark border border-slate-200 dark:border-slate-700/80 rounded-3xl p-5 shadow-sm space-y-1">
+          <div className="flex items-center justify-between">
+            <span className="text-[11px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-wider">Avg Tested GSM</span>
+            <div className="p-2 rounded-xl bg-blue-50 dark:bg-blue-950/40 text-blue-600 dark:text-blue-400">
+              <Scale className="h-4 w-4" />
+            </div>
+          </div>
+          <p className="text-xl font-black font-mono text-slate-900 dark:text-white">
+            {avgTestedGsm} g/m²
+          </p>
+          <p className="text-[11px] text-slate-500 dark:text-slate-400 font-medium">Across all roll samples</p>
+        </div>
+
+        <div className="bg-white dark:bg-surface-dark border border-slate-200 dark:border-slate-700/80 rounded-3xl p-5 shadow-sm space-y-1">
+          <div className="flex items-center justify-between">
+            <span className="text-[11px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-wider">Avg Moisture %</span>
+            <div className="p-2 rounded-xl bg-amber-50 dark:bg-amber-950/40 text-amber-600 dark:text-amber-400">
+              <Activity className="h-4 w-4" />
+            </div>
+          </div>
+          <p className="text-xl font-black font-mono text-slate-900 dark:text-white">
+            {avgTestedMoisture}%
+          </p>
+          <p className="text-[11px] text-slate-500 dark:text-slate-400 font-medium">Target range: 4% – 8%</p>
+        </div>
+
+        <div className="bg-white dark:bg-surface-dark border border-slate-200 dark:border-slate-700/80 rounded-3xl p-5 shadow-sm space-y-1">
+          <div className="flex items-center justify-between">
+            <span className="text-[11px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-wider">Grade A Pass Ratio</span>
+            <div className="p-2 rounded-xl bg-emerald-50 dark:bg-emerald-950/40 text-emerald-600 dark:text-emerald-400">
+              <CheckCircle2 className="h-4 w-4" />
+            </div>
+          </div>
+          <p className="text-xl font-black font-mono text-slate-900 dark:text-white">
+            {gradeAPassPct}%
+          </p>
+          <p className="text-[11px] text-slate-500 dark:text-slate-400 font-medium">Quality Compliance</p>
+        </div>
+      </div>
+
+      {/* Main Ledger Table of Historical Lab Reports */}
+      <div className="bg-white dark:bg-surface-dark border border-slate-200 dark:border-slate-700/80 rounded-3xl p-6 shadow-sm space-y-5">
+        
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-slate-100 dark:border-slate-800 pb-4">
+          <div>
+            <h3 className="text-xs font-black text-slate-900 dark:text-white uppercase tracking-wider flex items-center gap-2">
+              <Layers className="h-4 w-4 text-purple-600 dark:text-purple-400" />
+              Paper Test Reports History Ledger
+            </h3>
+            <p className="text-xs text-slate-500 dark:text-slate-400 font-medium mt-0.5">
+              Sahab Paper Limited physical quality testing records & Certificate of Analysis (COA)
+            </p>
+          </div>
+
+          <div className="bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-2xl p-2 flex items-center gap-2 w-full md:w-72">
+            <Search className="h-4 w-4 text-slate-400 shrink-0" />
+            <input
+              type="text"
+              value={searchTerm}
+              onChange={e => setSearchTerm(e.target.value)}
+              placeholder="Search by Roll No, Product, Date..."
+              className="bg-transparent border-none text-xs font-semibold focus:outline-none w-full dark:text-white placeholder-slate-400"
+            />
+          </div>
+        </div>
+
+        {/* Ledger Table */}
+        <div className="overflow-x-auto">
+          <table className="w-full text-left text-xs border-collapse">
+            <thead>
+              <tr className="border-b border-slate-100 dark:border-slate-800 text-slate-400 uppercase text-[10px] font-black tracking-wider">
+                <th className="py-3 px-3">Report ID</th>
+                <th className="py-3 px-3">Date / Time</th>
+                <th className="py-3 px-3">Product Quality</th>
+                <th className="py-3 px-3 font-mono">Roll No</th>
+                <th className="py-3 px-3">Shift</th>
+                <th className="py-3 px-3 font-mono">Target / Avg GSM</th>
+                <th className="py-3 px-3 font-mono">Moisture</th>
+                <th className="py-3 px-3">QC Decision</th>
+                <th className="py-3 px-3 text-right">Actions</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-slate-100 dark:divide-slate-800 font-semibold">
+              {filteredReports.length === 0 ? (
+                <tr>
+                  <td colSpan={9} className="py-8 text-center text-xs text-slate-400 font-medium">
+                    No lab test reports match your search query.
+                  </td>
+                </tr>
+              ) : (
+                filteredReports.map(report => (
+                  <tr key={report.id} className="hover:bg-slate-50 dark:hover:bg-slate-800/40 transition">
+                    <td className="py-3.5 px-3 font-mono font-bold text-purple-600 dark:text-purple-400">
+                      {report.id}
+                    </td>
+                    <td className="py-3.5 px-3 font-mono text-slate-600 dark:text-slate-300">
+                      {report.date.split('-').reverse().join('.')} {report.time}
+                    </td>
+                    <td className="py-3.5 px-3 font-bold text-slate-900 dark:text-white">
+                      {report.product}
+                    </td>
+                    <td className="py-3.5 px-3 font-mono font-black text-slate-900 dark:text-white">
+                      #{report.rollNo}
+                    </td>
+                    <td className="py-3.5 px-3">
+                      <span className="px-2 py-0.5 rounded-md text-[10px] font-extrabold uppercase bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300">
+                        Shift {report.shift}
+                      </span>
+                    </td>
+                    <td className="py-3.5 px-3 font-mono">
+                      <span className="text-slate-400">{report.targetGsm}</span> / <strong className="text-slate-900 dark:text-white">{report.avgGsm} g/m²</strong>
+                    </td>
+                    <td className="py-3.5 px-3 font-mono font-bold text-slate-800 dark:text-slate-200">
+                      {report.moisturePct.toFixed(2)}%
+                    </td>
+                    <td className="py-3.5 px-3">
+                      <span className={`px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase border ${
+                        report.qcStatus === 'GRADE_A' ? 'bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-950/40 dark:text-emerald-300 dark:border-emerald-800' :
+                        report.qcStatus === 'GRADE_B' ? 'bg-amber-50 text-amber-700 border-amber-200 dark:bg-amber-950/40 dark:text-amber-300 dark:border-amber-800' :
+                        'bg-red-50 text-red-700 border-red-200 dark:bg-red-950/40 dark:text-red-300 dark:border-red-800'
+                      }`}>
+                        {report.qcStatus.replace('_', ' ')}
+                      </span>
+                    </td>
+                    <td className="py-3.5 px-3 text-right space-x-1.5">
+                      <button
+                        onClick={() => printPaperTestReport(report)}
+                        className="px-2.5 py-1.5 rounded-xl bg-purple-50 dark:bg-purple-950/40 hover:bg-purple-100 text-purple-700 dark:text-purple-300 font-bold transition text-[11px] cursor-pointer inline-flex items-center gap-1 border border-purple-200 dark:border-purple-800"
+                        title="Print PDF Certificate"
+                      >
+                        <Printer className="h-3.5 w-3.5" />
+                        <span>Print PDF</span>
+                      </button>
+
+                      {user?.role === 'Admin' && (
+                        <button
+                          onClick={e => handleDeleteReport(report.id, e)}
+                          className="p-1.5 rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-red-50 text-slate-400 hover:text-red-600 transition cursor-pointer"
+                          title="Delete Record"
+                        >
+                          <Trash2 className="h-3.5 w-3.5" />
+                        </button>
+                      )}
+                    </td>
+                  </tr>
+                ))
+              )}
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      {/* Interactive Paper Test Report Creation Modal */}
+      {isModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs animate-in fade-in">
+          <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700/80 rounded-3xl w-full max-w-4xl shadow-2xl flex flex-col max-h-[90vh] overflow-hidden">
+            
+            {/* Fixed Modal Header */}
+            <div className="flex items-center justify-between p-5 border-b border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shrink-0">
+              <div className="flex items-center gap-2">
+                <Beaker className="h-5 w-5 text-purple-600 dark:text-purple-400" />
+                <h3 className="text-sm font-black text-slate-900 dark:text-white uppercase tracking-wider font-heading">
+                  SAHAB PAPER LIMITED — PAPER TEST REPORT ENTRY
+                </h3>
+              </div>
+              <button onClick={() => setIsModalOpen(false)} className="text-slate-400 hover:text-slate-600 dark:hover:text-white cursor-pointer p-1 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800">
+                <X className="h-5 w-5" />
+              </button>
+            </div>
+
+            {/* Scrollable Modal Content */}
+            <div className="p-6 overflow-y-auto space-y-5 custom-scrollbar">
+              {errorMsg && (
+                <div className="p-3 bg-red-50 dark:bg-red-950/30 text-red-600 dark:text-red-400 text-xs rounded-xl border border-red-200 dark:border-red-800 font-bold">
+                  {errorMsg}
+                </div>
+              )}
+
+              <form onSubmit={handleSaveReport} className="space-y-6">
+              
+              {/* Section 1: Header Metadata Parameters */}
+              <div className="bg-slate-50 dark:bg-slate-900/60 border border-slate-200 dark:border-slate-800 rounded-2xl p-4 space-y-3">
+                <h4 className="text-xs font-black text-purple-600 dark:text-purple-400 uppercase tracking-wider flex items-center gap-1.5">
+                  <Sliders className="h-3.5 w-3.5" /> 1. Header Roll Parameters
+                </h4>
+                
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 text-xs">
+                  <div>
+                    <label className="block text-[10px] font-black text-slate-500 uppercase tracking-wider mb-1">Quality / Product</label>
+                    <input
+                      type="text"
+                      value={product}
+                      onChange={e => setProduct(e.target.value)}
+                      className="w-full p-2 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl font-bold dark:text-white"
+                      placeholder="e.g. NAPKIN"
+                      required
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-[10px] font-black text-slate-500 uppercase tracking-wider mb-1">Roll No</label>
+                    <input
+                      type="text"
+                      value={rollNo}
+                      onChange={e => setRollNo(e.target.value)}
+                      className="w-full p-2 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl font-mono font-bold dark:text-white"
+                      placeholder="e.g. 11"
+                      required
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-[10px] font-black text-slate-500 uppercase tracking-wider mb-1">Shift</label>
+                    <select
+                      value={shift}
+                      onChange={e => setShift(e.target.value as any)}
+                      className="w-full p-2 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl font-bold dark:text-white"
+                    >
+                      <option value="A">Shift A</option>
+                      <option value="B">Shift B</option>
+                      <option value="C">Shift C</option>
+                    </select>
+                  </div>
+
+                  <div>
+                    <label className="block text-[10px] font-black text-slate-500 uppercase tracking-wider mb-1">Date</label>
+                    <input
+                      type="date"
+                      value={dateStr}
+                      onChange={e => setDateStr(e.target.value)}
+                      className="w-full p-2 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl font-mono font-bold dark:text-white"
+                      required
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-[10px] font-black text-slate-500 uppercase tracking-wider mb-1">Target GSM</label>
+                    <input
+                      type="number"
+                      step="0.1"
+                      value={targetGsm}
+                      onChange={e => setTargetGsm(parseFloat(e.target.value) || 0)}
+                      className="w-full p-2 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl font-mono font-bold dark:text-white"
+                      required
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-[10px] font-black text-slate-500 uppercase tracking-wider mb-1">Roll Weight (kg)</label>
+                    <input
+                      type="number"
+                      value={weight}
+                      onChange={e => setWeight(parseFloat(e.target.value) || 0)}
+                      className="w-full p-2 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl font-mono font-bold dark:text-white"
+                      required
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-[10px] font-black text-slate-500 uppercase tracking-wider mb-1">Speed (m/min)</label>
+                    <input
+                      type="number"
+                      value={speed}
+                      onChange={e => setSpeed(parseFloat(e.target.value) || 0)}
+                      className="w-full p-2 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl font-mono font-bold dark:text-white"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-[10px] font-black text-slate-500 uppercase tracking-wider mb-1">Creping %</label>
+                    <input
+                      type="number"
+                      step="0.01"
+                      value={crepingPct}
+                      onChange={e => setCrepingPct(parseFloat(e.target.value) || 0)}
+                      className="w-full p-2 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl font-mono font-bold dark:text-white"
+                    />
+                  </div>
+                </div>
+              </div>
+
+              {/* Section 2: 14 GSM Sample Profile & Realtime Auto-Stats */}
+              <div className="bg-slate-50 dark:bg-slate-900/60 border border-slate-200 dark:border-slate-800 rounded-2xl p-4 space-y-4">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-slate-200 dark:border-slate-800 pb-2">
+                  <h4 className="text-xs font-black text-purple-600 dark:text-purple-400 uppercase tracking-wider flex items-center gap-1.5">
+                    <Scale className="h-3.5 w-3.5" /> 2. 14 GSM Profile Samples & Auto-Computed Stats
+                  </h4>
+                  
+                  {/* Realtime Stats Pills */}
+                  <div className="flex items-center gap-2 font-mono text-xs font-bold flex-wrap">
+                    <span className="px-2 py-0.5 rounded bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-purple-600 dark:text-purple-400">
+                      Avg: {gsmStats.avg}
+                    </span>
+                    <span className="px-2 py-0.5 rounded bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-red-600 dark:text-red-400">
+                      Max: {gsmStats.max}
+                    </span>
+                    <span className="px-2 py-0.5 rounded bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-blue-600 dark:text-blue-400">
+                      Min: {gsmStats.min}
+                    </span>
+                    <span className="px-2 py-0.5 rounded bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-amber-600 dark:text-amber-400">
+                      Range: {gsmStats.range}
+                    </span>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-4 sm:grid-cols-7 gap-2">
+                  {gsmSamples.map((sampleVal, idx) => (
+                    <div key={idx} className="space-y-0.5">
+                      <span className="block text-[9px] font-extrabold text-slate-400 text-center">SR {idx + 1}</span>
+                      <input
+                        type="number"
+                        step="0.1"
+                        value={sampleVal !== undefined ? sampleVal : ''}
+                        onChange={e => handleGsmSampleChange(idx, e.target.value)}
+                        className="w-full p-1.5 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg text-xs font-mono font-bold text-center dark:text-white text-purple-600 dark:text-purple-400 focus:ring-1 focus:ring-purple-500"
+                      />
+                    </div>
+                  ))}
+                </div>
+
+                <div className="pt-2 flex items-center justify-between border-t border-slate-200 dark:border-slate-800 text-xs">
+                  <span className="font-bold text-slate-500">Web Breakage Count:</span>
+                  <input
+                    type="number"
+                    min="0"
+                    value={breakageCount}
+                    onChange={e => setBreakageCount(parseInt(e.target.value, 10) || 0)}
+                    className="w-20 p-1.5 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg font-mono font-bold text-center dark:text-white"
+                  />
+                </div>
+              </div>
+
+              {/* Section 3: 13 Physical & Mechanical Lab Test Parameters */}
+              <div className="bg-slate-50 dark:bg-slate-900/60 border border-slate-200 dark:border-slate-800 rounded-2xl p-4 space-y-4">
+                <h4 className="text-xs font-black text-purple-600 dark:text-purple-400 uppercase tracking-wider flex items-center gap-1.5 border-b border-slate-200 dark:border-slate-800 pb-2">
+                  <Activity className="h-3.5 w-3.5" /> 3. Physical & Mechanical Lab Test Parameters (13 Parameters)
+                </h4>
+
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 text-xs">
+                  <div>
+                    <label className="block text-[10px] font-black text-slate-500 uppercase tracking-wider mb-1">1. GSM Result (g/m²)</label>
+                    <input
+                      type="number"
+                      step="0.1"
+                      value={labResultGsm}
+                      onChange={e => setLabResultGsm(parseFloat(e.target.value) || 0)}
+                      className="w-full p-2 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl font-mono font-bold text-emerald-600 dark:text-emerald-400"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-[10px] font-black text-slate-500 uppercase tracking-wider mb-1">2. Moisture (%)</label>
+                    <input
+                      type="number"
+                      step="0.01"
+                      value={moisturePct}
+                      onChange={e => setMoisturePct(parseFloat(e.target.value) || 0)}
+                      className="w-full p-2 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl font-mono font-bold dark:text-white"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-[10px] font-black text-slate-500 uppercase tracking-wider mb-1">3. Caliper Thickness (MM)</label>
+                    <input
+                      type="number"
+                      value={caliperMm}
+                      onChange={e => setCaliperMm(parseFloat(e.target.value) || 0)}
+                      className="w-full p-2 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl font-mono font-bold dark:text-white"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-[10px] font-black text-slate-500 uppercase tracking-wider mb-1">4. Bulk (cc/gm)</label>
+                    <input
+                      type="number"
+                      step="0.01"
+                      value={bulkCcGm}
+                      onChange={e => setBulkCcGm(parseFloat(e.target.value) || 0)}
+                      className="w-full p-2 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl font-mono font-bold dark:text-white"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-[10px] font-black text-slate-500 uppercase tracking-wider mb-1">5. Breaking Length MD (Mtr)</label>
+                    <input
+                      type="number"
+                      step="0.001"
+                      value={breakingLengthMd}
+                      onChange={e => setBreakingLengthMd(parseFloat(e.target.value) || 0)}
+                      className="w-full p-2 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl font-mono font-bold dark:text-white"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-[10px] font-black text-slate-500 uppercase tracking-wider mb-1">6. Breaking Length CD (Mtr)</label>
+                    <input
+                      type="number"
+                      step="0.001"
+                      value={breakingLengthCd}
+                      onChange={e => setBreakingLengthCd(parseFloat(e.target.value) || 0)}
+                      className="w-full p-2 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl font-mono font-bold dark:text-white"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-[10px] font-black text-slate-500 uppercase tracking-wider mb-1">7. Brightness (%)</label>
+                    <input
+                      type="number"
+                      step="0.1"
+                      value={brightnessPct}
+                      onChange={e => setBrightnessPct(parseFloat(e.target.value) || 0)}
+                      className="w-full p-2 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl font-mono font-bold text-red-600 dark:text-red-400"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-[10px] font-black text-slate-500 uppercase tracking-wider mb-1">8. Tear MD (J/m²)</label>
+                    <input
+                      type="number"
+                      step="0.01"
+                      value={tearMd}
+                      onChange={e => setTearMd(parseFloat(e.target.value) || 0)}
+                      className="w-full p-2 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl font-mono font-bold dark:text-white"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-[10px] font-black text-slate-500 uppercase tracking-wider mb-1">9. Tear CD (N/M)</label>
+                    <input
+                      type="number"
+                      step="0.01"
+                      value={tearCd}
+                      onChange={e => setTearCd(parseFloat(e.target.value) || 0)}
+                      className="w-full p-2 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl font-mono font-bold dark:text-white"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-[10px] font-black text-slate-500 uppercase tracking-wider mb-1">10. Tensile Dry MD (N/M)</label>
+                    <input
+                      type="number"
+                      step="0.01"
+                      value={tensileDryMd}
+                      onChange={e => setTensileDryMd(parseFloat(e.target.value) || 0)}
+                      className="w-full p-2 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl font-mono font-bold dark:text-white"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-[10px] font-black text-slate-500 uppercase tracking-wider mb-1">11. Tensile Dry CD (%)</label>
+                    <input
+                      type="number"
+                      step="0.01"
+                      value={tensileDryCd}
+                      onChange={e => setTensileDryCd(parseFloat(e.target.value) || 0)}
+                      className="w-full p-2 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl font-mono font-bold dark:text-white"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-[10px] font-black text-slate-500 uppercase tracking-wider mb-1">12. Stretch Dry MD (%)</label>
+                    <input
+                      type="number"
+                      step="0.01"
+                      value={stretchDryMd}
+                      onChange={e => setStretchDryMd(parseFloat(e.target.value) || 0)}
+                      className="w-full p-2 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl font-mono font-bold dark:text-white"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-[10px] font-black text-slate-500 uppercase tracking-wider mb-1">13. Stretch Dry CD (%)</label>
+                    <input
+                      type="number"
+                      step="0.01"
+                      value={stretchDryCd}
+                      onChange={e => setStretchDryCd(parseFloat(e.target.value) || 0)}
+                      className="w-full p-2 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl font-mono font-bold dark:text-white"
+                    />
+                  </div>
+                </div>
+              </div>
+
+              {/* Section 4: QC Grade Decision & Remarks */}
+              <div className="bg-slate-50 dark:bg-slate-900/60 border border-slate-200 dark:border-slate-800 rounded-2xl p-4 space-y-3">
+                <h4 className="text-xs font-black text-purple-600 dark:text-purple-400 uppercase tracking-wider flex items-center gap-1.5">
+                  <CheckCircle2 className="h-3.5 w-3.5" /> 4. QC Decision & Chemist Remarks
+                </h4>
+
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                  <div>
+                    <label className="block text-[10px] font-black text-slate-500 uppercase tracking-wider mb-1">QC Decision Grade</label>
+                    <select
+                      value={qcStatus}
+                      onChange={e => setQcStatus(e.target.value as any)}
+                      className="w-full p-2.5 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl font-bold dark:text-white text-xs"
+                    >
+                      <option value="GRADE_A">Grade A (Pass)</option>
+                      <option value="GRADE_B">Grade B (Muted / Minor Spec Deviation)</option>
+                      <option value="REJECTED">Rejected (Broke Return)</option>
+                    </select>
+                  </div>
+
+                  <div className="sm:col-span-2">
+                    <label className="block text-[10px] font-black text-slate-500 uppercase tracking-wider mb-1">Remarks / Chemist Notes</label>
+                    <input
+                      type="text"
+                      value={remarks}
+                      onChange={e => setRemarks(e.target.value)}
+                      className="w-full p-2.5 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl font-medium dark:text-white text-xs"
+                      placeholder="e.g. Meets all physical strength, moisture & GSM benchmarks"
+                    />
+                  </div>
+                </div>
+              </div>
+
+              {/* Form Buttons */}
+              <div className="flex items-center justify-end gap-3 pt-2">
+                <button
+                  type="button"
+                  onClick={() => setIsModalOpen(false)}
+                  className="px-5 py-3 bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 font-bold rounded-2xl text-xs uppercase cursor-pointer"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  className="px-6 py-3 bg-gradient-to-r from-purple-600 via-indigo-600 to-blue-600 text-white font-black rounded-2xl text-xs uppercase tracking-wider shadow-lg shadow-purple-500/25 cursor-pointer hover:scale-[1.01] active:scale-[0.99] transition"
+                >
+                  Save & Issue Paper Test Report
+                </button>
+              </div>
+
+            </form>
+            </div>
+          </div>
+        </div>
+      )}
+
+    </div>
+  );
+};
