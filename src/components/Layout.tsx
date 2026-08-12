@@ -725,16 +725,21 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
         )}
 
         {/* 3. Main content area */}
-        <main
-          ref={mainRef}
-          className={`flex-1 flex flex-col overflow-y-auto pb-32 md:pb-6 relative min-w-0 ${
-            user ? 'md:ml-64' : ''
-          }`}
-        >
-          
-          {/* Actual children page content */}
-          <div className="p-2 sm:p-4 lg:p-6 flex-1 flex flex-col">{children}</div>
-        </main>
+        {(() => {
+          const isDashboard = location.pathname === '/' || location.pathname === '/dashboard';
+          return (
+            <main
+              ref={mainRef}
+              className={`flex-1 flex flex-col overflow-y-auto pb-32 md:pb-6 relative min-w-0 ${
+                user ? 'md:ml-64' : ''
+              } ${isDashboard ? 'dashboard-main-scrollbar' : ''}`}
+            >
+              
+              {/* Actual children page content */}
+              <div className="p-2 sm:p-4 lg:p-6 flex-1 flex flex-col">{children}</div>
+            </main>
+          );
+        })()}
       </div>
 
       {/* 4. Mobile Slide-out Menu */}

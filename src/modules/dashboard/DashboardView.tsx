@@ -53,6 +53,16 @@ export const DashboardView: React.FC = () => {
   const [refreshKey, setRefreshKey] = useState(0);
   const [isRefreshing, setIsRefreshing] = useState(false);
 
+  // Dynamically apply dashboard-active scrollbar styling only when DashboardView is mounted
+  useEffect(() => {
+    document.body.classList.add('dashboard-active');
+    document.documentElement.classList.add('dashboard-active');
+    return () => {
+      document.body.classList.remove('dashboard-active');
+      document.documentElement.classList.remove('dashboard-active');
+    };
+  }, []);
+
   // Re-sync data when selectedDate or timeframe changes
   useEffect(() => {
     setIsRefreshing(true);
@@ -355,7 +365,7 @@ export const DashboardView: React.FC = () => {
                 </button>
               </div>
 
-              <div className="overflow-x-auto rounded-xl border border-slate-200 dark:border-slate-700/80 shadow-xs">
+              <div className="overflow-x-auto rounded-xl border border-slate-200 dark:border-slate-700/80 shadow-xs dashboard-custom-scrollbar">
                 <table className="w-full text-left text-xs border-collapse">
                   <thead>
                     <tr className="bg-slate-50 dark:bg-slate-800/80 text-slate-600 dark:text-slate-300 border-b border-slate-200 dark:border-slate-700">
@@ -1112,7 +1122,7 @@ export const DashboardView: React.FC = () => {
 
 
             {/* 3. MIDDLE SECTION: PRODUCTION ANALYTICS & LIVE ACTIVITY STREAM */}
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 items-stretch">
               <div className="lg:col-span-2 bg-white dark:bg-surface-dark border border-slate-200 dark:border-slate-700 rounded-2xl p-6 shadow-sm space-y-5">
                 <div className="flex items-center justify-between border-b pb-4 dark:border-slate-700">
                   <div>
@@ -1190,8 +1200,8 @@ export const DashboardView: React.FC = () => {
                 </div>
               </div>
 
-              <div className="bg-white dark:bg-surface-dark border border-slate-200 dark:border-slate-700 rounded-3xl p-6 shadow-lg space-y-5 flex flex-col">
-                <div className="border-b pb-4 dark:border-slate-700">
+              <div className="bg-white dark:bg-surface-dark border border-slate-200 dark:border-slate-700 rounded-3xl p-6 shadow-lg flex flex-col space-y-5">
+                <div className="border-b pb-4 dark:border-slate-700 shrink-0">
                   <div className="flex items-center gap-3">
                     <div className="p-2.5 rounded-2xl bg-blue-50 dark:bg-blue-950/40 text-primary dark:text-blue-400">
                       <Activity className="h-6 w-6" />
@@ -1206,7 +1216,7 @@ export const DashboardView: React.FC = () => {
                 </div>
 
                 {/* Category Filter Pills */}
-                <div className="flex flex-wrap gap-1.5">
+                <div className="flex flex-wrap gap-1.5 shrink-0">
                   {(['all', 'boiler', 'production', 'dispatch', 'system'] as const).map(cat => (
                     <button
                       key={cat}
@@ -1222,8 +1232,11 @@ export const DashboardView: React.FC = () => {
                   ))}
                 </div>
 
-                {/* Stream Feed */}
-                <div className="space-y-3 flex-1 max-h-[380px] overflow-y-auto pr-1">
+                {/* Stream Feed - Dynamic max height based on period */}
+                <div
+                  className="space-y-3 flex-1 min-h-0 overflow-y-auto pr-1.5 transition-all duration-300 dashboard-custom-scrollbar"
+                  style={{ maxHeight: period === 'month' ? '250px' : '440px' }}
+                >
                   {unifiedActivityStream.length === 0 ? (
                     <div className="py-10 text-center space-y-2 border border-dashed border-slate-200 dark:border-slate-700 rounded-2xl">
                       <Activity className="h-8 w-8 text-slate-300 mx-auto" />
