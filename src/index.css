@@ -45,37 +45,83 @@ input[type="number"] {
   appearance: textfield !important;
 }
 
-/* Custom scrollbars */
+/* Global Custom Scrollbars matching Dashboard Theme */
+::-webkit-scrollbar-button,
+::-webkit-scrollbar-button:single-button,
+::-webkit-scrollbar-button:single-button:vertical:decrement,
+::-webkit-scrollbar-button:single-button:vertical:increment,
+::-webkit-scrollbar-button:single-button:horizontal:decrement,
+::-webkit-scrollbar-button:single-button:horizontal:increment,
+::-webkit-scrollbar-button:start,
+::-webkit-scrollbar-button:end,
+::-webkit-scrollbar-button:vertical:start:decrement,
+::-webkit-scrollbar-button:vertical:end:increment,
+::-webkit-scrollbar-button:horizontal:start:decrement,
+::-webkit-scrollbar-button:horizontal:end:increment,
+*::-webkit-scrollbar-button,
+*::-webkit-scrollbar-button:single-button,
+*::-webkit-scrollbar-button:vertical:decrement,
+*::-webkit-scrollbar-button:vertical:increment,
+.dashboard-main-scrollbar::-webkit-scrollbar-button,
+.dashboard-main-scrollbar::-webkit-scrollbar-button:single-button,
+.dashboard-main-scrollbar::-webkit-scrollbar-button:vertical:decrement,
+.dashboard-main-scrollbar::-webkit-scrollbar-button:vertical:increment,
+.dashboard-custom-scrollbar::-webkit-scrollbar-button,
+.dashboard-custom-scrollbar::-webkit-scrollbar-button:single-button,
+.dashboard-custom-scrollbar::-webkit-scrollbar-button:vertical:decrement,
+.dashboard-custom-scrollbar::-webkit-scrollbar-button:vertical:increment {
+  display: none !important;
+  width: 0px !important;
+  height: 0px !important;
+  background: transparent !important;
+  border: none !important;
+  opacity: 0 !important;
+  pointer-events: none !important;
+}
+
 ::-webkit-scrollbar {
-  width: 6px;
-  height: 6px;
+  width: 9px;
+  height: 9px;
 }
 ::-webkit-scrollbar-track {
-  background: transparent;
+  background: #f1f5f9;
+}
+.dark ::-webkit-scrollbar-track,
+html.dark ::-webkit-scrollbar-track {
+  background: #0b1329;
 }
 ::-webkit-scrollbar-thumb {
-  background: rgba(100, 116, 139, 0.2);
-  border-radius: 3px;
+  background: linear-gradient(180deg, #0F52BA 0%, #2563EB 100%);
+  border-radius: 9999px;
+  border: 1.5px solid #f1f5f9;
+  background-clip: padding-box;
+  box-shadow: 0 0 6px rgba(15, 82, 186, 0.3);
+}
+.dark ::-webkit-scrollbar-thumb,
+html.dark ::-webkit-scrollbar-thumb {
+  border: 1.5px solid #0b1329;
+  box-shadow: 0 0 8px rgba(15, 82, 186, 0.4);
 }
 ::-webkit-scrollbar-thumb:hover {
-  background: rgba(100, 116, 139, 0.4);
+  background: linear-gradient(180deg, #1D4ED8 0%, #3B82F6 100%);
+}
+
+/* Hide scrollbars completely for left sidebar & clean UI */
+.custom-scrollbar, .no-scrollbar {
+  -ms-overflow-style: none; /* IE and Edge */
+  scrollbar-width: none; /* Firefox */
+}
+.custom-scrollbar::-webkit-scrollbar, .no-scrollbar::-webkit-scrollbar {
+  display: none; /* Chrome, Safari, Opera */
+  width: 0px;
+  height: 0px;
+  background: transparent;
 }
 
 /* ==========================================================================
    CUSTOM REDESIGNED SCROLLBAR (EXCLUSIVE TO DASHBOARD PAGE)
    Dynamically adapts track & border colors based on Light / Dark theme
    ========================================================================== */
-
-/* Hide native scroll arrows (▲ / ▼ buttons) in all themes */
-.dashboard-main-scrollbar::-webkit-scrollbar-button,
-.dashboard-active::-webkit-scrollbar-button,
-body.dashboard-active::-webkit-scrollbar-button,
-html.dashboard-active::-webkit-scrollbar-button,
-.dashboard-custom-scrollbar::-webkit-scrollbar-button {
-  display: none !important;
-  width: 0 !important;
-  height: 0 !important;
-}
 
 /* Dimensions */
 .dashboard-main-scrollbar::-webkit-scrollbar,

@@ -170,14 +170,32 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
     };
   }, []);
 
-  // Reset navigation visibility and scroll position on route change
+  // Reset navigation visibility and scroll position on route change to ALWAYS open at the very top of the page
   useEffect(() => {
     setShowBottomNav(true);
-    if (mainRef.current) {
-      mainRef.current.scrollTop = 0;
-    }
+    setShowHeader(true);
     lastScrollY.current = 0;
-  }, [location.pathname]);
+
+    const resetScroll = () => {
+      if (mainRef.current) {
+        mainRef.current.scrollTop = 0;
+      }
+      window.scrollTo({ top: 0, left: 0, behavior: 'instant' as ScrollBehavior });
+      document.documentElement.scrollTop = 0;
+      document.body.scrollTop = 0;
+    };
+
+    resetScroll();
+
+    // Microtask & macrotask fallbacks to guarantee scroll reset even after async route/DOM updates
+    const timer1 = setTimeout(resetScroll, 0);
+    const timer2 = setTimeout(resetScroll, 40);
+
+    return () => {
+      clearTimeout(timer1);
+      clearTimeout(timer2);
+    };
+  }, [location.pathname, location.search]);
 
   // Click away handlers for dropdown menu states
   useEffect(() => {
@@ -691,16 +709,16 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
             </div>
 
             {/* Sidebar Navigation Sections */}
-            <div className="flex flex-col gap-4 overflow-y-auto flex-1 p-3 custom-scrollbar">
+            <div className="flex flex-col gap-2.5 overflow-y-auto flex-1 px-3 py-2.5 pb-20 no-scrollbar scroll-smooth">
               
               {/* Render Categorized Dynamic Sections */}
               {sidebarSections.map((section) => (
-                <div key={section.title} className="space-y-1">
-                  <div className="px-3 text-[10px] font-black uppercase tracking-wider text-slate-400 dark:text-slate-500 font-sans">
+                <div key={section.title} className="space-y-0.5">
+                  <div className="px-3 pt-1 pb-0.5 text-[10px] font-black uppercase tracking-wider text-slate-400 dark:text-slate-500 font-sans">
                     {section.title}
                   </div>
 
-                  <div className="space-y-1">
+                  <div className="space-y-0.5">
                     {section.items.map(item => {
                       const Icon = item.icon;
                       const isActive = location.pathname === item.path;
@@ -708,14 +726,14 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
                         <button
                           key={item.id}
                           onClick={() => navigate(item.path)}
-                          className={`w-full flex items-center justify-between px-3.5 py-2.5 rounded-2xl transition-all duration-200 text-left cursor-pointer group ${
+                          className={`w-full flex items-center justify-between px-3 py-2 rounded-xl transition-all duration-200 text-left cursor-pointer group ${
                             isActive
-                              ? 'bg-gradient-to-r from-blue-600 via-indigo-600 to-blue-700 text-white font-extrabold shadow-md shadow-blue-500/25 scale-[1.02]'
-                              : 'text-slate-600 dark:text-slate-300 hover:bg-slate-100/90 dark:hover:bg-slate-800/90 hover:text-slate-900 dark:hover:text-white hover:translate-x-1 font-semibold'
+                              ? 'bg-gradient-to-r from-blue-600 via-indigo-600 to-blue-700 text-white font-black shadow-md shadow-blue-600/25'
+                              : 'text-slate-600 dark:text-slate-300 hover:bg-slate-100/90 dark:hover:bg-slate-800/90 hover:text-slate-900 dark:hover:text-white font-bold'
                           }`}
                         >
-                          <div className="flex items-center gap-3 min-w-0">
-                            <Icon className={`h-4.5 w-4.5 flex-shrink-0 transition-transform duration-200 ${
+                          <div className="flex items-center gap-2.5 min-w-0">
+                            <Icon className={`h-4 w-4 flex-shrink-0 transition-transform duration-200 ${
                               isActive ? 'text-white' : 'text-slate-400 group-hover:text-primary dark:group-hover:text-blue-400'
                             }`} />
                             <span className="text-xs font-sans tracking-wide leading-tight truncate">
@@ -724,7 +742,7 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
                           </div>
 
                           {isActive && (
-                            <span className="h-2 w-2 rounded-full bg-white shadow-xs animate-pulse shrink-0"></span>
+                            <span className="h-1.5 w-1.5 rounded-full bg-white shadow-xs animate-pulse shrink-0"></span>
                           )}
                         </button>
                       );
@@ -737,21 +755,15 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
         )}
 
         {/* 3. Main content area */}
-        {(() => {
-          const isDashboard = location.pathname === '/' || location.pathname === '/dashboard';
-          return (
-            <main
-              ref={mainRef}
-              className={`flex-1 flex flex-col overflow-y-auto pb-32 md:pb-6 relative min-w-0 ${
-                user ? 'md:ml-64' : ''
-              } ${isDashboard ? 'dashboard-main-scrollbar' : ''}`}
-            >
-              
-              {/* Actual children page content */}
-              <div className="p-2 sm:p-4 lg:p-6 flex-1 flex flex-col">{children}</div>
-            </main>
-          );
-        })()}
+        <main
+          ref={mainRef}
+          className={`flex-1 flex flex-col overflow-y-auto pb-32 md:pb-6 relative min-w-0 ${
+            user ? 'md:ml-64' : ''
+          } dashboard-main-scrollbar`}
+        >
+          {/* Actual children page content */}
+          <div className="p-2 sm:p-4 lg:p-6 flex-1 flex flex-col">{children}</div>
+        </main>
       </div>
 
       {/* 4. Mobile Slide-out Menu */}
