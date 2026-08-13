@@ -581,7 +581,7 @@ export const RewinderView: React.FC = () => {
                     placeholder="1500"
                     value={reelForm.weightKg}
                     onChange={e => setReelForm({ ...reelForm, weightKg: e.target.value })}
-                    className="w-full p-3 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white rounded-xl text-xs font-bold font-mono focus:ring-2 focus:ring-amber-500 focus:outline-none"
+                    className="w-full p-3 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white rounded-xl text-xs font-bold font-mono focus:ring-2 focus:ring-blue-500 focus:outline-none"
                   />
                 </div>
                 <div>
@@ -593,7 +593,7 @@ export const RewinderView: React.FC = () => {
                     placeholder="100"
                     value={reelForm.brokeKg}
                     onChange={e => setReelForm({ ...reelForm, brokeKg: e.target.value })}
-                    className="w-full p-3 bg-[#FEF3E1] dark:bg-amber-950/30 border border-amber-300/80 dark:border-amber-700/80 text-amber-900 dark:text-amber-300 rounded-xl text-xs font-bold font-mono focus:ring-2 focus:ring-amber-500 focus:outline-none"
+                    className="w-full p-3 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white rounded-xl text-xs font-bold font-mono focus:ring-2 focus:ring-blue-500 focus:outline-none"
                   />
                 </div>
                 <div>
@@ -604,7 +604,7 @@ export const RewinderView: React.FC = () => {
                     type="number"
                     value={reelForm.dia}
                     onChange={e => setReelForm({ ...reelForm, dia: e.target.value })}
-                    className="w-full p-3 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white rounded-xl text-xs font-bold font-mono focus:ring-2 focus:ring-amber-500 focus:outline-none"
+                    className="w-full p-3 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white rounded-xl text-xs font-bold font-mono focus:ring-2 focus:ring-blue-500 focus:outline-none"
                   />
                 </div>
                 <div>
@@ -615,7 +615,7 @@ export const RewinderView: React.FC = () => {
                     type="number"
                     value={reelForm.joint}
                     onChange={e => setReelForm({ ...reelForm, joint: e.target.value })}
-                    className="w-full p-3 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white rounded-xl text-xs font-bold font-mono focus:ring-2 focus:ring-amber-500 focus:outline-none"
+                    className="w-full p-3 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white rounded-xl text-xs font-bold font-mono focus:ring-2 focus:ring-blue-500 focus:outline-none"
                   />
                 </div>
               </div>
