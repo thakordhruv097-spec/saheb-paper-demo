@@ -13,17 +13,46 @@ export const RewinderView: React.FC = () => {
   const [rolls, setRolls] = useState<MachineRoll[]>(() => getRolls());
   const [reels, setReels] = useState<Reel[]>(() => getReels());
 
+  // Helper functions for Reel No auto-increment
+  const parseAndIncrementReelNo = (lastNo: string): string => {
+    if (!lastNo || !lastNo.trim()) return 'RL-1001';
+    const match = lastNo.match(/^(.*?)(\d+)$/);
+    if (match) {
+      const prefix = match[1];
+      const numStr = match[2];
+      const nextNum = parseInt(numStr, 10) + 1;
+      const paddedNum = String(nextNum).padStart(numStr.length, '0');
+      return `${prefix}${paddedNum}`;
+    }
+    return `${lastNo}-1`;
+  };
+
+  const getInitialReelNo = (existingReels: Reel[], offset = 0): string => {
+    if (existingReels.length > 0) {
+      const lastReel = existingReels[existingReels.length - 1];
+      if (lastReel && lastReel.reelNo) {
+        let current = lastReel.reelNo;
+        for (let i = 0; i <= offset; i++) {
+          current = parseAndIncrementReelNo(current);
+        }
+        return current;
+      }
+    }
+    return `RL-${1001 + offset}`;
+  };
+
   // Conversion Form States
   const [selectedRollNo, setSelectedRollNo] = useState('');
   const [brokeWeightStr, setBrokeWeightStr] = useState('0');
   const [reelRows, setReelRows] = useState<Array<{
+    reelNo: string;
     weight: string;
     dia: string;
     joint: string;
     ply: string;
     size: string;
-  }>>([
-    { weight: '200', dia: '800', joint: '0', ply: '2', size: '30' }
+  }>>(() => [
+    { reelNo: getInitialReelNo(getReels(), 0), weight: '200', dia: '800', joint: '0', ply: '2', size: '30' }
   ]);
 
   const [recentlyGenerated, setRecentlyGenerated] = useState<Reel[]>([]);
@@ -39,9 +68,20 @@ export const RewinderView: React.FC = () => {
   }, [selectedRollNo, rolls]);
 
   const handleAddReelRow = () => {
-    // Duplicate last row values for convenience
-    const lastRow = reelRows[reelRows.length - 1] || { weight: '200', dia: '800', joint: '0', ply: '2', size: '30' };
-    setReelRows([...reelRows, { ...lastRow }]);
+    const lastRow = reelRows[reelRows.length - 1];
+    const lastNo = lastRow ? lastRow.reelNo : getInitialReelNo(reels, reelRows.length - 1);
+    const nextReelNo = parseAndIncrementReelNo(lastNo);
+
+    const newRow = {
+      reelNo: nextReelNo,
+      weight: lastRow ? lastRow.weight : '200',
+      dia: lastRow ? lastRow.dia : '800',
+      joint: lastRow ? lastRow.joint : '0',
+      ply: lastRow ? lastRow.ply : '2',
+      size: lastRow ? lastRow.size : '30',
+    };
+
+    setReelRows([...reelRows, newRow]);
   };
 
   const handleRemoveReelRow = (index: number) => {
@@ -77,7 +117,6 @@ export const RewinderView: React.FC = () => {
     // Verify row numbers
     const processedReels: Reel[] = [];
     const baseDate = selectedRoll.date.replace(/-/g, '');
-    const timestampSeed = Date.now().toString().slice(-4);
 
     for (let i = 0; i < reelRows.length; i++) {
       const row = reelRows[i];
@@ -96,10 +135,10 @@ export const RewinderView: React.FC = () => {
         return;
       }
 
-      // Generate unique QR Reel No (e.g. REEL-20260716-0001)
-      const reelIndex = reels.length + i + 1;
-      const padIndex = String(reelIndex).padStart(4, '0');
-      const reelNo = `REEL-${baseDate}-${padIndex}`;
+      // Use user-typed/auto-incremented reelNo or fallback to auto format
+      const userTypedNo = row.reelNo ? row.reelNo.trim() : '';
+      const fallbackNo = `REEL-${baseDate}-${String(reels.length + i + 1).padStart(4, '0')}`;
+      const reelNo = userTypedNo || fallbackNo;
 
       processedReels.push({
         reelNo,
@@ -122,15 +161,16 @@ export const RewinderView: React.FC = () => {
       saveReelsFromRoll(selectedRoll.rollNo, processedReels, brokeWeight, user?.displayName || 'System');
       
       // Update states
-      setReels(getReels());
+      const updatedReels = getReels();
+      setReels(updatedReels);
       setRecentlyGenerated(processedReels);
       setShowQRModal(true);
-      setSuccessMsg(`Roll rewound successfully! Returned ${brokeWeight} kg Broke waste.`);
+      setSuccessMsg(`Roll rewound successfully! Created ${processedReels.length} Reel(s), returned ${brokeWeight} kg Broke waste.`);
       
-      // Reset Form
+      // Reset Form with fresh next reel number
       setSelectedRollNo('');
       setBrokeWeightStr('0');
-      setReelRows([{ weight: '200', dia: '800', joint: '0', ply: '2', size: '30' }]);
+      setReelRows([{ reelNo: getInitialReelNo(updatedReels, 0), weight: '200', dia: '800', joint: '0', ply: '2', size: '30' }]);
     } catch (err: any) {
       setErrorMsg(err.message || 'Error processing roll rewinding');
     }
@@ -369,7 +409,21 @@ export const RewinderView: React.FC = () => {
                     )}
                   </div>
 
-                  <div className="grid grid-cols-1 sm:grid-cols-4 gap-4">
+                  <div className="grid grid-cols-1 sm:grid-cols-5 gap-3">
+                    {/* Reel No */}
+                    <div>
+                      <label className="block text-[10px] font-black text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-1">
+                        Reel No
+                      </label>
+                      <input
+                        type="text"
+                        value={row.reelNo}
+                        onChange={e => handleRowChange(index, 'reelNo', e.target.value)}
+                        placeholder="e.g. RL-1001"
+                        className="block w-full py-2 px-3 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-xs font-mono font-bold text-primary dark:text-blue-400 focus:outline-none focus:ring-2 focus:ring-primary uppercase"
+                      />
+                    </div>
+
                     {/* General Weight */}
                     <div>
                       <label className="block text-[10px] font-black text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-1">
