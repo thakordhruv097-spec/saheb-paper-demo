@@ -18,6 +18,9 @@ import {
   X,
   AlertCircle,
   Search,
+  SlidersHorizontal,
+  Layers,
+  RotateCcw,
 } from 'lucide-react';
 
 export const RewinderView: React.FC = () => {
@@ -96,6 +99,11 @@ export const RewinderView: React.FC = () => {
   }, [totalReelWeightKg, totalBrokeKg]);
 
   // Cascading Filter States
+  const [showCascadingModal, setShowCascadingModal] = useState(false);
+  const [filterProduct, setFilterProduct] = useState<string>('ALL');
+  const [filterGsm, setFilterGsm] = useState<string>('ALL');
+  const [filterSize, setFilterSize] = useState<string>('ALL');
+  const [filterPly, setFilterPly] = useState<string>('ALL');
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
   const [dateFilter, setDateFilter] = useState('all');
@@ -107,19 +115,90 @@ export const RewinderView: React.FC = () => {
     return Array.from(set);
   }, [reels, masterProducts]);
 
+  // Step 1: Available Products
+  const availableProducts = useMemo(() => {
+    return Array.from(new Set(reels.map(r => r.product))).sort();
+  }, [reels]);
+
+  // Step 2: Available GSMs (Cascaded by selected Product)
+  const availableGsms = useMemo(() => {
+    let list = reels;
+    if (filterProduct !== 'ALL') {
+      list = list.filter(r => r.product === filterProduct);
+    }
+    return Array.from(new Set(list.map(r => r.gsm))).sort((a, b) => a - b);
+  }, [reels, filterProduct]);
+
+  // Step 3: Available Sizes (Cascaded by selected Product + GSM)
+  const availableSizes = useMemo(() => {
+    let list = reels;
+    if (filterProduct !== 'ALL') {
+      list = list.filter(r => r.product === filterProduct);
+    }
+    if (filterGsm !== 'ALL') {
+      list = list.filter(r => r.gsm === Number(filterGsm));
+    }
+    return Array.from(new Set(list.map(r => r.size))).sort((a, b) => a - b);
+  }, [reels, filterProduct, filterGsm]);
+
+  // Step 4: Available Ply Values (Cascaded by selected Product + GSM + Size)
+  const availablePlys = useMemo(() => {
+    let list = reels;
+    if (filterProduct !== 'ALL') {
+      list = list.filter(r => r.product === filterProduct);
+    }
+    if (filterGsm !== 'ALL') {
+      list = list.filter(r => r.gsm === Number(filterGsm));
+    }
+    if (filterSize !== 'ALL') {
+      list = list.filter(r => r.size === Number(filterSize));
+    }
+    return Array.from(new Set(list.map(r => r.ply))).sort((a, b) => a - b);
+  }, [reels, filterProduct, filterGsm, filterSize]);
+
+  // Handlers for Cascading Selection
+  const handleProductChange = (prod: string) => {
+    setFilterProduct(prod);
+    setFilterGsm('ALL');
+    setFilterSize('ALL');
+    setFilterPly('ALL');
+    if (prod !== 'ALL') setSelectedProductFilter(prod);
+    else setSelectedProductFilter('all');
+  };
+
+  const handleGsmChange = (gsmVal: string) => {
+    setFilterGsm(gsmVal);
+    setFilterSize('ALL');
+    setFilterPly('ALL');
+  };
+
+  const handleSizeChange = (sizeVal: string) => {
+    setFilterSize(sizeVal);
+    setFilterPly('ALL');
+  };
+
+  const handlePlyChange = (plyVal: string) => {
+    setFilterPly(plyVal);
+  };
+
   const filteredReels = useMemo(() => {
     return reels.filter(r => {
-      // 1. Product Filter
-      if (selectedProductFilter !== 'all' && r.product !== selectedProductFilter) {
-        return false;
-      }
-      // 2. QC Status Filter
+      // 1. Cascading Filters
+      if (filterProduct !== 'ALL' && r.product !== filterProduct) return false;
+      if (filterGsm !== 'ALL' && r.gsm !== Number(filterGsm)) return false;
+      if (filterSize !== 'ALL' && r.size !== Number(filterSize)) return false;
+      if (filterPly !== 'ALL' && r.ply !== Number(filterPly)) return false;
+
+      // 2. Paper Chips Filter
+      if (selectedProductFilter !== 'all' && r.product !== selectedProductFilter) return false;
+
+      // 3. QC Status Filter
       if (statusFilter !== 'all') {
         if (statusFilter === 'QC_PENDING' && r.status !== 'QC_PENDING') return false;
         if (statusFilter === 'GRADE_A' && r.qcGrade !== 'A') return false;
         if (statusFilter === 'GRADE_B' && r.qcGrade !== 'B') return false;
       }
-      // 3. Date Filter
+      // 4. Date Filter
       if (dateFilter === 'today') {
         const todayStr = new Date().toISOString().substring(0, 10);
         if (!r.productionDate.startsWith(todayStr)) return false;
@@ -128,7 +207,7 @@ export const RewinderView: React.FC = () => {
         weekAgo.setDate(weekAgo.getDate() - 7);
         if (new Date(r.productionDate) < weekAgo) return false;
       }
-      // 4. Search Term
+      // 5. Search Term
       if (searchTerm.trim()) {
         const q = searchTerm.toLowerCase();
         const matchNo = r.reelNo.toLowerCase().includes(q);
@@ -142,11 +221,24 @@ export const RewinderView: React.FC = () => {
       }
       return true;
     });
-  }, [reels, selectedProductFilter, statusFilter, dateFilter, searchTerm]);
+  }, [reels, filterProduct, filterGsm, filterSize, filterPly, selectedProductFilter, statusFilter, dateFilter, searchTerm]);
 
-  const hasActiveFilters = selectedProductFilter !== 'all' || statusFilter !== 'all' || dateFilter !== 'all' || searchTerm.trim() !== '';
+  const activeCascadingFilterCount = useMemo(() => {
+    let c = 0;
+    if (filterProduct !== 'ALL') c++;
+    if (filterGsm !== 'ALL') c++;
+    if (filterSize !== 'ALL') c++;
+    if (filterPly !== 'ALL') c++;
+    return c;
+  }, [filterProduct, filterGsm, filterSize, filterPly]);
+
+  const hasActiveFilters = selectedProductFilter !== 'all' || statusFilter !== 'all' || dateFilter !== 'all' || searchTerm.trim() !== '' || activeCascadingFilterCount > 0;
 
   const handleClearFilters = () => {
+    setFilterProduct('ALL');
+    setFilterGsm('ALL');
+    setFilterSize('ALL');
+    setFilterPly('ALL');
     setSelectedProductFilter('all');
     setStatusFilter('all');
     setDateFilter('all');
@@ -396,6 +488,21 @@ export const RewinderView: React.FC = () => {
 
             {/* Dropdowns & Reset */}
             <div className="flex items-center gap-2 w-full sm:w-auto flex-wrap sm:flex-nowrap">
+              {/* Cascading Filter Trigger Button */}
+              <button
+                type="button"
+                onClick={() => setShowCascadingModal(true)}
+                className="flex items-center gap-1.5 py-2 px-3 bg-blue-50 dark:bg-blue-950/40 text-blue-600 dark:text-blue-400 hover:bg-blue-100 border border-blue-200 dark:border-blue-800 rounded-xl text-xs font-bold transition cursor-pointer shrink-0"
+              >
+                <SlidersHorizontal className="h-3.5 w-3.5" />
+                <span>Cascading Filter</span>
+                {activeCascadingFilterCount > 0 && (
+                  <span className="h-4.5 w-4.5 rounded-full bg-blue-600 text-white text-[10px] flex items-center justify-center font-black">
+                    {activeCascadingFilterCount}
+                  </span>
+                )}
+              </button>
+
               {/* Date Filter */}
               <select
                 value={dateFilter}
@@ -839,6 +946,150 @@ export const RewinderView: React.FC = () => {
                 <span>Print Labels</span>
               </button>
             </div>
+          </div>
+        </div>
+      )}
+      {/* INVENTORY CASCADING FILTER MODAL (Matching Screenshot) */}
+      {showCascadingModal && (
+        <div className="fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <div className="bg-[#181D35] text-white border border-[#262D4A] rounded-3xl max-w-lg w-full p-6 space-y-5 shadow-2xl animate-in fade-in zoom-in-95 duration-150 text-left">
+            
+            {/* Modal Header */}
+            <div className="flex justify-between items-start border-b border-slate-700/60 pb-3">
+              <div>
+                <h3 className="text-base font-black tracking-wider flex items-center gap-2 text-white">
+                  <SlidersHorizontal className="h-5 w-5 text-blue-400" />
+                  INVENTORY CASCADING FILTER
+                </h3>
+                <p className="text-xs text-slate-400 font-medium mt-0.5">
+                  Select Product &rarr; GSM &rarr; Size &rarr; Ply to view matching inventory
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={() => setShowCascadingModal(false)}
+                className="text-slate-400 hover:text-white p-1 rounded-xl hover:bg-slate-800 transition cursor-pointer"
+              >
+                <X className="h-5 w-5" />
+              </button>
+            </div>
+
+            {/* Hero Live Filter Results Card */}
+            <div className="bg-gradient-to-r from-blue-700 via-indigo-700 to-purple-800 rounded-2xl p-4 border border-blue-400/30 shadow-lg text-white space-y-1">
+              <span className="text-[10px] font-black tracking-widest text-blue-200 uppercase flex items-center gap-1.5">
+                <Layers className="h-3.5 w-3.5" /> LIVE FILTER RESULTS
+              </span>
+              <div className="flex items-baseline gap-3 pt-1">
+                <span className="text-2xl font-black">{filteredReels.length} <span className="text-sm font-normal text-blue-100">Reels</span></span>
+                <span className="text-slate-400">|</span>
+                <span className="text-xl font-extrabold">
+                  {filteredReels.reduce((acc, r) => acc + r.weight, 0).toLocaleString()} <span className="text-xs font-normal text-blue-100">kg ({(filteredReels.reduce((acc, r) => acc + r.weight, 0) / 1000).toFixed(2)} MT)</span>
+                </span>
+              </div>
+            </div>
+
+            {/* 4 Step Cascading Dropdowns */}
+            <div className="space-y-4 text-xs font-bold">
+              
+              {/* STEP 1: PRODUCT */}
+              <div>
+                <label className="block text-[11px] font-black text-slate-300 uppercase tracking-wider mb-1.5 flex justify-between">
+                  <span>1. SELECT PRODUCT</span>
+                  <span className="text-[10px] text-blue-400 font-medium">Step 1</span>
+                </label>
+                <select
+                  value={filterProduct}
+                  onChange={e => handleProductChange(e.target.value)}
+                  className="w-full py-3 px-3.5 bg-[#12162B] border border-[#262D4A] rounded-2xl text-xs font-bold text-white focus:outline-none focus:ring-2 focus:ring-blue-500 cursor-pointer"
+                >
+                  <option value="ALL">All Products ({availableProducts.length})</option>
+                  {availableProducts.map(p => (
+                    <option key={p} value={p}>{p}</option>
+                  ))}
+                </select>
+              </div>
+
+              {/* STEP 2: GSM */}
+              <div>
+                <label className="block text-[11px] font-black text-slate-300 uppercase tracking-wider mb-1.5 flex justify-between">
+                  <span>2. SELECT GSM</span>
+                  <span className="text-[10px] text-slate-400 font-medium">
+                    {filterProduct !== 'ALL' ? `Cascaded for ${filterProduct}` : 'SELECT PRODUCT FIRST'}
+                  </span>
+                </label>
+                <select
+                  value={filterGsm}
+                  onChange={e => handleGsmChange(e.target.value)}
+                  className="w-full py-3 px-3.5 bg-[#12162B] border border-[#262D4A] rounded-2xl text-xs font-bold text-white focus:outline-none focus:ring-2 focus:ring-blue-500 cursor-pointer"
+                >
+                  <option value="ALL">All GSMs ({availableGsms.length} available)</option>
+                  {availableGsms.map(g => (
+                    <option key={g} value={g}>{g} GSM</option>
+                  ))}
+                </select>
+              </div>
+
+              {/* STEP 3: SIZE */}
+              <div>
+                <label className="block text-[11px] font-black text-slate-300 uppercase tracking-wider mb-1.5 flex justify-between">
+                  <span>3. SELECT SIZE (CM)</span>
+                  <span className="text-[10px] text-slate-400 font-medium">
+                    {filterGsm !== 'ALL' ? `Cascaded for ${filterGsm} GSM` : 'ALL SIZES'}
+                  </span>
+                </label>
+                <select
+                  value={filterSize}
+                  onChange={e => handleSizeChange(e.target.value)}
+                  className="w-full py-3 px-3.5 bg-[#12162B] border border-[#262D4A] rounded-2xl text-xs font-bold text-white focus:outline-none focus:ring-2 focus:ring-blue-500 cursor-pointer"
+                >
+                  <option value="ALL">All Sizes ({availableSizes.length} available)</option>
+                  {availableSizes.map(s => (
+                    <option key={s} value={s}>{s} cm</option>
+                  ))}
+                </select>
+              </div>
+
+              {/* STEP 4: PLY */}
+              <div>
+                <label className="block text-[11px] font-black text-slate-300 uppercase tracking-wider mb-1.5 flex justify-between">
+                  <span>4. SELECT PLY</span>
+                  <span className="text-[10px] text-slate-400 font-medium">
+                    {filterSize !== 'ALL' ? `Cascaded for Size ${filterSize} cm` : 'ALL PLY'}
+                  </span>
+                </label>
+                <select
+                  value={filterPly}
+                  onChange={e => handlePlyChange(e.target.value)}
+                  className="w-full py-3 px-3.5 bg-[#12162B] border border-[#262D4A] rounded-2xl text-xs font-bold text-white focus:outline-none focus:ring-2 focus:ring-blue-500 cursor-pointer"
+                >
+                  <option value="ALL">All Ply ({availablePlys.length} available)</option>
+                  {availablePlys.map(p => (
+                    <option key={p} value={p}>{p} Ply</option>
+                  ))}
+                </select>
+              </div>
+
+            </div>
+
+            {/* Modal Actions */}
+            <div className="flex gap-3 pt-3 border-t border-slate-700/60">
+              <button
+                type="button"
+                onClick={handleClearFilters}
+                className="px-4 py-3 border border-red-500/40 rounded-2xl text-xs font-bold text-red-400 hover:bg-red-950/40 transition cursor-pointer flex items-center justify-center gap-1.5 shrink-0"
+              >
+                <RotateCcw className="h-4 w-4" /> Clear All
+              </button>
+
+              <button
+                type="button"
+                onClick={() => setShowCascadingModal(false)}
+                className="flex-1 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-2xl text-xs font-black uppercase tracking-wider shadow-md transition cursor-pointer flex items-center justify-center gap-2"
+              >
+                <span>APPLY &amp; VIEW ({filteredReels.length} REELS)</span>
+              </button>
+            </div>
+
           </div>
         </div>
       )}
