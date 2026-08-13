@@ -308,9 +308,9 @@ function seedOneMonthData(): void {
     reels.push(reel4);
 
     // 4. Utilities logs (Boiler, ETP, Electricity)
-    const shifts: ('A' | 'B' | 'C')[] = ['A', 'B', 'C'];
-    const woodCons = [550, 480, 420];
-    const waterCons = [750, 680, 600];
+    const shifts: ('A' | 'B')[] = ['A', 'B'];
+    const woodCons = [550, 480];
+    const waterCons = [750, 680];
     shifts.forEach((sh, idx) => {
       boilerLogs.push({
         id: `BLR-${dateStr.replace(/-/g, '')}-${sh}`,

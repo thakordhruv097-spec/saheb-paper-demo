@@ -52,7 +52,7 @@ export const MachineView: React.FC = () => {
   const [weightStr, setWeightStr] = useState(() => localStorage.getItem('draft_roll_weight') || '');
   const [gsmStr, setGsmStr] = useState(() => localStorage.getItem('draft_roll_gsm') || '');
   const [widthStr, setWidthStr] = useState(() => localStorage.getItem('draft_roll_width') || '');
-  const [shift, setShift] = useState<'A' | 'B' | 'C'>(() => (localStorage.getItem('draft_roll_shift') as 'A' | 'B' | 'C') || 'A');
+  const [shift, setShift] = useState<'A' | 'B'>(() => (localStorage.getItem('draft_roll_shift') as 'A' | 'B') || 'A');
   const [startTime, setStartTime] = useState(() => localStorage.getItem('draft_roll_start_time') || '08:00');
   const [offTime, setOffTime] = useState(() => localStorage.getItem('draft_roll_off_time') || '16:00');
   const [downtimeReason, setDowntimeReason] = useState(() => localStorage.getItem('draft_roll_downtime') || '');
@@ -252,12 +252,11 @@ export const MachineView: React.FC = () => {
                 </label>
                 <select
                   value={shift}
-                  onChange={e => setShift(e.target.value as 'A' | 'B' | 'C')}
+                  onChange={e => setShift(e.target.value as 'A' | 'B')}
                   className="block w-full py-2.5 px-3.5 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl text-xs font-bold focus:outline-none focus:ring-2 focus:ring-primary dark:text-white cursor-pointer"
                 >
-                  <option value="A">Shift A (08:00 - 16:00)</option>
-                  <option value="B">Shift B (16:00 - 24:00)</option>
-                  <option value="C">Shift C (24:00 - 08:00)</option>
+                  <option value="A">Shift A (Day Shift)</option>
+                  <option value="B">Shift B (Night Shift)</option>
                 </select>
               </div>
             </div>
