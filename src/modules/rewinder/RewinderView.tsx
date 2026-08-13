@@ -229,9 +229,29 @@ export const RewinderView: React.FC = () => {
     setTimeout(cleanup, 2000);
   };
 
+  const [selectedProductFilter, setSelectedProductFilter] = useState('all');
+
   const totalReelsConverted = useMemo(() => reels.length, [reels]);
   const totalReelWeightKg = useMemo(() => reels.reduce((acc, r) => acc + r.weight, 0), [reels]);
   const totalBrokeKg = useMemo(() => reels.reduce((acc, r) => acc + (r.joint * 15), 0), [reels]);
+
+  const netYieldRate = useMemo(() => {
+    if (totalReelWeightKg === 0) return '100.0%';
+    const totalInput = totalReelWeightKg + totalBrokeKg;
+    if (totalInput === 0) return '100.0%';
+    return `${((totalReelWeightKg / totalInput) * 100).toFixed(1)}%`;
+  }, [totalReelWeightKg, totalBrokeKg]);
+
+  const uniqueProducts = useMemo(() => {
+    const set = new Set<string>();
+    reels.forEach(r => { if (r.product) set.add(r.product); });
+    return Array.from(set);
+  }, [reels]);
+
+  const filteredRecentReels = useMemo(() => {
+    if (selectedProductFilter === 'all') return reels;
+    return reels.filter(r => r.product === selectedProductFilter);
+  }, [reels, selectedProductFilter]);
 
   return (
     <div className="space-y-6 font-sans pb-12">
@@ -266,35 +286,45 @@ export const RewinderView: React.FC = () => {
         </div>
       </div>
 
-      {/* 2. TOP METRIC SCORECARDS */}
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-        <div className="bg-white dark:bg-surface-dark border border-slate-200 dark:border-slate-700/80 rounded-3xl p-5 shadow-sm flex items-center gap-4">
+      {/* 2. TOP METRIC SCORECARDS (4 KPI Summary Cards) */}
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3.5">
+        <div className="bg-white dark:bg-surface-dark border border-slate-200 dark:border-slate-700/80 rounded-3xl p-4 sm:p-5 shadow-xs flex items-center gap-3.5">
           <div className="p-3 rounded-2xl bg-indigo-50 dark:bg-indigo-950/40 text-indigo-600 dark:text-indigo-400 border border-indigo-200/60 dark:border-indigo-800/60">
-            <RotateCw className="h-6 w-6" />
+            <RotateCw className="h-5.5 w-5.5" />
           </div>
           <div>
-            <p className="text-xs font-bold text-slate-500 uppercase tracking-wider">Converted Reels</p>
-            <p className="text-2xl font-black text-slate-900 dark:text-white mt-0.5">{totalReelsConverted} <span className="text-xs text-slate-400 font-normal">reels</span></p>
+            <p className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">Converted Reels</p>
+            <p className="text-xl font-black text-slate-900 dark:text-white mt-0.5">{totalReelsConverted} <span className="text-xs text-slate-400 font-normal">reels</span></p>
           </div>
         </div>
 
-        <div className="bg-white dark:bg-surface-dark border border-slate-200 dark:border-slate-700/80 rounded-3xl p-5 shadow-sm flex items-center gap-4">
+        <div className="bg-white dark:bg-surface-dark border border-slate-200 dark:border-slate-700/80 rounded-3xl p-4 sm:p-5 shadow-xs flex items-center gap-3.5">
           <div className="p-3 rounded-2xl bg-emerald-50 dark:bg-emerald-950/40 text-emerald-600 dark:text-emerald-400 border border-emerald-200/60 dark:border-emerald-800/60">
-            <Play className="h-6 w-6" />
+            <Play className="h-5.5 w-5.5" />
           </div>
           <div>
-            <p className="text-xs font-bold text-slate-500 uppercase tracking-wider">Reel Stock Output</p>
-            <p className="text-2xl font-black text-slate-900 dark:text-white mt-0.5">{totalReelWeightKg.toLocaleString()} <span className="text-xs text-slate-400 font-normal">kg</span></p>
+            <p className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">Reel Stock Output</p>
+            <p className="text-xl font-black text-slate-900 dark:text-white mt-0.5">{totalReelWeightKg.toLocaleString()} <span className="text-xs text-slate-400 font-normal">kg</span></p>
           </div>
         </div>
 
-        <div className="bg-white dark:bg-surface-dark border border-slate-200 dark:border-slate-700/80 rounded-3xl p-5 shadow-sm flex items-center gap-4">
+        <div className="bg-white dark:bg-surface-dark border border-slate-200 dark:border-slate-700/80 rounded-3xl p-4 sm:p-5 shadow-xs flex items-center gap-3.5">
           <div className="p-3 rounded-2xl bg-amber-50 dark:bg-amber-950/40 text-amber-600 dark:text-amber-400 border border-amber-200/60 dark:border-amber-800/60">
-            <Printer className="h-6 w-6" />
+            <Printer className="h-5.5 w-5.5" />
           </div>
           <div>
-            <p className="text-xs font-bold text-slate-500 uppercase tracking-wider">Broke Generated</p>
-            <p className="text-2xl font-black text-slate-900 dark:text-white mt-0.5">{totalBrokeKg.toLocaleString()} <span className="text-xs text-slate-400 font-normal">kg</span></p>
+            <p className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">Broke Generated</p>
+            <p className="text-xl font-black text-slate-900 dark:text-white mt-0.5">{totalBrokeKg.toLocaleString()} <span className="text-xs text-slate-400 font-normal">kg</span></p>
+          </div>
+        </div>
+
+        <div className="bg-white dark:bg-surface-dark border border-slate-200 dark:border-slate-700/80 rounded-3xl p-4 sm:p-5 shadow-xs flex items-center gap-3.5">
+          <div className="p-3 rounded-2xl bg-purple-50 dark:bg-purple-950/40 text-purple-600 dark:text-purple-400 border border-purple-200/60 dark:border-purple-800/60">
+            <Scissors className="h-5.5 w-5.5" />
+          </div>
+          <div>
+            <p className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">Net Yield Rate</p>
+            <p className="text-xl font-black text-purple-600 dark:text-purple-400 mt-0.5">{netYieldRate}</p>
           </div>
         </div>
       </div>
@@ -504,18 +534,49 @@ export const RewinderView: React.FC = () => {
 
         {/* Right Side: Logged List (1/3 width) */}
         <div className="bg-white dark:bg-surface-dark border border-slate-200 dark:border-slate-700/80 rounded-3xl p-6 shadow-sm space-y-4">
-          <h3 className="text-xs font-black text-slate-900 dark:text-white uppercase tracking-wider border-b border-slate-100 dark:border-slate-800 pb-3 flex items-center gap-2">
-            <RotateCw className="h-4 w-4 text-primary" />
-            Recent Converted Reels
-          </h3>
+          <div className="space-y-2 border-b border-slate-100 dark:border-slate-800 pb-3">
+            <h3 className="text-xs font-black text-slate-900 dark:text-white uppercase tracking-wider flex items-center gap-2">
+              <RotateCw className="h-4 w-4 text-primary" />
+              Recent Converted Reels ({filteredRecentReels.length})
+            </h3>
+            
+            {/* Product Filter Chips */}
+            <div className="flex items-center gap-1.5 overflow-x-auto pb-1 scrollbar-none">
+              <button
+                type="button"
+                onClick={() => setSelectedProductFilter('all')}
+                className={`px-2.5 py-1 rounded-xl font-extrabold text-[10px] whitespace-nowrap transition cursor-pointer border ${
+                  selectedProductFilter === 'all'
+                    ? 'bg-blue-600 text-white border-blue-600 shadow-2xs'
+                    : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 border-slate-200 dark:border-slate-700 hover:bg-slate-200'
+                }`}
+              >
+                All Papers ({reels.length})
+              </button>
+              {uniqueProducts.map(pName => (
+                <button
+                  key={pName}
+                  type="button"
+                  onClick={() => setSelectedProductFilter(pName)}
+                  className={`px-2.5 py-1 rounded-xl font-extrabold text-[10px] whitespace-nowrap transition cursor-pointer border ${
+                    selectedProductFilter === pName
+                      ? 'bg-blue-600 text-white border-blue-600 shadow-2xs'
+                      : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 border-slate-200 dark:border-slate-700 hover:bg-slate-200'
+                  }`}
+                >
+                  {pName}
+                </button>
+              ))}
+            </div>
+          </div>
 
-          {reels.length === 0 ? (
+          {filteredRecentReels.length === 0 ? (
             <p className="text-xs text-slate-500 dark:text-slate-400 py-6 text-center font-medium">
-              No reels produced yet.
+              No reels match the selected paper type.
             </p>
           ) : (
             <div className="space-y-3 max-h-[480px] overflow-y-auto pr-1">
-              {reels
+              {filteredRecentReels
                 .slice()
                 .sort((a, b) => b.productionDate.localeCompare(a.productionDate))
                 .map(r => (
