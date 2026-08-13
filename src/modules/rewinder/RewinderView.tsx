@@ -67,7 +67,7 @@ export const RewinderView: React.FC = () => {
     runningSize: '1650 mm',
     productName: masterProducts[0]?.name || 'Napkin Tissue',
     gsm: '16',
-    size: '30x30 cm',
+    size: '30 cm',
     ply: '2',
     dia: '900',
     joint: '0',
@@ -553,7 +553,7 @@ export const RewinderView: React.FC = () => {
                     value={reelForm.size}
                     onChange={e => setReelForm({ ...reelForm, size: e.target.value })}
                     className="w-full p-3 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white rounded-xl text-xs font-bold focus:ring-2 focus:ring-blue-500 focus:outline-none"
-                    placeholder="e.g. 30x30 cm"
+                    placeholder="e.g. 30 cm"
                   />
                 </div>
                 <div>
