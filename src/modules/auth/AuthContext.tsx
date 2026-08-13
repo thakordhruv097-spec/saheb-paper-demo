@@ -8,59 +8,11 @@ interface AuthContextType {
   logout: () => void;
   resetPin: (username: string, newPin: string) => Promise<boolean>;
   updateUserProfile: (updatedFields: Partial<User>) => Promise<boolean>;
+  simulateWorkerLogin: (targetUsername: string) => Promise<boolean>;
   hasAccess: (module: string) => boolean;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
-
-// Role to Module permission mapping strictly for 6 Master Roles
-const ROLE_PERMISSIONS: Partial<Record<UserRole, string[]>> = {
-  Admin: [
-    'dashboard',
-    'raw_material_stock',
-    'pulp_mill_operations',
-    'machine_production',
-    'rewinding_reel_conversion',
-    'utilities_etp',
-    'finished_stock_dispatch',
-    'spareparts_management',
-    'monthly_yearly_reporting',
-    'admin_panel_audit',
-    'orders',
-    'lab',
-  ],
-  PlantManager: [
-    'dashboard',
-    'raw_material_stock',
-    'pulp_mill_operations',
-    'machine_production',
-    'rewinding_reel_conversion',
-    'utilities_etp',
-    'finished_stock_dispatch',
-    'spareparts_management',
-    'monthly_yearly_reporting',
-    'admin_panel_audit',
-    'orders',
-    'lab',
-  ],
-  LabOperator: ['dashboard', 'lab'],
-  Shopper: ['dashboard', 'raw_material_stock', 'spareparts_management'],
-  Dispatcher: ['dashboard', 'finished_stock_dispatch', 'rewinding_reel_conversion', 'orders'],
-  Viewer: [
-    'dashboard',
-    'raw_material_stock',
-    'pulp_mill_operations',
-    'machine_production',
-    'rewinding_reel_conversion',
-    'utilities_etp',
-    'finished_stock_dispatch',
-    'spareparts_management',
-    'monthly_yearly_reporting',
-    'admin_panel_audit',
-    'orders',
-    'lab',
-  ],
-};
 
 const SESSION_DURATION_MS = 8 * 60 * 60 * 1000; // 8 hours session expiry window
 
@@ -198,15 +150,62 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     return false;
   };
 
+  const simulateWorkerLogin = async (targetUsername: string): Promise<boolean> => {
+    const users = getUsers();
+    const foundUser = users.find(u => u.username.toLowerCase() === targetUsername.toLowerCase());
+    if (foundUser) {
+      const token = `token_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`;
+      const expiresAt = Date.now() + SESSION_DURATION_MS;
+      const sessionData: SessionData = { token, expiresAt, user: foundUser };
+
+      setUser(foundUser);
+      localStorage.setItem('saheb_session', JSON.stringify(sessionData));
+      localStorage.setItem('saheb_active_user', JSON.stringify(foundUser));
+      addLog('Auth', 'Worker Login Simulated', `Simulated active session for @${foundUser.username} (${foundUser.displayName})`, user?.displayName || 'Admin');
+      return true;
+    }
+    return false;
+  };
+
   const hasAccess = (moduleName: string): boolean => {
     if (!user) return false;
     const userRoles = user.roles && user.roles.length > 0 ? user.roles : [user.role];
-    if (userRoles.includes('Admin')) return true;
+    if (user.role === 'Admin' || user.username === 'admin' || userRoles.includes('Admin')) return true;
 
-    return userRoles.some(rKey => {
-      const permissions = ROLE_PERMISSIONS[rKey] || [];
-      return permissions.includes(moduleName);
-    });
+    // Get user's custom modules assigned strictly via Role Management system
+    const custom = user.customModules && Array.isArray(user.customModules)
+      ? user.customModules
+      : ['dashboard'];
+
+    // Direct match against assigned custom module keys
+    if (custom.includes(moduleName)) return true;
+
+    // Route level access checks for sections that contain sub-modules
+    if (moduleName === 'pulp_mill_operations') return custom.includes('pulp_mill_operations');
+    if (moduleName === 'raw_material_stock') return custom.includes('raw_material_stock');
+    if (moduleName === 'machine_production') return custom.includes('machine_production');
+    if (moduleName === 'rewinding_reel_conversion') return custom.includes('rewinding_reel_conversion');
+    if (moduleName === 'lab') return custom.includes('machine_production') || custom.includes('pulp_mill_operations');
+
+    // Utilities & ETP section: Accessible if ANY of boiler, etp, electricity, or utilities_etp is toggled ON
+    if (moduleName === 'utilities_etp') {
+      return custom.includes('utilities_etp') || custom.includes('boiler') || custom.includes('etp') || custom.includes('electricity');
+    }
+
+    if (moduleName === 'orders') return custom.includes('orders');
+
+    // Finished Stock & Dispatch section route: Accessible if EITHER finished_stock_dispatch (Finish Stock) OR dispatch is toggled ON
+    if (moduleName === 'finished_stock_dispatch') {
+      return custom.includes('finished_stock_dispatch') || custom.includes('dispatch');
+    }
+
+    if (moduleName === 'spareparts_management') return custom.includes('spareparts_management');
+    if (moduleName === 'monthly_yearly_reporting') return custom.includes('monthly_yearly_reporting');
+    if (moduleName === 'admin_panel_audit') return custom.includes('admin_panel_audit') || userRoles.includes('Admin');
+    if (moduleName === 'dashboard') return custom.includes('dashboard');
+
+    // STRICT DENIAL: If a module is NOT enabled in Role Management, DENY ACCESS!
+    return false;
   };
 
   if (loading) {
@@ -218,7 +217,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   }
 
   return (
-    <AuthContext.Provider value={{ user, login, logout, resetPin, updateUserProfile, hasAccess }}>
+    <AuthContext.Provider value={{ user, login, logout, resetPin, updateUserProfile, simulateWorkerLogin, hasAccess }}>
       {children}
     </AuthContext.Provider>
   );

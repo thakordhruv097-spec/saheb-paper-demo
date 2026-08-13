@@ -22,7 +22,7 @@ import {
 const MASTER_ROLES: { key: UserRole; label: string; desc: string; color: string }[] = [
   { key: 'Admin', label: '👑 Admin Owner', desc: 'Full Master System Control', color: 'bg-red-100 text-red-700 dark:bg-red-950/40 dark:text-red-400 border-red-200 dark:border-red-800' },
   { key: 'PlantManager', label: '🏭 Plant Manager', desc: 'Mill Operations & Production', color: 'bg-indigo-100 text-indigo-700 dark:bg-indigo-950/40 dark:text-indigo-400 border-indigo-200 dark:border-indigo-800' },
-  { key: 'LabOperator', label: '🔬 Lab Operator', desc: '14 GSM Profile & QC Testing', color: 'bg-purple-100 text-purple-700 dark:bg-purple-950/40 dark:text-purple-400 border-purple-200 dark:border-purple-800' },
+  { key: 'LabOperator', label: '🥣 Pulper (Pulp Mill)', desc: 'Pulper & Pulp Mill Operations', color: 'bg-purple-100 text-purple-700 dark:bg-purple-950/40 dark:text-purple-400 border-purple-200 dark:border-purple-800' },
   { key: 'Viewer', label: '👁️ Viewer', desc: 'Read-Only System Observer', color: 'bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300 border-slate-200 dark:border-slate-700' },
   { key: 'Shopper', label: '🛒 Shopper (Purchase)', desc: 'Waste Paper & Chemical Purchase', color: 'bg-emerald-100 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-400 border-emerald-200 dark:border-emerald-800' },
   { key: 'Dispatcher', label: '🚚 Dispatcher', desc: 'Reel Stock & Delivery Order', color: 'bg-amber-100 text-amber-700 dark:bg-amber-950/40 dark:text-amber-400 border-amber-200 dark:border-amber-800' },
@@ -40,7 +40,7 @@ const ROLE_COLORS: Record<string, string> = {
 const ROLE_LABELS: Record<string, string> = {
   Admin: '👑 Admin',
   PlantManager: '🏭 Plant Manager',
-  LabOperator: '🔬 Lab Operator',
+  LabOperator: '🥣 Pulper',
   Viewer: '👁️ Viewer',
   Shopper: '🛒 Shopper',
   Dispatcher: '🚚 Dispatcher',

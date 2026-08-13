@@ -23,6 +23,7 @@ import {
   X,
   ChevronDown,
   User,
+  Shield,
   Flame,
   Droplet,
   Lightbulb,
@@ -620,6 +621,17 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
                       >
                         <User className="h-4 w-4 text-primary dark:text-blue-400" />
                         <span>My Profile & Details</span>
+                      </button>
+
+                      <button
+                        onClick={() => {
+                          navigate('/role-management');
+                          setProfileDropdownOpen(false);
+                        }}
+                        className="w-full flex items-center gap-2.5 px-4 py-2.5 text-xs font-bold text-slate-700 dark:text-slate-200 hover:bg-amber-50 dark:hover:bg-slate-700/50 text-left transition border-b border-slate-100 dark:border-slate-700 cursor-pointer"
+                      >
+                        <Shield className="h-4 w-4 text-amber-500" />
+                        <span>Role Management</span>
                       </button>
 
                       {(user.role === 'Admin' || user.role === 'Management') && (

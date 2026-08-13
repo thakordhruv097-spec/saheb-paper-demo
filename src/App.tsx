@@ -27,12 +27,12 @@ import { OperatorProfileView } from './modules/profile/OperatorProfileView';
 import { AdminProfileView } from './modules/profile/AdminProfileView';
 import { useAuth } from './modules/auth/AuthContext';
 
-function ProfileRouteWrapper() {
+function ProfileRouteWrapper({ defaultTab }: { defaultTab?: 'profile' | 'roles' | 'users' }) {
   const { user } = useAuth();
   if (user?.role === 'Admin') {
-    return <AdminProfileView />;
+    return <AdminProfileView defaultTab={defaultTab} />;
   }
-  return <OperatorProfileView />;
+  return <OperatorProfileView defaultTab={defaultTab === 'users' ? 'profile' : defaultTab} />;
 }
 
 // Initialize i18n
@@ -65,6 +65,17 @@ export default function App() {
               <ProtectedRoute moduleName="dashboard">
                 <Layout>
                   <ProfileRouteWrapper />
+                </Layout>
+              </ProtectedRoute>
+            }
+          />
+
+          <Route
+            path="/role-management"
+            element={
+              <ProtectedRoute moduleName="dashboard">
+                <Layout>
+                  <ProfileRouteWrapper defaultTab="roles" />
                 </Layout>
               </ProtectedRoute>
             }

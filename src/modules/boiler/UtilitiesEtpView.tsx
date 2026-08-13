@@ -9,24 +9,41 @@ import { Flame, Droplet, Lightbulb } from 'lucide-react';
 export const UtilitiesEtpView: React.FC = () => {
   const { user } = useAuth();
   const location = useLocation();
-  const showBoilerTab = user?.role !== 'EtpOperator';
-  
+
+  const isUserAdmin = user?.role === 'Admin' || (user?.roles && user.roles.includes('Admin'));
+
+  const canAccessBoiler = isUserAdmin || (user?.customModules && Array.isArray(user.customModules) ? user.customModules.includes('boiler') : true);
+  const canAccessEtp = isUserAdmin || (user?.customModules && Array.isArray(user.customModules) ? user.customModules.includes('etp') : true);
+  const canAccessElectricity = isUserAdmin || (user?.customModules && Array.isArray(user.customModules) ? user.customModules.includes('electricity') : true);
+
   // Read ?tab= query param from URL for bottom-nav deep linking (mobile)
   const getTabFromUrl = (): 'boiler' | 'etp_chemicals' | 'electricity' => {
     const params = new URLSearchParams(location.search);
     const tab = params.get('tab');
-    if (tab === 'etp') return 'etp_chemicals';
-    if (tab === 'electricity') return 'electricity';
-    if (tab === 'boiler' && showBoilerTab) return 'boiler';
-    return user?.role === 'EtpOperator' ? 'etp_chemicals' : 'boiler';
+    if (tab === 'etp' && canAccessEtp) return 'etp_chemicals';
+    if (tab === 'electricity' && canAccessElectricity) return 'electricity';
+    if (tab === 'boiler' && canAccessBoiler) return 'boiler';
+
+    if (canAccessBoiler) return 'boiler';
+    if (canAccessEtp) return 'etp_chemicals';
+    if (canAccessElectricity) return 'electricity';
+    return 'boiler';
   };
 
   const [activeTab, setActiveTab] = useState<'boiler' | 'etp_chemicals' | 'electricity'>(getTabFromUrl);
 
-  // Sync tab when URL query param changes (from bottom nav clicks)
+  // Sync tab when URL query param changes
   useEffect(() => {
     setActiveTab(getTabFromUrl());
   }, [location.search]);
+
+  if (!canAccessBoiler && !canAccessEtp && !canAccessElectricity) {
+    return (
+      <div className="p-8 text-center bg-white dark:bg-surface-dark rounded-2xl border border-red-200 text-red-600 font-bold text-sm">
+        ⚠️ Access Denied: You do not have permission to view Boiler, ETP, or Electricity modules.
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
@@ -44,7 +61,7 @@ export const UtilitiesEtpView: React.FC = () => {
           <div>
             <div className="flex items-center gap-2">
               <h2 className="text-xl sm:text-2xl font-black text-slate-900 dark:text-white tracking-tight">
-                {showBoilerTab ? 'Utilities, Boiler & ETP Management' : 'ETP & Electricity Management'}
+                Utilities, Boiler & ETP Management
               </h2>
               <span className="px-2.5 py-0.5 rounded-full bg-emerald-100 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300 text-[10px] font-extrabold uppercase tracking-wider border border-emerald-300/50 flex items-center gap-1">
                 <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-ping" /> Live Telemetry
@@ -57,9 +74,9 @@ export const UtilitiesEtpView: React.FC = () => {
         </div>
       </div>
 
-      {/* Tab Switcher Headers */}
+      {/* Tab Switcher Headers - Only show tabs user has permission for */}
       <div className="bg-slate-100 dark:bg-slate-800/80 p-1.5 rounded-2xl flex flex-wrap sm:flex-nowrap gap-1.5 border border-slate-200 dark:border-slate-700/80 shadow-inner print:hidden">
-        {showBoilerTab && (
+        {canAccessBoiler && (
           <button
             onClick={() => setActiveTab('boiler')}
             className={`flex-1 min-w-[120px] flex items-center justify-center gap-2 px-5 py-3 rounded-xl text-xs font-extrabold transition-all duration-200 cursor-pointer ${
@@ -73,36 +90,40 @@ export const UtilitiesEtpView: React.FC = () => {
           </button>
         )}
 
-        <button
-          onClick={() => setActiveTab('etp_chemicals')}
-          className={`flex-1 min-w-[120px] flex items-center justify-center gap-2 px-5 py-3 rounded-xl text-xs font-extrabold transition-all duration-200 cursor-pointer ${
-            activeTab === 'etp_chemicals'
-              ? 'bg-gradient-to-r from-blue-600 to-teal-600 text-white shadow-md shadow-blue-500/25 scale-[1.01]'
-              : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-white/60 dark:hover:bg-slate-700/50'
-          }`}
-        >
-          <Droplet className="h-4 w-4" />
-          <span>ETP Water & Chemicals</span>
-        </button>
+        {canAccessEtp && (
+          <button
+            onClick={() => setActiveTab('etp_chemicals')}
+            className={`flex-1 min-w-[120px] flex items-center justify-center gap-2 px-5 py-3 rounded-xl text-xs font-extrabold transition-all duration-200 cursor-pointer ${
+              activeTab === 'etp_chemicals'
+                ? 'bg-gradient-to-r from-blue-600 to-teal-600 text-white shadow-md shadow-blue-500/25 scale-[1.01]'
+                : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-white/60 dark:hover:bg-slate-700/50'
+            }`}
+          >
+            <Droplet className="h-4 w-4" />
+            <span>ETP Water & Chemicals</span>
+          </button>
+        )}
 
-        <button
-          onClick={() => setActiveTab('electricity')}
-          className={`flex-1 min-w-[120px] flex items-center justify-center gap-2 px-5 py-3 rounded-xl text-xs font-extrabold transition-all duration-200 cursor-pointer ${
-            activeTab === 'electricity'
-              ? 'bg-gradient-to-r from-amber-500 to-yellow-600 text-white shadow-md shadow-amber-500/25 scale-[1.01]'
-              : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-white/60 dark:hover:bg-slate-700/50'
-          }`}
-        >
-          <Lightbulb className="h-4 w-4" />
-          <span>Electricity & Power Grid</span>
-        </button>
+        {canAccessElectricity && (
+          <button
+            onClick={() => setActiveTab('electricity')}
+            className={`flex-1 min-w-[120px] flex items-center justify-center gap-2 px-5 py-3 rounded-xl text-xs font-extrabold transition-all duration-200 cursor-pointer ${
+              activeTab === 'electricity'
+                ? 'bg-gradient-to-r from-amber-500 to-yellow-600 text-white shadow-md shadow-amber-500/25 scale-[1.01]'
+                : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:bg-slate-700/50'
+            }`}
+          >
+            <Lightbulb className="h-4 w-4" />
+            <span>Electricity & Power Grid</span>
+          </button>
+        )}
       </div>
 
       {/* RENDER VIEWS */}
       <div className="pt-2">
-        {activeTab === 'boiler' && showBoilerTab && <BoilerView />}
-        {activeTab === 'etp_chemicals' && <EtpView />}
-        {activeTab === 'electricity' && <ElectricityView />}
+        {activeTab === 'boiler' && canAccessBoiler && <BoilerView />}
+        {activeTab === 'etp_chemicals' && canAccessEtp && <EtpView />}
+        {activeTab === 'electricity' && canAccessElectricity && <ElectricityView />}
       </div>
 
     </div>

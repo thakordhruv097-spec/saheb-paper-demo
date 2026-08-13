@@ -26,6 +26,9 @@ export interface User {
   needsPinReset?: boolean;
   securityQuestion?: string;
   securityAnswer?: string;
+  empId?: string;
+  designation?: string;
+  customModules?: string[];
 }
 
 export type RawMaterialCategory =
