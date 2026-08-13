@@ -59,7 +59,7 @@ export const LabView: React.FC = () => {
 
   const [product, setProduct] = useState('NAPKIN');
   const [rollNo, setRollNo] = useState('11');
-  const [shift, setShift] = useState<'A' | 'B' | 'C'>('A');
+  const [shift, setShift] = useState<'A' | 'B'>('A');
   const [time, setTime] = useState('07:50');
   const [targetGsm, setTargetGsm] = useState<number>(16);
   const [weight, setWeight] = useState<number>(500);
@@ -511,7 +511,6 @@ export const LabView: React.FC = () => {
                     >
                       <option value="A">Shift A</option>
                       <option value="B">Shift B</option>
-                      <option value="C">Shift C</option>
                     </select>
                   </div>
 

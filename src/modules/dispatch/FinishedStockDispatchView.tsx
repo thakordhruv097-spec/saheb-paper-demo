@@ -1,15 +1,35 @@
 import React, { useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import { useAuth } from '../auth/AuthContext';
 import { FinishStockView } from '../finish-stock/FinishStockView';
 import { DispatchView } from './DispatchView';
 import { Package, Truck } from 'lucide-react';
 
 export const FinishedStockDispatchView: React.FC = () => {
   const { t } = useTranslation();
-  const [activeTab, setActiveTab] = useState<'stock_category' | 'dispatch_mgmt'>('stock_category');
+  const { user, hasAccess } = useAuth();
+
+  const isUserAdmin = user?.role === 'Admin' || (user?.roles && user.roles.includes('Admin'));
+
+  const canAccessFinishStock = isUserAdmin || (user?.customModules && Array.isArray(user.customModules) ? user.customModules.includes('finished_stock_dispatch') : true);
+  const canAccessDispatch = isUserAdmin || (user?.customModules && Array.isArray(user.customModules) ? user.customModules.includes('dispatch') : true);
+
+  const [activeTab, setActiveTab] = useState<'stock_category' | 'dispatch_mgmt'>(() => {
+    if (canAccessFinishStock) return 'stock_category';
+    if (canAccessDispatch) return 'dispatch_mgmt';
+    return 'stock_category';
+  });
+
+  if (!canAccessFinishStock && !canAccessDispatch) {
+    return (
+      <div className="p-8 text-center bg-white dark:bg-surface-dark rounded-2xl border border-red-200 text-red-600 font-bold text-sm">
+        ⚠️ Access Denied: You do not have permission to view Finish Stock or Dispatch modules.
+      </div>
+    );
+  }
 
   return (
-    <div className="space-y-4 font-sans pb-12 w-full">
+    <div className="space-y-4 font-sans pb-12 w-full text-left">
       
       {/* 1. COMPACT SLEEK BANNER HEADER */}
       <div className="bg-gradient-to-r from-blue-700 via-indigo-700 to-slate-900 rounded-2xl p-4 sm:p-5 text-white shadow-md relative overflow-hidden">
@@ -32,35 +52,39 @@ export const FinishedStockDispatchView: React.FC = () => {
 
       {/* 2. MODERN SLEEK TAB SWITCHER */}
       <div className="flex items-center gap-2 bg-white dark:bg-surface-dark p-1.5 rounded-xl border border-slate-200 dark:border-slate-700/80 shadow-xs w-full">
-        <button
-          onClick={() => setActiveTab('stock_category')}
-          className={`flex-1 px-4 py-2.5 rounded-lg font-extrabold text-xs transition cursor-pointer flex items-center justify-center gap-2 ${
-            activeTab === 'stock_category'
-              ? 'bg-primary text-white shadow-xs'
-              : 'text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800'
-          }`}
-        >
-          <Package className="h-4 w-4" />
-          <span>Stock Categorization</span>
-        </button>
+        {canAccessFinishStock && (
+          <button
+            onClick={() => setActiveTab('stock_category')}
+            className={`flex-1 px-4 py-2.5 rounded-lg font-extrabold text-xs transition cursor-pointer flex items-center justify-center gap-2 ${
+              activeTab === 'stock_category'
+                ? 'bg-primary text-white shadow-xs'
+                : 'text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800'
+            }`}
+          >
+            <Package className="h-4 w-4" />
+            <span>Stock Categorization</span>
+          </button>
+        )}
 
-        <button
-          onClick={() => setActiveTab('dispatch_mgmt')}
-          className={`flex-1 px-4 py-2.5 rounded-lg font-extrabold text-xs transition cursor-pointer flex items-center justify-center gap-2 ${
-            activeTab === 'dispatch_mgmt'
-              ? 'bg-blue-600 text-white shadow-xs'
-              : 'text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800'
-          }`}
-        >
-          <Truck className="h-4 w-4" />
-          <span>Dispatch Management</span>
-        </button>
+        {canAccessDispatch && (
+          <button
+            onClick={() => setActiveTab('dispatch_mgmt')}
+            className={`flex-1 px-4 py-2.5 rounded-lg font-extrabold text-xs transition cursor-pointer flex items-center justify-center gap-2 ${
+              activeTab === 'dispatch_mgmt'
+                ? 'bg-blue-600 text-white shadow-xs'
+                : 'text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800'
+            }`}
+          >
+            <Truck className="h-4 w-4" />
+            <span>Dispatch Management</span>
+          </button>
+        )}
       </div>
 
       {/* 3. RENDER VIEWS */}
       <div className="pt-1">
-        {activeTab === 'stock_category' && <FinishStockView hideHeader={true} />}
-        {activeTab === 'dispatch_mgmt' && <DispatchView initialTab="create_slip" hideTabs={false} hideHeader={true} />}
+        {activeTab === 'stock_category' && canAccessFinishStock && <FinishStockView hideHeader={true} />}
+        {activeTab === 'dispatch_mgmt' && canAccessDispatch && <DispatchView initialTab="create_slip" hideTabs={false} hideHeader={true} />}
       </div>
 
     </div>

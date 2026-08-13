@@ -33,6 +33,18 @@ html, body, #root {
   min-height: 100vh;
 }
 
+/* Remove native number input up/down count spinner arrows globally across the full demo */
+input[type="number"]::-webkit-inner-spin-button,
+input[type="number"]::-webkit-outer-spin-button {
+  -webkit-appearance: none !important;
+  margin: 0 !important;
+}
+
+input[type="number"] {
+  -moz-appearance: textfield !important;
+  appearance: textfield !important;
+}
+
 /* Custom scrollbars */
 ::-webkit-scrollbar {
   width: 6px;
@@ -48,6 +60,161 @@ html, body, #root {
 ::-webkit-scrollbar-thumb:hover {
   background: rgba(100, 116, 139, 0.4);
 }
+
+/* ==========================================================================
+   CUSTOM REDESIGNED SCROLLBAR (EXCLUSIVE TO DASHBOARD PAGE)
+   Dynamically adapts track & border colors based on Light / Dark theme
+   ========================================================================== */
+
+/* Hide native scroll arrows (▲ / ▼ buttons) in all themes */
+.dashboard-main-scrollbar::-webkit-scrollbar-button,
+.dashboard-active::-webkit-scrollbar-button,
+body.dashboard-active::-webkit-scrollbar-button,
+html.dashboard-active::-webkit-scrollbar-button,
+.dashboard-custom-scrollbar::-webkit-scrollbar-button {
+  display: none !important;
+  width: 0 !important;
+  height: 0 !important;
+}
+
+/* Dimensions */
+.dashboard-main-scrollbar::-webkit-scrollbar,
+.dashboard-active::-webkit-scrollbar,
+body.dashboard-active::-webkit-scrollbar,
+html.dashboard-active::-webkit-scrollbar {
+  width: 9px;
+  height: 9px;
+}
+
+.dashboard-custom-scrollbar::-webkit-scrollbar {
+  width: 7px;
+  height: 7px;
+}
+
+/* --------------------------------------------------------------------------
+   LIGHT MODE STYLES (Default / html:not(.dark))
+   -------------------------------------------------------------------------- */
+.dashboard-main-scrollbar {
+  scrollbar-width: thin;
+  scrollbar-color: #0F52BA #f1f5f9;
+}
+
+.dashboard-custom-scrollbar {
+  scrollbar-width: thin;
+  scrollbar-color: #0F52BA #f1f5f9;
+}
+
+/* Light Track (Matches Light Theme Background) */
+.dashboard-main-scrollbar::-webkit-scrollbar-track,
+.dashboard-active::-webkit-scrollbar-track,
+body.dashboard-active::-webkit-scrollbar-track,
+html.dashboard-active::-webkit-scrollbar-track,
+.dashboard-main-scrollbar::-webkit-scrollbar-track-piece,
+.dashboard-active::-webkit-scrollbar-track-piece,
+.dashboard-custom-scrollbar::-webkit-scrollbar-track,
+.dashboard-custom-scrollbar::-webkit-scrollbar-track-piece {
+  background: #f1f5f9 !important;
+  border-radius: 0 !important;
+}
+
+.dashboard-main-scrollbar::-webkit-scrollbar-corner,
+.dashboard-active::-webkit-scrollbar-corner,
+body.dashboard-active::-webkit-scrollbar-corner,
+html.dashboard-active::-webkit-scrollbar-corner,
+.dashboard-custom-scrollbar::-webkit-scrollbar-corner {
+  background: #f1f5f9 !important;
+}
+
+/* Light Thumb (Blue pill with light matching border) */
+.dashboard-main-scrollbar::-webkit-scrollbar-thumb,
+.dashboard-active::-webkit-scrollbar-thumb,
+body.dashboard-active::-webkit-scrollbar-thumb,
+html.dashboard-active::-webkit-scrollbar-thumb,
+.dashboard-custom-scrollbar::-webkit-scrollbar-thumb {
+  background: linear-gradient(180deg, #0F52BA 0%, #2563EB 100%) !important;
+  border-radius: 9999px !important;
+  border: 1.5px solid #f1f5f9 !important;
+  background-clip: padding-box !important;
+  box-shadow: 0 0 6px rgba(15, 82, 186, 0.3);
+}
+
+.dashboard-main-scrollbar::-webkit-scrollbar-thumb:hover,
+.dashboard-active::-webkit-scrollbar-thumb:hover,
+body.dashboard-active::-webkit-scrollbar-thumb:hover,
+html.dashboard-active::-webkit-scrollbar-thumb:hover,
+.dashboard-custom-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: linear-gradient(180deg, #1D4ED8 0%, #3B82F6 100%) !important;
+  box-shadow: 0 0 10px rgba(37, 99, 235, 0.5);
+}
+
+/* --------------------------------------------------------------------------
+   DARK MODE STYLES (html.dark / .dark)
+   -------------------------------------------------------------------------- */
+.dark .dashboard-main-scrollbar,
+html.dark .dashboard-main-scrollbar,
+html.dark.dashboard-active {
+  scrollbar-width: thin;
+  scrollbar-color: #0F52BA #0b1329;
+}
+
+.dark .dashboard-custom-scrollbar {
+  scrollbar-width: thin;
+  scrollbar-color: #0F52BA #0b1329;
+}
+
+/* Dark Track (Matches Dark Theme Background) */
+.dark .dashboard-main-scrollbar::-webkit-scrollbar-track,
+.dark.dashboard-active::-webkit-scrollbar-track,
+.dark body.dashboard-active::-webkit-scrollbar-track,
+.dark html.dashboard-active::-webkit-scrollbar-track,
+html.dark .dashboard-main-scrollbar::-webkit-scrollbar-track,
+html.dark body.dashboard-active::-webkit-scrollbar-track,
+html.dark html.dashboard-active::-webkit-scrollbar-track,
+.dark .dashboard-main-scrollbar::-webkit-scrollbar-track-piece,
+.dark .dashboard-active::-webkit-scrollbar-track-piece,
+.dark body.dashboard-active::-webkit-scrollbar-track-piece,
+.dark html.dashboard-active::-webkit-scrollbar-track-piece,
+.dark .dashboard-custom-scrollbar::-webkit-scrollbar-track,
+.dark .dashboard-custom-scrollbar::-webkit-scrollbar-track-piece {
+  background: #0b1329 !important;
+  border-radius: 0 !important;
+}
+
+.dark .dashboard-main-scrollbar::-webkit-scrollbar-corner,
+.dark.dashboard-active::-webkit-scrollbar-corner,
+.dark body.dashboard-active::-webkit-scrollbar-corner,
+.dark html.dashboard-active::-webkit-scrollbar-corner,
+html.dark .dashboard-main-scrollbar::-webkit-scrollbar-corner,
+.dark .dashboard-custom-scrollbar::-webkit-scrollbar-corner {
+  background: #0b1329 !important;
+}
+
+/* Dark Thumb (Blue pill with dark matching border) */
+.dark .dashboard-main-scrollbar::-webkit-scrollbar-thumb,
+.dark.dashboard-active::-webkit-scrollbar-thumb,
+.dark body.dashboard-active::-webkit-scrollbar-thumb,
+.dark html.dashboard-active::-webkit-scrollbar-thumb,
+html.dark .dashboard-main-scrollbar::-webkit-scrollbar-thumb,
+html.dark body.dashboard-active::-webkit-scrollbar-thumb,
+html.dark html.dashboard-active::-webkit-scrollbar-thumb,
+.dark .dashboard-custom-scrollbar::-webkit-scrollbar-thumb {
+  background: linear-gradient(180deg, #0F52BA 0%, #2563EB 100%) !important;
+  border-radius: 9999px !important;
+  border: 1.5px solid #0b1329 !important;
+  background-clip: padding-box !important;
+  box-shadow: 0 0 8px rgba(15, 82, 186, 0.4);
+}
+
+.dark .dashboard-main-scrollbar::-webkit-scrollbar-thumb:hover,
+.dark.dashboard-active::-webkit-scrollbar-thumb:hover,
+.dark body.dashboard-active::-webkit-scrollbar-thumb:hover,
+.dark html.dashboard-active::-webkit-scrollbar-thumb:hover,
+html.dark .dashboard-main-scrollbar::-webkit-scrollbar-thumb:hover,
+.dark .dashboard-custom-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: linear-gradient(180deg, #1D4ED8 0%, #3B82F6 100%) !important;
+  box-shadow: 0 0 12px rgba(37, 99, 235, 0.6);
+}
+
 
 /* Print Layout & Thermal Label Styles */
 @media print {

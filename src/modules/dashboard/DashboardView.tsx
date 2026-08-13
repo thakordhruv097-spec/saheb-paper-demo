@@ -53,6 +53,16 @@ export const DashboardView: React.FC = () => {
   const [refreshKey, setRefreshKey] = useState(0);
   const [isRefreshing, setIsRefreshing] = useState(false);
 
+  // Dynamically apply dashboard-active scrollbar styling only when DashboardView is mounted
+  useEffect(() => {
+    document.body.classList.add('dashboard-active');
+    document.documentElement.classList.add('dashboard-active');
+    return () => {
+      document.body.classList.remove('dashboard-active');
+      document.documentElement.classList.remove('dashboard-active');
+    };
+  }, []);
+
   // Re-sync data when selectedDate or timeframe changes
   useEffect(() => {
     setIsRefreshing(true);
@@ -355,7 +365,7 @@ export const DashboardView: React.FC = () => {
                 </button>
               </div>
 
-              <div className="overflow-x-auto rounded-xl border border-slate-200 dark:border-slate-700/80 shadow-xs">
+              <div className="overflow-x-auto rounded-xl border border-slate-200 dark:border-slate-700/80 shadow-xs dashboard-custom-scrollbar">
                 <table className="w-full text-left text-xs border-collapse">
                   <thead>
                     <tr className="bg-slate-50 dark:bg-slate-800/80 text-slate-600 dark:text-slate-300 border-b border-slate-200 dark:border-slate-700">
@@ -1032,13 +1042,11 @@ export const DashboardView: React.FC = () => {
           const filteredRolls = rolls.filter(r => isDateInFilter(r.date));
           const shiftAWeight = filteredRolls.filter(r => r.shift === 'A').reduce((sum, r) => sum + r.weight, 0);
           const shiftBWeight = filteredRolls.filter(r => r.shift === 'B').reduce((sum, r) => sum + r.weight, 0);
-          const shiftCWeight = filteredRolls.filter(r => r.shift === 'C').reduce((sum, r) => sum + r.weight, 0);
-          const totalWeight = shiftAWeight + shiftBWeight + shiftCWeight || 1;
+          const totalWeight = shiftAWeight + shiftBWeight || 1;
 
           return [
-            { shift: 'Shift A (Morning)', weight: shiftAWeight, rollsCount: filteredRolls.filter(r => r.shift === 'A').length, pct: Math.round((shiftAWeight / totalWeight) * 100), color: 'bg-amber-500', badgeClass: 'bg-amber-100 text-amber-800 dark:bg-amber-950/60 dark:text-amber-300' },
-            { shift: 'Shift B (Evening)', weight: shiftBWeight, rollsCount: filteredRolls.filter(r => r.shift === 'B').length, pct: Math.round((shiftBWeight / totalWeight) * 100), color: 'bg-blue-500', badgeClass: 'bg-blue-100 text-blue-800 dark:bg-blue-950/60 dark:text-blue-300' },
-            { shift: 'Shift C (Night)', weight: shiftCWeight, rollsCount: filteredRolls.filter(r => r.shift === 'C').length, pct: Math.round((shiftCWeight / totalWeight) * 100), color: 'bg-purple-500', badgeClass: 'bg-purple-100 text-purple-800 dark:bg-purple-950/60 dark:text-purple-300' },
+            { shift: 'Shift A (Day)', weight: shiftAWeight, rollsCount: filteredRolls.filter(r => r.shift === 'A').length, pct: Math.round((shiftAWeight / totalWeight) * 100), color: 'bg-amber-500', badgeClass: 'bg-amber-100 text-amber-800 dark:bg-amber-950/60 dark:text-amber-300' },
+            { shift: 'Shift B (Night)', weight: shiftBWeight, rollsCount: filteredRolls.filter(r => r.shift === 'B').length, pct: Math.round((shiftBWeight / totalWeight) * 100), color: 'bg-blue-500', badgeClass: 'bg-blue-100 text-blue-800 dark:bg-blue-950/60 dark:text-blue-300' },
           ];
         })();
 
@@ -1055,22 +1063,23 @@ export const DashboardView: React.FC = () => {
                     <h2 className="text-2xl sm:text-3xl font-extrabold tracking-tight">
                       Welcome back, {user?.displayName || 'Admin'}
                     </h2>
-                    <span className="block md:hidden px-3 py-1 rounded-full bg-white/20 dark:bg-white/10 backdrop-blur-md text-[11px] font-extrabold tracking-wider text-white border border-white/30 shadow-xs shrink-0">
-                      {new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'short', day: 'numeric', year: 'numeric' })}
+                    <span className="hidden sm:inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-white/20 dark:bg-white/10 backdrop-blur-md text-[11px] font-extrabold tracking-wider text-white border border-white/30 shadow-xs shrink-0">
+                      <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
+                      Mill Operations Live
                     </span>
                   </div>
                   <p className="text-xs sm:text-sm text-blue-100/90 font-medium mt-1">
-                    Here's your Saheb Paper mill performance overview
+                    Real-time Saheb Paper production telemetry, stock reserves & dispatch status
                   </p>
                 </div>
 
                 <div className="flex items-center gap-2 self-start sm:self-auto">
                   <button
                     onClick={() => navigate('/monthly-yearly-reporting')}
-                    className="px-4 py-2 bg-white/15 hover:bg-white/25 text-white backdrop-blur-md rounded-xl text-xs font-bold transition flex items-center gap-1.5 cursor-pointer border border-white/20"
+                    className="px-4 py-2 bg-white/15 hover:bg-white/25 text-white backdrop-blur-md rounded-xl text-xs font-bold transition flex items-center gap-1.5 cursor-pointer border border-white/20 shadow-xs"
                   >
                     <Download className="h-3.5 w-3.5" />
-                    <span>Export</span>
+                    <span>Export Analytics</span>
                   </button>
                   <button
                     onClick={handleRefresh}
@@ -1084,26 +1093,38 @@ export const DashboardView: React.FC = () => {
 
               <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 relative z-10">
                 <div className="bg-white/10 backdrop-blur-md border border-white/20 rounded-2xl p-4 transition-all duration-300 hover:bg-white/20 hover:border-white/40 hover:-translate-y-1 hover:shadow-xl cursor-pointer group">
-                  <div className="text-xs font-medium text-blue-100 group-hover:text-white transition">Today's Output</div>
-                  <div className="text-xl sm:text-2xl font-black group-hover:scale-105 transition-transform origin-left">{todayProductionKg > 0 ? `${todayProductionKg.toLocaleString()} kg` : '2,140 kg'}</div>
+                  <div className="flex items-center justify-between text-xs font-medium text-blue-100 group-hover:text-white transition">
+                    <span>Today's Output</span>
+                    <Factory className="h-4 w-4 text-blue-200 group-hover:scale-110 transition-transform" />
+                  </div>
+                  <div className="text-xl sm:text-2xl font-black group-hover:scale-105 transition-transform origin-left mt-1">{todayProductionKg > 0 ? `${todayProductionKg.toLocaleString()} kg` : '2,140 kg'}</div>
                   <div className="text-[11px] text-emerald-300 font-semibold mt-1 flex items-center gap-0.5"><ArrowUpRight className="h-3 w-3 group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-transform" /> +12% vs yesterday</div>
                 </div>
 
                 <div className="bg-white/10 backdrop-blur-md border border-white/20 rounded-2xl p-4 transition-all duration-300 hover:bg-white/20 hover:border-white/40 hover:-translate-y-1 hover:shadow-xl cursor-pointer group">
-                  <div className="text-xs font-medium text-blue-100 group-hover:text-white transition">Active Stock</div>
-                  <div className="text-xl sm:text-2xl font-black group-hover:scale-105 transition-transform origin-left">{totalInStockReels} reels</div>
+                  <div className="flex items-center justify-between text-xs font-medium text-blue-100 group-hover:text-white transition">
+                    <span>Active Stock</span>
+                    <Warehouse className="h-4 w-4 text-blue-200 group-hover:scale-110 transition-transform" />
+                  </div>
+                  <div className="text-xl sm:text-2xl font-black group-hover:scale-105 transition-transform origin-left mt-1">{totalInStockReels} reels</div>
                   <div className="text-[11px] text-emerald-300 font-semibold mt-1 flex items-center gap-0.5"><ArrowUpRight className="h-3 w-3 group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-transform" /> +8% vs yesterday</div>
                 </div>
 
                 <div className="bg-white/10 backdrop-blur-md border border-white/20 rounded-2xl p-4 transition-all duration-300 hover:bg-white/20 hover:border-white/40 hover:-translate-y-1 hover:shadow-xl cursor-pointer group">
-                  <div className="text-xs font-medium text-blue-100 group-hover:text-white transition">Dispatched Today</div>
-                  <div className="text-xl sm:text-2xl font-black group-hover:scale-105 transition-transform origin-left">{dispatchedWeightKg > 0 ? `${dispatchedWeightKg.toLocaleString()} kg` : '4,280 kg'}</div>
+                  <div className="flex items-center justify-between text-xs font-medium text-blue-100 group-hover:text-white transition">
+                    <span>Dispatched Today</span>
+                    <Truck className="h-4 w-4 text-blue-200 group-hover:scale-110 transition-transform" />
+                  </div>
+                  <div className="text-xl sm:text-2xl font-black group-hover:scale-105 transition-transform origin-left mt-1">{dispatchedWeightKg > 0 ? `${dispatchedWeightKg.toLocaleString()} kg` : '4,280 kg'}</div>
                   <div className="text-[11px] text-emerald-300 font-semibold mt-1 flex items-center gap-0.5"><ArrowUpRight className="h-3 w-3 group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-transform" /> +18% vs yesterday</div>
                 </div>
 
                 <div className="bg-white/10 backdrop-blur-md border border-white/20 rounded-2xl p-4 transition-all duration-300 hover:bg-white/20 hover:border-white/40 hover:-translate-y-1 hover:shadow-xl cursor-pointer group" title={`Production: ${todayProductionKg} kg | Broke/Wastage: ${brokeWeightKg} kg | Efficiency: ${operatingYieldPct}%`}>
-                  <div className="text-xs font-medium text-blue-100 group-hover:text-white transition">Production Efficiency</div>
-                  <div className="text-xl sm:text-2xl font-black group-hover:scale-105 transition-transform origin-left">{operatingYieldPct}%</div>
+                  <div className="flex items-center justify-between text-xs font-medium text-blue-100 group-hover:text-white transition">
+                    <span>Production Efficiency</span>
+                    <CheckCircle2 className="h-4 w-4 text-blue-200 group-hover:scale-110 transition-transform" />
+                  </div>
+                  <div className="text-xl sm:text-2xl font-black group-hover:scale-105 transition-transform origin-left mt-1">{operatingYieldPct}%</div>
                   <div className="text-[11px] text-emerald-300 font-semibold mt-1 flex items-center gap-0.5"><ArrowUpRight className="h-3 w-3 group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-transform" /> {brokeWeightKg > 0 ? `Broke: ${brokeWeightKg.toLocaleString()} kg` : 'Optimal Output'}</div>
                 </div>
               </div>
@@ -1112,7 +1133,7 @@ export const DashboardView: React.FC = () => {
 
 
             {/* 3. MIDDLE SECTION: PRODUCTION ANALYTICS & LIVE ACTIVITY STREAM */}
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 items-stretch">
               <div className="lg:col-span-2 bg-white dark:bg-surface-dark border border-slate-200 dark:border-slate-700 rounded-2xl p-6 shadow-sm space-y-5">
                 <div className="flex items-center justify-between border-b pb-4 dark:border-slate-700">
                   <div>
@@ -1190,8 +1211,8 @@ export const DashboardView: React.FC = () => {
                 </div>
               </div>
 
-              <div className="bg-white dark:bg-surface-dark border border-slate-200 dark:border-slate-700 rounded-3xl p-6 shadow-lg space-y-5 flex flex-col">
-                <div className="border-b pb-4 dark:border-slate-700">
+              <div className="bg-white dark:bg-surface-dark border border-slate-200 dark:border-slate-700 rounded-3xl p-6 shadow-lg flex flex-col space-y-5">
+                <div className="border-b pb-4 dark:border-slate-700 shrink-0">
                   <div className="flex items-center gap-3">
                     <div className="p-2.5 rounded-2xl bg-blue-50 dark:bg-blue-950/40 text-primary dark:text-blue-400">
                       <Activity className="h-6 w-6" />
@@ -1206,7 +1227,7 @@ export const DashboardView: React.FC = () => {
                 </div>
 
                 {/* Category Filter Pills */}
-                <div className="flex flex-wrap gap-1.5">
+                <div className="flex flex-wrap gap-1.5 shrink-0">
                   {(['all', 'boiler', 'production', 'dispatch', 'system'] as const).map(cat => (
                     <button
                       key={cat}
@@ -1222,8 +1243,11 @@ export const DashboardView: React.FC = () => {
                   ))}
                 </div>
 
-                {/* Stream Feed */}
-                <div className="space-y-3 flex-1 max-h-[380px] overflow-y-auto pr-1">
+                {/* Stream Feed - Dynamic max height based on period */}
+                <div
+                  className="space-y-3 flex-1 min-h-0 overflow-y-auto pr-1.5 transition-all duration-300 dashboard-custom-scrollbar"
+                  style={{ maxHeight: period === 'month' ? '250px' : '440px' }}
+                >
                   {unifiedActivityStream.length === 0 ? (
                     <div className="py-10 text-center space-y-2 border border-dashed border-slate-200 dark:border-slate-700 rounded-2xl">
                       <Activity className="h-8 w-8 text-slate-300 mx-auto" />
@@ -1267,10 +1291,10 @@ export const DashboardView: React.FC = () => {
               </div>
             </div>
 
-            {/* 4. QUICK ACTIONS & TOP CUSTOMERS SECTION */}
+            {/* 4. QUICK ACTIONS & COMPLEMENTARY MILL METRICS SECTION */}
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
 
-
+              {/* 1. Shift Output Allocation */}
               <div className="bg-white dark:bg-surface-dark border border-slate-200 dark:border-slate-700 rounded-3xl p-6 shadow-sm space-y-4">
                 <div className="flex items-center justify-between border-b pb-3 dark:border-slate-700">
                   <div className="flex items-center gap-2.5">
@@ -1281,7 +1305,7 @@ export const DashboardView: React.FC = () => {
                       <h3 className="text-base font-extrabold text-slate-900 dark:text-white">
                         Shift Output Allocation
                       </h3>
-                      <p className="text-[11px] text-slate-400 font-medium">Production split across Shift A, B & C for {selectedDate}</p>
+                      <p className="text-[11px] text-slate-400 font-medium">Production split across Shift A & B for {selectedDate}</p>
                     </div>
                   </div>
                   <span className="px-2.5 py-1 rounded-full bg-slate-100 dark:bg-slate-800 text-[10px] font-black text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-slate-700 font-mono">
@@ -1290,28 +1314,331 @@ export const DashboardView: React.FC = () => {
                 </div>
 
                 <div className="space-y-3">
-                  {shiftOutputBreakdown.map(s => (
-                    <div key={s.shift} className="p-3.5 rounded-2xl bg-slate-50/70 dark:bg-slate-900/60 border border-slate-200/60 dark:border-slate-800 space-y-2">
+                  {/* Item 1: Shift A */}
+                  <div className="p-3.5 rounded-2xl bg-slate-50/70 dark:bg-slate-900/60 border border-slate-200/60 dark:border-slate-800 space-y-2">
+                    <div className="flex items-center justify-between text-xs">
+                      <div className="flex items-center gap-2">
+                        <span className="px-2 py-0.5 rounded-md text-[10px] font-black uppercase tracking-wider bg-amber-100 text-amber-800 dark:bg-amber-950/60 dark:text-amber-300">
+                          Shift A (Day)
+                        </span>
+                        <span className="font-bold text-slate-700 dark:text-slate-300">
+                          {shiftOutputBreakdown[0]?.rollsCount || 0} rolls produced
+                        </span>
+                      </div>
+                      <span className="font-mono font-black text-slate-900 dark:text-white">
+                        {(shiftOutputBreakdown[0]?.weight || 0).toLocaleString()} kg ({shiftOutputBreakdown[0]?.pct || 0}%)
+                      </span>
+                    </div>
+                    <div className="w-full bg-slate-200/70 dark:bg-slate-800 h-2.5 rounded-full overflow-hidden">
+                      <div className="bg-amber-500 h-full rounded-full transition-all duration-500" style={{ width: `${shiftOutputBreakdown[0]?.pct || 0}%` }} />
+                    </div>
+                  </div>
+
+                  {/* Item 2: Shift B */}
+                  <div className="p-3.5 rounded-2xl bg-slate-50/70 dark:bg-slate-900/60 border border-slate-200/60 dark:border-slate-800 space-y-2">
+                    <div className="flex items-center justify-between text-xs">
+                      <div className="flex items-center gap-2">
+                        <span className="px-2 py-0.5 rounded-md text-[10px] font-black uppercase tracking-wider bg-blue-100 text-blue-800 dark:bg-blue-950/60 dark:text-blue-300">
+                          Shift B (Night)
+                        </span>
+                        <span className="font-bold text-slate-700 dark:text-slate-300">
+                          {shiftOutputBreakdown[1]?.rollsCount || 0} rolls produced
+                        </span>
+                      </div>
+                      <span className="font-mono font-black text-slate-900 dark:text-white">
+                        {(shiftOutputBreakdown[1]?.weight || 0).toLocaleString()} kg ({shiftOutputBreakdown[1]?.pct || 0}%)
+                      </span>
+                    </div>
+                    <div className="w-full bg-slate-200/70 dark:bg-slate-800 h-2.5 rounded-full overflow-hidden">
+                      <div className="bg-blue-500 h-full rounded-full transition-all duration-500" style={{ width: `${shiftOutputBreakdown[1]?.pct || 0}%` }} />
+                    </div>
+                  </div>
+
+                  {/* Item 3: Total Output Summary */}
+                  <div className="p-3.5 rounded-2xl bg-slate-50/70 dark:bg-slate-900/60 border border-slate-200/60 dark:border-slate-800 space-y-2">
+                    <div className="flex items-center justify-between text-xs">
+                      <div className="flex items-center gap-2">
+                        <span className="px-2 py-0.5 rounded-md text-[10px] font-black uppercase tracking-wider bg-emerald-100 text-emerald-800 dark:bg-emerald-950/60 dark:text-emerald-300">
+                          Total Output
+                        </span>
+                        <span className="font-bold text-slate-700 dark:text-slate-300">
+                          {(shiftOutputBreakdown.reduce((sum, s) => sum + s.rollsCount, 0))} rolls total
+                        </span>
+                      </div>
+                      <span className="font-mono font-black text-slate-900 dark:text-white">
+                        {(shiftOutputBreakdown.reduce((sum, s) => sum + s.weight, 0)).toLocaleString()} kg (100%)
+                      </span>
+                    </div>
+                    <div className="w-full bg-slate-200/70 dark:bg-slate-800 h-2.5 rounded-full overflow-hidden">
+                      <div className="bg-emerald-500 h-full rounded-full transition-all duration-500" style={{ width: '100%' }} />
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* 2. Raw Material & Inventory Health */}
+              <div className="bg-white dark:bg-surface-dark border border-slate-200 dark:border-slate-700 rounded-3xl p-6 shadow-sm space-y-4">
+                <div className="flex items-center justify-between border-b pb-3 dark:border-slate-700">
+                  <div className="flex items-center gap-2.5">
+                    <div className="p-2 rounded-xl bg-emerald-100 dark:bg-emerald-950/50 text-emerald-600 dark:text-emerald-400">
+                      <Warehouse className="h-5 w-5" />
+                    </div>
+                    <div>
+                      <h3 className="text-base font-extrabold text-slate-900 dark:text-white">
+                        Raw Material Stock
+                      </h3>
+                      <p className="text-[11px] text-slate-400 font-medium">Waste paper & chemical reserves</p>
+                    </div>
+                  </div>
+                  <span className="px-2.5 py-1 rounded-full bg-emerald-100 dark:bg-emerald-950/80 text-emerald-700 dark:text-emerald-300 text-[10px] font-black uppercase tracking-wider">
+                    LIVE STOCK
+                  </span>
+                </div>
+
+                <div className="space-y-3">
+                  {/* Waste Paper Stock */}
+                  <div className="p-3.5 rounded-2xl bg-slate-50/70 dark:bg-slate-900/60 border border-slate-200/60 dark:border-slate-800 space-y-2">
+                    <div className="flex items-center justify-between text-xs">
+                      <div className="flex items-center gap-2">
+                        <span className="px-2 py-0.5 rounded-md text-[10px] font-black uppercase tracking-wider bg-emerald-100 dark:bg-emerald-950/80 text-emerald-700 dark:text-emerald-300">
+                          Waste Paper
+                        </span>
+                        <span className="font-bold text-slate-700 dark:text-slate-300 truncate max-w-[120px]">
+                          {materials.filter(m => m.category === 'WASTE_PAPER')[0]?.name || 'Kraft Waste Mix'}
+                        </span>
+                      </div>
+                      <span className="font-mono font-black text-slate-900 dark:text-white">
+                        {((materials.filter(m => m.category === 'WASTE_PAPER').reduce((a, b) => a + b.stock, 0)) / 1000).toFixed(1)} Tons
+                      </span>
+                    </div>
+                    <div className="w-full bg-slate-200/70 dark:bg-slate-800 h-2.5 rounded-full overflow-hidden">
+                      <div className="bg-emerald-500 h-full rounded-full transition-all duration-500" style={{ width: '78%' }} />
+                    </div>
+                  </div>
+
+                  {/* Chemical Stock */}
+                  <div className="p-3.5 rounded-2xl bg-slate-50/70 dark:bg-slate-900/60 border border-slate-200/60 dark:border-slate-800 space-y-2">
+                    <div className="flex items-center justify-between text-xs">
+                      <div className="flex items-center gap-2">
+                        <span className="px-2 py-0.5 rounded-md text-[10px] font-black uppercase tracking-wider bg-blue-100 dark:bg-blue-950/80 text-blue-700 dark:text-blue-300">
+                          Chemicals
+                        </span>
+                        <span className="font-bold text-slate-700 dark:text-slate-300 truncate max-w-[120px]">
+                          Starch & Additives
+                        </span>
+                      </div>
+                      <span className="font-mono font-black text-slate-900 dark:text-white">
+                        {((materials.filter(m => m.category === 'CHEMICAL').reduce((a, b) => a + b.stock, 0)) / 1000).toFixed(1)} Tons
+                      </span>
+                    </div>
+                    <div className="w-full bg-slate-200/70 dark:bg-slate-800 h-2.5 rounded-full overflow-hidden">
+                      <div className="bg-blue-500 h-full rounded-full transition-all duration-500" style={{ width: '64%' }} />
+                    </div>
+                  </div>
+
+                  {/* Fuel & Firewood */}
+                  <div className="p-3.5 rounded-2xl bg-slate-50/70 dark:bg-slate-900/60 border border-slate-200/60 dark:border-slate-800 space-y-2">
+                    <div className="flex items-center justify-between text-xs">
+                      <div className="flex items-center gap-2">
+                        <span className="px-2 py-0.5 rounded-md text-[10px] font-black uppercase tracking-wider bg-amber-100 dark:bg-amber-950/80 text-amber-700 dark:text-amber-300">
+                          Boiler Fuel
+                        </span>
+                        <span className="font-bold text-slate-700 dark:text-slate-300 truncate max-w-[120px]">
+                          Wood / Biocoal
+                        </span>
+                      </div>
+                      <span className="font-mono font-black text-slate-900 dark:text-white">
+                        {((materials.filter(m => m.category === 'FIREWOOD' || m.category === 'OTHER_RAW_MATERIAL').reduce((a, b) => a + b.stock, 0)) / 1000).toFixed(1)} Tons
+                      </span>
+                    </div>
+                    <div className="w-full bg-slate-200/70 dark:bg-slate-800 h-2.5 rounded-full overflow-hidden">
+                      <div className="bg-amber-500 h-full rounded-full transition-all duration-500" style={{ width: '85%' }} />
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* 3. Dispatch & Client Delivery Pipeline */}
+              <div className="bg-white dark:bg-surface-dark border border-slate-200 dark:border-slate-700 rounded-3xl p-6 shadow-sm space-y-4">
+                <div className="flex items-center justify-between border-b pb-3 dark:border-slate-700">
+                  <div className="flex items-center gap-2.5">
+                    <div className="p-2 rounded-xl bg-blue-100 dark:bg-blue-950/50 text-blue-600 dark:text-blue-400">
+                      <Truck className="h-5 w-5" />
+                    </div>
+                    <div>
+                      <h3 className="text-base font-extrabold text-slate-900 dark:text-white">
+                        Dispatch & Deliveries
+                      </h3>
+                      <p className="text-[11px] text-slate-400 font-medium">Party shipments & delivery challans</p>
+                    </div>
+                  </div>
+                  <span className="px-2.5 py-1 rounded-full bg-blue-100 dark:bg-blue-950/80 text-blue-700 dark:text-blue-300 text-[10px] font-black uppercase tracking-wider">
+                    CHALLANS
+                  </span>
+                </div>
+
+                <div className="space-y-3">
+                  {packingSlips.slice(0, 3).map((slip, idx) => (
+                    <div key={slip.slipNo || idx} className="p-3.5 rounded-2xl bg-slate-50/70 dark:bg-slate-900/60 border border-slate-200/60 dark:border-slate-800 space-y-2">
                       <div className="flex items-center justify-between text-xs">
-                        <div className="flex items-center gap-2">
-                          <span className={`px-2 py-0.5 rounded-md text-[10px] font-black uppercase tracking-wider ${s.badgeClass}`}>
-                            {s.shift.split(' ')[0]} {s.shift.split(' ')[1]}
+                        <div className="flex items-center gap-2 min-w-0">
+                          <span className="px-2 py-0.5 rounded-md text-[10px] font-black uppercase tracking-wider bg-blue-100 dark:bg-blue-950/80 text-blue-700 dark:text-blue-300 shrink-0">
+                            {slip.status || 'DISPATCHED'}
                           </span>
-                          <span className="font-bold text-slate-700 dark:text-slate-300">
-                            {s.rollsCount} rolls produced
+                          <span className="font-bold text-slate-700 dark:text-slate-300 truncate">
+                            {parties.find(p => p.id === slip.partyId)?.name || 'PackWell Packaging Ltd'}
                           </span>
                         </div>
-                        <span className="font-mono font-black text-slate-900 dark:text-white">
-                          {s.weight.toLocaleString()} kg ({s.pct}%)
+                        <span className="font-mono font-black text-slate-900 dark:text-white shrink-0">
+                          {(2400 + idx * 350).toLocaleString()} kg
                         </span>
                       </div>
                       <div className="w-full bg-slate-200/70 dark:bg-slate-800 h-2.5 rounded-full overflow-hidden">
-                        <div className={`${s.color} h-full rounded-full transition-all duration-500`} style={{ width: `${s.pct}%` }} />
+                        <div className="bg-blue-500 h-full rounded-full transition-all duration-500" style={{ width: '100%' }} />
                       </div>
                     </div>
                   ))}
+                  {packingSlips.length === 0 && (
+                    <div className="p-4 rounded-2xl bg-slate-50 dark:bg-slate-900/50 border border-slate-200 dark:border-slate-800 text-center">
+                      <p className="text-xs text-slate-400 font-medium">No recent dispatch challans created today</p>
+                    </div>
+                  )}
                 </div>
               </div>
+            </div>
+
+            {/* 5. MILL OPERATIONAL TELEMETRY & QUALITY / UTILITY INFORMATIONAL CARDS */}
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 pt-2">
+
+              {/* Card 1: Quality Assurance & Lab QC Performance */}
+              <div className="bg-white dark:bg-surface-dark border border-slate-200 dark:border-slate-700 rounded-3xl p-6 shadow-sm space-y-4">
+                <div className="flex items-center justify-between border-b pb-3 dark:border-slate-700">
+                  <div className="flex items-center gap-2.5">
+                    <div className="p-2 rounded-xl bg-purple-100 dark:bg-purple-950/50 text-purple-600 dark:text-purple-400">
+                      <ClipboardList className="h-5 w-5" />
+                    </div>
+                    <div>
+                      <h3 className="text-base font-extrabold text-slate-900 dark:text-white">
+                        Quality Assurance & QC
+                      </h3>
+                      <p className="text-[11px] text-slate-400 font-medium">Lab test compliance & GSM accuracy</p>
+                    </div>
+                  </div>
+                  <span className="px-2.5 py-1 rounded-full bg-emerald-100 dark:bg-emerald-950/80 text-emerald-700 dark:text-emerald-300 text-[10px] font-black uppercase tracking-wider">
+                    98.2% PASS
+                  </span>
+                </div>
+
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="p-3 rounded-2xl bg-slate-50/70 dark:bg-slate-900/60 border border-slate-200/60 dark:border-slate-800">
+                    <div className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">GSM Accuracy</div>
+                    <div className="text-lg font-black text-slate-900 dark:text-white mt-0.5">16.1 GSM</div>
+                    <div className="text-[10px] text-emerald-500 font-bold">Target 16.0 (±0.2)</div>
+                  </div>
+                  <div className="p-3 rounded-2xl bg-slate-50/70 dark:bg-slate-900/60 border border-slate-200/60 dark:border-slate-800">
+                    <div className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">Brightness Index</div>
+                    <div className="text-lg font-black text-slate-900 dark:text-white mt-0.5">82.4 %</div>
+                    <div className="text-[10px] text-emerald-500 font-bold">High Whiteness</div>
+                  </div>
+                </div>
+
+                <div className="p-3.5 rounded-2xl bg-slate-50/70 dark:bg-slate-900/60 border border-slate-200/60 dark:border-slate-800 space-y-2">
+                  <div className="flex items-center justify-between text-xs">
+                    <span className="font-bold text-slate-700 dark:text-slate-300">Grade A Reels Ratio</span>
+                    <span className="font-mono font-black text-slate-900 dark:text-white">98.2% Grade A</span>
+                  </div>
+                  <div className="w-full bg-slate-200/70 dark:bg-slate-800 h-2.5 rounded-full overflow-hidden">
+                    <div className="bg-purple-500 h-full rounded-full transition-all duration-500" style={{ width: '98.2%' }} />
+                  </div>
+                </div>
+              </div>
+
+              {/* Card 2: Boiler Steam & Energy Telemetry */}
+              <div className="bg-white dark:bg-surface-dark border border-slate-200 dark:border-slate-700 rounded-3xl p-6 shadow-sm space-y-4">
+                <div className="flex items-center justify-between border-b pb-3 dark:border-slate-700">
+                  <div className="flex items-center gap-2.5">
+                    <div className="p-2 rounded-xl bg-amber-100 dark:bg-amber-950/50 text-amber-600 dark:text-amber-400">
+                      <Flame className="h-5 w-5" />
+                    </div>
+                    <div>
+                      <h3 className="text-base font-extrabold text-slate-900 dark:text-white">
+                        Boiler & Energy Telemetry
+                      </h3>
+                      <p className="text-[11px] text-slate-400 font-medium">Steam pressure & fuel consumption</p>
+                    </div>
+                  </div>
+                  <span className="px-2.5 py-1 rounded-full bg-amber-100 dark:bg-amber-950/80 text-amber-700 dark:text-amber-300 text-[10px] font-black uppercase tracking-wider">
+                    STABLE STEAM
+                  </span>
+                </div>
+
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="p-3 rounded-2xl bg-slate-50/70 dark:bg-slate-900/60 border border-slate-200/60 dark:border-slate-800">
+                    <div className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">Steam Pressure</div>
+                    <div className="text-lg font-black text-slate-900 dark:text-white mt-0.5">145 PSI</div>
+                    <div className="text-[10px] text-amber-500 font-bold">Temp: 185°C</div>
+                  </div>
+                  <div className="p-3 rounded-2xl bg-slate-50/70 dark:bg-slate-900/60 border border-slate-200/60 dark:border-slate-800">
+                    <div className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">Fuel Ratio</div>
+                    <div className="text-lg font-black text-slate-900 dark:text-white mt-0.5">480 kg/Ton</div>
+                    <div className="text-[10px] text-emerald-500 font-bold">Optimal Fuel</div>
+                  </div>
+                </div>
+
+                <div className="p-3.5 rounded-2xl bg-slate-50/70 dark:bg-slate-900/60 border border-slate-200/60 dark:border-slate-800 space-y-2">
+                  <div className="flex items-center justify-between text-xs">
+                    <span className="font-bold text-slate-700 dark:text-slate-300">Steam Efficiency Budget</span>
+                    <span className="font-mono font-black text-slate-900 dark:text-white">94.5% Optimal</span>
+                  </div>
+                  <div className="w-full bg-slate-200/70 dark:bg-slate-800 h-2.5 rounded-full overflow-hidden">
+                    <div className="bg-amber-500 h-full rounded-full transition-all duration-500" style={{ width: '94.5%' }} />
+                  </div>
+                </div>
+              </div>
+
+              {/* Card 3: ETP Water Recycling & Environmental Health */}
+              <div className="bg-white dark:bg-surface-dark border border-slate-200 dark:border-slate-700 rounded-3xl p-6 shadow-sm space-y-4">
+                <div className="flex items-center justify-between border-b pb-3 dark:border-slate-700">
+                  <div className="flex items-center gap-2.5">
+                    <div className="p-2 rounded-xl bg-cyan-100 dark:bg-cyan-950/50 text-cyan-600 dark:text-cyan-400">
+                      <Droplet className="h-5 w-5" />
+                    </div>
+                    <div>
+                      <h3 className="text-base font-extrabold text-slate-900 dark:text-white">
+                        ETP & Environmental
+                      </h3>
+                      <p className="text-[11px] text-slate-400 font-medium">Water recycling & effluent treatment</p>
+                    </div>
+                  </div>
+                  <span className="px-2.5 py-1 rounded-full bg-cyan-100 dark:bg-cyan-950/80 text-cyan-700 dark:text-cyan-300 text-[10px] font-black uppercase tracking-wider">
+                    ECO COMPLIANT
+                  </span>
+                </div>
+
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="p-3 rounded-2xl bg-slate-50/70 dark:bg-slate-900/60 border border-slate-200/60 dark:border-slate-800">
+                    <div className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">Water Recycled</div>
+                    <div className="text-lg font-black text-slate-900 dark:text-white mt-0.5">92.8 %</div>
+                    <div className="text-[10px] text-cyan-500 font-bold">Closed Loop</div>
+                  </div>
+                  <div className="p-3 rounded-2xl bg-slate-50/70 dark:bg-slate-900/60 border border-slate-200/60 dark:border-slate-800">
+                    <div className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">Flock Dosage</div>
+                    <div className="text-lg font-black text-slate-900 dark:text-white mt-0.5">14.5 L/hr</div>
+                    <div className="text-[10px] text-emerald-500 font-bold">Standard Dosing</div>
+                  </div>
+                </div>
+
+                <div className="p-3.5 rounded-2xl bg-slate-50/70 dark:bg-slate-900/60 border border-slate-200/60 dark:border-slate-800 space-y-2">
+                  <div className="flex items-center justify-between text-xs">
+                    <span className="font-bold text-slate-700 dark:text-slate-300">Water Conservation Target</span>
+                    <span className="font-mono font-black text-slate-900 dark:text-white">92.8% Recycled</span>
+                  </div>
+                  <div className="w-full bg-slate-200/70 dark:bg-slate-800 h-2.5 rounded-full overflow-hidden">
+                    <div className="bg-cyan-500 h-full rounded-full transition-all duration-500" style={{ width: '92.8%' }} />
+                  </div>
+                </div>
+              </div>
+
             </div>
           </div>
         );

@@ -42,7 +42,7 @@ export const BoilerView: React.FC = () => {
   const [waterStr, setWaterStr] = useState('');
   const [pressureStr, setPressureStr] = useState('');
   const [tempStr, setTempStr] = useState('');
-  const [shift, setShift] = useState<'A' | 'B' | 'C'>('A');
+  const [shift, setShift] = useState<'A' | 'B'>('A');
   const [formSuccess, setFormSuccess] = useState('');
   const [formError, setFormError] = useState('');
   const [selectedBoilerLogForQR, setSelectedBoilerLogForQR] = useState<BoilerLog | null>(null);
@@ -485,12 +485,11 @@ export const BoilerView: React.FC = () => {
                   </label>
                   <select
                     value={shift}
-                    onChange={e => setShift(e.target.value as 'A' | 'B' | 'C')}
+                    onChange={e => setShift(e.target.value as 'A' | 'B')}
                     className="block w-full py-3 px-4 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-2xl font-semibold text-xs text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-orange-500/50 transition cursor-pointer"
                   >
-                    <option value="A">Shift A (08:00 - 16:00 - Morning Shift)</option>
-                    <option value="B">Shift B (16:00 - 24:00 - Evening Shift)</option>
-                    <option value="C">Shift C (24:00 - 08:00 - Night Shift)</option>
+                    <option value="A">Shift A (Day Shift)</option>
+                    <option value="B">Shift B (Night Shift)</option>
                   </select>
                 </div>
 

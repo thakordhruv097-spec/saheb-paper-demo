@@ -1,4 +1,5 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import { useLocation } from 'react-router-dom';
 import { useAuth } from '../auth/AuthContext';
 import {
   ShieldCheck,
@@ -13,14 +14,35 @@ import {
   LogOut,
   Eye,
   EyeOff,
-  Edit3
+  Edit3,
+  ShieldAlert
 } from 'lucide-react';
 import UserManagementView from '../admin/UserManagementView';
+import RoleManagementView from './RoleManagementView';
 
-export const AdminProfileView: React.FC = () => {
+interface AdminProfileViewProps {
+  defaultTab?: 'profile' | 'roles' | 'users';
+}
+
+export const AdminProfileView: React.FC<AdminProfileViewProps> = ({ defaultTab }) => {
   const { user, updateUserProfile, logout } = useAuth();
+  const location = useLocation();
 
-  const [activeTab, setActiveTab] = useState<'users' | 'profile'>('profile');
+  const [activeTab, setActiveTab] = useState<'users' | 'profile' | 'roles'>(() => {
+    if (defaultTab) return defaultTab;
+    const searchParams = new URLSearchParams(location.search);
+    if (searchParams.get('tab') === 'role-management' || location.pathname.includes('role-management')) {
+      return 'roles';
+    }
+    return 'profile';
+  });
+
+  useEffect(() => {
+    const searchParams = new URLSearchParams(location.search);
+    if (searchParams.get('tab') === 'role-management' || location.pathname.includes('role-management')) {
+      setActiveTab('roles');
+    }
+  }, [location]);
 
   const [isEditing, setIsEditing] = useState(false);
   const [displayName, setDisplayName] = useState(user?.displayName || '');
@@ -81,30 +103,42 @@ export const AdminProfileView: React.FC = () => {
         </div>
       </div>
 
-      {/* 2. ADMIN NAVIGATION TAB CONTROLS (Mobile Only: md:hidden) */}
-      <div className="flex md:hidden items-center gap-2 bg-white dark:bg-surface-dark p-1.5 rounded-xl border border-slate-200 dark:border-slate-700/80 shadow-xs">
-        <button
-          onClick={() => setActiveTab('users')}
-          className={`flex-1 px-4 py-2.5 rounded-lg font-extrabold text-xs transition cursor-pointer flex items-center justify-center gap-2 ${
-            activeTab === 'users'
-              ? 'bg-purple-600 text-white shadow-xs'
-              : 'text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800'
-          }`}
-        >
-          <Users className="h-4 w-4" />
-          <span>User Management</span>
-        </button>
-
+      {/* 2. PROFILE NAVIGATION TAB CONTROLS (ALWAYS VISIBLE) */}
+      <div className="flex items-center gap-1.5 sm:gap-2 bg-white dark:bg-surface-dark p-1.5 rounded-2xl border border-slate-200 dark:border-slate-700/80 shadow-xs overflow-x-auto">
         <button
           onClick={() => setActiveTab('profile')}
-          className={`flex-1 px-4 py-2.5 rounded-lg font-extrabold text-xs transition cursor-pointer flex items-center justify-center gap-2 ${
+          className={`flex-1 min-w-[120px] px-4 py-2.5 rounded-xl font-extrabold text-xs transition cursor-pointer flex items-center justify-center gap-2 ${
             activeTab === 'profile'
               ? 'bg-primary text-white shadow-xs'
               : 'text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800'
           }`}
         >
           <User className="h-4 w-4" />
-          <span>Admin Profile</span>
+          <span>My Profile</span>
+        </button>
+
+        <button
+          onClick={() => setActiveTab('roles')}
+          className={`flex-1 min-w-[150px] px-4 py-2.5 rounded-xl font-extrabold text-xs transition cursor-pointer flex items-center justify-center gap-2 ${
+            activeTab === 'roles'
+              ? 'bg-amber-600 text-white shadow-xs'
+              : 'text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800'
+          }`}
+        >
+          <ShieldAlert className="h-4 w-4 text-amber-300" />
+          <span>Role Management</span>
+        </button>
+
+        <button
+          onClick={() => setActiveTab('users')}
+          className={`flex-1 min-w-[130px] px-4 py-2.5 rounded-xl font-extrabold text-xs transition cursor-pointer flex items-center justify-center gap-2 ${
+            activeTab === 'users'
+              ? 'bg-purple-600 text-white shadow-xs'
+              : 'text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800'
+          }`}
+        >
+          <Users className="h-4 w-4" />
+          <span>User Accounts</span>
         </button>
       </div>
 
@@ -324,12 +358,19 @@ export const AdminProfileView: React.FC = () => {
         )}
       </div>
 
-      {/* 4. EMBEDDED USER MANAGEMENT VIEW (Mobile Only: md:hidden when activeTab === 'users') */}
-      <div className={activeTab === 'users' ? 'block md:hidden' : 'hidden'}>
+      {/* 3. ROLE MANAGEMENT VIEW */}
+      {activeTab === 'roles' && (
+        <div className="animate-fadeIn">
+          <RoleManagementView />
+        </div>
+      )}
+
+      {/* 4. USER MANAGEMENT VIEW */}
+      {activeTab === 'users' && (
         <div className="animate-fadeIn">
           <UserManagementView />
         </div>
-      </div>
+      )}
 
     </div>
   );

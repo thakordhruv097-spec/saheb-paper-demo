@@ -39,6 +39,7 @@ import type {
 } from '../../data/types';
 import * as XLSX from 'xlsx';
 import { Settings, Plus, Users, Truck, ShoppingBag, Database, ShieldAlert, FileSpreadsheet, Download, Upload, Search, RotateCw, MoreVertical, Trash2, CheckCircle2, Pencil, Eye, X, ListFilter, Boxes } from 'lucide-react';
+import { RoleManagementView } from '../profile/RoleManagementView';
 
 export const AdminMasters: React.FC = () => {
   const { t } = useTranslation();
@@ -1940,67 +1941,9 @@ export const AdminMasters: React.FC = () => {
               </div>
             )}
 
-            {/* Roles & Permissions Listing */}
+            {/* Roles & Permissions Listing -> Embeds Interactive Role Management Matrix */}
             {activeTab === 'roles' && (
-              <div className="space-y-5">
-                <div className="flex items-center gap-3 bg-blue-50/80 dark:bg-blue-950/30 p-4 rounded-2xl border border-blue-200/60 dark:border-blue-900/40">
-                  <div className="p-2 rounded-xl bg-blue-600 text-white shadow-md shadow-blue-500/25">
-                    <ShieldAlert className="h-4 w-4" />
-                  </div>
-                  <div>
-                    <h4 className="text-xs font-black text-slate-900 dark:text-white uppercase tracking-wider">
-                      Role-Based Access Control (RBAC) Permissions Matrix
-                    </h4>
-                    <p className="text-xs text-slate-500 dark:text-slate-400 font-medium mt-0.5">
-                      System roles strictly dictate accessible modules, action controls, and date filtering privileges.
-                    </p>
-                  </div>
-                </div>
-
-                <div className="overflow-x-auto">
-                  <table className="w-full text-left text-xs border-collapse">
-                    <thead>
-                      <tr className="border-b border-slate-100 dark:border-slate-800 text-slate-400 uppercase text-[10px] font-black tracking-wider">
-                        <th className="py-3 px-3 w-1/4">System Role</th>
-                        <th className="py-3 px-3">Accessible Modules / Views</th>
-                      </tr>
-                    </thead>
-                    <tbody className="divide-y divide-slate-100 dark:divide-slate-800 font-semibold">
-                      {[
-                        { role: 'Admin', color: 'bg-indigo-100 dark:bg-indigo-950/50 text-indigo-700 dark:text-indigo-300 border-indigo-300 dark:border-indigo-800', modules: ['Dashboard', 'Raw Material Stock', 'Pulp Mill Operations', 'Machine Production', 'Rewinder Section', 'Utilities and ETP', 'Finished Stock and Dispatch', 'Store Inventory', 'Reports', 'Settings'] },
-                        { role: 'Management', color: 'bg-emerald-100 dark:bg-emerald-950/50 text-emerald-700 dark:text-emerald-300 border-emerald-300 dark:border-emerald-800', modules: ['Dashboard', 'Raw Material Stock', 'Pulp Mill Operations', 'Machine Production', 'Rewinder Section', 'Utilities and ETP', 'Finished Stock and Dispatch', 'Store Inventory', 'Reports', 'Settings'] },
-                        { role: 'PulpOperator', color: 'bg-blue-100 dark:bg-blue-950/50 text-blue-700 dark:text-blue-300 border-blue-300 dark:border-blue-800', modules: ['Dashboard', 'Pulp Mill Operations', 'Machine Production'] },
-                        { role: 'MachineOperator', color: 'bg-cyan-100 dark:bg-cyan-950/50 text-cyan-700 dark:text-cyan-300 border-cyan-300 dark:border-cyan-800', modules: ['Dashboard', 'Pulp Mill Operations', 'Machine Production'] },
-                        { role: 'RewinderOperator', color: 'bg-violet-100 dark:bg-violet-950/50 text-violet-700 dark:text-violet-300 border-violet-300 dark:border-violet-800', modules: ['Dashboard', 'Rewinder Section'] },
-                        { role: 'BoilerOperator', color: 'bg-amber-100 dark:bg-amber-950/50 text-amber-700 dark:text-amber-300 border-amber-300 dark:border-amber-800', modules: ['Dashboard', 'Utilities and ETP (Boiler Room logs)'] },
-                        { role: 'EtpOperator', color: 'bg-teal-100 dark:bg-teal-950/50 text-teal-700 dark:text-teal-300 border-teal-300 dark:border-teal-800', modules: ['Dashboard', 'Utilities and ETP (ETP Plant logs)'] },
-                        { role: 'WarehouseStaff', color: 'bg-sky-100 dark:bg-sky-950/50 text-sky-700 dark:text-sky-300 border-sky-300 dark:border-sky-800', modules: ['Dashboard', 'Finished Stock and Dispatch', 'Rewinder Section'] },
-                        { role: 'StoreManager', color: 'bg-purple-100 dark:bg-purple-950/50 text-purple-700 dark:text-purple-300 border-purple-300 dark:border-purple-800', modules: ['Dashboard', 'Store Inventory'] },
-                      ].map(r => (
-                        <tr key={r.role} className="hover:bg-blue-50/50 dark:hover:bg-slate-800/40 transition">
-                          <td className="py-3.5 px-3 align-top">
-                            <span className={`px-3 py-1 rounded-full text-xs font-mono font-black uppercase tracking-wider border shadow-2xs inline-block ${r.color}`}>
-                              {r.role}
-                            </span>
-                          </td>
-                          <td className="py-3.5 px-3">
-                            <div className="flex flex-wrap gap-1.5">
-                              {r.modules.map(mod => (
-                                <span
-                                  key={mod}
-                                  className="px-2.5 py-1 rounded-xl bg-slate-100 dark:bg-slate-800/90 text-[11px] font-bold text-slate-700 dark:text-slate-200 border border-slate-200 dark:border-slate-700 shadow-2xs hover:border-blue-400 transition"
-                                >
-                                  {mod}
-                                </span>
-                              ))}
-                            </div>
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-              </div>
+              <RoleManagementView />
             )}
 
             {/* Backup / Restore Controls */}

@@ -16,6 +16,7 @@
     "@capacitor/android": "^8.4.2",
     "@capacitor/cli": "^8.4.2",
     "@capacitor/core": "^8.4.2",
+    "@rolldown/binding-win32-x64-msvc": "^1.2.4",
     "chart.js": "^4.5.1",
     "date-fns": "^4.4.0",
     "html5-qrcode": "^2.3.8",

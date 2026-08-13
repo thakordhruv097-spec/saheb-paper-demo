@@ -26,6 +26,9 @@ export interface User {
   needsPinReset?: boolean;
   securityQuestion?: string;
   securityAnswer?: string;
+  empId?: string;
+  designation?: string;
+  customModules?: string[];
 }
 
 export type RawMaterialCategory =
@@ -86,7 +89,7 @@ export interface MachineRoll {
   weight: number; // in kg
   gsm: number;
   width: number; // in mm
-  shift: 'A' | 'B' | 'C';
+  shift: 'A' | 'B';
   startTime: string;
   offTime: string;
   downtimeReason: string;
@@ -151,7 +154,7 @@ export interface BoilerLog {
   pressure: number; // psi
   temperature: number; // °C
   operator: string;
-  shift: 'A' | 'B' | 'C';
+  shift: 'A' | 'B';
 }
 
 export interface EtpLog {
@@ -217,7 +220,7 @@ export interface PaperTestReport {
   id: string; // e.g. PTR-20260808-01
   product: string; // e.g. "NAPKIN", "TOILET TISSUE"
   rollNo: string; // e.g. "11" or "ROLL-20260808-01"
-  shift: 'A' | 'B' | 'C';
+  shift: 'A' | 'B';
   date: string; // YYYY-MM-DD (e.g. "2026-08-03")
   time: string; // HH:MM (e.g. "07:50")
   targetGsm: number; // e.g. 16

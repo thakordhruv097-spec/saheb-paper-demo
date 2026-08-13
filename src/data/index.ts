@@ -59,12 +59,96 @@ const KEYS = {
 
 // 1. Initial Seeds
 const DEFAULT_USERS: User[] = [
-  { username: 'admin', role: 'Admin', roles: ['Admin'], pin: '1234', displayName: 'System Administrator', email: 'admin@sahebpaper.com', phone: '9876543210', securityQuestion: 'What is your favorite color?', securityAnswer: 'blue' },
-  { username: 'plant_manager', role: 'PlantManager', roles: ['PlantManager'], pin: '1111', displayName: 'Plant Manager', email: 'manager@sahebpaper.com', phone: '9876543219', securityQuestion: 'What is your favorite color?', securityAnswer: 'blue' },
-  { username: 'lab_operator', role: 'LabOperator', roles: ['LabOperator'], pin: '1234', displayName: 'Lab Quality Technician', email: 'lab@sahebpaper.com', phone: '9876543220', securityQuestion: 'What is your favorite color?', securityAnswer: 'blue' },
-  { username: 'shopper', role: 'Shopper', roles: ['Shopper'], pin: '1234', displayName: 'Purchase Officer', email: 'shopper@sahebpaper.com', phone: '9876543221', securityQuestion: 'What is your favorite color?', securityAnswer: 'blue' },
-  { username: 'dispatcher', role: 'Dispatcher', roles: ['Dispatcher'], pin: '1234', displayName: 'Dispatch Supervisor', email: 'dispatch@sahebpaper.com', phone: '9876543222', securityQuestion: 'What is your favorite color?', securityAnswer: 'blue' },
-  { username: 'viewer', role: 'Viewer', roles: ['Viewer'], pin: '1234', displayName: 'Read-Only Viewer', email: 'viewer@sahebpaper.com', phone: '9876543223', securityQuestion: 'What is your favorite color?', securityAnswer: 'blue' },
+  {
+    username: 'admin',
+    role: 'Admin',
+    roles: ['Admin'],
+    pin: '1234',
+    displayName: 'Rajesh Sharma',
+    email: 'admin@sahebpaper.com',
+    phone: '9876543210',
+    securityQuestion: 'What is your favorite color?',
+    securityAnswer: 'blue',
+    empId: 'EMP-001',
+    designation: 'Admin / Owner',
+    customModules: [
+      'dashboard', 'raw_material_stock', 'pulp_mill_operations', 'machine_production', 'rewinding_reel_conversion',
+      'boiler', 'etp', 'electricity', 'orders', 'finished_stock_dispatch', 'dispatch', 'spareparts_management', 'monthly_yearly_reporting'
+    ]
+  },
+  {
+    username: 'plant_manager',
+    role: 'PlantManager',
+    roles: ['PlantManager'],
+    pin: '1111',
+    displayName: 'Anil Verma',
+    email: 'manager@sahebpaper.com',
+    phone: '9876543219',
+    securityQuestion: 'What is your favorite color?',
+    securityAnswer: 'blue',
+    empId: 'EMP-002',
+    designation: 'Plant Manager',
+    customModules: ['dashboard', 'raw_material_stock', 'pulp_mill_operations', 'machine_production']
+  },
+  {
+    username: 'pulper',
+    role: 'LabOperator',
+    roles: ['LabOperator'],
+    pin: '1234',
+    displayName: 'Pulper',
+    email: 'pulper@sahebpaper.com',
+    phone: '9876543220',
+    securityQuestion: 'What is your favorite color?',
+    securityAnswer: 'blue',
+    empId: 'EMP-003',
+    designation: 'Pulper (Pulp Mill Operator)',
+    customModules: ['dashboard', 'boiler', 'etp', 'electricity', 'machine_production']
+  },
+  {
+    username: 'dispatcher',
+    role: 'Dispatcher',
+    roles: ['Dispatcher'],
+    pin: '1234',
+    displayName: 'Vikram Singh',
+    email: 'dispatch@sahebpaper.com',
+    phone: '9876543222',
+    securityQuestion: 'What is your favorite color?',
+    securityAnswer: 'blue',
+    empId: 'EMP-004',
+    designation: 'Dispatcher',
+    customModules: ['dashboard', 'orders', 'finished_stock_dispatch', 'spareparts_management']
+  },
+  {
+    username: 'shopper',
+    role: 'Shopper',
+    roles: ['Shopper'],
+    pin: '1234',
+    displayName: 'Amit Patel',
+    email: 'shopper@sahebpaper.com',
+    phone: '9876543221',
+    securityQuestion: 'What is your favorite color?',
+    securityAnswer: 'blue',
+    empId: 'EMP-005',
+    designation: 'Shopper (Store & Procurement)',
+    customModules: ['dashboard', 'finished_stock_dispatch', 'dispatch']
+  },
+  {
+    username: 'viewer',
+    role: 'Viewer',
+    roles: ['Viewer'],
+    pin: '1234',
+    displayName: 'Guest Viewer',
+    email: 'viewer@sahebpaper.com',
+    phone: '9876543223',
+    securityQuestion: 'What is your favorite color?',
+    securityAnswer: 'blue',
+    empId: 'GUEST-001',
+    designation: 'Guest / Read-Only Viewer',
+    customModules: [
+      'dashboard', 'raw_material_stock', 'pulp_mill_operations', 'machine_production', 'rewinding_reel_conversion',
+      'boiler', 'etp', 'electricity', 'orders', 'finished_stock_dispatch', 'dispatch', 'spareparts_management', 'monthly_yearly_reporting'
+    ]
+  },
 ];
 
 const DEFAULT_RAW_MATERIALS: RawMaterialItem[] = [
@@ -308,9 +392,9 @@ function seedOneMonthData(): void {
     reels.push(reel4);
 
     // 4. Utilities logs (Boiler, ETP, Electricity)
-    const shifts: ('A' | 'B' | 'C')[] = ['A', 'B', 'C'];
-    const woodCons = [550, 480, 420];
-    const waterCons = [750, 680, 600];
+    const shifts: ('A' | 'B')[] = ['A', 'B'];
+    const woodCons = [550, 480];
+    const waterCons = [750, 680];
     shifts.forEach((sh, idx) => {
       boilerLogs.push({
         id: `BLR-${dateStr.replace(/-/g, '')}-${sh}`,
@@ -476,19 +560,54 @@ export function initializeStorage() {
   if (!localStorage.getItem(KEYS.PACKING_SLIPS)) setJSON(KEYS.PACKING_SLIPS, []);
   if (!localStorage.getItem(KEYS.STORE_ITEMS)) setJSON(KEYS.STORE_ITEMS, DEFAULT_STORE_ITEMS);
 
-  // Always fix @admin account to ensure Admin role is never corrupted
+  // Always fix users to ensure empId, designation, and customModules exist
   try {
     const rawUsers = getJSON<User[]>(KEYS.USERS, DEFAULT_USERS);
     let updated = false;
     const fixedUsers = rawUsers.map(u => {
+      const defaultMatch = DEFAULT_USERS.find(d => d.username.toLowerCase() === u.username.toLowerCase());
+      let modified = false;
+      let newU = { ...u };
+
       if (u.username === 'admin') {
         if (u.role !== 'Admin' || !u.roles || u.roles[0] !== 'Admin') {
-          updated = true;
-          return { ...u, role: 'Admin' as UserRole, roles: ['Admin' as UserRole] };
+          newU.role = 'Admin' as UserRole;
+          newU.roles = ['Admin' as UserRole];
+          modified = true;
         }
       }
-      return u;
+
+      if (defaultMatch) {
+        if (!newU.empId && defaultMatch.empId) {
+          newU.empId = defaultMatch.empId;
+          modified = true;
+        }
+        if (!newU.designation && defaultMatch.designation) {
+          newU.designation = defaultMatch.designation;
+          modified = true;
+        }
+        if (!newU.customModules && defaultMatch.customModules) {
+          newU.customModules = defaultMatch.customModules;
+          modified = true;
+        }
+        if (defaultMatch.displayName && newU.displayName !== defaultMatch.displayName) {
+          newU.displayName = defaultMatch.displayName;
+          modified = true;
+        }
+      }
+
+      if (u.username.toLowerCase() === 'pulper') {
+        if (newU.displayName !== 'Pulper' || newU.designation !== 'Pulper (Pulp Mill Operator)') {
+          newU.displayName = 'Pulper';
+          newU.designation = 'Pulper (Pulp Mill Operator)';
+          modified = true;
+        }
+      }
+
+      if (modified) updated = true;
+      return newU;
     });
+
     if (updated) {
       setJSON(KEYS.USERS, fixedUsers);
     }
@@ -543,9 +662,19 @@ export function getUsers(): User[] {
   const validRoles: UserRole[] = ['Admin', 'PlantManager', 'LabOperator', 'Viewer', 'Shopper', 'Dispatcher'];
 
   return users.map(u => {
+    let displayName = u.displayName;
+    let designation = u.designation;
+
+    if (u.username.toLowerCase() === 'pulper') {
+      displayName = 'Pulper';
+      designation = 'Pulper (Pulp Mill Operator)';
+    }
+
     if (u.username === 'admin') {
       return {
         ...u,
+        displayName,
+        designation,
         role: 'Admin' as UserRole,
         roles: ['Admin' as UserRole],
       };
@@ -559,6 +688,8 @@ export function getUsers(): User[] {
 
     return {
       ...u,
+      displayName,
+      designation,
       role: primaryRole,
       roles: userRoles,
     };
@@ -579,6 +710,18 @@ export function saveUser(user: User): User {
   }
   setJSON(KEYS.USERS, users);
   return user;
+}
+
+export function updateUserModules(username: string, customModules: string[], operator: string): boolean {
+  const users = getUsers();
+  const user = users.find(u => u.username.toLowerCase() === username.toLowerCase());
+  if (user) {
+    user.customModules = customModules;
+    setJSON(KEYS.USERS, users);
+    addLog('Admin', 'Role Permissions Updated', `Updated module permissions for ${user.displayName} (@${username}): ${customModules.length} active modules`, operator);
+    return true;
+  }
+  return false;
 }
 
 export function updateRawUserPin(username: string, pin: string): boolean {
