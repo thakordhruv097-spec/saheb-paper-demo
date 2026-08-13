@@ -290,23 +290,7 @@ export const UserManagementView: React.FC = () => {
         </button>
       </div>
 
-      {/* 2. 6 MASTER ROLE SUMMARY CARDS */}
-      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
-        {MASTER_ROLES.map(r => (
-          <button
-            key={r.key}
-            onClick={() => setFilterRole(filterRole === r.key ? 'ALL' : r.key)}
-            className={`p-3 rounded-2xl border transition-all text-left cursor-pointer ${
-              filterRole === r.key
-                ? `${r.color} ring-2 ring-primary/40 shadow-sm scale-[1.02]`
-                : 'bg-white dark:bg-surface-dark border-slate-200 dark:border-slate-700/80 hover:bg-slate-50 dark:hover:bg-slate-800'
-            }`}
-          >
-            <div className="text-xs font-black truncate text-slate-800 dark:text-white">{r.label}</div>
-            <div className="text-[10px] text-slate-500 dark:text-slate-400 mt-0.5">{roleCounts[r.key] || 0} Users Assigned</div>
-          </button>
-        ))}
-      </div>
+
 
       {/* 3. SEARCH & ROLE FILTER BAR */}
       <div className="bg-white dark:bg-surface-dark border border-slate-200 dark:border-slate-700/80 rounded-2xl p-3 shadow-xs flex flex-col sm:flex-row gap-3 items-center justify-between">
