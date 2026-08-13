@@ -1052,6 +1052,37 @@ export function saveReelsFromRoll(
   );
 }
 
+export function saveSingleReel(
+  reel: Reel,
+  brokeWeight: number,
+  user: string
+): void {
+  const currentReels = getReels();
+
+  if (brokeWeight > 0) {
+    const materials = getRawMaterials();
+    const brokeMaterial = materials.find(m => m.name === 'Broke');
+    if (brokeMaterial) {
+      updateRawMaterialStock(brokeMaterial.id, brokeWeight, user);
+    }
+  }
+
+  if (!reel.status) {
+    reel.status = 'QC_PENDING';
+    reel.qcGrade = 'PENDING';
+  }
+
+  currentReels.push(reel);
+  setJSON(KEYS.REELS, currentReels);
+
+  addLog(
+    'Rewinder',
+    'Reel Logged',
+    `Reel #${reel.reelNo} logged: ${reel.product}, ${reel.weight}kg, GSM ${reel.gsm}. Returned ${brokeWeight}kg Broke to stock.`,
+    user
+  );
+}
+
 export function updateReelQC(
   reelNo: string,
   qcGrade: 'A' | 'B',

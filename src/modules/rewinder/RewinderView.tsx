@@ -1,17 +1,35 @@
 import React, { useState, useMemo } from 'react';
 import { useAuth } from '../auth/AuthContext';
 import { useTranslation } from 'react-i18next';
-import { getRolls, getReels, saveReelsFromRoll } from '../../data/index';
+import { getRolls, getReels, getProducts, saveSingleReel, saveReelsFromRoll } from '../../data/index';
 import type { MachineRoll, Reel } from '../../data/types';
 import { QRCodeSVG } from 'qrcode.react';
-import { RotateCw, Play, Plus, Trash2, Printer, CheckCircle, Scissors, ListFilter } from 'lucide-react';
+import {
+  RotateCw,
+  Play,
+  Plus,
+  Trash2,
+  Printer,
+  CheckCircle,
+  Scissors,
+  RefreshCw,
+  PackageCheck,
+  Filter,
+  X,
+  AlertCircle,
+  Search,
+} from 'lucide-react';
 
 export const RewinderView: React.FC = () => {
   const { t } = useTranslation();
   const { user } = useAuth();
 
-  const [rolls, setRolls] = useState<MachineRoll[]>(() => getRolls());
+  const [rolls] = useState<MachineRoll[]>(() => getRolls());
   const [reels, setReels] = useState<Reel[]>(() => getReels());
+  const masterProducts = useMemo(() => getProducts(), []);
+
+  // Filter State
+  const [selectedProductFilter, setSelectedProductFilter] = useState('all');
 
   // Helper functions for Reel No auto-increment
   const parseAndIncrementReelNo = (lastNo: string): string => {
@@ -41,138 +59,126 @@ export const RewinderView: React.FC = () => {
     return `RL-${1001 + offset}`;
   };
 
-  // Conversion Form States
-  const [selectedRollNo, setSelectedRollNo] = useState('');
-  const [brokeWeightStr, setBrokeWeightStr] = useState('0');
-  const [reelRows, setReelRows] = useState<Array<{
-    reelNo: string;
-    weight: string;
-    dia: string;
-    joint: string;
-    ply: string;
-    size: string;
-  }>>(() => [
-    { reelNo: getInitialReelNo(getReels(), 0), weight: '200', dia: '800', joint: '0', ply: '2', size: '30' }
-  ]);
+  // Add Reel Modal Form State (Rudra DEMO2 style)
+  const [isAddModalOpen, setIsAddModalOpen] = useState(false);
+  const [reelForm, setReelForm] = useState({
+    reelNo: getInitialReelNo(getReels(), 0),
+    runningRollNo: 'M-001',
+    runningSize: '1650 mm',
+    productName: masterProducts[0]?.name || 'Napkin Tissue',
+    gsm: '16',
+    size: '30x30 cm',
+    ply: '2',
+    dia: '900',
+    joint: '0',
+    weightKg: '1500',
+    brokeKg: '100',
+  });
 
+  const [modalError, setModalError] = useState('');
+  const [toastMsg, setToastMsg] = useState('');
+
+  // QR Modal State
   const [recentlyGenerated, setRecentlyGenerated] = useState<Reel[]>([]);
   const [showQRModal, setShowQRModal] = useState(false);
   const [printFormat, setPrintFormat] = useState<'tsc_4x3' | 'tsc_3x2' | 'tsc_2x2' | 'a4_grid'>('tsc_4x3');
 
-  // Success / Error States
-  const [successMsg, setSuccessMsg] = useState('');
-  const [errorMsg, setErrorMsg] = useState('');
+  // Computed Totals & Metrics
+  const totalReelWeightKg = useMemo(() => reels.reduce((sum, r) => sum + Number(r.weight || 0), 0), [reels]);
+  const totalBrokeKg = useMemo(() => reels.reduce((sum, r) => sum + (Number(r.joint || 0) * 15 + 20), 0), [reels]);
+  const netFinishStockKg = useMemo(() => Math.max(0, totalReelWeightKg - totalBrokeKg), [totalReelWeightKg, totalBrokeKg]);
 
-  const selectedRoll = useMemo(() => {
-    return rolls.find(r => r.rollNo === selectedRollNo);
-  }, [selectedRollNo, rolls]);
+  const netYieldRate = useMemo(() => {
+    if (totalReelWeightKg === 0) return '100.0%';
+    const totalInput = totalReelWeightKg + totalBrokeKg;
+    if (totalInput === 0) return '100.0%';
+    return `${((totalReelWeightKg / totalInput) * 100).toFixed(1)}%`;
+  }, [totalReelWeightKg, totalBrokeKg]);
 
-  const handleAddReelRow = () => {
-    const lastRow = reelRows[reelRows.length - 1];
-    const lastNo = lastRow ? lastRow.reelNo : getInitialReelNo(reels, reelRows.length - 1);
-    const nextReelNo = parseAndIncrementReelNo(lastNo);
+  const uniqueProducts = useMemo(() => {
+    const set = new Set<string>();
+    masterProducts.forEach(p => set.add(p.name));
+    reels.forEach(r => { if (r.product) set.add(r.product); });
+    return Array.from(set);
+  }, [reels, masterProducts]);
 
-    const newRow = {
-      reelNo: nextReelNo,
-      weight: lastRow ? lastRow.weight : '200',
-      dia: lastRow ? lastRow.dia : '800',
-      joint: lastRow ? lastRow.joint : '0',
-      ply: lastRow ? lastRow.ply : '2',
-      size: lastRow ? lastRow.size : '30',
-    };
+  const filteredReels = useMemo(() => {
+    if (selectedProductFilter === 'all') return reels;
+    return reels.filter(r => r.product === selectedProductFilter);
+  }, [reels, selectedProductFilter]);
 
-    setReelRows([...reelRows, newRow]);
+  const formatKgOrTon = (kg: number) => {
+    if (kg >= 1000) {
+      return `${(kg / 1000).toFixed(2)} Tons`;
+    }
+    return `${kg.toLocaleString()} kg`;
   };
 
-  const handleRemoveReelRow = (index: number) => {
-    if (reelRows.length === 1) return;
-    setReelRows(reelRows.filter((_, i) => i !== index));
+  const handleOpenAddModal = () => {
+    setModalError('');
+    const latestReels = getReels();
+    const nextNo = getInitialReelNo(latestReels, 0);
+    setReelForm(prev => ({
+      ...prev,
+      reelNo: nextNo,
+    }));
+    setIsAddModalOpen(true);
   };
 
-  const handleRowChange = (index: number, field: string, val: string) => {
-    const updated = [...reelRows];
-    updated[index] = {
-      ...updated[index],
-      [field]: val,
-    };
-    setReelRows(updated);
-  };
-
-  const handleRewindSubmit = (e: React.FormEvent) => {
+  const handleSaveSingleReel = (e: React.FormEvent) => {
     e.preventDefault();
-    setSuccessMsg('');
-    setErrorMsg('');
+    setModalError('');
 
-    if (!selectedRoll) {
-      setErrorMsg('Please select a parent Machine Roll');
+    if (!reelForm.reelNo.trim()) {
+      setModalError('Please enter a valid Reel No.');
+      return;
+    }
+    if (!reelForm.weightKg || parseFloat(reelForm.weightKg) <= 0) {
+      setModalError('Reel Weight must be a positive number.');
       return;
     }
 
-    const brokeWeight = parseFloat(brokeWeightStr) || 0;
-    if (brokeWeight < 0) {
-      setErrorMsg('Broke weight cannot be negative');
-      return;
-    }
+    const brokeKg = parseFloat(reelForm.brokeKg) || 0;
+    const weightKg = parseFloat(reelForm.weightKg) || 0;
+    const diaVal = parseFloat(reelForm.dia) || 900;
+    const jointVal = parseInt(reelForm.joint) || 0;
+    const plyVal = parseInt(reelForm.ply) || 2;
+    const gsmVal = parseFloat(reelForm.gsm) || 18;
 
-    // Verify row numbers
-    const processedReels: Reel[] = [];
-    const baseDate = selectedRoll.date.replace(/-/g, '');
+    const newReelRecord: Reel = {
+      reelNo: reelForm.reelNo.trim(),
+      parentRollNo: reelForm.runningRollNo || 'M-001',
+      product: reelForm.productName,
+      gsm: gsmVal,
+      size: parseFloat(reelForm.size) || 30,
+      ply: plyVal,
+      weight: weightKg,
+      dia: diaVal,
+      joint: jointVal,
+      status: 'QC_PENDING',
+      qcGrade: 'PENDING',
+      productionDate: `${new Date().toISOString().substring(0, 10)} ${new Date().toLocaleTimeString('en-US', { hour12: false }).substring(0, 5)}`,
+    };
 
-    for (let i = 0; i < reelRows.length; i++) {
-      const row = reelRows[i];
-      const weight = parseFloat(row.weight);
-      const dia = parseFloat(row.dia);
-      const joint = parseInt(row.joint);
-      const ply = parseInt(row.ply);
-      const size = parseFloat(row.size);
-
-      if (isNaN(weight) || isNaN(dia) || isNaN(joint) || isNaN(ply) || isNaN(size)) {
-        setErrorMsg(`Reel Row #${i + 1} contains invalid numeric data.`);
-        return;
-      }
-      if (weight <= 0 || dia <= 0 || ply <= 0 || size <= 0) {
-        setErrorMsg(`Reel Row #${i + 1} dimensions/weights must be positive numbers.`);
-        return;
-      }
-
-      // Use user-typed/auto-incremented reelNo or fallback to auto format
-      const userTypedNo = row.reelNo ? row.reelNo.trim() : '';
-      const fallbackNo = `REEL-${baseDate}-${String(reels.length + i + 1).padStart(4, '0')}`;
-      const reelNo = userTypedNo || fallbackNo;
-
-      processedReels.push({
-        reelNo,
-        parentRollNo: selectedRoll.rollNo,
-        product: selectedRoll.product,
-        gsm: selectedRoll.gsm,
-        size,
-        ply,
-        weight,
-        dia,
-        joint,
-        status: 'QC_PENDING',
-        qcGrade: 'PENDING',
-        productionDate: `${selectedRoll.date} ${new Date().toLocaleTimeString('en-US', { hour12: false }).substring(0, 5)}`,
-      });
-    }
-
-    // Call data access layer to process
     try {
-      saveReelsFromRoll(selectedRoll.rollNo, processedReels, brokeWeight, user?.displayName || 'System');
-      
-      // Update states
+      saveSingleReel(newReelRecord, brokeKg, user?.displayName || 'System');
       const updatedReels = getReels();
       setReels(updatedReels);
-      setRecentlyGenerated(processedReels);
-      setShowQRModal(true);
-      setSuccessMsg(`Roll rewound successfully! Created ${processedReels.length} Reel(s), returned ${brokeWeight} kg Broke waste.`);
-      
-      // Reset Form with fresh next reel number
-      setSelectedRollNo('');
-      setBrokeWeightStr('0');
-      setReelRows([{ reelNo: getInitialReelNo(updatedReels, 0), weight: '200', dia: '800', joint: '0', ply: '2', size: '30' }]);
+
+      // Auto-increment Reel No for next entry!
+      const nextNo = parseAndIncrementReelNo(newReelRecord.reelNo);
+      setReelForm(prev => ({
+        ...prev,
+        reelNo: nextNo,
+        weightKg: '1500',
+        brokeKg: '100',
+      }));
+
+      setIsAddModalOpen(false);
+      setToastMsg(`Reel ${newReelRecord.reelNo} logged successfully!`);
+      setTimeout(() => setToastMsg(''), 4000);
     } catch (err: any) {
-      setErrorMsg(err.message || 'Error processing roll rewinding');
+      setModalError(err.message || 'Error saving reel entry.');
     }
   };
 
@@ -180,7 +186,7 @@ export const RewinderView: React.FC = () => {
     const todayStr = new Date().toISOString().substring(0, 10);
     const todaysReels = reels.filter(r => r.productionDate.startsWith(todayStr));
     if (todaysReels.length === 0) {
-      alert("No reels have been produced today yet.");
+      alert('No reels have been produced today yet.');
       return;
     }
     setRecentlyGenerated(todaysReels);
@@ -205,542 +211,530 @@ export const RewinderView: React.FC = () => {
       pageSize = 'A4 portrait';
     }
 
-    // Set body class for scoped print CSS
     document.body.classList.add(bodyClass);
-
-    // Create dynamic style tag for @page size
     const styleEl = document.createElement('style');
     styleEl.id = 'dynamic-label-print-style';
     styleEl.innerHTML = `@page { size: ${pageSize}; margin: 0; }`;
     document.head.appendChild(styleEl);
 
-    // Trigger printing
     window.print();
 
-    // Cleanup style and body class
     const cleanup = () => {
       document.body.classList.remove(bodyClass);
       const el = document.getElementById('dynamic-label-print-style');
       if (el) el.remove();
     };
 
-    // Use standard window event or timeout for cleanup
     window.addEventListener('afterprint', cleanup, { once: true });
     setTimeout(cleanup, 2000);
   };
 
-  const [selectedProductFilter, setSelectedProductFilter] = useState('all');
-
-  const totalReelsConverted = useMemo(() => reels.length, [reels]);
-  const totalReelWeightKg = useMemo(() => reels.reduce((acc, r) => acc + r.weight, 0), [reels]);
-  const totalBrokeKg = useMemo(() => reels.reduce((acc, r) => acc + (r.joint * 15), 0), [reels]);
-
-  const netYieldRate = useMemo(() => {
-    if (totalReelWeightKg === 0) return '100.0%';
-    const totalInput = totalReelWeightKg + totalBrokeKg;
-    if (totalInput === 0) return '100.0%';
-    return `${((totalReelWeightKg / totalInput) * 100).toFixed(1)}%`;
-  }, [totalReelWeightKg, totalBrokeKg]);
-
-  const uniqueProducts = useMemo(() => {
-    const set = new Set<string>();
-    reels.forEach(r => { if (r.product) set.add(r.product); });
-    return Array.from(set);
-  }, [reels]);
-
-  const filteredRecentReels = useMemo(() => {
-    if (selectedProductFilter === 'all') return reels;
-    return reels.filter(r => r.product === selectedProductFilter);
-  }, [reels, selectedProductFilter]);
-
   return (
-    <div className="space-y-6 font-sans pb-12">
-      
-      {/* 1. HERO GRADIENT HEADER BANNER */}
-      <div className="bg-gradient-to-r from-blue-700 via-indigo-600 to-slate-900 rounded-3xl p-6 sm:p-8 text-white shadow-xl relative overflow-hidden">
-        <div className="absolute -top-16 -right-16 w-64 h-64 rounded-full bg-white/10 blur-xl pointer-events-none" />
-        <div className="absolute -bottom-20 -left-20 w-80 h-80 rounded-full bg-blue-400/10 blur-2xl pointer-events-none" />
-
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-6 relative z-10">
-          <div className="flex items-center gap-4">
-            <div className="p-3.5 rounded-2xl bg-white/15 backdrop-blur-md border border-white/20 text-white shadow-lg shrink-0">
-              <RotateCw className="h-8 w-8" />
-            </div>
-            <div>
-              <div className="flex flex-wrap items-center gap-3">
-                <h2 className="text-2xl sm:text-3xl font-black tracking-tight">{t('rewinder.title')}</h2>
-              </div>
-              <p className="text-xs sm:text-sm text-blue-100/90 font-medium mt-1">
-                Log roll-to-reel conversions, manage broke recycling loops, and output unique QR tracking labels.
-              </p>
-            </div>
-          </div>
-
-          <button
-            onClick={handlePrintAllToday}
-            className="px-5 py-3 rounded-2xl bg-white text-indigo-700 hover:bg-blue-50 font-black text-xs uppercase tracking-wider shadow-lg transition-all duration-200 hover:scale-[1.02] active:scale-[0.98] flex items-center gap-2 cursor-pointer self-start sm:self-auto shrink-0"
-          >
-            <Printer className="h-4 w-4" />
-            <span>Print All Today ({reels.filter(r => r.productionDate.startsWith(new Date().toISOString().substring(0, 10))).length})</span>
-          </button>
+    <div className="space-y-6 font-sans pb-12 text-left">
+      {/* Toast Alert */}
+      {toastMsg && (
+        <div className="fixed top-5 right-5 z-50 bg-slate-900 text-white px-4 py-3 rounded-2xl shadow-xl border border-slate-700 flex items-center gap-2 text-xs font-bold animate-in fade-in slide-in-from-top-2">
+          <CheckCircle className="h-4.5 w-4.5 text-emerald-400" />
+          <span>{toastMsg}</span>
         </div>
-      </div>
+      )}
 
-      {/* 2. TOP METRIC SCORECARDS (4 KPI Summary Cards) */}
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3.5">
-        <div className="bg-white dark:bg-surface-dark border border-slate-200 dark:border-slate-700/80 rounded-3xl p-4 sm:p-5 shadow-xs flex items-center gap-3.5">
-          <div className="p-3 rounded-2xl bg-indigo-50 dark:bg-indigo-950/40 text-indigo-600 dark:text-indigo-400 border border-indigo-200/60 dark:border-indigo-800/60">
-            <RotateCw className="h-5.5 w-5.5" />
+      {/* 1. TOP BANNER STAT CARDS (Rudra DEMO2 style) */}
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+        <div className="bg-white dark:bg-surface-dark border border-slate-200 dark:border-slate-700/80 rounded-3xl p-5 shadow-sm flex items-center gap-4">
+          <div className="p-3.5 rounded-2xl bg-amber-50 dark:bg-amber-950/40 text-amber-600 dark:text-amber-400 border border-amber-200/60 dark:border-amber-800/60 shrink-0">
+            <RotateCw className="h-6 w-6" />
           </div>
           <div>
-            <p className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">Converted Reels</p>
-            <p className="text-xl font-black text-slate-900 dark:text-white mt-0.5">{totalReelsConverted} <span className="text-xs text-slate-400 font-normal">reels</span></p>
+            <p className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Rewinder Reel Output Today</p>
+            <p className="text-2xl font-black text-slate-900 dark:text-white mt-0.5">{formatKgOrTon(totalReelWeightKg)}</p>
+            <p className="text-[11px] text-slate-400 font-semibold mt-0.5">{reels.length} Finished Reels Formed</p>
           </div>
         </div>
 
-        <div className="bg-white dark:bg-surface-dark border border-slate-200 dark:border-slate-700/80 rounded-3xl p-4 sm:p-5 shadow-xs flex items-center gap-3.5">
-          <div className="p-3 rounded-2xl bg-emerald-50 dark:bg-emerald-950/40 text-emerald-600 dark:text-emerald-400 border border-emerald-200/60 dark:border-emerald-800/60">
-            <Play className="h-5.5 w-5.5" />
+        <div className="bg-white dark:bg-surface-dark border border-slate-200 dark:border-slate-700/80 rounded-3xl p-5 shadow-sm flex items-center gap-4">
+          <div className="p-3.5 rounded-2xl bg-red-50 dark:bg-red-950/40 text-red-600 dark:text-red-400 border border-red-200/60 dark:border-red-800/60 shrink-0">
+            <RefreshCw className="h-6 w-6" />
           </div>
           <div>
-            <p className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">Reel Stock Output</p>
-            <p className="text-xl font-black text-slate-900 dark:text-white mt-0.5">{totalReelWeightKg.toLocaleString()} <span className="text-xs text-slate-400 font-normal">kg</span></p>
+            <p className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Broke (Wastage) Generated (Rule 6)</p>
+            <p className="text-2xl font-black text-red-600 dark:text-red-400 mt-0.5">{formatKgOrTon(totalBrokeKg)}</p>
+            <p className="text-[11px] text-slate-400 font-semibold mt-0.5">Auto Loop-Back to Raw Material &gt; Broke</p>
           </div>
         </div>
 
-        <div className="bg-white dark:bg-surface-dark border border-slate-200 dark:border-slate-700/80 rounded-3xl p-4 sm:p-5 shadow-xs flex items-center gap-3.5">
-          <div className="p-3 rounded-2xl bg-amber-50 dark:bg-amber-950/40 text-amber-600 dark:text-amber-400 border border-amber-200/60 dark:border-amber-800/60">
-            <Printer className="h-5.5 w-5.5" />
+        <div className="bg-white dark:bg-surface-dark border border-slate-200 dark:border-slate-700/80 rounded-3xl p-5 shadow-sm flex items-center gap-4">
+          <div className="p-3.5 rounded-2xl bg-emerald-50 dark:bg-emerald-950/40 text-emerald-600 dark:text-emerald-400 border border-emerald-200/60 dark:border-emerald-800/60 shrink-0">
+            <PackageCheck className="h-6 w-6" />
           </div>
           <div>
-            <p className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">Broke Generated</p>
-            <p className="text-xl font-black text-slate-900 dark:text-white mt-0.5">{totalBrokeKg.toLocaleString()} <span className="text-xs text-slate-400 font-normal">kg</span></p>
-          </div>
-        </div>
-
-        <div className="bg-white dark:bg-surface-dark border border-slate-200 dark:border-slate-700/80 rounded-3xl p-4 sm:p-5 shadow-xs flex items-center gap-3.5">
-          <div className="p-3 rounded-2xl bg-purple-50 dark:bg-purple-950/40 text-purple-600 dark:text-purple-400 border border-purple-200/60 dark:border-purple-800/60">
-            <Scissors className="h-5.5 w-5.5" />
-          </div>
-          <div>
-            <p className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">Net Yield Rate</p>
-            <p className="text-xl font-black text-purple-600 dark:text-purple-400 mt-0.5">{netYieldRate}</p>
+            <p className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Net Added to Finish Stock</p>
+            <p className="text-2xl font-black text-slate-900 dark:text-white mt-0.5">{formatKgOrTon(netFinishStockKg)}</p>
+            <p className="text-[11px] text-emerald-600 dark:text-emerald-400 font-bold mt-0.5">Net of Broke (Rule 6 &amp; 10)</p>
           </div>
         </div>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 items-start">
-        
-        {/* Left Form: Conversion Details (2/3 width) */}
-        <div className="lg:col-span-2 bg-white dark:bg-surface-dark border border-slate-200 dark:border-slate-700/80 rounded-3xl p-6 shadow-sm">
-          <h3 className="text-xs font-black text-slate-900 dark:text-white uppercase tracking-wider mb-5 border-b border-slate-100 dark:border-slate-800 pb-3 flex items-center gap-2">
-            <Scissors className="h-4 w-4 text-primary" />
-            {t('rewinder.convert_reels')}
-          </h3>
+      {/* 2. MAIN REELS TABLE CARD */}
+      <div className="bg-white dark:bg-surface-dark border border-slate-200 dark:border-slate-700/80 rounded-3xl p-5 sm:p-6 shadow-sm space-y-5">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-100 dark:border-slate-800 pb-4">
+          <div>
+            <h3 className="text-base font-black text-slate-900 dark:text-white tracking-tight">Rewinder Reel Production Log</h3>
+            <p className="text-xs text-slate-500 dark:text-slate-400 font-medium mt-0.5">
+              Date: {new Date().toLocaleDateString('en-GB')} &bull; Broke automatically increases Raw Material Stock (Rule 6)
+            </p>
+          </div>
 
-          <form onSubmit={handleRewindSubmit} className="space-y-6">
-            {successMsg && (
-              <div className="p-3.5 bg-emerald-50 dark:bg-emerald-950/20 text-emerald-600 dark:text-emerald-400 text-xs rounded-2xl border border-emerald-200 dark:border-emerald-800 font-bold">
-                {successMsg}
-              </div>
-            )}
-            {errorMsg && (
-              <div className="p-3.5 bg-red-50 dark:bg-red-950/20 text-red-600 dark:text-red-400 text-xs rounded-2xl border border-red-200 dark:border-red-800 font-bold">
-                {errorMsg}
-              </div>
-            )}
-
-            {/* Input Selection Block */}
-            <div className="bg-slate-50 dark:bg-slate-900 p-4 rounded-2xl border border-slate-200 dark:border-slate-700 space-y-2">
-              <label className="block text-[11px] font-black text-slate-500 dark:text-slate-400 uppercase tracking-wider">
-                Select Parent Machine Roll
-              </label>
-              <select
-                value={selectedRollNo}
-                onChange={e => setSelectedRollNo(e.target.value)}
-                className="block w-full py-2.5 px-3.5 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl text-xs font-bold focus:outline-none focus:ring-2 focus:ring-primary dark:text-white cursor-pointer"
-              >
-                <option value="">-- Choose Roll --</option>
-                {rolls.slice().sort((a, b) => b.rollNo.localeCompare(a.rollNo)).map(r => (
-                  <option key={r.rollNo} value={r.rollNo}>
-                    Roll #{r.rollNo} [{r.product}] - {r.weight}kg (GSM {r.gsm})
-                  </option>
-                ))}
-              </select>
-            </div>
-
-            {/* Parent Details Card */}
-            {selectedRoll && (
-              <div className="p-4 bg-blue-50/60 dark:bg-blue-950/20 rounded-2xl border border-blue-200/60 dark:border-blue-800/60 text-xs space-y-2">
-                <span className="font-black text-blue-900 dark:text-blue-300 uppercase tracking-wider text-[10px]">Parent Roll Specifications:</span>
-                <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 text-slate-800 dark:text-white font-semibold">
-                  <div><span className="text-slate-400 text-[10px] uppercase font-bold block">Product</span> {selectedRoll.product}</div>
-                  <div><span className="text-slate-400 text-[10px] uppercase font-bold block">GSM</span> {selectedRoll.gsm}</div>
-                  <div><span className="text-slate-400 text-[10px] uppercase font-bold block">Width</span> {selectedRoll.width} mm</div>
-                  <div><span className="text-slate-400 text-[10px] uppercase font-bold block">Weight</span> {selectedRoll.weight} kg</div>
-                </div>
-              </div>
-            )}
-
-            {/* 1. Broke Generation Section */}
-            <div className="border border-slate-200 dark:border-slate-700/80 rounded-2xl p-4 bg-slate-50 dark:bg-slate-900 space-y-3">
-              <h4 className="text-xs font-black text-slate-900 dark:text-white uppercase tracking-wider border-b pb-2 border-slate-200 dark:border-slate-800 flex items-center gap-2">
-                <span className="h-2 w-2 rounded-full bg-blue-500"></span>
-                Broke Generation
-              </h4>
-              <div>
-                <label className="block text-[11px] font-black text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-1.5">
-                  Broke / Wastage generated (kg)
-                </label>
-                <input
-                  type="number"
-                  step="0.1"
-                  value={brokeWeightStr}
-                  onChange={e => setBrokeWeightStr(e.target.value)}
-                  className="block w-full py-2.5 px-3.5 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl text-xs font-bold focus:outline-none focus:ring-2 focus:ring-primary dark:text-white font-mono"
-                  placeholder="0"
-                />
-              </div>
-            </div>
-
-            {/* Reels rows inputs */}
-            <div className="space-y-4 pt-3 border-t border-slate-100 dark:border-slate-800">
-              <div className="flex justify-between items-center">
-                <span className="text-xs font-black text-slate-900 dark:text-white uppercase tracking-wider">
-                  Reel Output Configurations
-                </span>
-                <button
-                  type="button"
-                  onClick={handleAddReelRow}
-                  className="flex items-center gap-1.5 px-3 py-1.5 bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-xl text-xs font-black uppercase tracking-wider shadow-sm hover:scale-105 transition cursor-pointer"
-                >
-                  <Plus className="h-3.5 w-3.5" />
-                  <span>{t('rewinder.add_reel')}</span>
-                </button>
-              </div>
-
-              {reelRows.map((row, index) => (
-                <div key={index} className="border border-slate-200 dark:border-slate-800 rounded-2xl p-4 bg-slate-50/60 dark:bg-slate-900/40 space-y-3 relative">
-                  
-                  {/* Row Header */}
-                  <div className="flex justify-between items-center border-b border-slate-200 dark:border-slate-800 pb-2">
-                    <span className="text-[11px] font-black text-slate-800 dark:text-slate-200 uppercase tracking-wider">
-                      Reel Output #{index + 1}
-                    </span>
-                    {reelRows.length > 1 && (
-                      <button
-                        type="button"
-                        onClick={() => handleRemoveReelRow(index)}
-                        className="text-red-500 hover:text-red-600 text-xs font-bold flex items-center gap-1 cursor-pointer"
-                      >
-                        <Trash2 className="h-3.5 w-3.5" />
-                        <span>Remove</span>
-                      </button>
-                    )}
-                  </div>
-
-                  <div className="grid grid-cols-1 sm:grid-cols-5 gap-3">
-                    {/* Reel No */}
-                    <div>
-                      <label className="block text-[10px] font-black text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-1">
-                        Reel No
-                      </label>
-                      <input
-                        type="text"
-                        value={row.reelNo}
-                        onChange={e => handleRowChange(index, 'reelNo', e.target.value)}
-                        placeholder="e.g. RL-1001"
-                        className="block w-full py-2 px-3 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-xs font-mono font-bold text-primary dark:text-blue-400 focus:outline-none focus:ring-2 focus:ring-primary uppercase"
-                      />
-                    </div>
-
-                    {/* General Weight */}
-                    <div>
-                      <label className="block text-[10px] font-black text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-1">
-                        Reel Weight (kg)
-                      </label>
-                      <input
-                        type="number"
-                        value={row.weight}
-                        onChange={e => handleRowChange(index, 'weight', e.target.value)}
-                        className="block w-full py-2 px-3 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-xs font-bold focus:outline-none focus:ring-2 focus:ring-primary dark:text-white font-mono"
-                      />
-                    </div>
-
-                    {/* Running Sizes */}
-                    <div>
-                      <label className="block text-[10px] font-black text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-1">
-                        Running Sizes (cm)
-                      </label>
-                      <input
-                        type="number"
-                        value={row.size}
-                        onChange={e => handleRowChange(index, 'size', e.target.value)}
-                        className="block w-full py-2 px-3 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-xs font-bold focus:outline-none focus:ring-2 focus:ring-primary dark:text-white font-mono"
-                      />
-                    </div>
-
-                    {/* Ply and Diameter */}
-                    <div>
-                      <label className="block text-[10px] font-black text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-1">
-                        Ply and Diameter
-                      </label>
-                      <div className="grid grid-cols-2 gap-1.5">
-                        <input
-                          type="number"
-                          placeholder="Ply"
-                          value={row.ply}
-                          onChange={e => handleRowChange(index, 'ply', e.target.value)}
-                          className="block w-full py-2 px-2 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-xs font-bold focus:outline-none focus:ring-2 focus:ring-primary dark:text-white font-mono"
-                          title="Ply"
-                        />
-                        <input
-                          type="number"
-                          placeholder="Dia (mm)"
-                          value={row.dia}
-                          onChange={e => handleRowChange(index, 'dia', e.target.value)}
-                          className="block w-full py-2 px-2 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-xs font-bold focus:outline-none focus:ring-2 focus:ring-primary dark:text-white font-mono"
-                          title="Diameter (mm)"
-                        />
-                      </div>
-                    </div>
-
-                    {/* Joints */}
-                    <div>
-                      <label className="block text-[10px] font-black text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-1">
-                        Joints
-                      </label>
-                      <input
-                        type="number"
-                        value={row.joint}
-                        onChange={e => handleRowChange(index, 'joint', e.target.value)}
-                        className="block w-full py-2 px-3 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-xs font-bold focus:outline-none focus:ring-2 focus:ring-primary dark:text-white font-mono"
-                      />
-                    </div>
-                  </div>
-                </div>
-              ))}
-            </div>
+          <div className="flex items-center gap-2 flex-wrap">
+            <button
+              onClick={handlePrintAllToday}
+              className="flex items-center justify-center gap-2 px-4 py-2.5 rounded-2xl bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 text-slate-700 dark:text-slate-200 font-bold text-xs transition cursor-pointer border border-slate-200 dark:border-slate-700"
+            >
+              <Printer className="h-4 w-4 text-slate-500" />
+              <span>Print QR Labels ({reels.length})</span>
+            </button>
 
             <button
-              type="submit"
-              className="w-full bg-gradient-to-r from-blue-600 via-indigo-600 to-blue-700 hover:from-blue-700 hover:to-indigo-700 text-white font-black py-3 rounded-2xl text-xs uppercase tracking-wider shadow-lg shadow-blue-500/25 transition-all hover:scale-[1.01] active:scale-[0.99] cursor-pointer flex items-center justify-center gap-2"
+              onClick={handleOpenAddModal}
+              className="flex items-center justify-center gap-2 px-5 py-2.5 rounded-2xl bg-[#cf8730] hover:bg-[#b87528] text-white font-extrabold text-xs shadow-md shadow-[#cf8730]/25 transition cursor-pointer active:scale-95 shrink-0"
             >
-              <RotateCw className="h-4.5 w-4.5" />
-              Save Reel Outputs & Return Broke
+              <Plus className="h-4 w-4 text-white" />
+              <span>+ Add Reel Entry</span>
             </button>
-          </form>
+          </div>
         </div>
 
-        {/* Right Side: Logged List (1/3 width) */}
-        <div className="bg-white dark:bg-surface-dark border border-slate-200 dark:border-slate-700/80 rounded-3xl p-6 shadow-sm space-y-4">
-          <div className="space-y-2 border-b border-slate-100 dark:border-slate-800 pb-3">
-            <h3 className="text-xs font-black text-slate-900 dark:text-white uppercase tracking-wider flex items-center gap-2">
-              <RotateCw className="h-4 w-4 text-primary" />
-              Recent Converted Reels ({filteredRecentReels.length})
-            </h3>
-            
-            {/* Product Filter Chips */}
-            <div className="flex items-center gap-1.5 overflow-x-auto pb-1 scrollbar-none">
-              <button
-                type="button"
-                onClick={() => setSelectedProductFilter('all')}
-                className={`px-2.5 py-1 rounded-xl font-extrabold text-[10px] whitespace-nowrap transition cursor-pointer border ${
-                  selectedProductFilter === 'all'
-                    ? 'bg-blue-600 text-white border-blue-600 shadow-2xs'
-                    : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 border-slate-200 dark:border-slate-700 hover:bg-slate-200'
-                }`}
-              >
-                All Papers ({reels.length})
-              </button>
-              {uniqueProducts.map(pName => (
-                <button
-                  key={pName}
-                  type="button"
-                  onClick={() => setSelectedProductFilter(pName)}
-                  className={`px-2.5 py-1 rounded-xl font-extrabold text-[10px] whitespace-nowrap transition cursor-pointer border ${
-                    selectedProductFilter === pName
-                      ? 'bg-blue-600 text-white border-blue-600 shadow-2xs'
-                      : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 border-slate-200 dark:border-slate-700 hover:bg-slate-200'
-                  }`}
-                >
-                  {pName}
-                </button>
-              ))}
-            </div>
+        {/* 4-Card Mini KPI Summary Bar (Rudra DEMO2 style) */}
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 p-3.5 bg-slate-50 dark:bg-slate-900/60 rounded-2xl border border-slate-200/80 dark:border-slate-800">
+          <div className="p-3 bg-white dark:bg-slate-800 rounded-xl border border-slate-200/60 dark:border-slate-700">
+            <span className="text-[10px] font-bold text-slate-400 uppercase block">Total Reels</span>
+            <span className="text-base font-extrabold text-slate-900 dark:text-white">{reels.length} Reels</span>
           </div>
+          <div className="p-3 bg-white dark:bg-slate-800 rounded-xl border border-slate-200/60 dark:border-slate-700">
+            <span className="text-[10px] font-bold text-slate-400 uppercase block">Total Weight</span>
+            <span className="text-base font-extrabold text-[#cf8730]">{formatKgOrTon(totalReelWeightKg)}</span>
+          </div>
+          <div className="p-3 bg-white dark:bg-slate-800 rounded-xl border border-slate-200/60 dark:border-slate-700">
+            <span className="text-[10px] font-bold text-slate-400 uppercase block">Broke Returned</span>
+            <span className="text-base font-extrabold text-red-500">+{totalBrokeKg.toLocaleString()} kg</span>
+          </div>
+          <div className="p-3 bg-white dark:bg-slate-800 rounded-xl border border-slate-200/60 dark:border-slate-700">
+            <span className="text-[10px] font-bold text-slate-400 uppercase block">Net Yield Rate</span>
+            <span className="text-base font-extrabold text-emerald-500">{netYieldRate}</span>
+          </div>
+        </div>
 
-          {filteredRecentReels.length === 0 ? (
-            <p className="text-xs text-slate-500 dark:text-slate-400 py-6 text-center font-medium">
-              No reels match the selected paper type.
-            </p>
+        {/* Filter Chips Row */}
+        <div className="flex items-center gap-2 overflow-x-auto pb-1 scrollbar-none">
+          <span className="text-xs font-bold text-slate-500 flex items-center gap-1 shrink-0">
+            <Filter className="h-3.5 w-3.5 text-slate-400" /> Filter:
+          </span>
+          <button
+            onClick={() => setSelectedProductFilter('all')}
+            className={`px-3.5 py-1.5 rounded-xl font-bold text-xs transition cursor-pointer whitespace-nowrap border ${
+              selectedProductFilter === 'all'
+                ? 'bg-[#cf8730] text-white border-[#cf8730] shadow-2xs'
+                : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 border-slate-200 dark:border-slate-700 hover:bg-slate-200'
+            }`}
+          >
+            All Paper Types
+          </button>
+          {uniqueProducts.map(pName => (
+            <button
+              key={pName}
+              onClick={() => setSelectedProductFilter(pName)}
+              className={`px-3.5 py-1.5 rounded-xl font-bold text-xs transition cursor-pointer whitespace-nowrap border ${
+                selectedProductFilter === pName
+                  ? 'bg-[#cf8730] text-white border-[#cf8730] shadow-2xs'
+                  : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 border-slate-200 dark:border-slate-700 hover:bg-slate-200'
+              }`}
+            >
+              {pName}
+            </button>
+          ))}
+        </div>
+
+        {/* Desktop Table View */}
+        <div className="hidden md:block overflow-x-auto">
+          <table className="w-full text-left text-xs border-collapse">
+            <thead>
+              <tr className="bg-slate-50 dark:bg-slate-900/80 text-slate-400 uppercase tracking-wider font-extrabold text-[10px]">
+                <th className="p-3.5 rounded-l-xl">Reel No</th>
+                <th className="p-3.5">Running Roll</th>
+                <th className="p-3.5">Product</th>
+                <th className="p-3.5">GSM / Size / Ply</th>
+                <th className="p-3.5">Dia / Joint</th>
+                <th className="p-3.5 text-right">Reel Weight</th>
+                <th className="p-3.5 text-right text-red-500">Broke (kg)</th>
+                <th className="p-3.5 text-right rounded-r-xl font-black">Net Stock Weight</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-slate-100 dark:divide-slate-800 font-medium">
+              {filteredReels.length === 0 ? (
+                <tr>
+                  <td colSpan={8} className="p-8 text-center text-slate-400 font-medium">
+                    No rewinder reels recorded matching filter. Click &quot;+ Add Reel Entry&quot; to log finished reels.
+                  </td>
+                </tr>
+              ) : (
+                filteredReels.map(reel => {
+                  const brokeVal = Number(reel.joint || 0) * 15 + 20;
+                  const netKg = Math.max(0, reel.weight - brokeVal);
+                  return (
+                    <tr key={reel.reelNo} className="hover:bg-slate-50/60 dark:hover:bg-slate-800/40 transition">
+                      <td className="p-3.5 font-black text-[#cf8730]">{reel.reelNo}</td>
+                      <td className="p-3.5 text-slate-500 dark:text-slate-400 font-mono">{reel.parentRollNo}</td>
+                      <td className="p-3.5 font-extrabold text-slate-900 dark:text-white">{reel.product}</td>
+                      <td className="p-3.5 text-slate-600 dark:text-slate-300">
+                        {reel.gsm} GSM | {reel.size} cm | {reel.ply} Ply
+                      </td>
+                      <td className="p-3.5 text-slate-600 dark:text-slate-300">
+                        {reel.dia} mm | {reel.joint} Joint
+                      </td>
+                      <td className="p-3.5 text-right font-black text-slate-900 dark:text-white">
+                        {reel.weight.toLocaleString()} kg
+                      </td>
+                      <td className="p-3.5 text-right font-black text-red-500">
+                        +{brokeVal} kg
+                      </td>
+                      <td className="p-3.5 text-right font-black text-slate-900 dark:text-white">
+                        {netKg.toLocaleString()} kg
+                      </td>
+                    </tr>
+                  );
+                })
+              )}
+            </tbody>
+          </table>
+        </div>
+
+        {/* Mobile View Cards */}
+        <div className="block md:hidden space-y-3">
+          {filteredReels.length === 0 ? (
+            <p className="text-center text-slate-400 py-6 text-xs">No rewinder reels recorded.</p>
           ) : (
-            <div className="space-y-3 max-h-[480px] overflow-y-auto pr-1">
-              {filteredRecentReels
-                .slice()
-                .sort((a, b) => b.productionDate.localeCompare(a.productionDate))
-                .map(r => (
-                  <div key={r.reelNo} className="p-4 border border-slate-200 dark:border-slate-800 rounded-2xl bg-slate-50/60 dark:bg-slate-900/60 hover:bg-blue-50/40 transition space-y-2.5 text-xs">
-                    <div className="flex justify-between items-center border-b pb-2 dark:border-slate-800">
-                      <span className="font-black text-slate-900 dark:text-white text-xs">{r.reelNo}</span>
-                      <span className={`px-2.5 py-0.5 rounded-full text-[9px] font-black uppercase tracking-wider ${
-                        r.status === 'QC_PENDING' ? 'bg-purple-100 dark:bg-purple-950/40 text-purple-700 dark:text-purple-300 border border-purple-200' :
-                        r.status === 'IN_STOCK_B' ? 'bg-blue-100 dark:bg-blue-950/40 text-blue-700 dark:text-blue-300 border border-blue-200' :
-                        'bg-emerald-100 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300 border border-emerald-200'
-                      }`}>
-                        {r.status}
-                      </span>
+            filteredReels.map(reel => {
+              const brokeVal = Number(reel.joint || 0) * 15 + 20;
+              const netKg = Math.max(0, reel.weight - brokeVal);
+              return (
+                <div key={reel.reelNo} className="p-4 rounded-2xl bg-slate-50 dark:bg-slate-900/60 border border-slate-200/80 dark:border-slate-800 space-y-2">
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm font-black text-[#cf8730]">{reel.reelNo}</span>
+                    <span className="text-xs font-black px-2.5 py-0.5 rounded-lg bg-emerald-100 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300">
+                      Net: {netKg.toLocaleString()} kg
+                    </span>
+                  </div>
+                  <div className="grid grid-cols-2 gap-2 text-xs pt-1">
+                    <div>
+                      <span className="text-slate-400 block text-[10px] uppercase font-bold">Product</span>
+                      <span className="font-bold text-slate-900 dark:text-white">{reel.product}</span>
                     </div>
-                    <div className="grid grid-cols-2 gap-y-2 text-[11px] text-slate-600 dark:text-slate-400">
-                      <div>
-                        <span className="font-black text-slate-400 block uppercase tracking-wider text-[9px]">Reel No</span>
-                        <span className="font-bold text-slate-900 dark:text-white text-xs">{r.reelNo}</span>
-                      </div>
-                      <div>
-                        <span className="font-black text-slate-400 block uppercase tracking-wider text-[9px]">Weight</span>
-                        <span className="font-bold text-slate-900 dark:text-white text-xs">{r.weight} kg</span>
-                      </div>
-                      <div>
-                        <span className="font-black text-slate-400 block uppercase tracking-wider text-[9px]">Diameter</span>
-                        <span className="font-bold text-slate-900 dark:text-white text-xs">{r.dia} mm</span>
-                      </div>
-                      <div>
-                        <span className="font-black text-slate-400 block uppercase tracking-wider text-[9px]">Joints</span>
-                        <span className="font-bold text-slate-900 dark:text-white text-xs">{r.joint}</span>
-                      </div>
-                      <div>
-                        <span className="font-black text-slate-400 block uppercase tracking-wider text-[9px]">Produced</span>
-                        <span className="font-bold text-slate-800 dark:text-white text-xs">{r.productionDate}</span>
-                      </div>
-                      <div>
-                        <span className="font-black text-slate-400 block uppercase tracking-wider text-[9px]">GSM</span>
-                        <span className="font-bold text-slate-900 dark:text-white text-xs">{r.gsm}</span>
-                      </div>
+                    <div>
+                      <span className="text-slate-400 block text-[10px] uppercase font-bold">Reel Weight</span>
+                      <span className="font-extrabold text-slate-900 dark:text-white">{reel.weight.toLocaleString()} kg</span>
                     </div>
-                    <div className="pt-2 border-t dark:border-slate-800 text-[10px] text-slate-400 font-medium">
-                      Parent Roll: <span className="font-bold text-slate-800 dark:text-slate-200">#{r.parentRollNo}</span>
+                    <div>
+                      <span className="text-slate-400 block text-[10px] uppercase font-bold">GSM / Size / Ply</span>
+                      <span className="font-semibold text-slate-700 dark:text-slate-300">{reel.gsm} GSM &bull; {reel.size}cm &bull; {reel.ply}P</span>
+                    </div>
+                    <div>
+                      <span className="text-slate-400 block text-[10px] uppercase font-bold">Broke (Returned)</span>
+                      <span className="font-bold text-red-500">+{brokeVal} kg</span>
                     </div>
                   </div>
-                ))}
-            </div>
+                </div>
+              );
+            })
           )}
         </div>
-
       </div>
+
+      {/* ADD REEL ENTRY MODAL (Matching Rudra DEMO2 Screenshot + Auto-Increment Reel No!) */}
+      {isAddModalOpen && (
+        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <div className="bg-white dark:bg-surface-dark border border-slate-200 dark:border-slate-700/80 rounded-3xl max-w-2xl w-full p-6 space-y-4 shadow-2xl animate-in fade-in zoom-in-95 duration-150">
+            {/* Modal Header */}
+            <div className="flex justify-between items-center border-b border-slate-100 dark:border-slate-800 pb-3">
+              <h3 className="text-base font-black text-slate-900 dark:text-white">
+                Log Rewinder Reel &amp; Broke (Rule 6)
+              </h3>
+              <button
+                type="button"
+                onClick={() => setIsAddModalOpen(false)}
+                className="p-1.5 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800 transition cursor-pointer"
+              >
+                <X className="h-5 w-5" />
+              </button>
+            </div>
+
+            <form onSubmit={handleSaveSingleReel} className="space-y-4">
+              {modalError && (
+                <div className="p-3 bg-red-50 dark:bg-red-950/40 border border-red-200 dark:border-red-800 text-red-700 dark:text-red-300 rounded-xl text-xs font-bold">
+                  {modalError}
+                </div>
+              )}
+
+              {/* Row 1: Reel No (Auto-Incremented!), Running Roll No, Running Size */}
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                <div>
+                  <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">
+                    Reel No (Unique)
+                  </label>
+                  <input
+                    type="text"
+                    required
+                    value={reelForm.reelNo}
+                    onChange={e => setReelForm({ ...reelForm, reelNo: e.target.value })}
+                    className="w-full p-3 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white rounded-xl text-xs font-bold font-mono focus:ring-2 focus:ring-amber-500 focus:outline-none"
+                    placeholder="e.g. RL-982"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">
+                    Running Roll No
+                  </label>
+                  <input
+                    type="text"
+                    value={reelForm.runningRollNo}
+                    onChange={e => setReelForm({ ...reelForm, runningRollNo: e.target.value })}
+                    className="w-full p-3 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white rounded-xl text-xs font-bold focus:ring-2 focus:ring-amber-500 focus:outline-none"
+                    placeholder="e.g. M-001"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">
+                    Running Size
+                  </label>
+                  <input
+                    type="text"
+                    value={reelForm.runningSize}
+                    onChange={e => setReelForm({ ...reelForm, runningSize: e.target.value })}
+                    className="w-full p-3 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white rounded-xl text-xs font-bold focus:ring-2 focus:ring-amber-500 focus:outline-none"
+                    placeholder="e.g. 1650 mm"
+                  />
+                </div>
+              </div>
+
+              {/* Row 2: Product, GSM, Size, Ply */}
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                <div>
+                  <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">
+                    Product
+                  </label>
+                  <select
+                    value={reelForm.productName}
+                    onChange={e => setReelForm({ ...reelForm, productName: e.target.value })}
+                    className="w-full p-3 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white rounded-xl text-xs font-bold focus:ring-2 focus:ring-amber-500 focus:outline-none cursor-pointer"
+                  >
+                    {masterProducts.map(p => (
+                      <option key={p.id} value={p.name}>
+                        {p.name}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">
+                    GSM
+                  </label>
+                  <input
+                    type="number"
+                    value={reelForm.gsm}
+                    onChange={e => setReelForm({ ...reelForm, gsm: e.target.value })}
+                    className="w-full p-3 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white rounded-xl text-xs font-bold font-mono focus:ring-2 focus:ring-amber-500 focus:outline-none"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">
+                    Size
+                  </label>
+                  <input
+                    type="text"
+                    value={reelForm.size}
+                    onChange={e => setReelForm({ ...reelForm, size: e.target.value })}
+                    className="w-full p-3 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white rounded-xl text-xs font-bold focus:ring-2 focus:ring-amber-500 focus:outline-none"
+                    placeholder="e.g. 30x30 cm"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">
+                    Ply
+                  </label>
+                  <input
+                    type="number"
+                    value={reelForm.ply}
+                    onChange={e => setReelForm({ ...reelForm, ply: e.target.value })}
+                    className="w-full p-3 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white rounded-xl text-xs font-bold font-mono focus:ring-2 focus:ring-amber-500 focus:outline-none"
+                  />
+                </div>
+              </div>
+
+              {/* Row 3: Reel Weight, Broke/Wastage, Dia, Joint Count */}
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                <div>
+                  <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">
+                    Reel Weight (kg)
+                  </label>
+                  <input
+                    type="number"
+                    required
+                    placeholder="1500"
+                    value={reelForm.weightKg}
+                    onChange={e => setReelForm({ ...reelForm, weightKg: e.target.value })}
+                    className="w-full p-3 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white rounded-xl text-xs font-bold font-mono focus:ring-2 focus:ring-amber-500 focus:outline-none"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">
+                    Broke / Wastage (kg)
+                  </label>
+                  <input
+                    type="number"
+                    placeholder="100"
+                    value={reelForm.brokeKg}
+                    onChange={e => setReelForm({ ...reelForm, brokeKg: e.target.value })}
+                    className="w-full p-3 bg-[#FEF3E1] dark:bg-amber-950/30 border border-amber-300/80 dark:border-amber-700/80 text-amber-900 dark:text-amber-300 rounded-xl text-xs font-bold font-mono focus:ring-2 focus:ring-amber-500 focus:outline-none"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">
+                    Dia (mm)
+                  </label>
+                  <input
+                    type="number"
+                    value={reelForm.dia}
+                    onChange={e => setReelForm({ ...reelForm, dia: e.target.value })}
+                    className="w-full p-3 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white rounded-xl text-xs font-bold font-mono focus:ring-2 focus:ring-amber-500 focus:outline-none"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">
+                    Joint Count
+                  </label>
+                  <input
+                    type="number"
+                    value={reelForm.joint}
+                    onChange={e => setReelForm({ ...reelForm, joint: e.target.value })}
+                    className="w-full p-3 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white rounded-xl text-xs font-bold font-mono focus:ring-2 focus:ring-amber-500 focus:outline-none"
+                  />
+                </div>
+              </div>
+
+              {/* Info Banner */}
+              <div className="p-3.5 rounded-2xl text-xs font-bold flex items-center gap-2.5 bg-[#E7F9EF] text-emerald-800 border border-emerald-200 dark:bg-emerald-950/40 dark:text-emerald-300 dark:border-emerald-800">
+                <AlertCircle className="h-4.5 w-4.5 text-emerald-600 shrink-0" />
+                <span>Broke quantity automatically adds back into Raw Material &gt; Broke stock (Rule 6).</span>
+              </div>
+
+              {/* Actions */}
+              <div className="pt-3 flex flex-col sm:flex-row justify-end gap-3 border-t border-slate-100 dark:border-slate-800">
+                <button
+                  type="button"
+                  onClick={() => setIsAddModalOpen(false)}
+                  className="px-5 py-2.5 rounded-xl font-bold text-xs transition cursor-pointer bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-200 border border-slate-200 dark:border-slate-700"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  className="px-6 py-2.5 rounded-xl font-black text-xs text-white transition cursor-pointer bg-[#cf8730] hover:bg-[#b87528] shadow-md shadow-[#cf8730]/25 active:scale-95"
+                >
+                  Save Reel &amp; Loop-Back Broke
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
 
       {/* QR Code Labels printable Modal */}
       {showQRModal && recentlyGenerated.length > 0 && (
         <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-          <div className="bg-white dark:bg-slate-800 rounded-lg max-w-2xl w-full p-6 space-y-4 shadow-2xl max-h-[85vh] overflow-y-auto print:p-0 print:shadow-none print:max-h-full">
-            
+          <div className="bg-white dark:bg-slate-800 rounded-2xl max-w-2xl w-full p-6 space-y-4 shadow-2xl max-h-[85vh] overflow-y-auto print:p-0 print:shadow-none print:max-h-full">
             <div className="flex justify-between items-center border-b pb-3 dark:border-slate-700 print:hidden">
               <h3 className="text-base font-bold text-slate-900 dark:text-white flex items-center gap-1.5">
                 <CheckCircle className="h-5 w-5 text-emerald-500" />
                 Print QR Traceability Labels
               </h3>
               <button
-                onClick={() => { setShowQRModal(false); setRecentlyGenerated([]); }}
-                className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-300"
+                onClick={() => setShowQRModal(false)}
+                className="p-1 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-700"
               >
-                Close
+                <X className="h-5 w-5" />
               </button>
             </div>
 
-            {/* Layout Format Selection */}
-            <div className="bg-slate-50 dark:bg-slate-900/50 p-3 rounded-md flex flex-col sm:flex-row sm:items-center justify-between gap-3 border border-slate-200 dark:border-slate-700 print:hidden">
-              <div>
-                <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider mb-0.5">
-                  TSC Printer & Label Layout
-                </label>
-                <p className="text-[10px] text-text-light-secondary dark:text-slate-400">
-                  Select dimensions matching your TSC thermal label roll or standard sheet.
-                </p>
+            <div className="flex flex-col sm:flex-row items-center justify-between gap-3 bg-slate-50 dark:bg-slate-900 p-3 rounded-xl border dark:border-slate-700 print:hidden">
+              <div className="flex items-center gap-2">
+                <Printer className="h-4 w-4 text-primary" />
+                <span className="text-xs font-bold text-slate-700 dark:text-slate-300">Select Label Format:</span>
               </div>
-              <select
-                value={printFormat}
-                onChange={(e) => setPrintFormat(e.target.value as any)}
-                className="text-xs font-medium bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-md p-1.5 focus:outline-none focus:ring-1 focus:ring-primary w-full sm:w-52"
-              >
-                <option value="tsc_4x3">TSC Thermal Roll (4" x 3")</option>
-                <option value="tsc_3x2">TSC Thermal Roll (3" x 2")</option>
-                <option value="tsc_2x2">TSC Thermal Roll (2" x 2")</option>
-                <option value="a4_grid">A4 Label Sheet (Grid)</option>
-              </select>
+              <div className="flex items-center gap-1.5 flex-wrap">
+                <button
+                  type="button"
+                  onClick={() => setPrintFormat('tsc_4x3')}
+                  className={`px-3 py-1.5 rounded-lg text-xs font-extrabold transition ${
+                    printFormat === 'tsc_4x3' ? 'bg-primary text-white' : 'bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-300 border'
+                  }`}
+                >
+                  TSC 4x3&quot;
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setPrintFormat('tsc_3x2')}
+                  className={`px-3 py-1.5 rounded-lg text-xs font-extrabold transition ${
+                    printFormat === 'tsc_3x2' ? 'bg-primary text-white' : 'bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-300 border'
+                  }`}
+                >
+                  TSC 3x2&quot;
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setPrintFormat('a4_grid')}
+                  className={`px-3 py-1.5 rounded-lg text-xs font-extrabold transition ${
+                    printFormat === 'a4_grid' ? 'bg-primary text-white' : 'bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-300 border'
+                  }`}
+                >
+                  A4 Grid
+                </button>
+              </div>
             </div>
 
-            {/* Labels Printable Area */}
-            <div id="printable-qr-labels" className="grid grid-cols-1 sm:grid-cols-2 gap-4 py-2 print:grid-cols-2 print:gap-8 bg-slate-100 dark:bg-slate-900/90 p-4 rounded-2xl border border-slate-200 dark:border-slate-700">
+            <div className="space-y-4 py-2">
               {recentlyGenerated.map(reel => (
-                <div
-                  key={reel.reelNo}
-                  className="qr-label-card p-5 border-2 border-slate-900 rounded-xl bg-white text-slate-900 flex flex-col items-center text-center space-y-3 shadow-md print:border-2 print:border-black print:bg-white print:p-6 print:m-2"
-                >
-                  <h4 className="text-xs font-black uppercase tracking-wider text-slate-900 border-b-2 border-slate-900 pb-1.5 w-full font-heading">
-                    SAHEB PAPER PVT. LTD.
-                  </h4>
-                  
-                  {/* QR SVG */}
-                  <div className="bg-white p-2 border border-slate-200 rounded-lg shadow-2xs print:border-none">
-                    <QRCodeSVG value={reel.reelNo} size={120} level="H" />
+                <div key={reel.reelNo} className="p-4 border dark:border-slate-700 rounded-xl flex items-center justify-between gap-4 bg-slate-50/50 dark:bg-slate-900/50">
+                  <div className="space-y-1 text-xs">
+                    <span className="font-black text-[#cf8730] text-sm block">{reel.reelNo}</span>
+                    <p className="font-bold text-slate-800 dark:text-white">{reel.product} &bull; {reel.gsm} GSM &bull; {reel.size}cm &bull; {reel.ply}P</p>
+                    <p className="text-[11px] text-slate-500 font-mono">Weight: {reel.weight} kg | Dia: {reel.dia} mm | Roll: #{reel.parentRollNo}</p>
                   </div>
-                  
-                  {/* Text details */}
-                  <div className="w-full text-left space-y-1.5 text-xs text-slate-900 font-sans">
-                    <div className="flex justify-between border-b pb-1 border-dashed border-slate-300">
-                      <span className="text-[10px] font-black text-slate-500 uppercase tracking-wider">REEL NO:</span>
-                      <span className="font-black text-slate-900 font-mono text-xs tracking-tight">{reel.reelNo}</span>
-                    </div>
-                    <div className="flex justify-between border-b pb-1 border-dashed border-slate-300">
-                      <span className="text-[10px] font-black text-slate-500 uppercase tracking-wider">PRODUCT:</span>
-                      <span className="font-black text-slate-900">{reel.product}</span>
-                    </div>
-                    <div className="grid grid-cols-2 gap-2 text-[11px] border-b pb-1 border-dashed border-slate-300">
-                      <div className="flex justify-between">
-                        <span className="text-[10px] font-black text-slate-500">GSM:</span>
-                        <span className="font-black text-slate-900">{reel.gsm}</span>
-                      </div>
-                      <div className="flex justify-between">
-                        <span className="text-[10px] font-black text-slate-500">SIZE:</span>
-                        <span className="font-black text-slate-900">{reel.size} cm</span>
-                      </div>
-                    </div>
-                    <div className="grid grid-cols-2 gap-2 text-[11px]">
-                      <div className="flex justify-between">
-                        <span className="text-[10px] font-black text-slate-500">PLY:</span>
-                        <span className="font-black text-slate-900">{reel.ply}</span>
-                      </div>
-                      <div className="flex justify-between">
-                        <span className="text-[10px] font-black text-slate-500">WEIGHT:</span>
-                        <span className="font-black text-slate-900">{reel.weight} kg</span>
-                      </div>
-                    </div>
+                  <div className="p-2 bg-white rounded-lg border shadow-2xs shrink-0">
+                    <QRCodeSVG value={JSON.stringify({ reelNo: reel.reelNo, product: reel.product, weight: reel.weight, gsm: reel.gsm })} size={64} />
                   </div>
                 </div>
               ))}
             </div>
 
-            {/* Modal Controls */}
-            <div className="flex justify-end gap-3 border-t pt-3 dark:border-slate-700 print:hidden">
+            <div className="pt-3 border-t dark:border-slate-700 flex justify-end gap-2 print:hidden">
               <button
-                onClick={() => { setShowQRModal(false); setRecentlyGenerated([]); }}
-                className="px-4 py-2 border border-slate-200 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-800 rounded text-xs font-semibold text-slate-700 dark:text-slate-300"
+                onClick={() => setShowQRModal(false)}
+                className="px-4 py-2 rounded-xl border text-xs font-bold text-slate-600 dark:text-slate-300 hover:bg-slate-100"
               >
-                Done
+                Close
               </button>
               <button
                 onClick={handlePrint}
-                className="px-4 py-2 bg-primary hover:bg-blue-800 text-white rounded text-xs font-semibold shadow flex items-center gap-1.5"
+                className="px-5 py-2 rounded-xl bg-primary hover:bg-blue-700 text-white font-extrabold text-xs shadow-md flex items-center gap-2"
               >
                 <Printer className="h-4 w-4" />
-                <span>{t('rewinder.print_label')}</span>
+                <span>Print Labels</span>
               </button>
             </div>
-
           </div>
         </div>
       )}
-
     </div>
   );
 };
+
 export default RewinderView;
