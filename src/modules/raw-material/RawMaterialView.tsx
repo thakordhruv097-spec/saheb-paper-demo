@@ -9,6 +9,8 @@ import {
 } from '../../data/index';
 import type { RawMaterialCategory, RawMaterialItem, RawMaterialLot } from '../../data/types';
 import { CustomDatePickerModal } from '../../components/CustomDatePickerModal';
+import { DataFilterBar } from '../../components/DataFilterBar';
+import type { FilterField } from '../../components/DataFilterBar';
 import {
   Warehouse,
   Plus,
@@ -38,6 +40,13 @@ export const RawMaterialView: React.FC = () => {
   const [rmSearchQuery, setRmSearchQuery] = useState('');
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
   const vendors = getVendors();
+
+  // Inward Lots filter states
+  const [lotSearchQuery, setLotSearchQuery] = useState('');
+  const [lotDateFrom, setLotDateFrom] = useState('');
+  const [lotDateTo, setLotDateTo] = useState('');
+  const [lotVendorFilter, setLotVendorFilter] = useState('all');
+  const [lotMaterialFilter, setLotMaterialFilter] = useState('all');
 
   // Inward Form States & Modal
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -313,12 +322,39 @@ export const RawMaterialView: React.FC = () => {
 
       {/* Recent Inward Lots History Table */}
       <div className="bg-white dark:bg-surface-dark border border-slate-200 dark:border-slate-700/80 rounded-3xl p-6 shadow-sm space-y-4">
-        <div className="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-3">
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-3 border-b border-slate-100 dark:border-slate-800 pb-3">
           <h3 className="text-xs font-black text-slate-900 dark:text-white uppercase tracking-wider flex items-center gap-2">
             <Layers className="h-4 w-4 text-primary" />
             Recent Purchase Inward Receipts Log
           </h3>
-          <span className="text-xs font-bold text-slate-400">Latest Arrival Lots</span>
+          <div className="flex items-center gap-2">
+            <div className="bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-2xl p-2 flex items-center gap-2 w-full md:w-48">
+              <Search className="h-4 w-4 text-slate-400 shrink-0" />
+              <input
+                type="text"
+                value={lotSearchQuery}
+                onChange={e => setLotSearchQuery(e.target.value)}
+                placeholder="Search lot, item..."
+                className="bg-transparent border-none text-xs font-semibold focus:outline-none w-full dark:text-white placeholder-slate-400"
+              />
+            </div>
+            <DataFilterBar
+              dateFrom={lotDateFrom}
+              dateTo={lotDateTo}
+              onDateFromChange={setLotDateFrom}
+              onDateToChange={setLotDateTo}
+              filterFields={[
+                { id: 'vendor', label: 'Vendor', options: vendors.map(v => ({ label: v.name, value: v.name })) },
+                { id: 'material', label: 'Material', options: [...new Set(lots.map(l => l.materialName || ''))].filter(Boolean).map(n => ({ label: n, value: n })) },
+              ]}
+              activeFilters={{ vendor: lotVendorFilter, material: lotMaterialFilter }}
+              onFilterChange={(fieldId, value) => {
+                if (fieldId === 'vendor') setLotVendorFilter(value);
+                if (fieldId === 'material') setLotMaterialFilter(value);
+              }}
+              onClearAll={() => { setLotDateFrom(''); setLotDateTo(''); setLotVendorFilter('all'); setLotMaterialFilter('all'); }}
+            />
+          </div>
         </div>
 
         <div className="overflow-x-auto">
@@ -334,45 +370,54 @@ export const RawMaterialView: React.FC = () => {
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100 dark:divide-slate-800 font-semibold">
-              {lots.length === 0 ? (
-                <tr>
-                  <td colSpan={6} className="py-6 text-center text-xs text-slate-400 font-medium">
-                    No inward receipt lots logged yet.
-                  </td>
-                </tr>
-              ) : (
-                lots.slice(0, 8).map(lot => {
-                  const item = materials.find(m => m.id === lot.materialId);
-                  return (
-                    <tr key={lot.lotNo} className="hover:bg-slate-50 dark:hover:bg-slate-800/40 transition">
-                      <td className="py-3 px-3 font-mono font-bold text-primary dark:text-blue-400">
-                        {lot.lotNo}
-                      </td>
-                      <td className="py-3 px-3 text-slate-600 dark:text-slate-300 font-mono">
-                        {lot.date}
-                      </td>
-                      <td className="py-3 px-3 font-bold text-slate-900 dark:text-white">
-                        {lot.materialName || item?.name || 'Raw Material Item'}
-                      </td>
-                      <td className="py-3 px-3 text-slate-600 dark:text-slate-300">
-                        {lot.vendorName}
-                      </td>
-                      <td className="py-3 px-3 font-mono font-bold text-slate-900 dark:text-white">
-                        {lot.weight} kg
-                      </td>
-                      <td className="py-3 px-3 text-right">
-                        <button
-                          onClick={() => setSelectedLotForQR(lot)}
-                          className="p-1.5 rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-primary/10 dark:hover:bg-blue-950/40 text-slate-600 dark:text-slate-300 hover:text-primary transition cursor-pointer inline-flex items-center gap-1 text-[11px] font-bold border border-slate-200/80 dark:border-slate-700"
-                        >
-                          <QrCode className="h-3.5 w-3.5 text-primary dark:text-blue-400" />
-                          <span>View QR</span>
-                        </button>
-                      </td>
-                    </tr>
-                  );
-                })
-              )}
+              {(() => {
+                let filteredLots = lots;
+                const lq = lotSearchQuery.toLowerCase().trim();
+                if (lq) filteredLots = filteredLots.filter(l => (l.lotNo || '').toLowerCase().includes(lq) || (l.materialName || '').toLowerCase().includes(lq) || (l.vendorName || '').toLowerCase().includes(lq));
+                if (lotDateFrom) filteredLots = filteredLots.filter(l => l.date >= lotDateFrom);
+                if (lotDateTo) filteredLots = filteredLots.filter(l => l.date <= lotDateTo);
+                if (lotVendorFilter && lotVendorFilter !== 'all') filteredLots = filteredLots.filter(l => l.vendorName === lotVendorFilter);
+                if (lotMaterialFilter && lotMaterialFilter !== 'all') filteredLots = filteredLots.filter(l => l.materialName === lotMaterialFilter);
+                return filteredLots.length === 0 ? (
+                  <tr>
+                    <td colSpan={6} className="py-6 text-center text-xs text-slate-400 font-medium">
+                      No inward receipt lots match your filters.
+                    </td>
+                  </tr>
+                ) : (
+                  filteredLots.map(lot => {
+                    const item = materials.find(m => m.id === lot.materialId);
+                    return (
+                      <tr key={lot.lotNo} className="hover:bg-slate-50 dark:hover:bg-slate-800/40 transition">
+                        <td className="py-3 px-3 font-mono font-bold text-primary dark:text-blue-400">
+                          {lot.lotNo}
+                        </td>
+                        <td className="py-3 px-3 text-slate-600 dark:text-slate-300 font-mono">
+                          {lot.date}
+                        </td>
+                        <td className="py-3 px-3 font-bold text-slate-900 dark:text-white">
+                          {lot.materialName || item?.name || 'Raw Material Item'}
+                        </td>
+                        <td className="py-3 px-3 text-slate-600 dark:text-slate-300">
+                          {lot.vendorName}
+                        </td>
+                        <td className="py-3 px-3 font-mono font-bold text-slate-900 dark:text-white">
+                          {lot.weight} kg
+                        </td>
+                        <td className="py-3 px-3 text-right">
+                          <button
+                            onClick={() => setSelectedLotForQR(lot)}
+                            className="p-1.5 rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-primary/10 dark:hover:bg-blue-950/40 text-slate-600 dark:text-slate-300 hover:text-primary transition cursor-pointer inline-flex items-center gap-1 text-[11px] font-bold border border-slate-200/80 dark:border-slate-700"
+                          >
+                            <QrCode className="h-3.5 w-3.5 text-primary dark:text-blue-400" />
+                            <span>View QR</span>
+                          </button>
+                        </td>
+                      </tr>
+                    );
+                  })
+                );
+              })()}
             </tbody>
           </table>
         </div>

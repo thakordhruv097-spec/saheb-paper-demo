@@ -625,6 +625,24 @@ export function getRawMaterials(): RawMaterialItem[] {
   return getJSON<RawMaterialItem[]>(KEYS.RAW_MATERIALS, []);
 }
 
+export function saveRawMaterial(material: RawMaterialItem): RawMaterialItem {
+  const materials = getRawMaterials();
+  const existingIndex = materials.findIndex(m => m.id === material.id);
+  if (existingIndex > -1) {
+    materials[existingIndex] = material;
+  } else {
+    materials.push(material);
+  }
+  setJSON(KEYS.RAW_MATERIALS, materials);
+  return material;
+}
+
+export function deleteRawMaterial(id: string): void {
+  const materials = getRawMaterials();
+  const updated = materials.filter(m => m.id !== id);
+  setJSON(KEYS.RAW_MATERIALS, updated);
+}
+
 export function getRawMaterialLots(): RawMaterialLot[] {
   return getJSON<RawMaterialLot[]>(KEYS.RAW_MATERIAL_LOTS, []);
 }

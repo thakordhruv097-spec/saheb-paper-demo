@@ -4,6 +4,7 @@ import { useTranslation } from 'react-i18next';
 import { getElectricityLogs, saveElectricityLog, getRolls } from '../../data/index';
 import type { ElectricityLog } from '../../data/types';
 import { CustomDatePickerModal } from '../../components/CustomDatePickerModal';
+import { DataFilterBar } from '../../components/DataFilterBar';
 import { Lightbulb, Plus, Search, ListFilter, CheckCircle2, AlertCircle, Zap, Calendar } from 'lucide-react';
 
 export const ElectricityView: React.FC = () => {
@@ -13,16 +14,23 @@ export const ElectricityView: React.FC = () => {
   const [logs, setLogs] = useState<ElectricityLog[]>(() => getElectricityLogs());
   const [searchTerm, setSearchTerm] = useState('');
   const rolls = getRolls();
+  const [elecDateFrom, setElecDateFrom] = useState('');
+  const [elecDateTo, setElecDateTo] = useState('');
 
   const filteredLogs = useMemo(() => {
+    let list = logs;
     const q = searchTerm.toLowerCase().trim();
-    if (!q) return logs;
-    return logs.filter(
-      l =>
-        l.date.toLowerCase().includes(q) ||
-        l.operator.toLowerCase().includes(q)
-    );
-  }, [logs, searchTerm]);
+    if (q) {
+      list = list.filter(
+        l =>
+          l.date.toLowerCase().includes(q) ||
+          l.operator.toLowerCase().includes(q)
+      );
+    }
+    if (elecDateFrom) list = list.filter(l => l.date >= elecDateFrom);
+    if (elecDateTo) list = list.filter(l => l.date <= elecDateTo);
+    return list;
+  }, [logs, searchTerm, elecDateFrom, elecDateTo]);
 
   // Form States
   const [dateStr, setDateStr] = useState<string>(() => new Date().toISOString().substring(0, 10));
@@ -211,15 +219,24 @@ export const ElectricityView: React.FC = () => {
             </div>
           </div>
 
-          {/* Search Input */}
-          <div className="mb-4 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-2xl p-2.5 flex items-center gap-2 shadow-2xs">
-            <Search className="h-4 w-4 text-slate-400 shrink-0 ml-1" />
-            <input
-              type="text"
-              value={searchTerm}
-              onChange={e => setSearchTerm(e.target.value)}
-              placeholder="Search logs by date or operator..."
-              className="bg-transparent border-none text-xs font-semibold focus:outline-none w-full dark:text-white"
+          {/* Search Input + Filter */}
+          <div className="mb-4 flex items-center gap-2">
+            <div className="bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-2xl p-2.5 flex items-center gap-2 shadow-2xs flex-1">
+              <Search className="h-4 w-4 text-slate-400 shrink-0 ml-1" />
+              <input
+                type="text"
+                value={searchTerm}
+                onChange={e => setSearchTerm(e.target.value)}
+                placeholder="Search by date, operator..."
+                className="bg-transparent border-none text-xs font-semibold focus:outline-none w-full dark:text-white"
+              />
+            </div>
+            <DataFilterBar
+              dateFrom={elecDateFrom}
+              dateTo={elecDateTo}
+              onDateFromChange={setElecDateFrom}
+              onDateToChange={setElecDateTo}
+              onClearAll={() => { setElecDateFrom(''); setElecDateTo(''); }}
             />
           </div>
 

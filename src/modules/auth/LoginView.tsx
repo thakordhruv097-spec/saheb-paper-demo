@@ -245,83 +245,112 @@ export const LoginView: React.FC = () => {
               </button>
             </div>
 
-            {/* Quick Demo Credentials Bar */}
-            <div className="pt-5 border-t border-slate-100 text-center space-y-2">
-              <span className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest">
-                Quick Demo Access (6 Master Accounts)
-              </span>
-              <div className="flex justify-center flex-wrap gap-1.5">
+            {/* Quick Demo Credentials - Modern Card Grid */}
+            <div className="pt-6 border-t border-slate-100">
+              <p className="text-xs font-semibold text-slate-500 text-center mb-3">
+                Quick Demo Access
+              </p>
+              <div className="grid grid-cols-2 gap-2">
                 <button
                   type="button"
                   onClick={async () => {
-                    setUsername('admin');
-                    setPin('1234');
-                    await login('admin', '1234');
-                    navigate('/');
+                    const success = await login('admin', '1234');
+                    if (success) navigate('/');
                   }}
-                  className="px-2.5 py-1 bg-red-50 hover:bg-red-100 text-[10px] font-extrabold text-red-600 rounded-full transition cursor-pointer"
+                  className="flex items-center gap-2 p-2.5 bg-gradient-to-br from-red-50 to-red-100/50 hover:from-red-100 hover:to-red-200/50 border border-red-200 rounded-xl transition-all duration-200 cursor-pointer group"
                 >
-                  👑 Admin (1234)
+                  <div className="flex-shrink-0 w-8 h-8 bg-red-500 rounded-lg flex items-center justify-center text-white text-base group-hover:scale-110 transition-transform">
+                    👑
+                  </div>
+                  <div className="text-left flex-1 min-w-0">
+                    <p className="text-xs font-bold text-red-700 truncate">Admin</p>
+                    <p className="text-[10px] text-red-600/70 font-medium">PIN: 1234</p>
+                  </div>
                 </button>
+
                 <button
                   type="button"
                   onClick={async () => {
-                    setUsername('plant_manager');
-                    setPin('1111');
-                    await login('plant_manager', '1111');
-                    navigate('/');
+                    const success = await login('plant_manager', '1111');
+                    if (success) navigate('/');
                   }}
-                  className="px-2.5 py-1 bg-indigo-50 hover:bg-indigo-100 text-[10px] font-extrabold text-indigo-600 rounded-full transition cursor-pointer"
+                  className="flex items-center gap-2 p-2.5 bg-gradient-to-br from-blue-50 to-blue-100/50 hover:from-blue-100 hover:to-blue-200/50 border border-blue-200 rounded-xl transition-all duration-200 cursor-pointer group"
                 >
-                  🏭 Plant Manager (1111)
+                  <div className="flex-shrink-0 w-8 h-8 bg-blue-500 rounded-lg flex items-center justify-center text-white text-base group-hover:scale-110 transition-transform">
+                    🏭
+                  </div>
+                  <div className="text-left flex-1 min-w-0">
+                    <p className="text-xs font-bold text-blue-700 truncate">Plant Manager</p>
+                    <p className="text-[10px] text-blue-600/70 font-medium">PIN: 1111</p>
+                  </div>
                 </button>
+
                 <button
                   type="button"
                   onClick={async () => {
-                    setUsername('lab_operator');
-                    setPin('1234');
-                    await login('lab_operator', '1234');
-                    navigate('/');
+                    const success = await login('lab_operator', '1234');
+                    if (success) navigate('/');
                   }}
-                  className="px-2.5 py-1 bg-purple-50 hover:bg-purple-100 text-[10px] font-extrabold text-purple-600 rounded-full transition cursor-pointer"
+                  className="flex items-center gap-2 p-2.5 bg-gradient-to-br from-purple-50 to-purple-100/50 hover:from-purple-100 hover:to-purple-200/50 border border-purple-200 rounded-xl transition-all duration-200 cursor-pointer group"
                 >
-                  🔬 Lab (1234)
+                  <div className="flex-shrink-0 w-8 h-8 bg-purple-500 rounded-lg flex items-center justify-center text-white text-base group-hover:scale-110 transition-transform">
+                    🔬
+                  </div>
+                  <div className="text-left flex-1 min-w-0">
+                    <p className="text-xs font-bold text-purple-700 truncate">Lab Operator</p>
+                    <p className="text-[10px] text-purple-600/70 font-medium">PIN: 1234</p>
+                  </div>
                 </button>
+
                 <button
                   type="button"
                   onClick={async () => {
-                    setUsername('shopper');
-                    setPin('1234');
-                    await login('shopper', '1234');
-                    navigate('/');
+                    const success = await login('shopper', '1234');
+                    if (success) navigate('/');
                   }}
-                  className="px-2.5 py-1 bg-emerald-50 hover:bg-emerald-100 text-[10px] font-extrabold text-emerald-600 rounded-full transition cursor-pointer"
+                  className="flex items-center gap-2 p-2.5 bg-gradient-to-br from-emerald-50 to-emerald-100/50 hover:from-emerald-100 hover:to-emerald-200/50 border border-emerald-200 rounded-xl transition-all duration-200 cursor-pointer group"
                 >
-                  🛒 Shopper (1234)
+                  <div className="flex-shrink-0 w-8 h-8 bg-emerald-500 rounded-lg flex items-center justify-center text-white text-base group-hover:scale-110 transition-transform">
+                    🛒
+                  </div>
+                  <div className="text-left flex-1 min-w-0">
+                    <p className="text-xs font-bold text-emerald-700 truncate">Shopper</p>
+                    <p className="text-[10px] text-emerald-600/70 font-medium">PIN: 1234</p>
+                  </div>
                 </button>
+
                 <button
                   type="button"
                   onClick={async () => {
-                    setUsername('dispatcher');
-                    setPin('1234');
-                    await login('dispatcher', '1234');
-                    navigate('/');
+                    const success = await login('dispatcher', '1234');
+                    if (success) navigate('/');
                   }}
-                  className="px-2.5 py-1 bg-amber-50 hover:bg-amber-100 text-[10px] font-extrabold text-amber-600 rounded-full transition cursor-pointer"
+                  className="flex items-center gap-2 p-2.5 bg-gradient-to-br from-amber-50 to-amber-100/50 hover:from-amber-100 hover:to-amber-200/50 border border-amber-200 rounded-xl transition-all duration-200 cursor-pointer group"
                 >
-                  🚚 Dispatcher (1234)
+                  <div className="flex-shrink-0 w-8 h-8 bg-amber-500 rounded-lg flex items-center justify-center text-white text-base group-hover:scale-110 transition-transform">
+                    🚚
+                  </div>
+                  <div className="text-left flex-1 min-w-0">
+                    <p className="text-xs font-bold text-amber-700 truncate">Dispatcher</p>
+                    <p className="text-[10px] text-amber-600/70 font-medium">PIN: 1234</p>
+                  </div>
                 </button>
+
                 <button
                   type="button"
                   onClick={async () => {
-                    setUsername('viewer');
-                    setPin('1234');
-                    await login('viewer', '1234');
-                    navigate('/');
+                    const success = await login('viewer', '1234');
+                    if (success) navigate('/');
                   }}
-                  className="px-2.5 py-1 bg-slate-100 hover:bg-slate-200 text-[10px] font-extrabold text-slate-600 rounded-full transition cursor-pointer"
+                  className="flex items-center gap-2 p-2.5 bg-gradient-to-br from-slate-50 to-slate-100/50 hover:from-slate-100 hover:to-slate-200/50 border border-slate-200 rounded-xl transition-all duration-200 cursor-pointer group"
                 >
-                  👁️ Viewer (1234)
+                  <div className="flex-shrink-0 w-8 h-8 bg-slate-500 rounded-lg flex items-center justify-center text-white text-base group-hover:scale-110 transition-transform">
+                    👁️
+                  </div>
+                  <div className="text-left flex-1 min-w-0">
+                    <p className="text-xs font-bold text-slate-700 truncate">Viewer</p>
+                    <p className="text-[10px] text-slate-600/70 font-medium">PIN: 1234</p>
+                  </div>
                 </button>
               </div>
             </div>

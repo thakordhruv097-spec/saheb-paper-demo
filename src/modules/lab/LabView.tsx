@@ -5,6 +5,7 @@ import { getLabReports, saveLabReport, deleteLabReport, getRolls } from '../../d
 import type { PaperTestReport } from '../../data/types';
 import { printPaperTestReport } from '../../utils/labPdfGenerator';
 import { CustomDatePickerModal } from '../../components/CustomDatePickerModal';
+import { DataFilterBar } from '../../components/DataFilterBar';
 import {
   Beaker,
   Plus,
@@ -35,6 +36,12 @@ export const LabView: React.FC = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedReportForView, setSelectedReportForView] = useState<PaperTestReport | null>(null);
+
+  // Filter states for lab reports history
+  const [labDateFrom, setLabDateFrom] = useState('');
+  const [labDateTo, setLabDateTo] = useState('');
+  const [labShiftFilter, setLabShiftFilter] = useState('all');
+  const [labQcFilter, setLabQcFilter] = useState('all');
 
   // Success / Error Feedback
   const [successMsg, setSuccessMsg] = useState('');
@@ -171,17 +178,24 @@ export const LabView: React.FC = () => {
   };
 
   const filteredReports = useMemo(() => {
+    let list = reports;
     const q = searchTerm.toLowerCase().trim();
-    if (!q) return reports;
-    return reports.filter(r => {
-      return (
-        r.rollNo.toLowerCase().includes(q) ||
-        r.product.toLowerCase().includes(q) ||
-        r.date.includes(q) ||
-        r.inspector.toLowerCase().includes(q)
-      );
-    });
-  }, [reports, searchTerm]);
+    if (q) {
+      list = list.filter(r => {
+        return (
+          r.rollNo.toLowerCase().includes(q) ||
+          r.product.toLowerCase().includes(q) ||
+          r.date.includes(q) ||
+          r.inspector.toLowerCase().includes(q)
+        );
+      });
+    }
+    if (labDateFrom) list = list.filter(r => r.date >= labDateFrom);
+    if (labDateTo) list = list.filter(r => r.date <= labDateTo);
+    if (labShiftFilter && labShiftFilter !== 'all') list = list.filter(r => r.shift === labShiftFilter);
+    if (labQcFilter && labQcFilter !== 'all') list = list.filter(r => r.qcStatus === labQcFilter);
+    return list;
+  }, [reports, searchTerm, labDateFrom, labDateTo, labShiftFilter, labQcFilter]);
 
   // Overall KPI Metrics
   const totalReportsCount = reports.length;
@@ -313,14 +327,32 @@ export const LabView: React.FC = () => {
             </p>
           </div>
 
-          <div className="bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-2xl p-2 flex items-center gap-2 w-full md:w-72">
-            <Search className="h-4 w-4 text-slate-400 shrink-0" />
-            <input
-              type="text"
-              value={searchTerm}
-              onChange={e => setSearchTerm(e.target.value)}
-              placeholder="Search by Roll No, Product, Date..."
-              className="bg-transparent border-none text-xs font-semibold focus:outline-none w-full dark:text-white placeholder-slate-400"
+          <div className="flex items-center gap-2">
+            <div className="bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-2xl p-2 flex items-center gap-2 w-full md:w-56">
+              <Search className="h-4 w-4 text-slate-400 shrink-0" />
+              <input
+                type="text"
+                value={searchTerm}
+                onChange={e => setSearchTerm(e.target.value)}
+                placeholder="Search roll, product..."
+                className="bg-transparent border-none text-xs font-semibold focus:outline-none w-full dark:text-white placeholder-slate-400"
+              />
+            </div>
+            <DataFilterBar
+              dateFrom={labDateFrom}
+              dateTo={labDateTo}
+              onDateFromChange={setLabDateFrom}
+              onDateToChange={setLabDateTo}
+              filterFields={[
+                { id: 'shift', label: 'Shift', options: [{label: 'Shift A', value: 'A'}, {label: 'Shift B', value: 'B'}, {label: 'Shift C', value: 'C'}] },
+                { id: 'qc', label: 'QC Status', options: [{label: 'Grade A', value: 'GRADE_A'}, {label: 'Grade B', value: 'GRADE_B'}, {label: 'Rejected', value: 'REJECTED'}] },
+              ]}
+              activeFilters={{ shift: labShiftFilter, qc: labQcFilter }}
+              onFilterChange={(fieldId, value) => {
+                if (fieldId === 'shift') setLabShiftFilter(value);
+                if (fieldId === 'qc') setLabQcFilter(value);
+              }}
+              onClearAll={() => { setLabDateFrom(''); setLabDateTo(''); setLabShiftFilter('all'); setLabQcFilter('all'); }}
             />
           </div>
         </div>

@@ -1,19 +1,51 @@
-node_modules
-dist
-dist-ssr
-dist-electron
-release
-.jdk17
-jdk17*
-*.zip
+# Dependencies
+node_modules/
+
+# Production & Build outputs
+dist/
+dist-ssr/
+dist-electron/
+release/
+build/
+
+# Binaries & Bundles
+*.apk
+*.aab
 *.exe
+*.zip
+.jdk17/
+jdk17*
+
+# Environment Variables & Secret Security
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+.env.*
+
+# Logs
+logs/
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# OS & Editor Files
+.DS_Store
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+.vscode/*
+!.vscode/extensions.json
+.idea/
+
+# Android & Capacitor Local Build Files
 android/.gradle_user_home
 android/.gradle
 android/build
 android/app/build
 android/local.properties
 android/capacitor-cordova-android-plugins
-*.apk
-*.aab
-.env
-.env.*

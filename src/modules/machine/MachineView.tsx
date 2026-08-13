@@ -4,6 +4,7 @@ import { useTranslation } from 'react-i18next';
 import { getRolls, saveRoll, getProducts, getFormulaForDate } from '../../data/index';
 import type { MachineRoll } from '../../data/types';
 import { CustomDatePickerModal } from '../../components/CustomDatePickerModal';
+import { DataFilterBar } from '../../components/DataFilterBar';
 import { Cog, Plus, Info, Search, Calendar } from 'lucide-react';
 
 export const MachineView: React.FC = () => {
@@ -19,6 +20,10 @@ export const MachineView: React.FC = () => {
 
   // Search State
   const [searchRoll, setSearchRoll] = useState('');
+  const [machDateFrom, setMachDateFrom] = useState('');
+  const [machDateTo, setMachDateTo] = useState('');
+  const [machShiftFilter, setMachShiftFilter] = useState('all');
+  const [machProductFilter, setMachProductFilter] = useState('all');
 
   // Filtered Rolls Memo
   const filteredRolls = useMemo(() => {
@@ -32,8 +37,12 @@ export const MachineView: React.FC = () => {
         String(r.width).includes(term)
       );
     }
+    if (machDateFrom) list = list.filter(r => r.date >= machDateFrom);
+    if (machDateTo) list = list.filter(r => r.date <= machDateTo);
+    if (machShiftFilter && machShiftFilter !== 'all') list = list.filter(r => r.shift === machShiftFilter);
+    if (machProductFilter && machProductFilter !== 'all') list = list.filter(r => r.product === machProductFilter);
     return list;
-  }, [rolls, searchRoll]);
+  }, [rolls, searchRoll, machDateFrom, machDateTo, machShiftFilter, machProductFilter]);
 
   // Form States - load from localStorage if present
   const [dateStr, setDateStr] = useState(() => {
@@ -401,15 +410,33 @@ export const MachineView: React.FC = () => {
             Recent Logged Rolls
           </h3>
 
-          <div className="mb-4 relative">
-            <input
-              type="text"
-              value={searchRoll}
-              onChange={e => setSearchRoll(e.target.value)}
-              placeholder="Search roll no, product, width..."
-              className="w-full py-2 px-3 pl-8 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-2xl text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-primary dark:text-white placeholder-slate-400"
+          <div className="mb-4 flex items-center gap-2">
+            <div className="relative flex-1">
+              <input
+                type="text"
+                value={searchRoll}
+                onChange={e => setSearchRoll(e.target.value)}
+                placeholder="Search roll no, product..."
+                className="w-full py-2 px-3 pl-8 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-2xl text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-primary dark:text-white placeholder-slate-400"
+              />
+              <Search className="h-3.5 w-3.5 text-slate-400 absolute left-2.5 top-2.5" />
+            </div>
+            <DataFilterBar
+              dateFrom={machDateFrom}
+              dateTo={machDateTo}
+              onDateFromChange={setMachDateFrom}
+              onDateToChange={setMachDateTo}
+              filterFields={[
+                { id: 'shift', label: 'Shift', options: [{label: 'Shift A', value: 'A'}, {label: 'Shift B', value: 'B'}, {label: 'Shift C', value: 'C'}] },
+                { id: 'product', label: 'Product', options: [...new Set(rolls.map(r => r.product))].map(p => ({label: p, value: p})) },
+              ]}
+              activeFilters={{ shift: machShiftFilter, product: machProductFilter }}
+              onFilterChange={(fieldId, value) => {
+                if (fieldId === 'shift') setMachShiftFilter(value);
+                if (fieldId === 'product') setMachProductFilter(value);
+              }}
+              onClearAll={() => { setMachDateFrom(''); setMachDateTo(''); setMachShiftFilter('all'); setMachProductFilter('all'); }}
             />
-            <Search className="h-3.5 w-3.5 text-slate-400 absolute left-2.5 top-2.5" />
           </div>
 
           <div className="space-y-3 max-h-[600px] overflow-y-auto pr-1">

@@ -4,6 +4,7 @@ import { useTranslation } from 'react-i18next';
 import { getFormulas, saveFormula } from '../../data/index';
 import type { PulpFormula } from '../../data/types';
 import { CustomDatePickerModal } from '../../components/CustomDatePickerModal';
+import { DataFilterBar } from '../../components/DataFilterBar';
 import {
   Factory,
   Plus,
@@ -21,6 +22,9 @@ import {
   Layers,
   ChevronLeft,
   ChevronRight,
+  ChevronDown,
+  Copy,
+  Package,
 } from 'lucide-react';
 
 interface DowntimeLog {
@@ -33,9 +37,12 @@ interface DowntimeLog {
 export const PulpMillView: React.FC = () => {
   const { t } = useTranslation();
   const { user } = useAuth();
+  const [showAllHistory, setShowAllHistory] = useState(false);
 
   const [formulas, setFormulas] = useState<PulpFormula[]>(() => getFormulas());
   const [searchTerm, setSearchTerm] = useState('');
+  const [historyDateFrom, setHistoryDateFrom] = useState('');
+  const [historyDateTo, setHistoryDateTo] = useState('');
 
   // Date selection state
   const [dateStr, setDateStr] = useState(() => {
@@ -163,16 +170,93 @@ export const PulpMillView: React.FC = () => {
   };
 
   const filteredFormulas = useMemo(() => {
+    let list = formulas;
+    // Text search
     const q = searchTerm.toLowerCase().trim();
-    if (!q) return formulas;
-    return formulas.filter(f => {
-      const formattedDate = f.date.split('-').reverse().join('-');
-      return (
-        f.date.toLowerCase().includes(q) ||
-        formattedDate.toLowerCase().includes(q)
-      );
-    });
-  }, [formulas, searchTerm]);
+    if (q) {
+      list = list.filter(f => {
+        const formattedDate = f.date.split('-').reverse().join('-');
+        return (
+          f.date.toLowerCase().includes(q) ||
+          formattedDate.toLowerCase().includes(q)
+        );
+      });
+    }
+    // Date range filter
+    if (historyDateFrom) {
+      list = list.filter(f => f.date >= historyDateFrom);
+    }
+    if (historyDateTo) {
+      list = list.filter(f => f.date <= historyDateTo);
+    }
+    return list;
+  }, [formulas, searchTerm, historyDateFrom, historyDateTo]);
+
+  // Detect formulas identical to chronological previous day
+  const sameAsPrevSet = useMemo(() => {
+    const sorted = [...formulas].sort((a, b) => a.date.localeCompare(b.date));
+    const set = new Set<string>();
+
+    for (let i = 1; i < sorted.length; i++) {
+      const current = sorted[i];
+      const prev = sorted[i - 1];
+
+      const currentWaste = Object.entries(current.wasteMix || {}).filter(([_, v]) => Number(v) > 0);
+      const prevWaste = Object.entries(prev.wasteMix || {}).filter(([_, v]) => Number(v) > 0);
+
+      let matches = currentWaste.length === prevWaste.length;
+      if (matches) {
+        for (const [k, v] of currentWaste) {
+          if (prev.wasteMix[k] !== v) {
+            matches = false;
+            break;
+          }
+        }
+      }
+
+      if (matches) {
+        const currentChem = Object.entries(current.chemicals || {}).filter(([_, v]) => Number(v) > 0);
+        const prevChem = Object.entries(prev.chemicals || {}).filter(([_, v]) => Number(v) > 0);
+        if (currentChem.length !== prevChem.length) {
+          matches = false;
+        } else {
+          for (const [k, v] of currentChem) {
+            if (prev.chemicals[k] !== v) {
+              matches = false;
+              break;
+            }
+          }
+        }
+      }
+
+      if (matches) {
+        set.add(current.id);
+      }
+    }
+
+    return set;
+  }, [formulas]);
+
+  const getWasteBadgeStyle = (name: string, index: number) => {
+    const n = name.toLowerCase();
+    if (n.includes('broke') || n.includes('mill')) {
+      return 'bg-amber-100/80 dark:bg-amber-950/50 text-amber-800 dark:text-amber-300 border-amber-300/80 dark:border-amber-700/80';
+    }
+    if (n.includes('craft') || n.includes('corrugat') || n.includes('occ')) {
+      return 'bg-blue-100/80 dark:bg-blue-950/50 text-blue-800 dark:text-blue-300 border-blue-300/80 dark:border-blue-700/80';
+    }
+    if (n.includes('office') || n.includes('white') || n.includes('sheet')) {
+      return 'bg-emerald-100/80 dark:bg-emerald-950/50 text-emerald-800 dark:text-emerald-300 border-emerald-300/80 dark:border-emerald-700/80';
+    }
+    const fallbackStyles = [
+      'bg-blue-100/80 dark:bg-blue-950/50 text-blue-800 dark:text-blue-300 border-blue-300/80 dark:border-blue-700/80',
+      'bg-amber-100/80 dark:bg-amber-950/50 text-amber-800 dark:text-amber-300 border-amber-300/80 dark:border-amber-700/80',
+      'bg-emerald-100/80 dark:bg-emerald-950/50 text-emerald-800 dark:text-emerald-300 border-emerald-300/80 dark:border-emerald-700/80',
+      'bg-slate-200/80 dark:bg-slate-800 text-slate-800 dark:text-slate-200 border-slate-300/80 dark:border-slate-700',
+      'bg-indigo-100/80 dark:bg-indigo-950/50 text-indigo-800 dark:text-indigo-300 border-indigo-300/80 dark:border-indigo-700/80',
+    ];
+    return fallbackStyles[index % fallbackStyles.length];
+  };
 
   return (
     <div className="space-y-6">
@@ -387,70 +471,152 @@ export const PulpMillView: React.FC = () => {
             </p>
           </div>
 
-          <div className="bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-2xl p-2 flex items-center gap-2 w-full md:w-64">
-            <Search className="h-4 w-4 text-slate-400 shrink-0" />
-            <input
-              type="text"
-              value={searchTerm}
-              onChange={e => setSearchTerm(e.target.value)}
-              placeholder="Search date (DD/MM/YYYY)..."
-              className="bg-transparent border-none text-xs font-semibold focus:outline-none w-full dark:text-white placeholder-slate-400"
+          <div className="flex items-center gap-2">
+            <div className="bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-2xl p-2 flex items-center gap-2 w-full md:w-56">
+              <Search className="h-4 w-4 text-slate-400 shrink-0" />
+              <input
+                type="text"
+                value={searchTerm}
+                onChange={e => setSearchTerm(e.target.value)}
+                placeholder="Search date..."
+                className="bg-transparent border-none text-xs font-semibold focus:outline-none w-full dark:text-white placeholder-slate-400"
+              />
+            </div>
+            <DataFilterBar
+              dateFrom={historyDateFrom}
+              dateTo={historyDateTo}
+              onDateFromChange={setHistoryDateFrom}
+              onDateToChange={setHistoryDateTo}
+              onClearAll={() => { setHistoryDateFrom(''); setHistoryDateTo(''); }}
             />
           </div>
         </div>
 
-        <div className="overflow-x-auto">
-          <table className="w-full text-left text-xs border-collapse">
-            <thead>
-              <tr className="border-b border-slate-100 dark:border-slate-800 text-slate-400 uppercase text-[10px] font-black tracking-wider">
-                <th className="py-3 px-3">Date</th>
-                <th className="py-3 px-3">Waste Paper Mix (%)</th>
-                <th className="py-3 px-3">Chemical Rates (kg/T)</th>
-                <th className="py-3 px-3 text-right">Status</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-slate-100 dark:divide-slate-800 font-semibold">
-              {filteredFormulas.length === 0 ? (
-                <tr>
-                  <td colSpan={4} className="py-8 text-center text-xs text-slate-400 font-medium">
-                    No formula records match your search.
-                  </td>
-                </tr>
-              ) : (
-                filteredFormulas.map(f => {
-                  const wasteMixText = Object.entries(f.wasteMix || {})
-                    .filter(([_, val]) => Number(val) > 0)
-                    .map(([name, val]) => `${name}: ${val}%`)
-                    .join(', ');
+        {/* Card-Based Layout for History Records */}
+        {filteredFormulas.length === 0 ? (
+          <div className="py-10 text-center text-xs text-slate-400 font-medium bg-slate-50/50 dark:bg-slate-900/40 rounded-2xl border border-dashed border-slate-200 dark:border-slate-800">
+            No formula records match your search or date filter.
+          </div>
+        ) : (
+          <div className="space-y-3.5">
+            {(showAllHistory || searchTerm || historyDateFrom || historyDateTo
+              ? filteredFormulas
+              : filteredFormulas.slice(0, 3)
+            ).map(f => {
+              const wasteEntries = Object.entries(f.wasteMix || {}).filter(([_, val]) => Number(val) > 0);
+              const chemEntries = Object.entries(f.chemicals || {}).filter(([_, val]) => Number(val) > 0);
+              const isSameAsPrev = sameAsPrevSet.has(f.id);
 
-                  const chemicalText = Object.entries(f.chemicals || {})
-                    .filter(([_, val]) => Number(val) > 0)
-                    .map(([name, val]) => `${name}: ${val} kg/T`)
-                    .join(', ');
-
-                  return (
-                    <tr key={f.id} className="hover:bg-slate-50 dark:hover:bg-slate-800/40 transition">
-                      <td className="py-3 px-3 font-mono font-bold text-slate-900 dark:text-white">
-                        {f.date.split('-').reverse().join('/')}
-                      </td>
-                      <td className="py-3 px-3 text-slate-700 dark:text-slate-300 max-w-xs truncate">
-                        {wasteMixText || 'Default Mix'}
-                      </td>
-                      <td className="py-3 px-3 text-slate-700 dark:text-slate-300 max-w-xs truncate">
-                        {chemicalText || 'Standard Dosage'}
-                      </td>
-                      <td className="py-3 px-3 text-right">
-                        <span className="px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase bg-emerald-100 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800">
-                          Active Engine
+              return (
+                <div
+                  key={f.id}
+                  className="p-4 sm:p-5 bg-slate-50/60 dark:bg-slate-900/50 border border-slate-200/80 dark:border-slate-800 rounded-2xl space-y-4 hover:border-slate-300 dark:hover:border-slate-700 transition shadow-2xs"
+                >
+                  {/* Card Header: Date & Indicators */}
+                  <div className="flex flex-wrap items-center justify-between gap-2 border-b border-slate-200/80 dark:border-slate-800 pb-3">
+                    <div className="flex items-center gap-2.5 flex-wrap">
+                      <div className="flex items-center gap-2">
+                        <div className="p-1.5 rounded-xl bg-primary/10 text-primary dark:bg-blue-950/60 dark:text-blue-400">
+                          <Calendar className="h-4 w-4" />
+                        </div>
+                        <span className="font-mono font-black text-sm text-slate-900 dark:text-white">
+                          {f.date.split('-').reverse().join('/')}
                         </span>
-                      </td>
-                    </tr>
-                  );
-                })
-              )}
-            </tbody>
-          </table>
-        </div>
+                      </div>
+
+                      {isSameAsPrev && (
+                        <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[10px] font-extrabold bg-sky-100 dark:bg-sky-950/60 text-sky-800 dark:text-sky-300 border border-sky-300/80 dark:border-sky-700/80">
+                          <Copy className="h-3 w-3 text-sky-600 dark:text-sky-400" />
+                          <span>Same as previous day</span>
+                        </span>
+                      )}
+                    </div>
+
+                    <span className="px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase bg-emerald-100 dark:bg-emerald-950/40 text-emerald-800 dark:text-emerald-300 border border-emerald-300/80 dark:border-emerald-800">
+                      Active Engine
+                    </span>
+                  </div>
+
+                  {/* Card Body: Separated Sections */}
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    {/* Section 1: Waste Paper Mix */}
+                    <div className="space-y-2">
+                      <div className="flex items-center justify-between">
+                        <span className="text-[10px] font-black text-slate-500 dark:text-slate-400 uppercase tracking-wider flex items-center gap-1.5">
+                          <Package className="h-3.5 w-3.5 text-blue-600 dark:text-blue-400" />
+                          Waste Paper Mix (100% Total)
+                        </span>
+                        <span className="text-[10px] font-bold text-slate-400 font-mono">
+                          {wasteEntries.reduce((sum, [_, v]) => sum + Number(v), 0)}%
+                        </span>
+                      </div>
+                      <div className="flex flex-wrap gap-1.5">
+                        {wasteEntries.length === 0 ? (
+                          <span className="text-slate-400 italic text-[11px]">No waste mix logged</span>
+                        ) : (
+                          wasteEntries.map(([name, val], idx) => {
+                            const badgeStyle = getWasteBadgeStyle(name, idx);
+                            return (
+                              <span
+                                key={name}
+                                className={`px-2.5 py-1 rounded-xl text-xs font-bold border flex items-center gap-1.5 shadow-2xs ${badgeStyle}`}
+                              >
+                                <span>{name}</span>
+                                <strong className="font-mono font-black text-[11px] bg-white/60 dark:bg-black/30 px-1.5 py-0.5 rounded-lg">
+                                  {val}%
+                                </strong>
+                              </span>
+                            );
+                          })
+                        )}
+                      </div>
+                    </div>
+
+                    {/* Section 2: Chemical Dosage Rates */}
+                    <div className="space-y-2">
+                      <div className="flex items-center justify-between">
+                        <span className="text-[10px] font-black text-slate-500 dark:text-slate-400 uppercase tracking-wider flex items-center gap-1.5">
+                          <Beaker className="h-3.5 w-3.5 text-purple-600 dark:text-purple-400" />
+                          Chemical Rates (kg/Ton)
+                        </span>
+                      </div>
+                      <div className="flex flex-wrap gap-1.5">
+                        {chemEntries.length === 0 ? (
+                          <span className="text-slate-400 italic text-[11px]">Standard dosage</span>
+                        ) : (
+                          chemEntries.map(([name, val]) => (
+                            <span
+                              key={name}
+                              className="px-2.5 py-1 rounded-xl text-xs font-bold bg-purple-100/80 dark:bg-purple-950/50 text-purple-800 dark:text-purple-300 border border-purple-300/80 dark:border-purple-700/80 flex items-center gap-1.5 shadow-2xs"
+                            >
+                              <span>{name}</span>
+                              <strong className="font-mono font-black text-[11px] bg-white/60 dark:bg-black/30 px-1.5 py-0.5 rounded-lg">
+                                {val} kg/T
+                              </strong>
+                            </span>
+                          ))
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              );
+            })}
+
+            {filteredFormulas.length > 3 && !searchTerm && !historyDateFrom && !historyDateTo && (
+              <div className="pt-2 text-center">
+                <button
+                  type="button"
+                  onClick={() => setShowAllHistory(!showAllHistory)}
+                  className="px-5 py-2.5 bg-slate-100 dark:bg-slate-800/80 hover:bg-primary/10 dark:hover:bg-blue-950/50 text-primary dark:text-blue-400 font-black text-xs rounded-2xl border border-slate-200/80 dark:border-slate-700 transition cursor-pointer inline-flex items-center gap-2 shadow-2xs"
+                >
+                  <span>{showAllHistory ? 'Show Less History' : `View More History (${filteredFormulas.length - 3} more records)`}</span>
+                  <ChevronDown className={`h-4 w-4 transition-transform duration-200 ${showAllHistory ? 'rotate-180' : ''}`} />
+                </button>
+              </div>
+            )}
+          </div>
+        )}
       </div>
 
       {/* Date Picker Modal */}

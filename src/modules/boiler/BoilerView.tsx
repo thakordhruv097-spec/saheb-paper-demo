@@ -5,6 +5,7 @@ import { getBoilerLogs, saveBoilerLog, getRolls } from '../../data/index';
 import type { BoilerLog } from '../../data/types';
 import { Flame, Droplet, Plus, Info, List, BarChart, QrCode, Printer, Search, ChevronDown, ChevronUp } from 'lucide-react';
 import { QRCodeSVG } from 'qrcode.react';
+import { DataFilterBar } from '../../components/DataFilterBar';
 
 export const BoilerView: React.FC = () => {
   const { t } = useTranslation();
@@ -14,18 +15,27 @@ export const BoilerView: React.FC = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [visibleCount, setVisibleCount] = useState(6);
   const rolls = getRolls();
+  const [boilerDateFrom, setBoilerDateFrom] = useState('');
+  const [boilerDateTo, setBoilerDateTo] = useState('');
+  const [boilerShiftFilter, setBoilerShiftFilter] = useState('all');
 
   const filteredLogs = useMemo(() => {
+    let list = logs;
     const q = searchTerm.toLowerCase().trim();
-    if (!q) return logs;
-    return logs.filter(
-      l =>
-        l.date.toLowerCase().includes(q) ||
-        l.operator.toLowerCase().includes(q) ||
-        `shift ${l.shift.toLowerCase()}`.includes(q) ||
-        l.shift.toLowerCase().includes(q)
-    );
-  }, [logs, searchTerm]);
+    if (q) {
+      list = list.filter(
+        l =>
+          l.date.toLowerCase().includes(q) ||
+          l.operator.toLowerCase().includes(q) ||
+          `shift ${l.shift.toLowerCase()}`.includes(q) ||
+          l.shift.toLowerCase().includes(q)
+      );
+    }
+    if (boilerDateFrom) list = list.filter(l => l.date >= boilerDateFrom);
+    if (boilerDateTo) list = list.filter(l => l.date <= boilerDateTo);
+    if (boilerShiftFilter && boilerShiftFilter !== 'all') list = list.filter(l => l.shift === boilerShiftFilter);
+    return list;
+  }, [logs, searchTerm, boilerDateFrom, boilerDateTo, boilerShiftFilter]);
 
   // Operator Entry Form States
   const [woodStr, setWoodStr] = useState('');
@@ -219,15 +229,29 @@ export const BoilerView: React.FC = () => {
               Boiler Daily Operation Registers
             </h3>
             
-            {/* Search Input */}
-            <div className="mb-4 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg p-2.5 flex items-center gap-2 max-w-md">
-              <Search className="h-4.5 w-4.5 text-slate-400 shrink-0" />
-              <input
-                type="text"
-                value={searchTerm}
-                onChange={e => setSearchTerm(e.target.value)}
-                placeholder="Search logs by date, operator, or shift..."
-                className="bg-transparent border-none text-xs focus:outline-none w-full dark:text-white"
+            {/* Search Input + Filter */}
+            <div className="mb-4 flex items-center gap-2 flex-wrap">
+              <div className="bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg p-2.5 flex items-center gap-2 flex-1 min-w-[200px] max-w-md">
+                <Search className="h-4.5 w-4.5 text-slate-400 shrink-0" />
+                <input
+                  type="text"
+                  value={searchTerm}
+                  onChange={e => setSearchTerm(e.target.value)}
+                  placeholder="Search logs by date, operator..."
+                  className="bg-transparent border-none text-xs focus:outline-none w-full dark:text-white"
+                />
+              </div>
+              <DataFilterBar
+                dateFrom={boilerDateFrom}
+                dateTo={boilerDateTo}
+                onDateFromChange={setBoilerDateFrom}
+                onDateToChange={setBoilerDateTo}
+                filterFields={[
+                  { id: 'shift', label: 'Shift', options: [{label: 'Shift A', value: 'A'}, {label: 'Shift B', value: 'B'}, {label: 'Shift C', value: 'C'}] },
+                ]}
+                activeFilters={{ shift: boilerShiftFilter }}
+                onFilterChange={(fieldId, value) => { if (fieldId === 'shift') setBoilerShiftFilter(value); }}
+                onClearAll={() => { setBoilerDateFrom(''); setBoilerDateTo(''); setBoilerShiftFilter('all'); }}
               />
             </div>
 

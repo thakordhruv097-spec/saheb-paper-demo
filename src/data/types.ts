@@ -40,6 +40,7 @@ export interface RawMaterialItem {
   category: RawMaterialCategory;
   stock: number; // in kg
   minThreshold: number; // in kg
+  active?: boolean;
 }
 
 export interface ProductItem {
