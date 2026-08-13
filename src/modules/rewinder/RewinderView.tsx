@@ -377,38 +377,49 @@ export const RewinderView: React.FC = () => {
         </div>
       )}
 
-      {/* 1. TOP BANNER STAT CARDS (Rudra DEMO2 style) */}
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-        <div className="bg-white dark:bg-surface-dark border border-slate-200 dark:border-slate-700/80 rounded-3xl p-5 shadow-sm flex items-center gap-4">
-          <div className="p-3.5 rounded-2xl bg-amber-50 dark:bg-amber-950/40 text-amber-600 dark:text-amber-400 border border-amber-200/60 dark:border-amber-800/60 shrink-0">
-            <RotateCw className="h-6 w-6" />
+      {/* 1. TOP BANNER STAT CARDS (4 Hero Scorecards) */}
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3.5">
+        <div className="bg-white dark:bg-surface-dark border border-slate-200 dark:border-slate-700/80 rounded-3xl p-4 sm:p-5 shadow-xs flex items-center gap-3.5">
+          <div className="p-3 rounded-2xl bg-indigo-50 dark:bg-indigo-950/40 text-indigo-600 dark:text-indigo-400 border border-indigo-200/60 dark:border-indigo-800/60 shrink-0">
+            <RotateCw className="h-5.5 w-5.5" />
           </div>
           <div>
-            <p className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Rewinder Reel Output Today</p>
-            <p className="text-2xl font-black text-slate-900 dark:text-white mt-0.5">{formatKgOrTon(totalReelWeightKg)}</p>
-            <p className="text-[11px] text-slate-400 font-semibold mt-0.5">{reels.length} Finished Reels Formed</p>
+            <p className="text-[11px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Reel Output Today</p>
+            <p className="text-xl sm:text-2xl font-black text-slate-900 dark:text-white mt-0.5">{formatKgOrTon(totalReelWeightKg)}</p>
+            <p className="text-[11px] text-slate-400 font-semibold mt-0.5">{reels.length} Finished Reels</p>
           </div>
         </div>
 
-        <div className="bg-white dark:bg-surface-dark border border-slate-200 dark:border-slate-700/80 rounded-3xl p-5 shadow-sm flex items-center gap-4">
-          <div className="p-3.5 rounded-2xl bg-red-50 dark:bg-red-950/40 text-red-600 dark:text-red-400 border border-red-200/60 dark:border-red-800/60 shrink-0">
-            <RefreshCw className="h-6 w-6" />
+        <div className="bg-white dark:bg-surface-dark border border-slate-200 dark:border-slate-700/80 rounded-3xl p-4 sm:p-5 shadow-xs flex items-center gap-3.5">
+          <div className="p-3 rounded-2xl bg-red-50 dark:bg-red-950/40 text-red-600 dark:text-red-400 border border-red-200/60 dark:border-red-800/60 shrink-0">
+            <RefreshCw className="h-5.5 w-5.5" />
           </div>
           <div>
-            <p className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Broke (Wastage) Generated (Rule 6)</p>
-            <p className="text-2xl font-black text-red-600 dark:text-red-400 mt-0.5">{formatKgOrTon(totalBrokeKg)}</p>
-            <p className="text-[11px] text-slate-400 font-semibold mt-0.5">Auto Loop-Back to Raw Material &gt; Broke</p>
+            <p className="text-[11px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Broke Generated</p>
+            <p className="text-xl sm:text-2xl font-black text-red-600 dark:text-red-400 mt-0.5">{formatKgOrTon(totalBrokeKg)}</p>
+            <p className="text-[11px] text-slate-400 font-semibold mt-0.5">Auto Loop-Back (Rule 6)</p>
           </div>
         </div>
 
-        <div className="bg-white dark:bg-surface-dark border border-slate-200 dark:border-slate-700/80 rounded-3xl p-5 shadow-sm flex items-center gap-4">
-          <div className="p-3.5 rounded-2xl bg-emerald-50 dark:bg-emerald-950/40 text-emerald-600 dark:text-emerald-400 border border-emerald-200/60 dark:border-emerald-800/60 shrink-0">
-            <PackageCheck className="h-6 w-6" />
+        <div className="bg-white dark:bg-surface-dark border border-slate-200 dark:border-slate-700/80 rounded-3xl p-4 sm:p-5 shadow-xs flex items-center gap-3.5">
+          <div className="p-3 rounded-2xl bg-emerald-50 dark:bg-emerald-950/40 text-emerald-600 dark:text-emerald-400 border border-emerald-200/60 dark:border-emerald-800/60 shrink-0">
+            <PackageCheck className="h-5.5 w-5.5" />
           </div>
           <div>
-            <p className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Net Added to Finish Stock</p>
-            <p className="text-2xl font-black text-slate-900 dark:text-white mt-0.5">{formatKgOrTon(netFinishStockKg)}</p>
-            <p className="text-[11px] text-emerald-600 dark:text-emerald-400 font-bold mt-0.5">Net of Broke (Rule 6 &amp; 10)</p>
+            <p className="text-[11px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Net Stock Added</p>
+            <p className="text-xl sm:text-2xl font-black text-slate-900 dark:text-white mt-0.5">{formatKgOrTon(netFinishStockKg)}</p>
+            <p className="text-[11px] text-emerald-600 dark:text-emerald-400 font-bold mt-0.5">Net of Broke</p>
+          </div>
+        </div>
+
+        <div className="bg-white dark:bg-surface-dark border border-slate-200 dark:border-slate-700/80 rounded-3xl p-4 sm:p-5 shadow-xs flex items-center gap-3.5">
+          <div className="p-3 rounded-2xl bg-purple-50 dark:bg-purple-950/40 text-purple-600 dark:text-purple-400 border border-purple-200/60 dark:border-purple-800/60 shrink-0">
+            <Scissors className="h-5.5 w-5.5" />
+          </div>
+          <div>
+            <p className="text-[11px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Net Yield Rate</p>
+            <p className="text-xl sm:text-2xl font-black text-purple-600 dark:text-purple-400 mt-0.5">{netYieldRate}</p>
+            <p className="text-[11px] text-purple-500 font-semibold mt-0.5">Yield Efficiency</p>
           </div>
         </div>
       </div>
@@ -442,25 +453,7 @@ export const RewinderView: React.FC = () => {
           </div>
         </div>
 
-        {/* 4-Card Mini KPI Summary Bar (Rudra DEMO2 style) */}
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 p-3.5 bg-slate-50 dark:bg-slate-900/60 rounded-2xl border border-slate-200/80 dark:border-slate-800">
-          <div className="p-3 bg-white dark:bg-slate-800 rounded-xl border border-slate-200/60 dark:border-slate-700">
-            <span className="text-[10px] font-bold text-slate-400 uppercase block">Total Reels</span>
-            <span className="text-base font-extrabold text-slate-900 dark:text-white">{reels.length} Reels</span>
-          </div>
-          <div className="p-3 bg-white dark:bg-slate-800 rounded-xl border border-slate-200/60 dark:border-slate-700">
-            <span className="text-[10px] font-bold text-slate-400 uppercase block">Total Weight</span>
-            <span className="text-base font-extrabold text-blue-600 dark:text-blue-400">{formatKgOrTon(totalReelWeightKg)}</span>
-          </div>
-          <div className="p-3 bg-white dark:bg-slate-800 rounded-xl border border-slate-200/60 dark:border-slate-700">
-            <span className="text-[10px] font-bold text-slate-400 uppercase block">Broke Returned</span>
-            <span className="text-base font-extrabold text-red-500">+{totalBrokeKg.toLocaleString()} kg</span>
-          </div>
-          <div className="p-3 bg-white dark:bg-slate-800 rounded-xl border border-slate-200/60 dark:border-slate-700">
-            <span className="text-[10px] font-bold text-slate-400 uppercase block">Net Yield Rate</span>
-            <span className="text-base font-extrabold text-emerald-500">{netYieldRate}</span>
-          </div>
-        </div>
+
 
         {/* Search & Cascading Filter Controls */}
         <div className="space-y-3 bg-slate-50/80 dark:bg-slate-900/50 p-3.5 rounded-2xl border border-slate-200/60 dark:border-slate-800">
