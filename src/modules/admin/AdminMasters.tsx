@@ -763,10 +763,10 @@ export const AdminMasters: React.FC = () => {
 
 
       {/* 3. NAVIGATION TABS PILLS */}
-      <div className="flex bg-slate-100/90 dark:bg-slate-800/90 p-1.5 rounded-2xl border border-slate-200/80 dark:border-slate-700 overflow-x-auto gap-1">
+      <div className="flex items-center bg-slate-100/90 dark:bg-slate-800/90 p-1.5 rounded-2xl border border-slate-200/80 dark:border-slate-700 overflow-x-auto scrollbar-none gap-1.5 w-full">
         <button
           onClick={() => { setActiveTab('products'); setSuccessMsg(''); setErrorMsg(''); }}
-          className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-black transition-all cursor-pointer whitespace-nowrap ${activeTab === 'products' ? 'bg-gradient-to-r from-blue-600 to-indigo-600 text-white shadow-md' : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
+          className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-black transition-all cursor-pointer whitespace-nowrap shrink-0 ${activeTab === 'products' ? 'bg-gradient-to-r from-blue-600 to-indigo-600 text-white shadow-md' : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
             }`}
         >
           <ShoppingBag className="h-4 w-4" />
@@ -774,7 +774,7 @@ export const AdminMasters: React.FC = () => {
         </button>
         <button
           onClick={() => { setActiveTab('raw_materials'); setSuccessMsg(''); setErrorMsg(''); }}
-          className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-black transition-all cursor-pointer whitespace-nowrap ${activeTab === 'raw_materials' ? 'bg-gradient-to-r from-blue-600 to-indigo-600 text-white shadow-md' : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
+          className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-black transition-all cursor-pointer whitespace-nowrap shrink-0 ${activeTab === 'raw_materials' ? 'bg-gradient-to-r from-blue-600 to-indigo-600 text-white shadow-md' : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
             }`}
         >
           <Boxes className="h-4 w-4" />
@@ -782,7 +782,7 @@ export const AdminMasters: React.FC = () => {
         </button>
         <button
           onClick={() => { setActiveTab('parties'); setSuccessMsg(''); setErrorMsg(''); }}
-          className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-black transition-all cursor-pointer whitespace-nowrap ${activeTab === 'parties' ? 'bg-gradient-to-r from-blue-600 to-indigo-600 text-white shadow-md' : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
+          className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-black transition-all cursor-pointer whitespace-nowrap shrink-0 ${activeTab === 'parties' ? 'bg-gradient-to-r from-blue-600 to-indigo-600 text-white shadow-md' : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
             }`}
         >
           <Users className="h-4 w-4" />
@@ -790,7 +790,7 @@ export const AdminMasters: React.FC = () => {
         </button>
         <button
           onClick={() => { setActiveTab('vendors'); setSuccessMsg(''); setErrorMsg(''); }}
-          className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-black transition-all cursor-pointer whitespace-nowrap ${activeTab === 'vendors' ? 'bg-gradient-to-r from-blue-600 to-indigo-600 text-white shadow-md' : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
+          className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-black transition-all cursor-pointer whitespace-nowrap shrink-0 ${activeTab === 'vendors' ? 'bg-gradient-to-r from-blue-600 to-indigo-600 text-white shadow-md' : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
             }`}
         >
           <Users className="h-4 w-4" />
@@ -798,7 +798,7 @@ export const AdminMasters: React.FC = () => {
         </button>
         <button
           onClick={() => { setActiveTab('vehicles'); setSuccessMsg(''); setErrorMsg(''); }}
-          className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-black transition-all cursor-pointer whitespace-nowrap ${activeTab === 'vehicles' ? 'bg-gradient-to-r from-blue-600 to-indigo-600 text-white shadow-md' : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
+          className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-black transition-all cursor-pointer whitespace-nowrap shrink-0 ${activeTab === 'vehicles' ? 'bg-gradient-to-r from-blue-600 to-indigo-600 text-white shadow-md' : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
             }`}
         >
           <Truck className="h-4 w-4" />
@@ -807,7 +807,7 @@ export const AdminMasters: React.FC = () => {
 
         <button
           onClick={() => { setActiveTab('roles'); setSuccessMsg(''); setErrorMsg(''); }}
-          className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-black transition-all cursor-pointer whitespace-nowrap ${activeTab === 'roles' ? 'bg-gradient-to-r from-blue-600 to-indigo-600 text-white shadow-md' : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
+          className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-black transition-all cursor-pointer whitespace-nowrap shrink-0 ${activeTab === 'roles' ? 'bg-gradient-to-r from-blue-600 to-indigo-600 text-white shadow-md' : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
             }`}
         >
           <ShieldAlert className="h-4 w-4" />
@@ -815,7 +815,7 @@ export const AdminMasters: React.FC = () => {
         </button>
         <button
           onClick={() => { setActiveTab('backup'); setSuccessMsg(''); setErrorMsg(''); }}
-          className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-black transition-all cursor-pointer whitespace-nowrap ${activeTab === 'backup' ? 'bg-gradient-to-r from-blue-600 to-indigo-600 text-white shadow-md' : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
+          className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-black transition-all cursor-pointer whitespace-nowrap shrink-0 ${activeTab === 'backup' ? 'bg-gradient-to-r from-blue-600 to-indigo-600 text-white shadow-md' : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
             }`}
         >
           <Database className="h-4 w-4" />
@@ -823,7 +823,7 @@ export const AdminMasters: React.FC = () => {
         </button>
         <button
           onClick={() => { setActiveTab('logs'); setSuccessMsg(''); setErrorMsg(''); }}
-          className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-black transition-all cursor-pointer whitespace-nowrap ${activeTab === 'logs' ? 'bg-gradient-to-r from-blue-600 to-indigo-600 text-white shadow-md' : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
+          className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-black transition-all cursor-pointer whitespace-nowrap shrink-0 ${activeTab === 'logs' ? 'bg-gradient-to-r from-blue-600 to-indigo-600 text-white shadow-md' : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
             }`}
         >
           <ShieldAlert className="h-4 w-4" />
@@ -834,8 +834,8 @@ export const AdminMasters: React.FC = () => {
       {/* Main Grid View */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 items-start">
 
-        {/* Left List Pane (2/3 width) */}
-        <div className="lg:col-span-2 space-y-4">
+        {/* List Pane (2/3 width for master forms, 3/3 full width for roles/backup/logs) */}
+        <div className={activeTab === 'backup' || activeTab === 'logs' || activeTab === 'roles' ? 'lg:col-span-3 space-y-4' : 'lg:col-span-2 space-y-4'}>
 
           {successMsg && (
             <div className="p-3.5 bg-emerald-50 dark:bg-emerald-950/20 text-emerald-600 dark:text-emerald-400 text-xs rounded-2xl border border-emerald-200 dark:border-emerald-800 font-bold">
