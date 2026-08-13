@@ -95,6 +95,11 @@ export const RewinderView: React.FC = () => {
     return `${((totalReelWeightKg / totalInput) * 100).toFixed(1)}%`;
   }, [totalReelWeightKg, totalBrokeKg]);
 
+  // Cascading Filter States
+  const [searchTerm, setSearchTerm] = useState('');
+  const [statusFilter, setStatusFilter] = useState('all');
+  const [dateFilter, setDateFilter] = useState('all');
+
   const uniqueProducts = useMemo(() => {
     const set = new Set<string>();
     masterProducts.forEach(p => set.add(p.name));
@@ -103,9 +108,50 @@ export const RewinderView: React.FC = () => {
   }, [reels, masterProducts]);
 
   const filteredReels = useMemo(() => {
-    if (selectedProductFilter === 'all') return reels;
-    return reels.filter(r => r.product === selectedProductFilter);
-  }, [reels, selectedProductFilter]);
+    return reels.filter(r => {
+      // 1. Product Filter
+      if (selectedProductFilter !== 'all' && r.product !== selectedProductFilter) {
+        return false;
+      }
+      // 2. QC Status Filter
+      if (statusFilter !== 'all') {
+        if (statusFilter === 'QC_PENDING' && r.status !== 'QC_PENDING') return false;
+        if (statusFilter === 'GRADE_A' && r.qcGrade !== 'A') return false;
+        if (statusFilter === 'GRADE_B' && r.qcGrade !== 'B') return false;
+      }
+      // 3. Date Filter
+      if (dateFilter === 'today') {
+        const todayStr = new Date().toISOString().substring(0, 10);
+        if (!r.productionDate.startsWith(todayStr)) return false;
+      } else if (dateFilter === '7days') {
+        const weekAgo = new Date();
+        weekAgo.setDate(weekAgo.getDate() - 7);
+        if (new Date(r.productionDate) < weekAgo) return false;
+      }
+      // 4. Search Term
+      if (searchTerm.trim()) {
+        const q = searchTerm.toLowerCase();
+        const matchNo = r.reelNo.toLowerCase().includes(q);
+        const matchRoll = r.parentRollNo.toLowerCase().includes(q);
+        const matchProduct = r.product.toLowerCase().includes(q);
+        const matchGsm = String(r.gsm).includes(q);
+        const matchSize = String(r.size).includes(q);
+        if (!matchNo && !matchRoll && !matchProduct && !matchGsm && !matchSize) {
+          return false;
+        }
+      }
+      return true;
+    });
+  }, [reels, selectedProductFilter, statusFilter, dateFilter, searchTerm]);
+
+  const hasActiveFilters = selectedProductFilter !== 'all' || statusFilter !== 'all' || dateFilter !== 'all' || searchTerm.trim() !== '';
+
+  const handleClearFilters = () => {
+    setSelectedProductFilter('all');
+    setStatusFilter('all');
+    setDateFilter('all');
+    setSearchTerm('');
+  };
 
   const formatKgOrTon = (kg: number) => {
     if (kg >= 1000) {
@@ -324,34 +370,97 @@ export const RewinderView: React.FC = () => {
           </div>
         </div>
 
-        {/* Filter Chips Row */}
-        <div className="flex items-center gap-2 overflow-x-auto pb-1 scrollbar-none">
-          <span className="text-xs font-bold text-slate-500 flex items-center gap-1 shrink-0">
-            <Filter className="h-3.5 w-3.5 text-slate-400" /> Filter:
-          </span>
-          <button
-            onClick={() => setSelectedProductFilter('all')}
-            className={`px-3.5 py-1.5 rounded-xl font-bold text-xs transition cursor-pointer whitespace-nowrap border ${
-              selectedProductFilter === 'all'
-                ? 'bg-blue-600 text-white border-blue-600 shadow-2xs'
-                : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 border-slate-200 dark:border-slate-700 hover:bg-slate-200'
-            }`}
-          >
-            All Paper Types
-          </button>
-          {uniqueProducts.map(pName => (
+        {/* Search & Cascading Filter Controls */}
+        <div className="space-y-3 bg-slate-50/80 dark:bg-slate-900/50 p-3.5 rounded-2xl border border-slate-200/60 dark:border-slate-800">
+          <div className="flex flex-col sm:flex-row items-center justify-between gap-3">
+            {/* Search Input */}
+            <div className="relative w-full sm:w-80">
+              <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
+              <input
+                type="text"
+                value={searchTerm}
+                onChange={e => setSearchTerm(e.target.value)}
+                placeholder="Search Reel No, Roll No, Product..."
+                className="w-full pl-10 pr-8 py-2 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white rounded-xl text-xs font-bold focus:ring-2 focus:ring-blue-500 focus:outline-none placeholder:text-slate-400"
+              />
+              {searchTerm && (
+                <button
+                  type="button"
+                  onClick={() => setSearchTerm('')}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 cursor-pointer"
+                >
+                  <X className="h-3.5 w-3.5" />
+                </button>
+              )}
+            </div>
+
+            {/* Dropdowns & Reset */}
+            <div className="flex items-center gap-2 w-full sm:w-auto flex-wrap sm:flex-nowrap">
+              {/* Date Filter */}
+              <select
+                value={dateFilter}
+                onChange={e => setDateFilter(e.target.value)}
+                className="py-2 px-3 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-200 rounded-xl text-xs font-bold focus:ring-2 focus:ring-blue-500 focus:outline-none cursor-pointer"
+              >
+                <option value="all">📅 All Dates</option>
+                <option value="today">Today</option>
+                <option value="7days">Last 7 Days</option>
+              </select>
+
+              {/* QC Status Filter */}
+              <select
+                value={statusFilter}
+                onChange={e => setStatusFilter(e.target.value)}
+                className="py-2 px-3 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-200 rounded-xl text-xs font-bold focus:ring-2 focus:ring-blue-500 focus:outline-none cursor-pointer"
+              >
+                <option value="all">⚡ All Statuses</option>
+                <option value="QC_PENDING">QC Pending</option>
+                <option value="GRADE_A">Grade A (Passed)</option>
+                <option value="GRADE_B">Grade B</option>
+              </select>
+
+              {hasActiveFilters && (
+                <button
+                  type="button"
+                  onClick={handleClearFilters}
+                  className="flex items-center gap-1 py-2 px-3 bg-red-50 dark:bg-red-950/40 text-red-600 dark:text-red-400 hover:bg-red-100 border border-red-200 dark:border-red-800 rounded-xl text-xs font-bold transition cursor-pointer shrink-0"
+                >
+                  <X className="h-3.5 w-3.5" />
+                  <span>Clear Filters</span>
+                </button>
+              )}
+            </div>
+          </div>
+
+          {/* Filter Chips Row */}
+          <div className="flex items-center gap-2 overflow-x-auto pt-2 border-t border-slate-200/50 dark:border-slate-800 scrollbar-none">
+            <span className="text-[11px] font-bold text-slate-500 flex items-center gap-1 shrink-0">
+              <Filter className="h-3 w-3 text-slate-400" /> Filter:
+            </span>
             <button
-              key={pName}
-              onClick={() => setSelectedProductFilter(pName)}
+              onClick={() => setSelectedProductFilter('all')}
               className={`px-3.5 py-1.5 rounded-xl font-bold text-xs transition cursor-pointer whitespace-nowrap border ${
-                selectedProductFilter === pName
+                selectedProductFilter === 'all'
                   ? 'bg-blue-600 text-white border-blue-600 shadow-2xs'
-                  : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 border-slate-200 dark:border-slate-700 hover:bg-slate-200'
+                  : 'bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-300 border-slate-200 dark:border-slate-700 hover:bg-slate-100'
               }`}
             >
-              {pName}
+              All Paper Types ({reels.length})
             </button>
-          ))}
+            {uniqueProducts.map(pName => (
+              <button
+                key={pName}
+                onClick={() => setSelectedProductFilter(pName)}
+                className={`px-3.5 py-1.5 rounded-xl font-bold text-xs transition cursor-pointer whitespace-nowrap border ${
+                  selectedProductFilter === pName
+                    ? 'bg-blue-600 text-white border-blue-600 shadow-2xs'
+                    : 'bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-300 border-slate-200 dark:border-slate-700 hover:bg-slate-100'
+                }`}
+              >
+                {pName}
+              </button>
+            ))}
+          </div>
         </div>
 
         {/* Desktop Table View */}
