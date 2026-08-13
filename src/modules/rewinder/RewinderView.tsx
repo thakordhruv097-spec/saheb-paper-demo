@@ -402,7 +402,7 @@ export const RewinderView: React.FC = () => {
                 onChange={e => setDateFilter(e.target.value)}
                 className="py-2 px-3 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-200 rounded-xl text-xs font-bold focus:ring-2 focus:ring-blue-500 focus:outline-none cursor-pointer"
               >
-                <option value="all">📅 All Dates</option>
+                <option value="all">All Dates</option>
                 <option value="today">Today</option>
                 <option value="7days">Last 7 Days</option>
               </select>
@@ -413,7 +413,7 @@ export const RewinderView: React.FC = () => {
                 onChange={e => setStatusFilter(e.target.value)}
                 className="py-2 px-3 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-200 rounded-xl text-xs font-bold focus:ring-2 focus:ring-blue-500 focus:outline-none cursor-pointer"
               >
-                <option value="all">⚡ All Statuses</option>
+                <option value="all">All Statuses</option>
                 <option value="QC_PENDING">QC Pending</option>
                 <option value="GRADE_A">Grade A (Passed)</option>
                 <option value="GRADE_B">Grade B</option>
