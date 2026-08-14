@@ -106,16 +106,37 @@ html.dark ::-webkit-scrollbar-thumb {
   background: linear-gradient(180deg, #1D4ED8 0%, #3B82F6 100%);
 }
 
-/* Hide scrollbars completely for left sidebar & clean UI */
-.custom-scrollbar, .no-scrollbar {
-  -ms-overflow-style: none; /* IE and Edge */
-  scrollbar-width: none; /* Firefox */
+/* Hide scrollbars completely & enforce blue background for login page */
+html.login-active,
+body.login-active,
+#root:has(.login-page-container) {
+  background-color: #0066FF !important;
+  min-height: 100vh !important;
+  min-height: 100dvh !important;
+  height: 100% !important;
+  overflow: hidden !important;
+  -ms-overflow-style: none !important; /* IE and Edge */
+  scrollbar-width: none !important; /* Firefox */
 }
-.custom-scrollbar::-webkit-scrollbar, .no-scrollbar::-webkit-scrollbar {
-  display: none; /* Chrome, Safari, Opera */
-  width: 0px;
-  height: 0px;
-  background: transparent;
+
+.custom-scrollbar,
+.no-scrollbar,
+.login-page-container,
+.login-page-container * {
+  -ms-overflow-style: none !important;
+  scrollbar-width: none !important;
+}
+
+html.login-active::-webkit-scrollbar,
+body.login-active::-webkit-scrollbar,
+.custom-scrollbar::-webkit-scrollbar,
+.no-scrollbar::-webkit-scrollbar,
+.login-page-container::-webkit-scrollbar,
+.login-page-container *::-webkit-scrollbar {
+  display: none !important; /* Chrome, Safari, Opera */
+  width: 0px !important;
+  height: 0px !important;
+  background: transparent !important;
 }
 
 /* ==========================================================================
