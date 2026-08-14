@@ -457,8 +457,8 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
         {/* Right Side Combined Controls & Profile Container */}
         <div className="flex items-center gap-2 sm:gap-3">
           
-          {/* RIGHT SIDE DATE & TIMEFRAME FILTER CONTROLS BAR (Only shown on Dashboard page for Admin & Management) */}
-          {location.pathname === '/' && (user?.role === 'Admin' || user?.role === 'Management') && (
+          {/* RIGHT SIDE DATE & TIMEFRAME FILTER CONTROLS BAR (Placed to the left side of Theme Toggle Button) */}
+          {(location.pathname === '/' || location.pathname === '/monthly-yearly-reporting') && (user?.role === 'Admin' || user?.role === 'Management') && (
             <div className="hidden md:flex items-center gap-2 bg-slate-100/90 dark:bg-slate-800/90 p-1.5 rounded-2xl border border-slate-200/80 dark:border-slate-700 shadow-xs mr-1 sm:mr-2">
               {/* Timeframe Selector Pill */}
               <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl p-0.5 flex items-center gap-0.5 shadow-2xs">

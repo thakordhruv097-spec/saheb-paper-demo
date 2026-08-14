@@ -25,6 +25,7 @@ import {
   ChevronDown,
   Copy,
   Package,
+  ArrowUpDown,
 } from 'lucide-react';
 
 interface DowntimeLog {
@@ -170,8 +171,10 @@ export const PulpMillView: React.FC = () => {
     setTimeout(() => setSuccessMsg(''), 3000);
   };
 
+  const [sortAscending, setSortAscending] = useState(true);
+
   const filteredFormulas = useMemo(() => {
-    let list = formulas;
+    let list = [...formulas];
     // Text search
     const q = searchTerm.toLowerCase().trim();
     if (q) {
@@ -190,8 +193,18 @@ export const PulpMillView: React.FC = () => {
     if (historyDateTo) {
       list = list.filter(f => f.date <= historyDateTo);
     }
+
+    // Sort by date based on sortAscending
+    list.sort((a, b) => {
+      if (sortAscending) {
+        return a.date.localeCompare(b.date);
+      } else {
+        return b.date.localeCompare(a.date);
+      }
+    });
+
     return list;
-  }, [formulas, searchTerm, historyDateFrom, historyDateTo]);
+  }, [formulas, searchTerm, historyDateFrom, historyDateTo, sortAscending]);
 
   // Detect formulas identical to chronological previous day
   const sameAsPrevSet = useMemo(() => {
@@ -491,6 +504,15 @@ export const PulpMillView: React.FC = () => {
               onDateToChange={setHistoryDateTo}
               onClearAll={() => { setHistoryDateFrom(''); setHistoryDateTo(''); }}
             />
+            <button
+              type="button"
+              onClick={() => setSortAscending(prev => !prev)}
+              className="px-3 py-2 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 border border-slate-200/80 dark:border-slate-700 rounded-2xl text-xs font-black transition cursor-pointer flex items-center gap-1.5 shrink-0"
+              title={sortAscending ? 'Order: Ascending (Oldest First)' : 'Order: Descending (Newest First)'}
+            >
+              <ArrowUpDown className="h-3.5 w-3.5 text-primary" />
+              <span>{sortAscending ? 'Ascending' : 'Descending'}</span>
+            </button>
           </div>
         </div>
 
