@@ -40,6 +40,29 @@ input[type="number"]::-webkit-outer-spin-button {
   margin: 0 !important;
 }
 
+/* Remove click/focus outlines, rings, and borders from all Recharts elements */
+.recharts-wrapper,
+.recharts-wrapper *,
+.recharts-surface,
+.recharts-layer,
+.recharts-responsive-container,
+.recharts-cartesian-grid,
+.recharts-tooltip-wrapper,
+.recharts-dot,
+.recharts-active-dot {
+  outline: none !important;
+  border: none !important;
+  box-shadow: none !important;
+  -webkit-tap-highlight-color: transparent !important;
+}
+
+/* Silky smooth butter-like glide animation for Recharts tooltip hover popup */
+.recharts-tooltip-wrapper {
+  transition: transform 180ms cubic-bezier(0.16, 1, 0.3, 1), opacity 150ms ease-out !important;
+  will-change: transform, opacity;
+  pointer-events: none !important;
+}
+
 input[type="number"] {
   -moz-appearance: textfield !important;
   appearance: textfield !important;

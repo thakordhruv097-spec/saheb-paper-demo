@@ -41,7 +41,8 @@ import {
   ResponsiveContainer,
   ComposedChart,
   Area,
-  Bar,
+  ReferenceArea,
+  ReferenceLine,
   PieChart,
   Pie,
   Cell,
@@ -676,14 +677,15 @@ export const ReportsView: React.FC = () => {
                 Production Output vs. Dispatch Volume Telemetry
               </h3>
               <p className="text-[11px] text-slate-500 dark:text-slate-400 font-medium mt-0.5">
-                {timeframe === 'day' ? 'Full 24-Hour Timeline Breakdown (00:00 to 23:55)' : 'Daily Tonnage Comparison (kg)'}
+                {timeframe === 'day' ? 'Full Shift Timeline Breakdown with Machine Stoppage Tracking' : 'Daily Tonnage Comparison (kg)'}
               </p>
             </div>
 
+
           </div>
 
-          <div className="h-72 w-full pt-2">
-            <ResponsiveContainer width="100%" height="100%">
+          <div className="h-72 w-full pt-2 focus:outline-none focus-visible:outline-none select-none" tabIndex={-1}>
+            <ResponsiveContainer width="100%" height="100%" className="focus:outline-none focus-visible:outline-none">
               <ComposedChart data={trendChartData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
                 <defs>
                   <linearGradient id="colorProd" x1="0" y1="0" x2="0" y2="1">
@@ -694,9 +696,9 @@ export const ReportsView: React.FC = () => {
                     <stop offset="5%" stopColor="#10B981" stopOpacity={0.4} />
                     <stop offset="95%" stopColor="#10B981" stopOpacity={0} />
                   </linearGradient>
-                  <linearGradient id="colorDown" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%" stopColor="#EF4444" stopOpacity={0.7} />
-                    <stop offset="95%" stopColor="#EF4444" stopOpacity={0.1} />
+                  <linearGradient id="gradientDowntime" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="0%" stopColor="#EF4444" stopOpacity={0.95} />
+                    <stop offset="100%" stopColor="#991B1B" stopOpacity={0.4} />
                   </linearGradient>
                 </defs>
                 <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#334155" opacity={0.15} />
@@ -706,13 +708,14 @@ export const ReportsView: React.FC = () => {
                 <Tooltip
                   offset={15}
                   isAnimationActive={true}
-                  animationDuration={150}
-                  animationEasing="ease-out"
+                  animationDuration={180}
+                  animationEasing="cubic-bezier(0.16, 1, 0.3, 1)"
                   cursor={{ stroke: '#3B82F6', strokeWidth: 1.5, strokeDasharray: '3 3' }}
                   content={({ active, payload, label }) => {
                     if (!active || !payload || !payload.length) return null;
+                    const hasDowntime = payload[0]?.payload?.downtimeMin > 0;
                     return (
-                      <div className="bg-slate-900/90 backdrop-blur-md border border-slate-700/80 rounded-2xl p-3.5 shadow-2xl text-xs space-y-2 pointer-events-none transition-all duration-150 ease-out select-none min-w-[215px] transform scale-100 animate-in fade-in-50 zoom-in-95">
+                      <div className="bg-slate-900/95 backdrop-blur-xl border border-slate-700/80 rounded-2xl p-3.5 shadow-2xl text-xs space-y-2 pointer-events-none transition-all duration-180 ease-out select-none min-w-[220px] transform-gpu animate-in fade-in-50 zoom-in-95">
                         <div className="flex items-center justify-between border-b border-slate-700/60 pb-1.5 font-mono font-black text-slate-200">
                           <span className="flex items-center gap-1.5">
                             <span className="w-2 h-2 rounded-full bg-blue-400 animate-ping" />
@@ -735,10 +738,20 @@ export const ReportsView: React.FC = () => {
                             );
                           })}
                         </div>
-                        {payload[0]?.payload?.downtimeReason && (
-                          <div className="pt-1.5 border-t border-slate-700/60 text-[11px] font-bold text-red-400 flex items-center gap-1.5">
-                            <AlertCircle className="h-3.5 w-3.5 text-red-400 shrink-0" />
-                            <span>Downtime Cause: {payload[0].payload.downtimeReason} ({payload[0].payload.downtimeMin || 45} mins lost)</span>
+                        {hasDowntime && (
+                          <div className="pt-2 border-t border-red-500/30 text-[11px] font-bold text-red-400 flex flex-col gap-1 bg-red-500/10 p-2 rounded-xl border">
+                            <div className="flex items-center gap-1.5 text-red-300">
+                              <AlertCircle className="h-3.5 w-3.5 text-red-400 shrink-0" />
+                              <span className="uppercase tracking-wider font-black text-[10px]">Machine Stoppage Event</span>
+                            </div>
+                            <div className="flex items-center justify-between font-mono text-white">
+                              <span>Reason:</span>
+                              <span className="text-red-300 font-bold">{payload[0].payload.downtimeReason}</span>
+                            </div>
+                            <div className="flex items-center justify-between font-mono text-white">
+                              <span>Duration:</span>
+                              <span className="text-red-400 font-black">{payload[0].payload.downtimeMin} mins lost</span>
+                            </div>
                           </div>
                         )}
                       </div>
@@ -746,57 +759,172 @@ export const ReportsView: React.FC = () => {
                   }}
                 />
                 <Legend iconType="circle" wrapperStyle={{ fontSize: '12px', fontWeight: 'bold' }} />
-                <Area yAxisId="left" connectNulls={false} type="monotone" dataKey="prodWeight" name="Production Output (kg)" stroke="#2563EB" strokeWidth={2.5} fillOpacity={1} fill="url(#colorProd)" dot={{ r: 3, strokeWidth: 1.5 }} activeDot={{ r: 5 }} />
+                <Area
+                  yAxisId="left"
+                  connectNulls={false}
+                  type="monotone"
+                  dataKey="prodWeight"
+                  name="Production Output (kg)"
+                  stroke="#2563EB"
+                  strokeWidth={2.5}
+                  fillOpacity={1}
+                  fill="url(#colorProd)"
+                  dot={(props: any) => {
+                    const { cx, cy, payload, index } = props;
+                    if (!cx || !cy) return null;
+                    if (payload && payload.downtimeMin > 0) {
+                      return (
+                        <g key={`downtime-dot-${index}`}>
+                          <circle cx={cx} cy={cy} r={10} fill="#EF4444" fillOpacity={0.35} />
+                          <circle cx={cx} cy={cy} r={6} fill="#EF4444" stroke="#FFFFFF" strokeWidth={2.5} />
+                        </g>
+                      );
+                    }
+                    return <circle key={`prod-dot-${index}`} cx={cx} cy={cy} r={3} fill="#2563EB" stroke="#2563EB" strokeWidth={1.5} />;
+                  }}
+                  activeDot={{ r: 6 }}
+                />
                 <Area yAxisId="left" connectNulls={false} type="monotone" dataKey="dispWeight" name="Dispatched Volume (kg)" stroke="#10B981" strokeWidth={2.5} fillOpacity={1} fill="url(#colorDisp)" dot={{ r: 3, strokeWidth: 1.5 }} activeDot={{ r: 5 }} />
-                {timeframe === 'day' && (
-                  <Bar yAxisId="right" dataKey="downtimeMin" name="Machine Downtime (Mins - RED)" fill="#EF4444" barSize={16} radius={[6, 6, 0, 0]} />
-                )}
               </ComposedChart>
             </ResponsiveContainer>
           </div>
+
+          {/* Sleek Machine Stoppage & Maintenance Log Card Below Chart */}
+          {timeframe === 'day' && trendChartData.some(d => d.downtimeMin > 0) && (
+            <div className="bg-red-500/5 dark:bg-red-500/10 border border-red-500/20 rounded-2xl p-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 animate-in fade-in duration-300">
+              <div className="flex items-center gap-3">
+                <div className="p-2.5 rounded-xl bg-red-500/15 text-red-500 shrink-0">
+                  <AlertCircle className="h-5 w-5 animate-pulse" />
+                </div>
+                <div>
+                  <div className="flex items-center gap-2">
+                    <span className="text-xs font-black text-slate-900 dark:text-white uppercase tracking-wider">
+                      Machine Stoppage Event Logged
+                    </span>
+                    <span className="px-2.5 py-0.5 rounded-full bg-red-500 text-white text-[10px] font-black tracking-wide">
+                      {trendChartData.find(d => d.downtimeMin > 0)?.downtimeMin || 45} MINS DOWNTIME
+                    </span>
+                  </div>
+                  <p className="text-xs font-medium text-slate-600 dark:text-slate-300 mt-0.5">
+                    Stoppage Reason: <span className="font-bold text-red-500 dark:text-red-400">{trendChartData.find(d => d.downtimeMin > 0)?.downtimeReason || 'Blade change'}</span> during {trendChartData.find(d => d.downtimeMin > 0)?.date || '16:30'} shift
+                  </p>
+                </div>
+              </div>
+              <div className="flex items-center gap-2 text-xs font-mono font-black text-red-600 dark:text-red-400 bg-white dark:bg-slate-900/80 px-3.5 py-2 rounded-xl border border-red-500/20 shadow-xs shrink-0">
+                <span>Output Impact: -780 kg</span>
+              </div>
+            </div>
+          )}
         </div>
 
-        {/* Chart 2: Inventory & Grade Distribution Donut Chart (MOVED BELOW MAIN CHART) */}
-        <div className="bg-white dark:bg-surface-dark border border-slate-200 dark:border-slate-700/80 rounded-3xl p-6 shadow-sm space-y-4">
-          <div className="border-b border-slate-100 dark:border-slate-800 pb-3">
-            <h3 className="text-xs font-black text-slate-900 dark:text-white uppercase tracking-wider flex items-center gap-2">
-              <PieChartIcon className="h-4 w-4 text-purple-600 dark:text-purple-400" />
-              Stock Allocation & Grade Distribution
-            </h3>
-            <p className="text-[11px] text-slate-500 dark:text-slate-400 font-medium mt-0.5">
-              Reels distribution by Grade & Status
-            </p>
+        {/* Chart 2: Inventory & Grade Distribution Donut Chart (REDESIGNED ULTRA-PREMIUM) */}
+        <div className="bg-white dark:bg-surface-dark border border-slate-200 dark:border-slate-700/80 rounded-3xl p-6 shadow-sm space-y-5">
+          <div className="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-3">
+            <div>
+              <h3 className="text-xs font-black text-slate-900 dark:text-white uppercase tracking-wider flex items-center gap-2">
+                <PieChartIcon className="h-4 w-4 text-purple-600 dark:text-purple-400" />
+                Stock Allocation & Quality Grade Breakdown
+              </h3>
+              <p className="text-[11px] text-slate-500 dark:text-slate-400 font-medium mt-0.5">
+                Real-time paper reel inventory distribution across quality grades & dispatch status
+              </p>
+            </div>
+            <span className="text-[10px] font-black uppercase tracking-wider text-slate-400 dark:text-slate-500 bg-slate-100 dark:bg-slate-800 px-3 py-1 rounded-full">
+              Live Stock Sync
+            </span>
           </div>
 
-          <div className="h-64 w-full flex items-center justify-center">
-            <ResponsiveContainer width="100%" height="100%">
-              <PieChart>
-                <Pie
-                  data={gradeDistributionData}
-                  cx="50%"
-                  cy="50%"
-                  innerRadius={55}
-                  outerRadius={80}
-                  paddingAngle={5}
-                  dataKey="value"
-                >
-                  {gradeDistributionData.map((entry, index) => (
-                    <Cell key={`cell-${index}`} fill={entry.color} />
-                  ))}
-                </Pie>
-                <Tooltip
-                  contentStyle={{
-                    backgroundColor: '#0F172A',
-                    borderRadius: '16px',
-                    borderColor: '#334155',
-                    color: '#FFF',
-                    fontSize: '12px',
-                    fontWeight: 'bold',
-                  }}
-                />
-                <Legend iconType="circle" wrapperStyle={{ fontSize: '11px', fontWeight: 'bold' }} />
-              </PieChart>
-            </ResponsiveContainer>
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-center">
+            {/* Donut Ring Column with Center Stat Badge */}
+            <div className="lg:col-span-5 relative h-64 w-full flex items-center justify-center focus:outline-none focus-visible:outline-none select-none" tabIndex={-1}>
+              <ResponsiveContainer width="100%" height="100%" className="focus:outline-none focus-visible:outline-none">
+                <PieChart>
+                  <Pie
+                    data={gradeDistributionData}
+                    cx="50%"
+                    cy="50%"
+                    innerRadius={70}
+                    outerRadius={95}
+                    paddingAngle={4}
+                    dataKey="value"
+                    stroke="none"
+                  >
+                    {gradeDistributionData.map((entry, index) => (
+                      <Cell key={`cell-${index}`} fill={entry.color} className="focus:outline-none focus-visible:outline-none cursor-pointer transition-all duration-200 hover:opacity-85" />
+                    ))}
+                  </Pie>
+                  <Tooltip
+                    offset={15}
+                    isAnimationActive={true}
+                    animationDuration={180}
+                    animationEasing="cubic-bezier(0.16, 1, 0.3, 1)"
+                    content={({ active, payload }) => {
+                      if (!active || !payload || !payload.length) return null;
+                      const entry = payload[0];
+                      const total = gradeDistributionData.reduce((acc, curr) => acc + curr.value, 0);
+                      const pct = total > 0 ? ((Number(entry.value) / total) * 100).toFixed(1) : '0';
+                      return (
+                        <div className="bg-slate-900/95 backdrop-blur-xl border border-slate-700/80 rounded-2xl p-3 shadow-2xl text-xs space-y-1.5 pointer-events-none transition-all duration-180 ease-out select-none min-w-[170px] transform-gpu">
+                          <div className="flex items-center gap-2 border-b border-slate-700/60 pb-1 font-bold text-slate-200">
+                            <span className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: entry.payload.color }} />
+                            <span>{entry.name}</span>
+                          </div>
+                          <div className="flex items-center justify-between gap-4 font-mono">
+                            <span className="text-slate-400 font-medium">Reels Count:</span>
+                            <span className="font-black text-white">{Number(entry.value).toLocaleString()}</span>
+                          </div>
+                          <div className="flex items-center justify-between gap-4 font-mono">
+                            <span className="text-slate-400 font-medium">Stock Share:</span>
+                            <span className="font-black text-emerald-400">{pct}%</span>
+                          </div>
+                        </div>
+                      );
+                    }}
+                  />
+                </PieChart>
+              </ResponsiveContainer>
+
+              {/* Center Donut Hole Overlay Badge */}
+              <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none select-none">
+                <span className="text-2xl font-mono font-black text-slate-900 dark:text-white tracking-tight">
+                  {gradeDistributionData.reduce((acc, curr) => acc + curr.value, 0).toLocaleString()}
+                </span>
+                <span className="text-[10px] font-black uppercase tracking-wider text-slate-400 dark:text-slate-500">
+                  Total Reels
+                </span>
+              </div>
+            </div>
+
+            {/* Detailed Grade Breakdown Cards Column */}
+            <div className="lg:col-span-7 space-y-3">
+              {gradeDistributionData.map((item, idx) => {
+                const total = gradeDistributionData.reduce((acc, curr) => acc + curr.value, 0);
+                const pct = total > 0 ? (item.value / total) * 100 : 0;
+                return (
+                  <div key={`grade-item-${idx}`} className="bg-slate-50 dark:bg-slate-800/40 border border-slate-100 dark:border-slate-800 rounded-2xl p-3 space-y-2 hover:border-slate-300 dark:hover:border-slate-700 transition-all duration-200">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2.5">
+                        <span className="w-3 h-3 rounded-full shrink-0 shadow-xs" style={{ backgroundColor: item.color }} />
+                        <span className="text-xs font-black text-slate-800 dark:text-slate-200">
+                          {item.name}
+                        </span>
+                      </div>
+                      <div className="flex items-center gap-2 text-xs font-mono font-black">
+                        <span className="text-slate-900 dark:text-white">{item.value.toLocaleString()} Reels</span>
+                        <span className="text-slate-400 dark:text-slate-500 text-[11px]">({pct.toFixed(1)}%)</span>
+                      </div>
+                    </div>
+                    {/* Visual Percentage Progress Bar */}
+                    <div className="w-full h-1.5 bg-slate-200 dark:bg-slate-700/60 rounded-full overflow-hidden">
+                      <div
+                        className="h-full rounded-full transition-all duration-500 ease-out"
+                        style={{ width: `${pct}%`, backgroundColor: item.color }}
+                      />
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
           </div>
         </div>
 
