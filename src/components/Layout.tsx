@@ -130,6 +130,7 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
   const [showHeader, setShowHeader] = useState(true);
   const lastScrollY = useRef(0);
   const mainRef = useRef<HTMLElement | null>(null);
+  const headerDatePickerRef = useRef<HTMLDivElement | null>(null);
 
   // Auto-hide top header & bottom nav bar on scroll down, show on scroll up
   useEffect(() => {
@@ -486,7 +487,7 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
                   <ChevronLeft className="h-3.5 w-3.5" />
                 </button>
 
-                <div className="relative">
+                <div className="relative" ref={headerDatePickerRef}>
                   <div 
                     onClick={() => setIsDatePickerModalOpen(prev => !prev)}
                     className="flex items-center bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg px-3 py-1 shadow-2xs group cursor-pointer hover:bg-slate-50 dark:hover:bg-slate-800/80 transition select-none"
@@ -504,6 +505,7 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
                       onSelectDate={(newDateStr) => setSelectedDate(newDateStr)}
                       onClose={() => setIsDatePickerModalOpen(false)}
                       align="right"
+                      triggerRef={headerDatePickerRef}
                     />
                   )}
                 </div>

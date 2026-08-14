@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useEffect } from 'react';
+import React, { useState, useMemo, useEffect, useRef } from 'react';
 import { useAuth } from '../auth/AuthContext';
 import { useTranslation } from 'react-i18next';
 import { getFormulas, saveFormula } from '../../data/index';
@@ -53,6 +53,7 @@ export const PulpMillView: React.FC = () => {
     return `${yyyy}-${mm}-${dd}`;
   });
   const [openDatePicker, setOpenDatePicker] = useState(false);
+  const dateBtnRef = useRef<HTMLButtonElement | null>(null);
 
   // Downtime state
   const [downtimeLogs, setDowntimeLogs] = useState<DowntimeLog[]>(() => {
@@ -281,6 +282,7 @@ export const PulpMillView: React.FC = () => {
         {/* Date Switcher Pill */}
         <div className="flex items-center gap-2">
           <button
+            ref={dateBtnRef}
             type="button"
             onClick={() => setOpenDatePicker(true)}
             className="flex items-center gap-2 px-4 py-2.5 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 border border-slate-200 dark:border-slate-700 rounded-2xl text-xs font-black text-slate-700 dark:text-slate-200 cursor-pointer transition"
@@ -628,6 +630,7 @@ export const PulpMillView: React.FC = () => {
             setOpenDatePicker(false);
           }}
           onClose={() => setOpenDatePicker(false)}
+          triggerRef={dateBtnRef}
         />
       )}
     </div>

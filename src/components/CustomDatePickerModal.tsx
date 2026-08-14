@@ -1,4 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
+import ReactDOM from 'react-dom';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 
 interface CustomDatePickerProps {
@@ -7,81 +8,101 @@ interface CustomDatePickerProps {
   onClose: () => void;
   align?: 'left' | 'right';
   allowFuture?: boolean;
+  triggerRef?: React.RefObject<HTMLElement | null>;
 }
 
 type ViewMode = 'days' | 'months' | 'years';
+
+const calculatePopoverStyle = (
+  triggerEl: HTMLElement | null,
+  align: 'left' | 'right'
+): React.CSSProperties => {
+  let targetEl = triggerEl;
+  if (!targetEl && typeof document !== 'undefined') {
+    const active = document.activeElement as HTMLElement;
+    if (active && active !== document.body) {
+      targetEl = active;
+    }
+  }
+
+  if (!targetEl || targetEl === document.body) {
+    const top = 70;
+    const left = align === 'right' ? Math.max(10, window.innerWidth - 290) : 20;
+    return {
+      position: 'fixed',
+      top: `${top}px`,
+      left: `${left}px`,
+      zIndex: 999999,
+      transformOrigin: align === 'right' ? 'top right' : 'top left',
+    };
+  }
+
+  const rect = targetEl.getBoundingClientRect();
+  const popoverWidth = 272; // w-68
+  const popoverHeight = 310;
+  const spaceBelow = window.innerHeight - rect.bottom;
+  const openUpward = spaceBelow < popoverHeight && rect.top > popoverHeight;
+
+  let top = openUpward ? rect.top - popoverHeight - 6 : rect.bottom + 6;
+  if (top < 10) top = 10;
+
+  // Center horizontally directly on the middle of the calendar button/icon
+  const buttonCenterX = rect.left + rect.width / 2;
+  let left = buttonCenterX - popoverWidth / 2;
+
+  if (left + popoverWidth > window.innerWidth - 10) {
+    left = window.innerWidth - popoverWidth - 10;
+  }
+  if (left < 10) left = 10;
+
+  const originY = openUpward ? 'bottom' : 'top';
+
+  return {
+    position: 'fixed',
+    top: `${top}px`,
+    left: `${left}px`,
+    zIndex: 999999,
+    transformOrigin: `${originY} center`,
+  };
+};
 
 export const CustomDatePickerModal: React.FC<CustomDatePickerProps> = ({
   selectedDate,
   onSelectDate,
   onClose,
   align = 'left',
-  allowFuture = true,
+  allowFuture = false,
+  triggerRef,
 }) => {
-  const containerRef = useRef<HTMLDivElement | null>(null);
-  const [popoverStyle, setPopoverStyle] = useState<React.CSSProperties>({
-    position: 'fixed',
-    zIndex: 99999,
-    opacity: 0,
-  });
+  const popoverRef = useRef<HTMLDivElement | null>(null);
+  const [popoverStyle, setPopoverStyle] = useState<React.CSSProperties>(() =>
+    calculatePopoverStyle(triggerRef?.current || null, align)
+  );
 
   useEffect(() => {
-    const handleOutsideClick = (e: MouseEvent) => {
-      if (containerRef.current && !containerRef.current.contains(e.target as Node)) {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
         onClose();
       }
     };
-
-    const timer = setTimeout(() => {
-      document.addEventListener('click', handleOutsideClick);
-      document.addEventListener('mousedown', handleOutsideClick);
-    }, 10);
-
-    return () => {
-      clearTimeout(timer);
-      document.removeEventListener('click', handleOutsideClick);
-      document.removeEventListener('mousedown', handleOutsideClick);
-    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
   }, [onClose]);
 
   useEffect(() => {
-    if (!containerRef.current) return;
-    const parentEl = containerRef.current.parentElement;
-    if (!parentEl) return;
-
-    const updatePos = () => {
-      const rect = parentEl.getBoundingClientRect();
-      const popoverWidth = 272; // w-68
-      const popoverHeight = 310;
-      const spaceBelow = window.innerHeight - rect.bottom;
-      const openUpward = spaceBelow < popoverHeight && rect.top > popoverHeight;
-
-      let top = openUpward ? rect.top - popoverHeight - 6 : rect.bottom + 6;
-      if (top < 10) top = 10;
-
-      let left = align === 'right' ? rect.right - popoverWidth : rect.left;
-      if (left + popoverWidth > window.innerWidth - 10) {
-        left = window.innerWidth - popoverWidth - 10;
-      }
-      if (left < 10) left = 10;
-
-      setPopoverStyle({
-        position: 'fixed',
-        top: `${top}px`,
-        left: `${left}px`,
-        zIndex: 99999,
-        opacity: 1,
-      });
+    const updatePosition = () => {
+      setPopoverStyle(calculatePopoverStyle(triggerRef?.current || null, align));
     };
 
-    updatePos();
-    window.addEventListener('resize', updatePos);
-    window.addEventListener('scroll', updatePos, true);
+    updatePosition();
+    window.addEventListener('resize', updatePosition);
+    window.addEventListener('scroll', updatePosition, true);
+
     return () => {
-      window.removeEventListener('resize', updatePos);
-      window.removeEventListener('scroll', updatePos, true);
+      window.removeEventListener('resize', updatePosition);
+      window.removeEventListener('scroll', updatePosition, true);
     };
-  }, [align]);
+  }, [align, triggerRef]);
 
   const initialDate = selectedDate ? new Date(selectedDate) : new Date();
   const validInitialDate = isNaN(initialDate.getTime()) ? new Date() : initialDate;
@@ -242,14 +263,14 @@ export const CustomDatePickerModal: React.FC<CustomDatePickerProps> = ({
   // Years array for Years View (12 years block)
   const yearsBlock = Array.from({ length: 12 }, (_, i) => yearBlockStart + i);
 
-  return (
+  return ReactDOM.createPortal(
     <>
-      {/* Invisible backdrop click catcher */}
-      <div className="fixed inset-0 z-[99998]" onClick={onClose} />
+      {/* Invisible backdrop click catcher (no dark screen blur) */}
+      <div className="fixed inset-0 z-[999998]" onClick={onClose} />
 
-      {/* Sleek 3-Level Quick-Navigation Date Picker Popover */}
+      {/* Small Popover Date Picker positioned directly below calendar button */}
       <div
-        ref={containerRef}
+        ref={popoverRef}
         style={popoverStyle}
         onClick={(e) => e.stopPropagation()}
         className="bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 rounded-3xl p-3.5 shadow-2xl w-68 font-sans space-y-3 animate-in fade-in zoom-in-95 duration-150 select-none"
@@ -325,7 +346,7 @@ export const CustomDatePickerModal: React.FC<CustomDatePickerProps> = ({
                     onClick={() => !isFuture && handleDateCellClick(cell.dateStr)}
                     className={`h-7 w-7 rounded-xl mx-auto flex items-center justify-center text-[11px] font-extrabold transition ${
                       isFuture
-                        ? 'opacity-25 text-slate-300 dark:text-slate-700 cursor-not-allowed pointer-events-none'
+                        ? 'opacity-45 text-slate-400 dark:text-slate-500 cursor-not-allowed pointer-events-none select-none'
                         : isSelected
                         ? 'bg-primary text-white font-black shadow-sm shadow-blue-600/40 scale-105 cursor-pointer'
                         : isToday
@@ -358,7 +379,7 @@ export const CustomDatePickerModal: React.FC<CustomDatePickerProps> = ({
                   onClick={() => !isFutureMonth && handleMonthCellClick(mIdx)}
                   className={`py-2 rounded-2xl text-xs font-black transition cursor-pointer text-center ${
                     isFutureMonth
-                      ? 'opacity-25 text-slate-300 dark:text-slate-700 cursor-not-allowed pointer-events-none'
+                      ? 'opacity-45 text-slate-400 dark:text-slate-500 cursor-not-allowed pointer-events-none select-none'
                       : isSelectedMonth
                       ? 'bg-primary text-white shadow-sm shadow-blue-600/40 scale-102'
                       : 'bg-slate-50 dark:bg-slate-800/60 text-slate-800 dark:text-slate-200 hover:bg-blue-50 dark:hover:bg-blue-950/50 hover:text-primary dark:hover:text-blue-400 border border-slate-200/60 dark:border-slate-800'
@@ -386,7 +407,7 @@ export const CustomDatePickerModal: React.FC<CustomDatePickerProps> = ({
                   onClick={() => !isFutureYear && handleYearCellClick(yrVal)}
                   className={`py-2 rounded-2xl text-xs font-black font-mono transition cursor-pointer text-center ${
                     isFutureYear
-                      ? 'opacity-25 text-slate-300 dark:text-slate-700 cursor-not-allowed pointer-events-none'
+                      ? 'opacity-45 text-slate-400 dark:text-slate-500 cursor-not-allowed pointer-events-none select-none'
                       : isSelectedYear
                       ? 'bg-primary text-white shadow-sm shadow-blue-600/40 scale-102'
                       : 'bg-slate-50 dark:bg-slate-800/60 text-slate-800 dark:text-slate-200 hover:bg-blue-50 dark:hover:bg-blue-950/50 hover:text-primary dark:hover:text-blue-400 border border-slate-200/60 dark:border-slate-800'
@@ -427,6 +448,7 @@ export const CustomDatePickerModal: React.FC<CustomDatePickerProps> = ({
           </div>
         </div>
       </div>
-    </>
+    </>,
+    document.body
   );
 };
