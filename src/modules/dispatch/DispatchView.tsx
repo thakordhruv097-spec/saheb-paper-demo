@@ -284,18 +284,20 @@ export const DispatchView: React.FC<DispatchViewProps> = ({ initialTab = 'orders
       
       {/* Title / Hero Banner */}
       {!hideHeader && (
-        <div className="bg-gradient-to-r from-blue-700 via-indigo-600 to-slate-900 rounded-3xl p-6 sm:p-8 text-white shadow-xl relative overflow-hidden">
+        <div className="bg-gradient-to-r from-blue-700 via-indigo-600 to-slate-900 rounded-3xl p-5 sm:p-6 px-6 sm:px-8 text-white shadow-xl relative overflow-hidden">
           <div className="absolute -right-10 -top-10 w-64 h-64 bg-blue-500/10 rounded-full blur-3xl pointer-events-none" />
           <div className="absolute -bottom-20 -left-20 w-80 h-80 rounded-full bg-blue-400/10 blur-2xl pointer-events-none" />
 
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-6 relative z-10">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-5 relative z-10">
             <div className="flex items-center gap-4">
-              <div className="p-3.5 rounded-2xl bg-white/15 backdrop-blur-md border border-white/20 text-white shadow-lg shrink-0">
-                <Truck className="h-8 w-8" />
+              <div className="p-3 rounded-2xl bg-white/15 backdrop-blur-md border border-white/20 text-white shadow-lg shrink-0">
+                <Truck className="h-7 w-7" />
               </div>
               <div>
                 <div className="flex flex-wrap items-center gap-3">
-                  <h2 className="text-2xl sm:text-3xl font-black tracking-tight font-heading">Finished Stock & Dispatch Management</h2>
+                  <h2 className="text-2xl sm:text-3xl font-black tracking-tight font-heading">
+                    {initialTab === 'orders' ? 'Order Bookings' : 'Finished Stock & Dispatch Management'}
+                  </h2>
                 </div>
               </div>
             </div>

@@ -221,6 +221,7 @@ const DEFAULT_STORE_ITEMS: StoreItem[] = [
 const DEFAULT_PENDING_ORDERS: PendingOrder[] = [
   { id: 'or-1', partyId: 'pt-1', productId: 'p-1', gsm: 18, size: 30, ply: 2, qty: 10, dueDate: '2026-07-23', status: 'PENDING', dispatchedQty: 0 },
   { id: 'or-2', partyId: 'pt-2', productId: 'p-3', gsm: 17, size: 10, ply: 3, qty: 15, dueDate: '2026-07-30', status: 'PENDING', dispatchedQty: 0 },
+  { id: 'or-3', partyId: 'pt-3', productId: 'p-2', gsm: 18, size: 30, ply: 2, qty: 30, dueDate: '2026-08-15', status: 'PENDING', dispatchedQty: 0 },
 ];
 
 function seedOneMonthData(): void {

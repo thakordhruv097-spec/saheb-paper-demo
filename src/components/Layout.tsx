@@ -361,7 +361,7 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
     { id: 'rewinding_reel_conversion', path: '/rewinding-reel-conversion', label: t('nav.rewinder', 'Rewinder Section'), icon: RotateCw },
     { id: 'lab', path: '/lab', label: 'Lab Quality Control', icon: Beaker },
     { id: 'utilities_etp', path: '/utilities-etp', label: t('nav.utilities_etp', 'Utilities and ETP'), icon: Flame },
-    { id: 'finished_stock_dispatch', path: '/finished-stock-dispatch', label: t('nav.finished_stock_dispatch', 'Finished Stock and Dispatch'), icon: Package },
+    { id: 'finished_stock_dispatch', path: '/finished-stock-dispatch', label: t('nav.finished_stock_dispatch', 'Finished Stock & Dispatch'), icon: Package },
     { id: 'spareparts_management', path: '/spareparts-management', label: t('nav.store', 'Store Inventory'), icon: Wrench },
     { id: 'monthly_yearly_reporting', path: '/monthly-yearly-reporting', label: t('nav.reports', 'Reports'), icon: BarChart2 },
     { id: 'admin_panel_audit', path: '/admin-panel-audit', label: t('nav.admin_masters', 'Settings'), icon: Settings },
