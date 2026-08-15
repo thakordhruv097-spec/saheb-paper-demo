@@ -39,6 +39,7 @@ import {
   Square,
   X,
   RotateCcw,
+  ScanBarcode,
 } from 'lucide-react';
 
 interface DispatchViewProps {
@@ -95,6 +96,7 @@ export const DispatchView: React.FC<DispatchViewProps> = ({ initialTab = 'orders
   // Fast Reel Selection Filter States
   const [reelSearchQuery, setReelSearchQuery] = useState('');
   const [reelGsmFilter, setReelGsmFilter] = useState<'ALL' | number>('ALL');
+  const [reelSizeFilter, setReelSizeFilter] = useState<'ALL' | number>('ALL');
   const [reelGradeFilter, setReelGradeFilter] = useState<'ALL' | 'A' | 'B'>('ALL');
   const [reelViewMode, setReelViewMode] = useState<'grid' | 'table'>('grid');
   const [barcodeGunInput, setBarcodeGunInput] = useState('');
@@ -170,22 +172,47 @@ export const DispatchView: React.FC<DispatchViewProps> = ({ initialTab = 'orders
     return Array.from(set).sort((a, b) => a - b);
   }, [availableReels]);
 
+  // Unique Sizes present in available reels for quick filter pills
+  const uniqueSizes = useMemo(() => {
+    const set = new Set<number>();
+    availableReels.forEach(r => {
+      if (r.size) set.add(r.size);
+    });
+    return Array.from(set).sort((a, b) => a - b);
+  }, [availableReels]);
+
   // Real-time filtered available reels
   const filteredAvailableReels = useMemo(() => {
     return availableReels.filter(r => {
       if (reelGsmFilter !== 'ALL' && r.gsm !== reelGsmFilter) return false;
+      if (reelSizeFilter !== 'ALL' && r.size !== reelSizeFilter) return false;
       if (reelGradeFilter !== 'ALL' && (r.qcGrade || 'A').toUpperCase() !== reelGradeFilter) return false;
       if (reelSearchQuery.trim()) {
         const q = reelSearchQuery.toLowerCase().trim();
         const matchReelNo = r.reelNo.toLowerCase().includes(q);
         const matchProd = (r.product || '').toLowerCase().includes(q);
         const matchGsm = String(r.gsm).includes(q);
+        const matchSize = String(r.size).includes(q);
         const matchWeight = String(r.weight).includes(q);
-        if (!matchReelNo && !matchProd && !matchGsm && !matchWeight) return false;
+        if (!matchReelNo && !matchProd && !matchGsm && !matchSize && !matchWeight) return false;
       }
       return true;
     });
-  }, [availableReels, reelGsmFilter, reelGradeFilter, reelSearchQuery]);
+  }, [availableReels, reelGsmFilter, reelSizeFilter, reelGradeFilter, reelSearchQuery]);
+
+  // Predictive typing suggestions when user types in the rapid entry box
+  const typingReelMatches = useMemo(() => {
+    const q = barcodeGunInput.trim().toLowerCase();
+    if (!q) return [];
+    return availableReels
+      .filter(r => !selectedReelNos.includes(r.reelNo) && (
+        r.reelNo.toLowerCase().includes(q) ||
+        String(r.gsm).includes(q) ||
+        String(r.size).includes(q) ||
+        (r.product || '').toLowerCase().includes(q)
+      ))
+      .slice(0, 4);
+  }, [barcodeGunInput, availableReels, selectedReelNos]);
 
   // Fast Batch Selection Actions
   const handleSelectAllFiltered = () => {
@@ -209,14 +236,19 @@ export const DispatchView: React.FC<DispatchViewProps> = ({ initialTab = 'orders
     }
   };
 
-  const handleBarcodeGunSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    const raw = barcodeGunInput.trim();
+  const handleBarcodeGunSubmit = (e?: React.FormEvent, customVal?: string) => {
+    if (e) e.preventDefault();
+    const raw = (customVal !== undefined ? customVal : barcodeGunInput).trim();
     if (!raw) return;
     const codes = raw.split(/[\s,]+/).filter(Boolean);
     const validCodesToAdd: string[] = [];
     codes.forEach(code => {
-      const found = availableReels.find(r => r.reelNo.toUpperCase() === code.toUpperCase());
+      // 1. Exact match first
+      let found = availableReels.find(r => r.reelNo.toUpperCase() === code.toUpperCase());
+      // 2. Partial match (last digits or subcode)
+      if (!found) {
+        found = availableReels.find(r => r.reelNo.toUpperCase().includes(code.toUpperCase()));
+      }
       if (found) {
         validCodesToAdd.push(found.reelNo);
       }
@@ -225,9 +257,9 @@ export const DispatchView: React.FC<DispatchViewProps> = ({ initialTab = 'orders
       setSelectedReelNos(prev => Array.from(new Set([...prev, ...validCodesToAdd])));
       playBeep();
       setBarcodeGunInput('');
-      setSuccessMsg(`Added ${validCodesToAdd.length} reel(s) via barcode gun: ${validCodesToAdd.join(', ')}`);
+      setSuccessMsg(`Added ${validCodesToAdd.length} reel(s): ${validCodesToAdd.join(', ')}`);
     } else {
-      setErrorMsg(`Reel '${raw}' not found in active available warehouse stock.`);
+      setErrorMsg(`Reel '${raw}' not found in active warehouse stock.`);
     }
   };
 
@@ -917,49 +949,92 @@ export const DispatchView: React.FC<DispatchViewProps> = ({ initialTab = 'orders
               </div>
             </div>
 
-            {/* 2. Fast Barcode Gun Multi-Add Bar & Real-time Search */}
-            <div className="grid grid-cols-1 sm:grid-cols-12 gap-2">
-              {/* Barcode Gun / Manual Rapid Entry */}
-              <div className="sm:col-span-7 flex gap-1.5">
-                <input
-                  type="text"
-                  value={barcodeGunInput}
-                  onChange={e => setBarcodeGunInput(e.target.value)}
-                  onKeyDown={e => {
-                    if (e.key === 'Enter') {
-                      handleBarcodeGunSubmit(e);
-                    }
-                  }}
-                  placeholder="⚡ Type / Gun Scan Reel (e.g. RL-1048) & Enter..."
-                  className="w-full py-2 px-3 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-xs font-bold focus:outline-none dark:text-white font-mono"
-                />
-                <button
-                  type="button"
-                  onClick={handleBarcodeGunSubmit}
-                  className="px-3.5 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-xs font-black uppercase tracking-wider shrink-0 cursor-pointer shadow-sm flex items-center gap-1"
-                >
-                  <Plus className="h-3.5 w-3.5" />
-                  <span>Add</span>
-                </button>
+            {/* 2. Top Search & Rapid Reel Entry Bar (With Smart Typing Assistance) */}
+            <div className="space-y-2">
+              <div className="grid grid-cols-1 sm:grid-cols-12 gap-2">
+                {/* Rapid Reel / Barcode Gun Entry */}
+                <div className="sm:col-span-7 flex gap-1.5 relative">
+                  <div className="relative w-full">
+                    <ScanBarcode className="h-4 w-4 text-slate-400 absolute left-2.5 top-1/2 -translate-y-1/2" />
+                    <input
+                      type="text"
+                      list="reel-datalist-suggestions"
+                      value={barcodeGunInput}
+                      onChange={e => setBarcodeGunInput(e.target.value)}
+                      onKeyDown={e => {
+                        if (e.key === 'Enter') {
+                          handleBarcodeGunSubmit(e);
+                        }
+                      }}
+                      placeholder="Type Reel No (e.g. 1048) or Scan Barcode..."
+                      className="w-full py-2 pl-8 pr-3 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-xs font-bold focus:outline-none dark:text-white font-mono placeholder:font-sans placeholder:font-normal"
+                    />
+                    <datalist id="reel-datalist-suggestions">
+                      {availableReels.slice(0, 40).map(r => (
+                        <option key={r.reelNo} value={r.reelNo}>
+                          {r.product} • {r.gsm} GSM • {r.size} cm • {r.weight} kg
+                        </option>
+                      ))}
+                    </datalist>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => handleBarcodeGunSubmit()}
+                    className="px-3.5 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-xs font-black uppercase tracking-wider shrink-0 cursor-pointer shadow-sm flex items-center gap-1"
+                  >
+                    <Plus className="h-3.5 w-3.5" />
+                    <span>Add</span>
+                  </button>
+                </div>
+
+                {/* Text Filter Search */}
+                <div className="sm:col-span-5 relative">
+                  <Search className="h-3.5 w-3.5 text-slate-400 absolute left-2.5 top-1/2 -translate-y-1/2" />
+                  <input
+                    type="text"
+                    value={reelSearchQuery}
+                    onChange={e => setReelSearchQuery(e.target.value)}
+                    placeholder="Search No, GSM, Size, Wt..."
+                    className="w-full py-2 pl-8 pr-7 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-xs font-bold focus:outline-none dark:text-white"
+                  />
+                  {reelSearchQuery && (
+                    <button
+                      type="button"
+                      onClick={() => setReelSearchQuery('')}
+                      className="absolute right-2 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 cursor-pointer"
+                    >
+                      <X className="h-3.5 w-3.5" />
+                    </button>
+                  )}
+                </div>
               </div>
 
-              {/* Text Search Filter */}
-              <div className="sm:col-span-5 relative">
-                <Search className="h-3.5 w-3.5 text-slate-400 absolute left-2.5 top-1/2 -translate-y-1/2" />
-                <input
-                  type="text"
-                  value={reelSearchQuery}
-                  onChange={e => setReelSearchQuery(e.target.value)}
-                  placeholder="Filter by No, Weight..."
-                  className="w-full py-2 pl-8 pr-2.5 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-xs font-bold focus:outline-none dark:text-white"
-                />
-              </div>
+              {/* Smart Predictive Typing Assistance Chips (Instant 1-Click Tap to Add) */}
+              {typingReelMatches.length > 0 && (
+                <div className="flex flex-wrap items-center gap-1.5 p-2 bg-blue-50/60 dark:bg-blue-950/30 border border-blue-200 dark:border-blue-800/80 rounded-xl">
+                  <span className="text-[10px] font-black text-blue-700 dark:text-blue-300 uppercase tracking-wider mr-1">
+                    Quick Match (Tap to Add):
+                  </span>
+                  {typingReelMatches.map(r => (
+                    <button
+                      key={r.reelNo}
+                      type="button"
+                      onClick={() => handleBarcodeGunSubmit(undefined, r.reelNo)}
+                      className="px-2 py-0.5 rounded-lg bg-white dark:bg-slate-800 hover:bg-blue-600 hover:text-white text-slate-800 dark:text-slate-200 text-xs font-bold border border-slate-200 dark:border-slate-700 shadow-2xs cursor-pointer transition flex items-center gap-1 font-mono"
+                    >
+                      <Plus className="h-3 w-3 text-blue-500" />
+                      <span>{r.reelNo}</span>
+                      <span className="text-[10px] font-normal text-slate-400">({r.gsm}g • {r.size}cm • {r.weight}kg)</span>
+                    </button>
+                  ))}
+                </div>
+              )}
             </div>
 
-            {/* 3. Fast Batch Selection Buttons & GSM Filter Chips */}
+            {/* 3. Fast Batch Selection Buttons, GSM & Size Filter Chips */}
             <div className="space-y-2 pt-1 border-t border-slate-100 dark:border-slate-800">
               
-              {/* Quick 1-Click Batch Actions */}
+              {/* Row A: Quick 1-Click Batch Actions */}
               <div className="flex flex-wrap items-center gap-1.5">
                 <span className="text-[10px] font-black text-slate-400 uppercase tracking-wider mr-1">
                   Batch Select:
@@ -1013,7 +1088,7 @@ export const DispatchView: React.FC<DispatchViewProps> = ({ initialTab = 'orders
                 )}
               </div>
 
-              {/* GSM Filter Chips */}
+              {/* Row B: GSM Filter Chips */}
               <div className="flex flex-wrap items-center gap-1.5 pt-1">
                 <span className="text-[10px] font-black text-slate-400 uppercase tracking-wider mr-1">
                   GSM Filter:
@@ -1063,6 +1138,43 @@ export const DispatchView: React.FC<DispatchViewProps> = ({ initialTab = 'orders
                     Grade A Only
                   </button>
                 </div>
+              </div>
+
+              {/* Row C: Size Filter Chips */}
+              <div className="flex flex-wrap items-center gap-1.5 pt-0.5">
+                <span className="text-[10px] font-black text-slate-400 uppercase tracking-wider mr-1">
+                  Size Filter:
+                </span>
+
+                <button
+                  type="button"
+                  onClick={() => setReelSizeFilter('ALL')}
+                  className={`px-2.5 py-0.5 rounded-full text-xs font-bold cursor-pointer transition ${
+                    reelSizeFilter === 'ALL'
+                      ? 'bg-indigo-900 dark:bg-indigo-500 text-white'
+                      : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 hover:bg-slate-200'
+                  }`}
+                >
+                  All Sizes ({availableReels.length})
+                </button>
+
+                {uniqueSizes.map(sz => {
+                  const count = availableReels.filter(r => r.size === sz).length;
+                  return (
+                    <button
+                      key={sz}
+                      type="button"
+                      onClick={() => setReelSizeFilter(sz)}
+                      className={`px-2.5 py-0.5 rounded-full text-xs font-bold cursor-pointer transition ${
+                        reelSizeFilter === sz
+                          ? 'bg-indigo-600 text-white shadow-xs'
+                          : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 hover:bg-slate-200'
+                      }`}
+                    >
+                      {sz} cm ({count})
+                    </button>
+                  );
+                })}
               </div>
 
             </div>
