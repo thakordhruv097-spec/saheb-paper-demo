@@ -1,10 +1,10 @@
 # 🏭 SAHEB PAPER PVT. LTD. — ERP PROJECT REVIEW & PRICING ARCHITECTURE
 
 > [!NOTE]
-> **Document Reference**: `SP-ERP-REVIEW-PRICING-2026-V1`  
+> **Document Reference**: `SP-ERP-REVIEW-PRICING-2026-V2`  
 > **Target Application**: Saheb Paper Mill Operations, Stock, & Dispatch ERP  
-> **Prepared For**: Mill Owner & Management Team  
-> **Scope**: Turnkey Cross-Platform ERP (Android + Windows + Web), QR Traceability Engine, & Local/Cloud Backend Architecture  
+> **Prepared For**: Mill Management & Executive Board  
+> **Scope**: Turnkey Cross-Platform ERP (Android + Windows + Web), QR Traceability Engine, Local vs Cloud Data Storage Engine  
 
 ---
 
@@ -58,27 +58,42 @@ flowchart TD
 
 ---
 
-## 3. 💰 Itemized Development & Financial Breakdown
+## 3. 🗄️ Local vs. Cloud Data Storage Architecture
+
+> [!IMPORTANT]
+> **Flexibility Choice**: The application supports both **Zero-Cost Offline Local Storage** and **Multi-Location Cloud Realtime Synchronization**. Management can choose the architecture best suited for their budget and operations.
+
+### 🏢 Comparison Matrix: Local Engine vs. Cloud Databases
+
+| Feature / Criteria | 🖥️ Option 1: Local Storage Engine *(Default)* | ☁️ Option 2: Cloud Database *(Optional)* | 🏠 Option 3: Private Mill Server |
+|---|---|---|---|
+| **Monthly Bill** | **₹0 / Month (100% Free Lifetime)** | ₹500 – ₹1,500 / Month | **₹0 Cloud Bill** (Local Server PC) |
+| **Internet Dependency** | 100% Offline (No Internet Needed) | Requires Active Internet | Works on Local Plant Wi-Fi |
+| **Data Speed** | Instant 0ms Latency (Ultra Fast) | Depends on Internet Speed | Instant 0ms Local Wi-Fi Speed |
+| **Multi-Device Sync** | Export/Import JSON Backup | Real-Time Live Auto-Sync | Real-Time Local Wi-Fi Auto-Sync |
+| **Data Privacy** | 100% Data Stays Inside Mill PCs | Secured on Enterprise Cloud | 100% Data Stays Inside Mill Premises |
+| **Best Suited For** | Single Mill Plant (Zero Overhead) | Owners Monitoring Remotely | Mill Office with Local Wi-Fi Network |
+
+---
+
+## 4. 💰 Itemized Development & Financial Breakdown
 
 Below is the transparent breakdown of technical engineering resources, AI model subscriptions, data schema architecture, build pipeline setup, and deployment labor:
 
-> [!IMPORTANT]
-> **Perpetual License**: Ownership belongs 100% to Saheb Paper Pvt. Ltd. Zero monthly database fees or mandatory subscription costs!
-
 | Sr | System Component & Description | Market Agency Value | Delivered Investment (₹) |
 |---|---|---|---|
-| **1** | **Core ERP Software Architecture & Custom UI/UX**<br>• Custom branding (Company Logo, Colors, Address on receipts)<br>• All 11 Paper Mill Modules & 50+ Responsive Views<br>• Modern Glassmorphic Indigo Design System & Dark Mode | ₹2,50,000 | ₹24,000 |
+| **1** | **Core ERP Software Architecture & Custom UI/UX**<br>• Custom branding (Company Logo, Colors, Address on receipts)<br>• All 11 Paper Mill Modules & 50+ Responsive Views<br>• Glassmorphic Indigo Design System & Dark Mode | ₹2,50,000 | ₹24,000 |
 | **2** | **Data Engine & Schema Architecture**<br>• LocalStorage JSON Data Engine (Offline-First, Zero Cloud Fees)<br>• 17 Entity Schemas (Reels, Boiler, ETP, Rolls, Packing Slips)<br>• Full Data Backup Export (`JSON`) & One-Click Restore | ₹80,000 | ₹8,500 |
 | **3** | **QR Engine, Scanner & Thermal Printer Driver**<br>• High-resolution QR Code SVG generator module<br>• Dual-mode Camera Scanner + Barcode Gun Listener<br>• TSC Thermal Label Printer drivers (4x3, 3x2, 2x2, A4) | ₹50,000 | ₹6,500 |
 | **4** | **Cross-Platform Build Pipeline Setup**<br>• Android Native Project & Gradle Compilation (`.apk`)<br>• Windows Portable Executable Setup (`.exe`) | ₹60,000 | ₹8,000 |
-| **5** | **Installation, Device Setup & Staff Training**<br>• Installation on office PCs & operator smartphones<br>• 2 Days Hands-On Operator Training (Machine, Rewinder, Dispatch)<br>• **6 Months Included Technical Support & Bug Fixes** | ₹45,000 | ₹8,000 |
+| **5** | **On-Site System Deployment & Production Go-Live**<br>• On-site installation on office PCs, weighbridge & operator smartphones<br>• Hardware integration (TSC Printer & Laser Barcode Gun drivers)<br>• **6 Months Included Technical Support & Bug Fixes** | ₹45,000 | ₹8,000 |
 | | **TOTAL COMMERCIAL MARKET VALUE** | **₹4,85,000** | **₹55,000** |
 | | **SPECIAL INAUGURAL DISCOUNT** | | **- ₹7,000** |
 | | **NET TURNKEY INVESTMENT COST** | | **₹48,000** |
 
 ---
 
-## 4. 💎 Recommended Pricing & Deal Packages
+## 5. 💎 Recommended Pricing & Deal Packages
 
 > [!TIP]
 > **Two Commercial Payment Options Available**:
@@ -86,8 +101,8 @@ Below is the transparent breakdown of technical engineering resources, AI model 
 ### 🏆 Option A: Complete Turnkey ERP Package — ₹48,000 *(Recommended)*
 - Full ERP Software (`SahebPaper.exe` + `SahebPaper.apk` + Web Browser link)
 - Complete Custom Branding (Logo, Address, Mill Name)
-- Installation on all Mill PCs, Mobiles, & Weighbridge Terminals
-- 2 Days Hands-on Staff Training
+- On-Site Installation on all Mill PCs, Mobiles, & Weighbridge Terminals
+- System Commissioning & Hardware Driver Integration
 - **6 Months FREE Warranty, Updates & Technical Support**
 - **Net Investment**: **₹48,000** *(One-time total payment)*
 
@@ -97,7 +112,7 @@ Below is the transparent breakdown of technical engineering resources, AI model 
 
 ---
 
-## 5. 💳 Milestone Payment Schedule
+## 6. 💳 Milestone Payment Schedule
 
 Payment is structured into 3 clear operational milestones:
 
@@ -105,27 +120,14 @@ Payment is structured into 3 clear operational milestones:
 ┌─────────────────────────────────────────────────────────────────────────────────┐
 │                           MILESTONE PAYMENT SCHEDULE                            │
 ├──────────────────────────┬───────────────────────────┬──────────────────────────┤
-│ MILESTONE 1: ADVANCE     │ MILESTONE 2: INSTALLATION │ MILESTONE 3: HANDOVER    │
+│ MILESTONE 1: ADVANCE     │ MILESTONE 2: DEPLOYMENT   │ MILESTONE 3: GO-LIVE     │
 ├──────────────────────────┼───────────────────────────┼──────────────────────────┤
-│ Booking Token & Branding │ Software Installed on     │ Operator Training Done & │
-│ Configuration Start      │ Office PCs & Mobiles      │ Final Live Deployment    │
+│ Booking Token & Branding │ Software Installed on     │ Production Go-Live &     │
+│ Configuration Start      │ Office PCs & Mobiles      │ Final System Handover    │
 ├──────────────────────────┼───────────────────────────┼──────────────────────────┤
 │ AMOUNT: ₹18,000          │ AMOUNT: ₹20,000           │ AMOUNT: ₹10,000          │
 └──────────────────────────┴───────────────────────────┴──────────────────────────┘
 ```
-
----
-
-## 6. 🌐 Future Backend & Cloud Database Upgrade Path
-
-Currently, the application runs on a **High-Performance Offline-First Local Data Engine** (Zero Monthly Bills). If the mill decides to expand to multi-location cloud synchronization in the future:
-
-| Option | Architecture | Monthly Running Cost | Best Suited For |
-|---|---|---|---|
-| **Current Setup** | Local Storage JSON Engine | **₹0 / month** | Single Plant Operation (100% Free) |
-| **Option 1** | Firebase Realtime Cloud DB | ₹500 – ₹1,200 / month | Instant Multi-Branch Live Sync |
-| **Option 2** | Supabase PostgreSQL Cloud | ₹1,500 / month | Enterprise SQL Reporting & Analytics |
-| **Option 3** | Self-Hosted Node.js + SQLite | ₹300 – ₹500 / month | Private Local Server in Mill Office |
 
 ---
 
@@ -139,4 +141,4 @@ Currently, the application runs on a **High-Performance Offline-First Local Data
 _____________________________________  
 **Authorized Signatory**  
 Saheb Paper Pvt. Ltd.  
-**Date**: August 14, 2026  
+**Date**: August 15, 2026  
