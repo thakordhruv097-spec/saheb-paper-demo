@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useAuth } from '../auth/AuthContext';
 import { FinishStockView } from '../finish-stock/FinishStockView';
@@ -61,7 +61,7 @@ export const FinishedStockDispatchView: React.FC = () => {
             </div>
           </div>
 
-          {/* Action Buttons: Print Label Studio + Scanner Quick Button */}
+          {/* Action Buttons: Print Label Studio (Universal) + Scanner Quick Button (Mobile Only) */}
           <div className="flex items-center gap-2 shrink-0">
             <button
               onClick={() => handleOpenPrintStudio()}
@@ -69,14 +69,14 @@ export const FinishedStockDispatchView: React.FC = () => {
               title="Print Universal QR &amp; Thermal Sticker Label"
             >
               <Printer className="h-4 w-4 text-sky-200" />
-              <span className="hidden sm:inline">Print Labels</span>
-              <span className="sm:hidden">Print</span>
+              <span>Print Labels</span>
             </button>
 
+            {/* Scanner Button (Visible ONLY on Mobile) */}
             {canAccessScanner && (
               <button
                 onClick={() => setActiveTab('qr_scanner')}
-                className={`px-3 py-2 rounded-xl text-xs font-black transition cursor-pointer flex items-center gap-1.5 shadow-md ${
+                className={`px-3 py-2 rounded-xl text-xs font-black transition cursor-pointer flex md:hidden items-center gap-1.5 shadow-md ${
                   activeTab === 'qr_scanner'
                     ? 'bg-emerald-500 text-white ring-2 ring-emerald-300'
                     : 'bg-white/15 hover:bg-white/25 text-white border border-white/20'
@@ -84,8 +84,7 @@ export const FinishedStockDispatchView: React.FC = () => {
                 title="Open QR Reel Dispatch Scanner"
               >
                 <QrCode className="h-4 w-4 text-emerald-300 animate-pulse" />
-                <span className="hidden sm:inline">Dispatch Scanner</span>
-                <span className="sm:hidden">Scanner</span>
+                <span>Scanner</span>
               </button>
             )}
           </div>
@@ -108,10 +107,11 @@ export const FinishedStockDispatchView: React.FC = () => {
           </button>
         )}
 
+        {/* QR Reel Scanner Tab (Visible ONLY on Mobile screens) */}
         {canAccessScanner && (
           <button
             onClick={() => setActiveTab('qr_scanner')}
-            className={`flex-1 min-w-[130px] px-3.5 py-2.5 rounded-lg font-extrabold text-xs transition cursor-pointer flex items-center justify-center gap-2 ${
+            className={`flex md:hidden min-w-[130px] px-3.5 py-2.5 rounded-lg font-extrabold text-xs transition cursor-pointer items-center justify-center gap-2 ${
               activeTab === 'qr_scanner'
                 ? 'bg-gradient-to-r from-emerald-600 to-teal-600 text-white shadow-xs ring-1 ring-emerald-400/50'
                 : 'text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800'
