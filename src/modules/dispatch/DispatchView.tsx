@@ -1398,123 +1398,221 @@ export const DispatchView: React.FC<DispatchViewProps> = ({ initialTab = 'orders
         </div>
       )}
 
-      {/* Challan View Detail Modal / Printable Receipt */}
-      {viewingSlip && (
-        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4 print:relative print:bg-white print:p-0">
-          <div className="bg-white dark:bg-slate-800 rounded-lg max-w-3xl w-full p-6 space-y-4 shadow-2xl max-h-[90vh] overflow-y-auto print:shadow-none print:max-h-full print:w-full print:p-0">
-            
-            {/* Modal Header */}
-            <div className="flex justify-between items-center border-b pb-3 dark:border-slate-700 print:hidden">
-              <h3 className="text-sm font-bold text-slate-800 dark:text-white uppercase tracking-wider">
-                Challan Dispatch Receipt Detail
-              </h3>
-              <button
-                onClick={() => setViewingSlip(null)}
-                className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-300"
-              >
-                Close
-              </button>
-            </div>
+      {/* Challan View Detail Modal / Printable Receipt (Exact Client Reference Format) */}
+      {viewingSlip && (() => {
+        const partyObj = parties.find(p => p.id === viewingSlip.partyId);
+        const vehicleObj = vehicles.find(v => v.id === viewingSlip.vehicleId || v.vehicleNo === viewingSlip.vehicleId);
+        const vehicleDisplay = vehicleObj ? vehicleObj.vehicleNo : (viewingSlip.vehicleId || 'GJ01EP1234');
+        const linkedReels = reels.filter(r => viewingSlip.reelNos.includes(r.reelNo));
 
-            {/* Printable Area Layout */}
-            <div className="space-y-6 text-slate-900 dark:text-white bg-white dark:bg-slate-800 p-4 print:p-0 print:text-black">
+        // Grouping for Product Summary table
+        const productSummaryMap: { [key: string]: { product: string; gsm: number; size: number; ply: number; count: number; totalWeight: number } } = {};
+        linkedReels.forEach(r => {
+          const key = `${r.product || 'Tissue'}__${r.gsm}__${r.size}__${r.ply || 1}`;
+          if (!productSummaryMap[key]) {
+            productSummaryMap[key] = {
+              product: r.product || 'Tissue Paper',
+              gsm: r.gsm,
+              size: r.size,
+              ply: r.ply || 1,
+              count: 0,
+              totalWeight: 0,
+            };
+          }
+          productSummaryMap[key].count += 1;
+          productSummaryMap[key].totalWeight += (r.weight || 0);
+        });
+
+        const productSummaryList = Object.values(productSummaryMap);
+        const grandTotalWeight = linkedReels.reduce((sum, r) => sum + (r.weight || 0), 0);
+
+        return (
+          <div className="fixed inset-0 bg-slate-900/70 backdrop-blur-xs z-50 flex items-center justify-center p-2 sm:p-4 overflow-y-auto print:p-0 print:relative print:bg-white">
+            <div className="bg-white text-slate-900 rounded-2xl max-w-3xl w-full p-4 sm:p-8 space-y-4 shadow-2xl my-auto print:shadow-none print:w-full print:p-0 print:m-0 print:rounded-none">
               
-              {/* Mill Header */}
-              <div className="text-center border-b-2 pb-4 border-slate-900">
-                <h2 className="text-xl font-bold font-heading uppercase tracking-wider print:text-black">SAHEB PAPER PVT. LTD.</h2>
-                <p className="text-[10px] text-text-light-secondary print:text-black font-sans uppercase">Tissue Paper Mill - Napkin, Toilet, KT & HRT Tissue</p>
-                <p className="text-[10px] text-text-light-secondary print:text-black font-sans">Surat, Gujarat, India | Contact: +91 98765 43210</p>
+              {/* Modal Top Actions (Hidden while printing) */}
+              <div className="flex justify-between items-center border-b border-slate-200 pb-3 print:hidden">
+                <div className="flex items-center gap-2">
+                  <FileText className="h-5 w-5 text-blue-600" />
+                  <span className="text-sm font-black text-slate-900 uppercase tracking-wider">
+                    Official Dispatch Receipt Preview
+                  </span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={handlePrintChallan}
+                    className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-xs font-black uppercase tracking-wider shadow-md transition cursor-pointer flex items-center gap-1.5"
+                  >
+                    <Printer className="h-4 w-4" />
+                    <span>Print Receipt</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setViewingSlip(null)}
+                    className="p-2 text-slate-400 hover:text-slate-700 rounded-xl hover:bg-slate-100 cursor-pointer"
+                  >
+                    <X className="h-5 w-5" />
+                  </button>
+                </div>
               </div>
 
-              {/* Challan Info Blocks */}
-              <div className="grid grid-cols-2 gap-4 text-xs font-mono">
-                <div className="space-y-1">
-                  <p><strong>CHALLAN NO:</strong> {viewingSlip.slipNo}</p>
-                  <p><strong>DATE:</strong> {viewingSlip.date}</p>
-                  <p><strong>STATUS:</strong> <span className="font-bold uppercase">{viewingSlip.status}</span></p>
+              {/* PRINTABLE RECEIPT CONTAINER (Matches Client Reference 100%) */}
+              <div className="bg-white p-2 sm:p-4 text-black font-sans select-none print:p-0">
+                
+                {/* 1. Header Banner */}
+                <div className="border-b-2 border-black pb-2 mb-3 text-left">
+                  <h1 className="text-xl sm:text-2xl font-black tracking-tight text-black uppercase leading-tight">
+                    SAHEB PAPER PVT. LTD.
+                  </h1>
+                  <p className="text-[10px] sm:text-[11px] font-bold text-slate-700 uppercase tracking-[0.18em]">
+                    FINISHED STOCK MANAGEMENT &bull; TISSUE PAPER MILL
+                  </p>
                 </div>
-                <div className="space-y-1">
-                  <p><strong>CUSTOMER:</strong> {parties.find(p => p.id === viewingSlip.partyId)?.name || 'N/A'}</p>
-                  <p><strong>VEHICLE NO:</strong> {vehicles.find(v => v.id === viewingSlip.vehicleId)?.vehicleNo || 'N/A'}</p>
-                  <p><strong>DRIVER NAME:</strong> {vehicles.find(v => v.id === viewingSlip.vehicleId)?.driverName || 'N/A'}</p>
-                </div>
-              </div>
 
-              {/* Reels Details Table */}
-              <div className="border border-slate-300 rounded-xl overflow-x-auto">
-                <table className="w-full text-left text-xs border-collapse min-w-[560px]">
-                  <thead>
-                    <tr className="bg-slate-100 dark:bg-slate-700/80 border-b border-slate-300 text-slate-800 dark:text-slate-200 font-bold font-mono print:text-black">
-                      <th className="py-2.5 px-3.5 whitespace-nowrap">Reel Number</th>
-                      <th className="py-2.5 px-3.5 whitespace-nowrap">Product Description</th>
-                      <th className="py-2.5 px-3.5 whitespace-nowrap">GSM</th>
-                      <th className="py-2.5 px-3.5 whitespace-nowrap">Size</th>
-                      <th className="py-2.5 px-3.5 whitespace-nowrap">Ply</th>
-                      <th className="py-2.5 px-3.5 text-right whitespace-nowrap">Weight (kg)</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-slate-200 dark:divide-slate-700">
-                    {reels
-                      .filter(r => viewingSlip.reelNos.includes(r.reelNo))
-                      .map(reel => (
-                        <tr key={reel.reelNo} className="print:text-black">
-                          <td className="py-2.5 px-3.5 font-bold font-mono whitespace-nowrap">{reel.reelNo}</td>
-                          <td className="py-2.5 px-3.5 whitespace-nowrap">{reel.product}</td>
-                          <td className="py-2.5 px-3.5 font-mono whitespace-nowrap">{reel.gsm} GSM</td>
-                          <td className="py-2.5 px-3.5 font-mono whitespace-nowrap">{reel.size} cm</td>
-                          <td className="py-2.5 px-3.5 font-mono whitespace-nowrap">{reel.ply} Ply</td>
-                          <td className="py-2.5 px-3.5 text-right font-bold font-mono whitespace-nowrap">{reel.weight.toLocaleString()} kg</td>
+                {/* 2. Document Title & Badge */}
+                <div className="text-center my-3 space-y-1">
+                  <h2 className="text-base sm:text-lg font-black tracking-[0.25em] text-black uppercase">
+                    DISPATCH RECEIPT
+                  </h2>
+                  <div>
+                    <span className="inline-block bg-[#E65100] text-white text-[10px] font-black uppercase px-4 py-0.5 rounded shadow-2xs">
+                      FINALIZED
+                    </span>
+                  </div>
+                </div>
+
+                {/* 3. Metadata Box */}
+                <div className="border border-slate-300 rounded p-3 text-xs text-left grid grid-cols-2 gap-y-2.5 font-sans bg-white mb-4">
+                  <div>
+                    <span className="text-[9px] font-extrabold text-slate-500 uppercase tracking-wider block">RECEIPT NO</span>
+                    <span className="font-bold font-mono text-black text-xs sm:text-sm">{viewingSlip.slipNo}</span>
+                  </div>
+                  <div>
+                    <span className="text-[9px] font-extrabold text-slate-500 uppercase tracking-wider block">DISPATCH DATE</span>
+                    <span className="font-bold text-black text-xs sm:text-sm">{viewingSlip.date}</span>
+                  </div>
+                  <div>
+                    <span className="text-[9px] font-extrabold text-slate-500 uppercase tracking-wider block">PARTY NAME</span>
+                    <span className="font-bold text-black text-xs sm:text-sm">{partyObj?.name || 'Gronew'}</span>
+                  </div>
+                  <div>
+                    <span className="text-[9px] font-extrabold text-slate-500 uppercase tracking-wider block">BILL NO</span>
+                    <span className="font-bold font-mono text-black text-xs sm:text-sm">GT/{viewingSlip.slipNo.slice(-2) || '45'}</span>
+                  </div>
+                  <div className="col-span-2">
+                    <span className="text-[9px] font-extrabold text-slate-500 uppercase tracking-wider block">VEHICLE NO</span>
+                    <span className="font-bold font-mono text-black text-xs sm:text-sm uppercase">{vehicleDisplay}</span>
+                  </div>
+                </div>
+
+                {/* 4. DISPATCHED REELS Table */}
+                <div className="mb-4 text-left">
+                  <h3 className="text-xs font-black text-black uppercase tracking-wider mb-1.5">
+                    DISPATCHED REELS
+                  </h3>
+                  <div className="border border-slate-300 overflow-x-auto">
+                    <table className="w-full text-left text-xs border-collapse font-sans">
+                      <thead className="bg-[#0B132B] text-white uppercase text-[10px] font-black tracking-wider">
+                        <tr>
+                          <th className="py-2 px-2.5 text-center w-10">SR</th>
+                          <th className="py-2 px-3 font-mono">REEL NO</th>
+                          <th className="py-2 px-3">PRODUCT</th>
+                          <th className="py-2 px-3 text-center">GSM</th>
+                          <th className="py-2 px-3 text-center">SIZE (CM)</th>
+                          <th className="py-2 px-3 text-center">PLY</th>
+                          <th className="py-2 px-3 text-right">WEIGHT (KG)</th>
                         </tr>
-                      ))}
-                    {/* Total Summary Row */}
-                    <tr className="bg-slate-50 dark:bg-slate-800 font-bold border-t-2 border-slate-300 font-mono print:text-black">
-                      <td colSpan={5} className="py-3 px-3.5 text-right uppercase tracking-wider text-xs whitespace-nowrap">Total Dispatch Weight:</td>
-                      <td className="py-3 px-3.5 text-right text-sm font-black whitespace-nowrap font-mono text-primary dark:text-blue-400">
-                        {reels
-                          .filter(r => viewingSlip.reelNos.includes(r.reelNo))
-                          .reduce((sum, r) => sum + r.weight, 0)
-                          .toLocaleString()}{' '}
-                        kg
-                      </td>
-                    </tr>
-                  </tbody>
-                </table>
-              </div>
+                      </thead>
+                      <tbody className="divide-y divide-slate-200 text-slate-900 font-medium">
+                        {linkedReels.map((reel, idx) => (
+                          <tr key={reel.reelNo} className="hover:bg-slate-50">
+                            <td className="py-1.5 px-2.5 text-center font-bold text-slate-700">{idx + 1}</td>
+                            <td className="py-1.5 px-3 font-mono font-bold">{reel.reelNo}</td>
+                            <td className="py-1.5 px-3">{reel.product}</td>
+                            <td className="py-1.5 px-3 text-center">{reel.gsm}</td>
+                            <td className="py-1.5 px-3 text-center">{reel.size}</td>
+                            <td className="py-1.5 px-3 text-center">{reel.ply || 1}</td>
+                            <td className="py-1.5 px-3 text-right font-mono font-bold">{reel.weight}</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
 
-              {/* Signatures */}
-              <div className="grid grid-cols-2 gap-8 pt-8 text-xs font-mono">
-                <div className="border-t border-dashed border-slate-600 pt-3 text-center">
-                  <p><strong>DRIVER SIGNATURE</strong></p>
-                  <p className="mt-2 text-slate-600 dark:text-slate-400 italic">Name: {viewingSlip.driverSignature}</p>
+                {/* 5. PRODUCT SUMMARY Table */}
+                <div className="mb-6 text-left">
+                  <h3 className="text-xs font-black text-black uppercase tracking-wider mb-1.5">
+                    PRODUCT SUMMARY
+                  </h3>
+                  <div className="border border-slate-300 overflow-x-auto">
+                    <table className="w-full text-left text-xs border-collapse font-sans">
+                      <thead className="bg-[#0B132B] text-white uppercase text-[10px] font-black tracking-wider">
+                        <tr>
+                          <th className="py-2 px-3">PRODUCT</th>
+                          <th className="py-2 px-3 text-center">GSM</th>
+                          <th className="py-2 px-3 text-center">SIZE</th>
+                          <th className="py-2 px-3 text-center">PLY</th>
+                          <th className="py-2 px-3 text-center">REELS</th>
+                          <th className="py-2 px-3 text-right">TOTAL WEIGHT</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-slate-200 text-slate-900 font-medium">
+                        {productSummaryList.map((item, idx) => (
+                          <tr key={idx} className="hover:bg-slate-50">
+                            <td className="py-1.5 px-3 font-bold">{item.product}</td>
+                            <td className="py-1.5 px-3 text-center">{item.gsm}</td>
+                            <td className="py-1.5 px-3 text-center">{item.size} CM</td>
+                            <td className="py-1.5 px-3 text-center">{item.ply} Ply</td>
+                            <td className="py-1.5 px-3 text-center font-bold">{item.count}</td>
+                            <td className="py-1.5 px-3 text-right font-mono font-bold">{item.totalWeight} KG</td>
+                          </tr>
+                        ))}
+                        {/* GRAND TOTAL Row (Matching Reference Peach/Amber Styling) */}
+                        <tr className="bg-[#FEE4CB] font-black text-slate-950 border-t-2 border-slate-300 text-xs">
+                          <td colSpan={5} className="py-2 px-3 uppercase tracking-wider font-black">
+                            GRAND TOTAL
+                          </td>
+                          <td className="py-2 px-3 text-right font-mono font-black text-sm">
+                            {grandTotalWeight.toLocaleString()} KG
+                          </td>
+                        </tr>
+                      </tbody>
+                    </table>
+                  </div>
                 </div>
-                <div className="border-t border-dashed border-slate-600 pt-3 text-center">
-                  <p><strong>RECEIVER SIGNATURE</strong></p>
-                  <p className="mt-2 text-slate-600 dark:text-slate-400 italic">Name: {viewingSlip.receiverSignature}</p>
+
+                {/* 6. Signatures (3 Columns with Top Horizontal Line) */}
+                <div className="grid grid-cols-3 gap-6 pt-6 mb-4 text-center font-sans">
+                  <div className="border-t-2 border-black pt-2">
+                    <span className="text-[10px] sm:text-xs font-black uppercase text-black tracking-wider block">
+                      PREPARED BY
+                    </span>
+                  </div>
+                  <div className="border-t-2 border-black pt-2">
+                    <span className="text-[10px] sm:text-xs font-black uppercase text-black tracking-wider block">
+                      DRIVER SIGNATURE
+                    </span>
+                  </div>
+                  <div className="border-t-2 border-black pt-2">
+                    <span className="text-[10px] sm:text-xs font-black uppercase text-black tracking-wider block">
+                      RECEIVER SIGNATURE
+                    </span>
+                  </div>
                 </div>
+
+                {/* 7. Footer Caption */}
+                <div className="text-center text-[10px] font-semibold text-slate-500 pt-2 border-t border-slate-200">
+                  Generated on {viewingSlip.date || new Date().toLocaleDateString('en-GB')} &bull; Saheb Paper Pvt. Ltd.
+                </div>
+
               </div>
 
             </div>
-
-            {/* Modal Footer controls */}
-            <div className="flex justify-end gap-3 border-t pt-3 dark:border-slate-700 print:hidden">
-              <button
-                onClick={() => setViewingSlip(null)}
-                className="px-4 py-2 border border-slate-200 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-800 rounded text-xs font-semibold text-slate-700 dark:text-slate-300"
-              >
-                Close
-              </button>
-              <button
-                onClick={handlePrintChallan}
-                className="px-4 py-2 bg-primary hover:bg-blue-800 text-white rounded text-xs font-semibold shadow flex items-center gap-1.5"
-              >
-                <Printer className="h-4 w-4" />
-                <span>Print Challan Receipt</span>
-              </button>
-            </div>
-
           </div>
-        </div>
-      )}
+        );
+      })()}
 
     </div>
   );
