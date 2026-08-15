@@ -95,6 +95,7 @@ export const DispatchView: React.FC<DispatchViewProps> = ({ initialTab = 'orders
 
   // Fast Reel Selection Filter States
   const [reelSearchQuery, setReelSearchQuery] = useState('');
+  const [reelProductFilter, setReelProductFilter] = useState<'ALL' | string>('ALL');
   const [reelGsmFilter, setReelGsmFilter] = useState<'ALL' | number>('ALL');
   const [reelSizeFilter, setReelSizeFilter] = useState<'ALL' | number>('ALL');
   const [reelGradeFilter, setReelGradeFilter] = useState<'ALL' | 'A' | 'B'>('ALL');
@@ -163,6 +164,15 @@ export const DispatchView: React.FC<DispatchViewProps> = ({ initialTab = 'orders
     return reels.filter(r => r.status === 'IN_STOCK' || r.status === 'IN_STOCK_B');
   }, [reels]);
 
+  // Unique Products present in available reels for quick filter pills
+  const uniqueProducts = useMemo(() => {
+    const set = new Set<string>();
+    availableReels.forEach(r => {
+      if (r.product) set.add(r.product);
+    });
+    return Array.from(set).sort();
+  }, [availableReels]);
+
   // Unique GSMs present in available reels for quick filter pills
   const uniqueGsms = useMemo(() => {
     const set = new Set<number>();
@@ -184,6 +194,7 @@ export const DispatchView: React.FC<DispatchViewProps> = ({ initialTab = 'orders
   // Real-time filtered available reels
   const filteredAvailableReels = useMemo(() => {
     return availableReels.filter(r => {
+      if (reelProductFilter !== 'ALL' && r.product !== reelProductFilter) return false;
       if (reelGsmFilter !== 'ALL' && r.gsm !== reelGsmFilter) return false;
       if (reelSizeFilter !== 'ALL' && r.size !== reelSizeFilter) return false;
       if (reelGradeFilter !== 'ALL' && (r.qcGrade || 'A').toUpperCase() !== reelGradeFilter) return false;
@@ -198,7 +209,7 @@ export const DispatchView: React.FC<DispatchViewProps> = ({ initialTab = 'orders
       }
       return true;
     });
-  }, [availableReels, reelGsmFilter, reelSizeFilter, reelGradeFilter, reelSearchQuery]);
+  }, [availableReels, reelProductFilter, reelGsmFilter, reelSizeFilter, reelGradeFilter, reelSearchQuery]);
 
   // Predictive typing suggestions when user types in the rapid entry box
   const typingReelMatches = useMemo(() => {
@@ -904,8 +915,8 @@ export const DispatchView: React.FC<DispatchViewProps> = ({ initialTab = 'orders
           {/* Reel Selection Ledger (2/3 width) - FAST BATCH & MULTI-SELECTION ENGINE */}
           <div className="lg:col-span-2 bg-white dark:bg-surface-dark border border-slate-200 dark:border-slate-700/80 rounded-3xl p-4 sm:p-5 shadow-xs space-y-3.5 text-left">
             
-            {/* 1. Header with Tally & View Switcher */}
-            <div className="flex flex-wrap items-center justify-between gap-2 border-b border-slate-100 dark:border-slate-800 pb-3">
+            {/* 1. Header with Tally, Search Bar (Picture 3 Spot) & View Switcher */}
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 border-b border-slate-100 dark:border-slate-800 pb-3">
               <div className="space-y-0.5">
                 <div className="flex items-center gap-2">
                   <h3 className="text-xs font-black text-slate-900 dark:text-white uppercase tracking-wider">
@@ -920,82 +931,17 @@ export const DispatchView: React.FC<DispatchViewProps> = ({ initialTab = 'orders
                 </p>
               </div>
 
-              {/* View Switcher: Grid vs Table */}
-              <div className="flex items-center gap-1 bg-slate-100 dark:bg-slate-900 p-1 rounded-xl">
-                <button
-                  type="button"
-                  onClick={() => setReelViewMode('grid')}
-                  className={`p-1.5 rounded-lg transition cursor-pointer ${
-                    reelViewMode === 'grid'
-                      ? 'bg-white dark:bg-slate-800 text-blue-600 shadow-xs'
-                      : 'text-slate-500 hover:text-slate-800 dark:hover:text-white'
-                  }`}
-                  title="Card Grid View"
-                >
-                  <LayoutGrid className="h-3.5 w-3.5" />
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setReelViewMode('table')}
-                  className={`p-1.5 rounded-lg transition cursor-pointer ${
-                    reelViewMode === 'table'
-                      ? 'bg-white dark:bg-slate-800 text-blue-600 shadow-xs'
-                      : 'text-slate-500 hover:text-slate-800 dark:hover:text-white'
-                  }`}
-                  title="Compact High-Density Table View"
-                >
-                  <List className="h-3.5 w-3.5" />
-                </button>
-              </div>
-            </div>
-
-            {/* 2. Top Search & Rapid Reel Entry Bar (With Smart Typing Assistance) */}
-            <div className="space-y-2">
-              <div className="grid grid-cols-1 sm:grid-cols-12 gap-2">
-                {/* Rapid Reel / Barcode Gun Entry */}
-                <div className="sm:col-span-7 flex gap-1.5 relative">
-                  <div className="relative w-full">
-                    <ScanBarcode className="h-4 w-4 text-slate-400 absolute left-2.5 top-1/2 -translate-y-1/2" />
-                    <input
-                      type="text"
-                      list="reel-datalist-suggestions"
-                      value={barcodeGunInput}
-                      onChange={e => setBarcodeGunInput(e.target.value)}
-                      onKeyDown={e => {
-                        if (e.key === 'Enter') {
-                          handleBarcodeGunSubmit(e);
-                        }
-                      }}
-                      placeholder="Type Reel No (e.g. 1048) or Scan Barcode..."
-                      className="w-full py-2 pl-8 pr-3 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-xs font-bold focus:outline-none dark:text-white font-mono placeholder:font-sans placeholder:font-normal"
-                    />
-                    <datalist id="reel-datalist-suggestions">
-                      {availableReels.slice(0, 40).map(r => (
-                        <option key={r.reelNo} value={r.reelNo}>
-                          {r.product} • {r.gsm} GSM • {r.size} cm • {r.weight} kg
-                        </option>
-                      ))}
-                    </datalist>
-                  </div>
-                  <button
-                    type="button"
-                    onClick={() => handleBarcodeGunSubmit()}
-                    className="px-3.5 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-xs font-black uppercase tracking-wider shrink-0 cursor-pointer shadow-sm flex items-center gap-1"
-                  >
-                    <Plus className="h-3.5 w-3.5" />
-                    <span>Add</span>
-                  </button>
-                </div>
-
-                {/* Text Filter Search */}
-                <div className="sm:col-span-5 relative">
+              {/* RIGHT SIDE OF PICTURE 3: Live Search Input + View Switcher */}
+              <div className="flex items-center gap-2">
+                {/* Search Bar placed directly in Pic 3 spot */}
+                <div className="relative w-full sm:w-56">
                   <Search className="h-3.5 w-3.5 text-slate-400 absolute left-2.5 top-1/2 -translate-y-1/2" />
                   <input
                     type="text"
                     value={reelSearchQuery}
                     onChange={e => setReelSearchQuery(e.target.value)}
-                    placeholder="Search No, GSM, Size, Wt..."
-                    className="w-full py-2 pl-8 pr-7 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-xs font-bold focus:outline-none dark:text-white"
+                    placeholder="Search No, GSM, Size..."
+                    className="w-full py-1.5 pl-8 pr-7 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-xs font-bold focus:outline-none dark:text-white"
                   />
                   {reelSearchQuery && (
                     <button
@@ -1003,10 +949,75 @@ export const DispatchView: React.FC<DispatchViewProps> = ({ initialTab = 'orders
                       onClick={() => setReelSearchQuery('')}
                       className="absolute right-2 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 cursor-pointer"
                     >
-                      <X className="h-3.5 w-3.5" />
+                      <X className="h-3 w-3" />
                     </button>
                   )}
                 </div>
+
+                {/* View Switcher: Grid vs Table */}
+                <div className="flex items-center gap-1 bg-slate-100 dark:bg-slate-900 p-1 rounded-xl shrink-0">
+                  <button
+                    type="button"
+                    onClick={() => setReelViewMode('grid')}
+                    className={`p-1.5 rounded-lg transition cursor-pointer ${
+                      reelViewMode === 'grid'
+                        ? 'bg-white dark:bg-slate-800 text-blue-600 shadow-xs'
+                        : 'text-slate-500 hover:text-slate-800 dark:hover:text-white'
+                    }`}
+                    title="Card Grid View"
+                  >
+                    <LayoutGrid className="h-3.5 w-3.5" />
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setReelViewMode('table')}
+                    className={`p-1.5 rounded-lg transition cursor-pointer ${
+                      reelViewMode === 'table'
+                        ? 'bg-white dark:bg-slate-800 text-blue-600 shadow-xs'
+                        : 'text-slate-500 hover:text-slate-800 dark:hover:text-white'
+                    }`}
+                    title="Compact High-Density Table View"
+                  >
+                    <List className="h-3.5 w-3.5" />
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            {/* 2. Rapid Reel / Barcode Gun Entry Bar (With Smart Typing Assistance) */}
+            <div className="space-y-2">
+              <div className="flex gap-1.5 relative">
+                <div className="relative w-full">
+                  <ScanBarcode className="h-4 w-4 text-slate-400 absolute left-2.5 top-1/2 -translate-y-1/2" />
+                  <input
+                    type="text"
+                    list="reel-datalist-suggestions"
+                    value={barcodeGunInput}
+                    onChange={e => setBarcodeGunInput(e.target.value)}
+                    onKeyDown={e => {
+                      if (e.key === 'Enter') {
+                        handleBarcodeGunSubmit(e);
+                      }
+                    }}
+                    placeholder="Type Reel No (e.g. 1048) or Scan Barcode..."
+                    className="w-full py-2 pl-8 pr-3 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-xs font-bold focus:outline-none dark:text-white font-mono placeholder:font-sans placeholder:font-normal"
+                  />
+                  <datalist id="reel-datalist-suggestions">
+                    {availableReels.slice(0, 40).map(r => (
+                      <option key={r.reelNo} value={r.reelNo}>
+                        {r.product} • {r.gsm} GSM • {r.size} cm • {r.weight} kg
+                      </option>
+                    ))}
+                  </datalist>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => handleBarcodeGunSubmit()}
+                  className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-xs font-black uppercase tracking-wider shrink-0 cursor-pointer shadow-sm flex items-center gap-1"
+                >
+                  <Plus className="h-3.5 w-3.5" />
+                  <span>Add Reel</span>
+                </button>
               </div>
 
               {/* Smart Predictive Typing Assistance Chips (Instant 1-Click Tap to Add) */}
@@ -1031,7 +1042,7 @@ export const DispatchView: React.FC<DispatchViewProps> = ({ initialTab = 'orders
               )}
             </div>
 
-            {/* 3. Fast Batch Selection Buttons, GSM & Size Filter Chips */}
+            {/* 3. Fast Batch Selection Buttons, Product, GSM & Size Filter Chips */}
             <div className="space-y-2 pt-1 border-t border-slate-100 dark:border-slate-800">
               
               {/* Row A: Quick 1-Click Batch Actions */}
@@ -1088,38 +1099,38 @@ export const DispatchView: React.FC<DispatchViewProps> = ({ initialTab = 'orders
                 )}
               </div>
 
-              {/* Row B: GSM Filter Chips */}
+              {/* Row B: Product Filter Chips */}
               <div className="flex flex-wrap items-center gap-1.5 pt-1">
                 <span className="text-[10px] font-black text-slate-400 uppercase tracking-wider mr-1">
-                  GSM Filter:
+                  Product:
                 </span>
 
                 <button
                   type="button"
-                  onClick={() => setReelGsmFilter('ALL')}
+                  onClick={() => setReelProductFilter('ALL')}
                   className={`px-2.5 py-0.5 rounded-full text-xs font-bold cursor-pointer transition ${
-                    reelGsmFilter === 'ALL'
+                    reelProductFilter === 'ALL'
                       ? 'bg-slate-900 dark:bg-white text-white dark:text-slate-900'
                       : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 hover:bg-slate-200'
                   }`}
                 >
-                  All GSM ({availableReels.length})
+                  All Products ({availableReels.length})
                 </button>
 
-                {uniqueGsms.map(gsm => {
-                  const count = availableReels.filter(r => r.gsm === gsm).length;
+                {uniqueProducts.map(prod => {
+                  const count = availableReels.filter(r => r.product === prod).length;
                   return (
                     <button
-                      key={gsm}
+                      key={prod}
                       type="button"
-                      onClick={() => setReelGsmFilter(gsm)}
+                      onClick={() => setReelProductFilter(prod)}
                       className={`px-2.5 py-0.5 rounded-full text-xs font-bold cursor-pointer transition ${
-                        reelGsmFilter === gsm
-                          ? 'bg-blue-600 text-white shadow-xs'
+                        reelProductFilter === prod
+                          ? 'bg-emerald-600 text-white shadow-xs'
                           : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 hover:bg-slate-200'
                       }`}
                     >
-                      {gsm} GSM ({count})
+                      {prod} ({count})
                     </button>
                   );
                 })}
@@ -1140,10 +1151,47 @@ export const DispatchView: React.FC<DispatchViewProps> = ({ initialTab = 'orders
                 </div>
               </div>
 
-              {/* Row C: Size Filter Chips */}
+              {/* Row C: GSM Filter Chips */}
               <div className="flex flex-wrap items-center gap-1.5 pt-0.5">
                 <span className="text-[10px] font-black text-slate-400 uppercase tracking-wider mr-1">
-                  Size Filter:
+                  GSM:
+                </span>
+
+                <button
+                  type="button"
+                  onClick={() => setReelGsmFilter('ALL')}
+                  className={`px-2.5 py-0.5 rounded-full text-xs font-bold cursor-pointer transition ${
+                    reelGsmFilter === 'ALL'
+                      ? 'bg-blue-900 dark:bg-blue-600 text-white'
+                      : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 hover:bg-slate-200'
+                  }`}
+                >
+                  All GSM
+                </button>
+
+                {uniqueGsms.map(gsm => {
+                  const count = availableReels.filter(r => r.gsm === gsm).length;
+                  return (
+                    <button
+                      key={gsm}
+                      type="button"
+                      onClick={() => setReelGsmFilter(gsm)}
+                      className={`px-2.5 py-0.5 rounded-full text-xs font-bold cursor-pointer transition ${
+                        reelGsmFilter === gsm
+                          ? 'bg-blue-600 text-white shadow-xs'
+                          : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 hover:bg-slate-200'
+                      }`}
+                    >
+                      {gsm} GSM ({count})
+                    </button>
+                  );
+                })}
+              </div>
+
+              {/* Row D: Size Filter Chips */}
+              <div className="flex flex-wrap items-center gap-1.5 pt-0.5">
+                <span className="text-[10px] font-black text-slate-400 uppercase tracking-wider mr-1">
+                  Size:
                 </span>
 
                 <button
@@ -1155,7 +1203,7 @@ export const DispatchView: React.FC<DispatchViewProps> = ({ initialTab = 'orders
                       : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 hover:bg-slate-200'
                   }`}
                 >
-                  All Sizes ({availableReels.length})
+                  All Sizes
                 </button>
 
                 {uniqueSizes.map(sz => {
@@ -1178,6 +1226,7 @@ export const DispatchView: React.FC<DispatchViewProps> = ({ initialTab = 'orders
               </div>
 
             </div>
+
 
             {/* 4. REELS LIST: Grid Cards Mode or Compact Table Mode */}
             {filteredAvailableReels.length === 0 ? (
@@ -1539,8 +1588,11 @@ export const DispatchView: React.FC<DispatchViewProps> = ({ initialTab = 'orders
         const grandTotalWeight = linkedReels.reduce((sum, r) => sum + (r.weight || 0), 0);
 
         return (
-          <div className="fixed inset-0 bg-slate-900/70 backdrop-blur-xs z-50 flex items-center justify-center p-2 sm:p-4 overflow-y-auto print:p-0 print:relative print:bg-white">
-            <div className="bg-white text-slate-900 rounded-2xl max-w-3xl w-full p-4 sm:p-8 space-y-4 shadow-2xl my-auto print:shadow-none print:w-full print:p-0 print:m-0 print:rounded-none">
+          <div
+            id="printable-receipt-modal"
+            className="fixed inset-0 bg-slate-900/70 backdrop-blur-xs z-50 flex items-center justify-center p-2 sm:p-4 overflow-y-auto print:fixed print:inset-0 print:bg-white print:z-[999999] print:p-0 print:m-0 print:block print:w-full print:h-full"
+          >
+            <div className="bg-white text-slate-900 rounded-2xl max-w-3xl w-full p-4 sm:p-8 space-y-4 shadow-2xl my-auto print:shadow-none print:w-full print:max-w-none print:p-0 print:m-0 print:rounded-none">
               
               {/* Modal Top Actions (Hidden while printing) */}
               <div className="flex justify-between items-center border-b border-slate-200 pb-3 print:hidden">
