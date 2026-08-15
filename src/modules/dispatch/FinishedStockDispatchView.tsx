@@ -146,11 +146,11 @@ export const FinishedStockDispatchView: React.FC = () => {
         {activeTab === 'qr_scanner' && canAccessScanner && <QRScannerView onOpenPrintStudio={handleOpenPrintStudio} />}
       </div>
 
-      {/* 4. FLOATING QUICK SCAN BUTTON (Visible across tabs except scanner) */}
+      {/* 4. FLOATING QUICK SCAN BUTTON (Visible only on mobile screens when not on scanner tab) */}
       {canAccessScanner && activeTab !== 'qr_scanner' && (
         <button
           onClick={() => setActiveTab('qr_scanner')}
-          className="fixed bottom-20 sm:bottom-8 right-5 z-40 bg-gradient-to-r from-blue-600 via-indigo-600 to-blue-700 hover:from-blue-700 hover:to-indigo-700 text-white font-extrabold px-5 py-3 rounded-full shadow-2xl shadow-blue-600/50 flex items-center gap-2.5 text-xs uppercase tracking-wider transition-all hover:scale-105 active:scale-95 cursor-pointer border border-blue-400/30 backdrop-blur-sm"
+          className="fixed bottom-20 right-4 z-40 bg-gradient-to-r from-blue-600 via-indigo-600 to-blue-700 hover:from-blue-700 hover:to-indigo-700 text-white font-extrabold px-5 py-3 rounded-full shadow-2xl shadow-blue-600/50 flex md:hidden items-center gap-2.5 text-xs uppercase tracking-wider transition-all hover:scale-105 active:scale-95 cursor-pointer border border-blue-400/30 backdrop-blur-sm"
           title="Quick QR Reel Scanner"
         >
           <QrCode className="h-4.5 w-4.5 text-sky-200" />
