@@ -754,7 +754,19 @@ export const DispatchView: React.FC<DispatchViewProps> = ({ initialTab = 'orders
 
       {/* 2. TAB: Create Draft Packing Slip */}
       {activeTab === 'create_slip' && (
-        <form onSubmit={handleSlipSubmit} className="grid grid-cols-1 lg:grid-cols-3 gap-5 items-start">
+        <form
+          onSubmit={handleSlipSubmit}
+          onKeyDown={e => {
+            if (e.key === 'Enter' && (e.target as HTMLElement).tagName === 'INPUT') {
+              const inputEl = e.target as HTMLInputElement;
+              if (inputEl.placeholder?.includes('Scan / Type Reel Number')) {
+                return; // let rapid reel entry handle its own submit
+              }
+              e.preventDefault();
+            }
+          }}
+          className="grid grid-cols-1 lg:grid-cols-3 gap-5 items-start"
+        >
           
           {/* Challan Card (1/3 width) - Modern Gate Pass UI */}
           <div className="bg-white dark:bg-surface-dark border border-slate-200 dark:border-slate-700/80 rounded-3xl p-5 shadow-sm space-y-4 text-left">
@@ -940,6 +952,12 @@ export const DispatchView: React.FC<DispatchViewProps> = ({ initialTab = 'orders
                     type="text"
                     value={reelSearchQuery}
                     onChange={e => setReelSearchQuery(e.target.value)}
+                    onKeyDown={e => {
+                      if (e.key === 'Enter') {
+                        e.preventDefault();
+                        e.stopPropagation();
+                      }
+                    }}
                     placeholder="Search No, GSM, Size..."
                     className="w-full py-1.5 pl-8 pr-7 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-xs font-bold focus:outline-none dark:text-white"
                   />
@@ -1334,13 +1352,23 @@ export const DispatchView: React.FC<DispatchViewProps> = ({ initialTab = 'orders
                             : 'border-slate-200/80 hover:bg-slate-50 dark:border-slate-700/80 dark:hover:bg-slate-800/40'
                         }`}
                       >
-                        <div className="flex justify-between items-center border-b pb-1.5 dark:border-slate-800">
-                          <span className="font-mono font-bold text-slate-900 dark:text-white text-xs">{reel.reelNo}</span>
-                          <div className="flex items-center gap-1.5">
+                        <div className="flex justify-between items-center border-b pb-1.5 dark:border-slate-800 gap-1.5">
+                          <div className="flex items-center gap-1.5 min-w-0">
+                            <span className="font-mono font-bold text-slate-900 dark:text-white text-xs truncate">{reel.reelNo}</span>
+                            {reel.product && (
+                              <span
+                                className="px-1.5 py-0.5 rounded bg-blue-50 dark:bg-blue-950/40 text-blue-700 dark:text-blue-300 text-[9px] font-extrabold truncate max-w-[100px]"
+                                title={reel.product}
+                              >
+                                {reel.product.replace(/ tissue/i, '')}
+                              </span>
+                            )}
+                          </div>
+                          <div className="flex items-center gap-1.5 shrink-0">
                             <span className={`px-1.5 py-0.5 rounded text-[8px] font-bold ${
-                              reel.status === 'IN_STOCK' ? 'bg-emerald-100 dark:bg-emerald-950/20 text-emerald-700' : 'bg-amber-100 dark:bg-amber-950/20 text-amber-700'
+                              (reel.qcGrade || 'A') === 'A' ? 'bg-emerald-100 dark:bg-emerald-950/20 text-emerald-700' : 'bg-amber-100 dark:bg-amber-950/20 text-amber-700'
                             }`}>
-                              Grade {reel.qcGrade}
+                              Grade {reel.qcGrade || 'A'}
                             </span>
                             <input
                               type="checkbox"
