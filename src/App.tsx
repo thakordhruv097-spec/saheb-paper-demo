@@ -19,6 +19,7 @@ import { QRScannerView } from './modules/rewinder/QRScannerView';
 import { QRTraceabilityView } from './modules/rewinder/QRTraceabilityView';
 import { OrdersView } from './modules/orders/OrdersView';
 import { LabView } from './modules/lab/LabView';
+import { ExperimentView } from './modules/experiment/ExperimentView';
 
 
 import { DateFilterProvider } from './context/DateFilterContext';
@@ -219,6 +220,17 @@ export default function App() {
               <ProtectedRoute moduleName="admin_panel_audit">
                 <Layout>
                   <AdminMasters />
+                </Layout>
+              </ProtectedRoute>
+            }
+          />
+
+          <Route
+            path="/experiment"
+            element={
+              <ProtectedRoute moduleName="admin_panel_audit">
+                <Layout>
+                  <ExperimentView />
                 </Layout>
               </ProtectedRoute>
             }

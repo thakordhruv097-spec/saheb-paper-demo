@@ -487,7 +487,7 @@ function seedOneMonthData(): void {
 
   // Initialize and dynamically compute raw material stock consumption
   const materials = JSON.parse(JSON.stringify(DEFAULT_RAW_MATERIALS)) as RawMaterialItem[];
-  
+
   // Set starting stocks realistically high enough to cover consumption:
   materials.forEach(m => {
     if (m.category === 'WASTE_PAPER') m.stock = 50000;
@@ -516,9 +516,9 @@ function seedOneMonthData(): void {
         const dosageKgPerTon = formula.chemicals[chemicalName];
         const deductKg = (rollWeight / 1000) * dosageKgPerTon;
         // Search chemical in materials (map Wet Strength to WSR, and Defoamer to Deformer)
-        const mat = materials.find(m => 
-          m.name === chemicalName || 
-          (m.name === 'WSR' && chemicalName === 'Wet Strength') || 
+        const mat = materials.find(m =>
+          m.name === chemicalName ||
+          (m.name === 'WSR' && chemicalName === 'Wet Strength') ||
           (m.name === 'Deformer' && chemicalName === 'Defoamer')
         );
         if (mat) {
@@ -553,7 +553,7 @@ export function initializeStorage() {
   if (!localStorage.getItem(KEYS.ROLLS)) setJSON(KEYS.ROLLS, []);
   if (!localStorage.getItem(KEYS.REELS)) setJSON(KEYS.REELS, []);
   if (!localStorage.getItem(KEYS.LOGS)) setJSON(KEYS.LOGS, []);
-  
+
   if (!localStorage.getItem(KEYS.BOILER_LOGS)) setJSON(KEYS.BOILER_LOGS, []);
   if (!localStorage.getItem(KEYS.ETP_LOGS)) setJSON(KEYS.ETP_LOGS, []);
   if (!localStorage.getItem(KEYS.ELECTRICITY_LOGS)) setJSON(KEYS.ELECTRICITY_LOGS, []);
@@ -808,14 +808,14 @@ export function updateRawMaterialStock(
   if (material) {
     material.stock = Math.max(0, parseFloat((material.stock + amount).toFixed(3)));
     setJSON(KEYS.RAW_MATERIALS, materials);
-    
+
     let lotNo = '';
     if (amount >= 0) {
       const today = new Date();
       const dateStr = today.toISOString().substring(0, 10).replace(/-/g, '');
       const rand = Math.floor(1000 + Math.random() * 9000);
       lotNo = `LOT-${dateStr}-${rand}`;
-      
+
       const newLot: RawMaterialLot = {
         lotNo,
         materialId: id,
@@ -1124,7 +1124,7 @@ export function saveBoilerLog(log: BoilerLog, user: string): BoilerLog {
   const logs = getBoilerLogs();
   logs.push(log);
   setJSON(KEYS.BOILER_LOGS, logs);
-  
+
   // Deduct wood from raw materials if it's logged
   if (log.woodUsed > 0) {
     const materials = getRawMaterials();
@@ -1152,7 +1152,7 @@ export function saveEtpLog(log: EtpLog, user: string): EtpLog {
   const logs = getEtpLogs();
   logs.push(log);
   setJSON(KEYS.ETP_LOGS, logs);
-  
+
   addLog(
     'ETP',
     'ETP Logged',
@@ -1171,7 +1171,7 @@ export function saveElectricityLog(log: ElectricityLog, user: string): Electrici
   const logs = getElectricityLogs();
   logs.push(log);
   setJSON(KEYS.ELECTRICITY_LOGS, logs);
-  
+
   addLog(
     'Electricity',
     'Electricity Logged',
@@ -1277,13 +1277,13 @@ export function confirmDispatch(slipId: string, user: string): void {
   const orders = getPendingOrders();
   slip.reelNos.forEach(rNo => {
     const reel = reels.find(r => r.reelNo === rNo)!;
-    const matchedOrder = orders.find(o => 
-      o.partyId === slip.partyId && 
+    const matchedOrder = orders.find(o =>
+      o.partyId === slip.partyId &&
       o.status !== 'COMPLETED' &&
       (reel.product.startsWith('Napkin') && o.productId === 'p-1' ||
-       reel.product.startsWith('Toilet') && o.productId === 'p-3' ||
-       reel.product.startsWith('KT') && o.productId === 'p-5' ||
-       reel.product.startsWith('HRT') && o.productId === 'p-7')
+        reel.product.startsWith('Toilet') && o.productId === 'p-3' ||
+        reel.product.startsWith('KT') && o.productId === 'p-5' ||
+        reel.product.startsWith('HRT') && o.productId === 'p-7')
     );
 
     if (matchedOrder) {
@@ -1297,7 +1297,7 @@ export function confirmDispatch(slipId: string, user: string): void {
   });
 
   slip.status = 'DISPATCHED';
-  
+
   setJSON(KEYS.REELS, reels);
   setJSON(KEYS.PACKING_SLIPS, slips);
   setJSON(KEYS.PENDING_ORDERS, orders);
@@ -1362,13 +1362,13 @@ export function restoreBackup(backupJson: string, user: string): void {
     if (!data[KEYS.USERS] || !data[KEYS.RAW_MATERIALS]) {
       throw new Error('Invalid backup file content: missing core tables.');
     }
-    
+
     Object.entries(KEYS).forEach(([_, storageKey]) => {
       if (data[storageKey]) {
         localStorage.setItem(storageKey, JSON.stringify(data[storageKey]));
       }
     });
-    
+
     addLog('Admin', 'Backup Restored', 'Full database restored from file backup', user);
   } catch (err: any) {
     throw new Error('Failed to restore backup: ' + err.message);

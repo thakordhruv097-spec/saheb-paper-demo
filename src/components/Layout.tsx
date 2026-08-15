@@ -33,6 +33,8 @@ import {
   GitBranch,
   FileText,
   Bell,
+  FlaskConical,
+  Layers,
   ArrowLeft,
   Eye,
   EyeOff,
@@ -361,7 +363,8 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
     { id: 'rewinding_reel_conversion', path: '/rewinding-reel-conversion', label: t('nav.rewinder', 'Rewinder Section'), icon: RotateCw },
     { id: 'lab', path: '/lab', label: 'Lab Quality Control', icon: Beaker },
     { id: 'utilities_etp', path: '/utilities-etp', label: t('nav.utilities_etp', 'Utilities and ETP'), icon: Flame },
-    { id: 'finished_stock_dispatch', path: '/finished-stock-dispatch', label: t('nav.finished_stock_dispatch', 'Finished Stock & Dispatch'), icon: Package },
+    { id: 'experiment', path: '/experiment', label: t('nav.experiment', 'Dispatch Slips'), icon: Truck },
+    { id: 'finished_stock_dispatch', path: '/finished-stock-dispatch', label: t('nav.finished_stock_dispatch', 'Stock Categorization'), icon: Layers },
     { id: 'spareparts_management', path: '/spareparts-management', label: t('nav.store', 'Store Inventory'), icon: Wrench },
     { id: 'monthly_yearly_reporting', path: '/monthly-yearly-reporting', label: t('nav.reports', 'Reports'), icon: BarChart2 },
     { id: 'admin_panel_audit', path: '/admin-panel-audit', label: t('nav.admin_masters', 'Settings'), icon: Settings },
@@ -373,7 +376,7 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
   const sidebarSections = useMemo(() => {
     const core = visibleMenuItems.filter(i => ['dashboard'].includes(i.id));
     const production = visibleMenuItems.filter(i => ['raw_material_stock', 'pulp_mill_operations', 'machine_production', 'rewinding_reel_conversion', 'lab'].includes(i.id));
-    const operations = visibleMenuItems.filter(i => ['orders', 'utilities_etp', 'finished_stock_dispatch', 'spareparts_management'].includes(i.id));
+    const operations = visibleMenuItems.filter(i => ['orders', 'utilities_etp', 'experiment', 'finished_stock_dispatch', 'spareparts_management'].includes(i.id));
     const admin = visibleMenuItems.filter(i => ['monthly_yearly_reporting', 'admin_panel_audit'].includes(i.id));
 
     return [

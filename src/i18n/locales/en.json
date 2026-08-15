@@ -33,7 +33,8 @@
     "hello": "Hello",
     "orders": "Order Bookings",
     "utilities_etp": "Utilities & ETP",
-    "finished_stock_dispatch": "Finished Stock & Dispatch"
+    "finished_stock_dispatch": "Stock Categorization",
+    "experiment": "Dispatch Slips"
   },
   "dashboard": {
     "title": "Dashboard",
