@@ -984,14 +984,13 @@ export const DispatchView: React.FC<DispatchViewProps> = ({ initialTab = 'orders
               </div>
             </div>
 
-            {/* 2. Rapid Reel / Barcode Gun Entry Bar (With Smart Typing Assistance) */}
+            {/* 2. Rapid Reel / Barcode Gun Entry Bar (Clean Input without Clunky Datalist) */}
             <div className="space-y-2">
               <div className="flex gap-1.5 relative">
                 <div className="relative w-full">
                   <ScanBarcode className="h-4 w-4 text-slate-400 absolute left-2.5 top-1/2 -translate-y-1/2" />
                   <input
                     type="text"
-                    list="reel-datalist-suggestions"
                     value={barcodeGunInput}
                     onChange={e => setBarcodeGunInput(e.target.value)}
                     onKeyDown={e => {
@@ -999,16 +998,9 @@ export const DispatchView: React.FC<DispatchViewProps> = ({ initialTab = 'orders
                         handleBarcodeGunSubmit(e);
                       }
                     }}
-                    placeholder="Type Reel No (e.g. 1048) or Scan Barcode..."
+                    placeholder="Scan / Type Reel Number (e.g. 1048)..."
                     className="w-full py-2 pl-8 pr-3 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-xs font-bold focus:outline-none dark:text-white font-mono placeholder:font-sans placeholder:font-normal"
                   />
-                  <datalist id="reel-datalist-suggestions">
-                    {availableReels.slice(0, 40).map(r => (
-                      <option key={r.reelNo} value={r.reelNo}>
-                        {r.product} • {r.gsm} GSM • {r.size} cm • {r.weight} kg
-                      </option>
-                    ))}
-                  </datalist>
                 </div>
                 <button
                   type="button"
@@ -1042,7 +1034,7 @@ export const DispatchView: React.FC<DispatchViewProps> = ({ initialTab = 'orders
               )}
             </div>
 
-            {/* 3. Fast Batch Selection Buttons, Product, GSM & Size Filter Chips */}
+            {/* 3. Fast Batch Selection Buttons, Product, Grade, GSM & Size Filter Chips */}
             <div className="space-y-2 pt-1 border-t border-slate-100 dark:border-slate-800">
               
               {/* Row A: Quick 1-Click Batch Actions */}
@@ -1099,7 +1091,7 @@ export const DispatchView: React.FC<DispatchViewProps> = ({ initialTab = 'orders
                 )}
               </div>
 
-              {/* Row B: Product Filter Chips */}
+              {/* Row B: Product & Grade Filter Chips */}
               <div className="flex flex-wrap items-center gap-1.5 pt-1">
                 <span className="text-[10px] font-black text-slate-400 uppercase tracking-wider mr-1">
                   Product:
@@ -1135,18 +1127,41 @@ export const DispatchView: React.FC<DispatchViewProps> = ({ initialTab = 'orders
                   );
                 })}
 
-                {/* Grade Filter */}
-                <div className="flex items-center gap-1 ml-auto">
+                {/* Grade Filter Pill Group (All, Grade A, Grade B) */}
+                <div className="flex items-center gap-1 ml-auto bg-slate-100 dark:bg-slate-900 p-0.5 rounded-xl border border-slate-200 dark:border-slate-800">
+                  <span className="text-[9px] font-black text-slate-400 uppercase px-1">Grade:</span>
                   <button
                     type="button"
-                    onClick={() => setReelGradeFilter(prev => (prev === 'A' ? 'ALL' : 'A'))}
+                    onClick={() => setReelGradeFilter('ALL')}
                     className={`px-2 py-0.5 rounded-lg text-[10px] font-extrabold cursor-pointer transition ${
-                      reelGradeFilter === 'A'
-                        ? 'bg-emerald-600 text-white'
-                        : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400'
+                      reelGradeFilter === 'ALL'
+                        ? 'bg-slate-800 text-white dark:bg-slate-200 dark:text-slate-900'
+                        : 'text-slate-600 dark:text-slate-400 hover:text-slate-900'
                     }`}
                   >
-                    Grade A Only
+                    All
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setReelGradeFilter('A')}
+                    className={`px-2 py-0.5 rounded-lg text-[10px] font-extrabold cursor-pointer transition ${
+                      reelGradeFilter === 'A'
+                        ? 'bg-emerald-600 text-white shadow-xs'
+                        : 'text-emerald-700 dark:text-emerald-400 hover:bg-emerald-50 dark:hover:bg-emerald-950/30'
+                    }`}
+                  >
+                    Grade A
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setReelGradeFilter('B')}
+                    className={`px-2 py-0.5 rounded-lg text-[10px] font-extrabold cursor-pointer transition ${
+                      reelGradeFilter === 'B'
+                        ? 'bg-amber-600 text-white shadow-xs'
+                        : 'text-amber-700 dark:text-amber-400 hover:bg-amber-50 dark:hover:bg-amber-950/30'
+                    }`}
+                  >
+                    Grade B Only
                   </button>
                 </div>
               </div>
