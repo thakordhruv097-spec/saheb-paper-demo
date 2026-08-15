@@ -1,0 +1,384 @@
+const fs = require('fs');
+const path = require('path');
+const { execSync } = require('child_process');
+
+const htmlContent = `<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Saheb Paper Pvt. Ltd. - ERP Project Proposal & Pricing Architecture</title>
+  <style>
+    @page {
+      size: A4;
+      margin: 18mm 15mm 18mm 15mm;
+    }
+    body {
+      font-family: 'Segoe UI', Helvetica, Arial, sans-serif;
+      color: #1e293b;
+      line-height: 1.5;
+      font-size: 11pt;
+      background: #ffffff;
+    }
+    .header-banner {
+      background: linear-gradient(135deg, #1e3a8a 0%, #3b82f6 100%);
+      color: white;
+      padding: 24px;
+      border-radius: 12px;
+      margin-bottom: 24px;
+    }
+    .header-banner h1 {
+      margin: 0;
+      font-size: 20pt;
+      font-weight: 800;
+      letter-spacing: -0.5px;
+    }
+    .header-banner p {
+      margin: 6px 0 0 0;
+      font-size: 10pt;
+      opacity: 0.9;
+    }
+    .doc-meta {
+      display: flex;
+      justify-content: space-between;
+      background: #f8fafc;
+      border: 1px solid #e2e8f0;
+      padding: 10px 16px;
+      border-radius: 8px;
+      font-size: 9pt;
+      margin-bottom: 20px;
+      font-weight: 600;
+      color: #475569;
+    }
+    h2 {
+      color: #1e3a8a;
+      font-size: 13pt;
+      border-bottom: 2px solid #2563eb;
+      padding-bottom: 4px;
+      margin-top: 24px;
+      margin-bottom: 12px;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin: 12px 0 20px 0;
+      font-size: 9.5pt;
+    }
+    th, td {
+      border: 1px solid #cbd5e1;
+      padding: 8px 10px;
+      text-align: left;
+    }
+    th {
+      background-color: #1e293b;
+      color: #ffffff;
+      font-weight: 700;
+      font-size: 9pt;
+      text-transform: uppercase;
+    }
+    tr:nth-child(even) {
+      background-color: #f8fafc;
+    }
+    .badge {
+      display: inline-block;
+      padding: 2px 6px;
+      border-radius: 4px;
+      font-size: 8.5pt;
+      font-weight: 700;
+    }
+    .badge-blue { background: #dbeafe; color: #1e40af; }
+    .badge-green { background: #dcfce7; color: #166534; }
+    .highlight-box {
+      background: #eff6ff;
+      border-left: 4px solid #2563eb;
+      padding: 12px 16px;
+      border-radius: 0 8px 8px 0;
+      margin: 16px 0;
+      font-size: 10pt;
+    }
+    .scope-box {
+      border: 1.5px dashed #3b82f6;
+      background: #f0f9ff;
+      border-radius: 10px;
+      padding: 14px;
+      margin: 16px 0;
+      font-size: 9.5pt;
+    }
+    .milestone-grid {
+      display: table;
+      width: 100%;
+      margin: 16px 0;
+    }
+    .milestone-card {
+      display: table-cell;
+      width: 33.33%;
+      border: 1px solid #cbd5e1;
+      padding: 12px;
+      background: #f8fafc;
+      border-radius: 8px;
+      text-align: center;
+    }
+    .milestone-title { font-weight: 800; color: #1e3a8a; font-size: 9.5pt; }
+    .milestone-amount { font-size: 14pt; font-weight: 900; color: #2563eb; margin-top: 4px; }
+    .page-break { page-break-before: always; }
+    .sign-section {
+      margin-top: 40px;
+      display: flex;
+      justify-content: space-between;
+      font-size: 10pt;
+      font-weight: 600;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="header-banner">
+    <h1>SAHEB PAPER PVT. LTD.</h1>
+    <p>Custom Enterprise Resource Planning (ERP) System & QR Traceability Architecture</p>
+  </div>
+
+  <div class="doc-meta">
+    <div>Ref: SP-ERP-PROPOSAL-2026-V2</div>
+    <div>Date: August 15, 2026</div>
+    <div>Prepared For: Executive Management Board</div>
+  </div>
+
+  <h2>1. Executive Project Overview & Scope Delivered</h2>
+  <p>This custom-engineered Enterprise Resource Planning (ERP) system has been designed specifically for paper mill manufacturing operations, providing complete digitisation from <strong>Raw Material Intake</strong> to <strong>Rewinder QR Labeling</strong> and <strong>Dispatch Gate Pass Generation</strong>.</p>
+
+  <div class="scope-box">
+    <strong>DELIVERED SYSTEM SCOPE & PLATFORMS:</strong><br>
+    • 📱 <strong>Android Native Mobile App (.apk)</strong> — Operating on phones & tablets for plant operators.<br>
+    • 💻 <strong>Windows Portable Desktop App (.exe)</strong> — Installed on weighbridge & office PCs.<br>
+    • 🌐 <strong>Web Browser Cloud Access</strong> — Instant access on laptops & remote management PCs.<br>
+    • 🏷️ <strong>QR Engine & Label Generator</strong> — Instant stickers for paper reels (TSC Thermal Printers / A4).<br>
+    • 📷 <strong>Dual Camera & Laser Barcode Gun Scanner</strong> — Live smartphone scan + handheld scanner support.<br>
+    • 🔒 <strong>9 Role-Based Access Accounts</strong> — Admin, Boiler, ETP, Machine, Rewinder, Dispatch, Store.
+  </div>
+
+  <h2>2. Module-by-Module Capabilities Review</h2>
+  <table>
+    <thead>
+      <tr>
+        <th style="width: 25%;">Module Name</th>
+        <th style="width: 50%;">Core Functionality Delivered</th>
+        <th style="width: 25%;">Automation Logic</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><strong>1. Executive Dashboard</strong></td>
+        <td>Real-time KPI Scorecards, Daily Reel Weight, Yield Efficiency %, Stock Gauges & Financial Balance</td>
+        <td>Auto-syncs across all devices</td>
+      </tr>
+      <tr>
+        <td><strong>2. Raw Material Stock</strong></td>
+        <td>Track Waste Paper Lots (Indian Tissue, Import, SMK, Broke), Reorder Thresholds & Stock Valuation</td>
+        <td>Auto-deducts on Pulping</td>
+      </tr>
+      <tr>
+        <td><strong>3. Pulp Mill Operations</strong></td>
+        <td>Daily Fiber & Chemical Formula Mix (DSR, WSR, OBA), Cooking Temp & Consistency Logs</td>
+        <td>Auto-deducts raw stock</td>
+      </tr>
+      <tr>
+        <td><strong>4. Machine Production</strong></td>
+        <td>Machine Roll Logging (GSM, Width, Shift, Speed), Downtime Tracking & Blade Change Logs</td>
+        <td>Feeds into Rewinder</td>
+      </tr>
+      <tr>
+        <td><strong>5. Rewinder Conversion</strong></td>
+        <td><strong>Auto-Incrementing Reel No</strong>, 11-Field Input Modal, <strong>Rule 6 Broke Auto-Loopback</strong>, & TSC QR Labels</td>
+        <td>Auto-adds Broke to Raw Stock</td>
+      </tr>
+      <tr>
+        <td><strong>6. QR Code Scanner</strong></td>
+        <td>Dual-Mode Live Camera Scanner + Manual Reel Search Input + Inline Spec Editor + Instant Dispatch</td>
+        <td>Dual Camera + Laser Gun</td>
+      </tr>
+      <tr>
+        <td><strong>7. Full Traceability</strong></td>
+        <td>Genealogy audit graph: Waste Paper Lot → Pulp Batch → Machine Roll → Rewinder Reel → Dispatch</td>
+        <td>100% Audit Compliance</td>
+      </tr>
+      <tr>
+        <td><strong>8. Utilities & ETP / Boiler</strong></td>
+        <td>Boiler Fuel Wood & Water Consumption, Steam Pressure, ETP Chemical Dosing Logs</td>
+        <td>Compliance & Cost Audit</td>
+      </tr>
+      <tr>
+        <td><strong>9. Finished Goods Stock</strong></td>
+        <td><strong>Inventory Cascading Filter (Product → GSM → Size → Ply)</strong>, Grade A vs B Stock Split</td>
+        <td>Real-time MT Weight Counter</td>
+      </tr>
+      <tr>
+        <td><strong>10. Dispatch & Gate Pass</strong></td>
+        <td>Packing Slip Generation, Customer Order Mapping, Vehicle Number Linking & Print Gate Pass</td>
+        <td><strong>Auto-Minus Finished Stock</strong></td>
+      </tr>
+    </tbody>
+  </table>
+
+  <div class="page-break"></div>
+
+  <h2>3. Local Data Engine vs. Cloud Database Storage Architecture</h2>
+  <div class="highlight-box">
+    <strong>System Flexibility:</strong> The application supports both <strong>Zero-Cost Offline Local Storage</strong> and <strong>Multi-Location Cloud Synchronization</strong>. Management can select the setup best suited for mill operations.
+  </div>
+
+  <table>
+    <thead>
+      <tr>
+        <th>Criteria / Feature</th>
+        <th>🖥️ Option 1: Local Engine (Default)</th>
+        <th>☁️ Option 2: Cloud Database (Optional)</th>
+        <th>🏠 Option 3: Private Mill Server</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><strong>Monthly Bill</strong></td>
+        <td><span class="badge badge-green">₹0 / Month (100% Free Lifetime)</span></td>
+        <td>₹500 – ₹1,500 / Month</td>
+        <td><span class="badge badge-green">₹0 Cloud Bill (Local Mini PC)</span></td>
+      </tr>
+      <tr>
+        <td><strong>Internet Dependency</strong></td>
+        <td>100% Offline (No Internet Needed)</td>
+        <td>Requires Active Internet</td>
+        <td>Works on Local Plant Wi-Fi</td>
+      </tr>
+      <tr>
+        <td><strong>Data Speed</strong></td>
+        <td>Instant 0ms Latency (Ultra Fast)</td>
+        <td>Depends on Internet Speed</td>
+        <td>Instant 0ms Local Wi-Fi Speed</td>
+      </tr>
+      <tr>
+        <td><strong>Multi-Device Sync</strong></td>
+        <td>Export/Import JSON Backup</td>
+        <td>Real-Time Live Auto-Sync</td>
+        <td>Real-Time Local Wi-Fi Auto-Sync</td>
+      </tr>
+      <tr>
+        <td><strong>Data Security</strong></td>
+        <td>100% Data Stays Inside Mill PCs</td>
+        <td>Secured on Enterprise Cloud</td>
+        <td>100% Data Stays Inside Mill Premises</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <h2>4. Itemized Commercial Cost & Investment Breakdown</h2>
+  <table>
+    <thead>
+      <tr>
+        <th style="width: 10%;">Sr</th>
+        <th style="width: 55%;">System Component & Engineering Description</th>
+        <th style="width: 20%;">Market Value</th>
+        <th style="width: 15%;">Investment (₹)</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td>1</td>
+        <td><strong>Core ERP Software Architecture & Custom UI/UX</strong><br>Branding (Logo, Address), 11 Modules, Glassmorphic Indigo Design System</td>
+        <td>₹2,50,000</td>
+        <td>₹24,000</td>
+      </tr>
+      <tr>
+        <td>2</td>
+        <td><strong>Data Engine & Schema Architecture</strong><br>LocalStorage JSON Engine (Zero Cloud Fees), 17 Schemas, JSON Backup & Restore</td>
+        <td>₹80,000</td>
+        <td>₹8,500</td>
+      </tr>
+      <tr>
+        <td>3</td>
+        <td><strong>QR Engine, Scanner & Thermal Printer Driver</strong><br>QR Code SVG generator, Camera Scanner + Barcode Gun Listener, TSC Drivers</td>
+        <td>₹50,000</td>
+        <td>₹6,500</td>
+      </tr>
+      <tr>
+        <td>4</td>
+        <td><strong>Cross-Platform Build Pipeline Setup</strong><br>Android Native Project (.apk) & Windows Portable Executable (.exe) setup</td>
+        <td>₹60,000</td>
+        <td>₹8,000</td>
+      </tr>
+      <tr>
+        <td>5</td>
+        <td><strong>On-Site System Deployment & Production Go-Live</strong><br>Installation on PCs/Mobiles, Hardware Drivers Setup, <strong>6 Months Technical Support</strong></td>
+        <td>₹45,000</td>
+        <td>₹8,000</td>
+      </tr>
+      <tr style="font-weight: bold; background: #e2e8f0;">
+        <td colspan="2">TOTAL COMMERCIAL MARKET VALUE</td>
+        <td>₹4,85,000</td>
+        <td>₹55,000</td>
+      </tr>
+      <tr style="font-weight: bold; color: #dc2626;">
+        <td colspan="3">LESS: SPECIAL INAUGURAL DISCOUNT</td>
+        <td>- ₹7,000</td>
+      </tr>
+      <tr style="font-weight: 900; background: #dbeafe; font-size: 11pt; color: #1e3a8a;">
+        <td colspan="3">NET TURNKEY INVESTMENT COST</td>
+        <td>₹48,000</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <h2>5. Commercial Pricing Packages</h2>
+  <p><strong>🏆 Turnkey ERP Package — ₹48,000 (One-Time Net Total)</strong><br>
+  Includes Full Software (Windows + Android + Web), Complete Branding, On-Site Installation, Commissioning, Hardware Integration & 6 Months FREE Technical Support & Updates.</p>
+
+  <h2>6. Milestone Payment Schedule</h2>
+  <div class="milestone-grid">
+    <div class="milestone-card">
+      <div class="milestone-title">MILESTONE 1: ADVANCE</div>
+      <div style="font-size: 8.5pt; color: #64748b; margin-top: 4px;">Booking Token &amp; Custom Setup</div>
+      <div class="milestone-amount">₹18,000</div>
+    </div>
+    <div class="milestone-card">
+      <div class="milestone-title">MILESTONE 2: DEPLOYMENT</div>
+      <div style="font-size: 8.5pt; color: #64748b; margin-top: 4px;">Installation on PCs &amp; Mobiles</div>
+      <div class="milestone-amount">₹20,000</div>
+    </div>
+    <div class="milestone-card">
+      <div class="milestone-title">MILESTONE 3: GO-LIVE</div>
+      <div style="font-size: 8.5pt; color: #64748b; margin-top: 4px;">Production Handover &amp; Go-Live</div>
+      <div class="milestone-amount">₹10,000</div>
+    </div>
+  </div>
+
+  <div class="sign-section">
+    <div>
+      <br><br>
+      ____________________________________<br>
+      Authorized Signatory<br>
+      Software Engineering Lead
+    </div>
+    <div style="text-align: right;">
+      <br><br>
+      ____________________________________<br>
+      Accepted &amp; Approved By<br>
+      Saheb Paper Pvt. Ltd.
+    </div>
+  </div>
+
+</body>
+</html>`;
+
+const htmlPath = path.join(__dirname, 'proposal_temp.html');
+const pdfPath = path.join(__dirname, 'Saheb_Paper_ERP_Project_Proposal_and_Pricing.pdf');
+
+fs.writeFileSync(htmlPath, htmlContent, 'utf8');
+
+const edgePath = `C:\\Program Files (x86)\\Microsoft\\Edge\\Application\\msedge.exe`;
+const command = `& "${edgePath}" --headless --print-to-pdf="${pdfPath}" --no-margins "${htmlPath}"`;
+
+try {
+  execSync(command, { shell: 'powershell.exe' });
+  console.log(`PDF Generated Successfully at: ${pdfPath}`);
+} catch (err) {
+  console.error("Error generating PDF:", err);
+}
