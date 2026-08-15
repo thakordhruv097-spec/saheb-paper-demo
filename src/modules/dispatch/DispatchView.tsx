@@ -21,9 +21,10 @@ interface DispatchViewProps {
   initialTab?: 'orders' | 'create_slip' | 'slips_list';
   hideTabs?: boolean;
   hideHeader?: boolean;
+  onOpenScanner?: () => void;
 }
 
-export const DispatchView: React.FC<DispatchViewProps> = ({ initialTab = 'orders', hideTabs = false, hideHeader = false }) => {
+export const DispatchView: React.FC<DispatchViewProps> = ({ initialTab = 'orders', hideTabs = false, hideHeader = false, onOpenScanner }) => {
   const { t } = useTranslation();
   const { user } = useAuth();
 
@@ -588,106 +589,155 @@ export const DispatchView: React.FC<DispatchViewProps> = ({ initialTab = 'orders
 
       {/* 2. TAB: Create Draft Packing Slip */}
       {activeTab === 'create_slip' && (
-        <form onSubmit={handleSlipSubmit} className="grid grid-cols-1 lg:grid-cols-3 gap-6 items-start">
+        <form onSubmit={handleSlipSubmit} className="grid grid-cols-1 lg:grid-cols-3 gap-5 items-start">
           
-          {/* Slip Fields (1/3 width) */}
-          <div className="bg-white dark:bg-surface-dark border border-border-light dark:border-slate-700 rounded-lg p-5 shadow-sm space-y-4">
-            <h3 className="text-sm font-bold text-slate-800 dark:text-white uppercase tracking-wider mb-2 border-b pb-2 dark:border-slate-700 flex items-center gap-1.5">
-              <Plus className="h-4.5 w-4.5 text-primary" />
-              Challan Specifications
-            </h3>
-
-            <div className="relative">
-              <label className="block text-xs font-semibold text-text-light-secondary dark:text-slate-300 uppercase tracking-wider mb-1.5">Dispatch Date</label>
-              <button
-                type="button"
-                onClick={() => setOpenSlipDatePicker(prev => !prev)}
-                className="w-full flex items-center justify-between py-2 px-3 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg text-xs font-semibold text-slate-800 dark:text-white cursor-pointer hover:bg-slate-100 dark:hover:bg-slate-800 transition"
-              >
-                <span className={slipDate ? 'font-bold' : 'text-slate-400 font-normal'}>{slipDate || 'dd-mm-yyyy'}</span>
-                <Calendar className="h-3.5 w-3.5 text-primary dark:text-blue-400" />
-              </button>
-              {openSlipDatePicker && (
-                <CustomDatePickerModal
-                  selectedDate={slipDate}
-                  onSelectDate={(newDate) => {
-                    setSlipDate(newDate);
-                    setOpenSlipDatePicker(false);
-                  }}
-                  onClose={() => setOpenSlipDatePicker(false)}
-                />
-              )}
+          {/* Challan Card (1/3 width) - Modern Gate Pass UI */}
+          <div className="bg-white dark:bg-surface-dark border border-slate-200 dark:border-slate-700/80 rounded-3xl p-5 shadow-sm space-y-4 text-left">
+            <div className="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-3">
+              <div className="flex items-center gap-2">
+                <FileText className="h-5 w-5 text-blue-600 dark:text-blue-400" />
+                <h3 className="text-sm font-extrabold text-slate-900 dark:text-white tracking-tight">
+                  Create Gate Pass Challan
+                </h3>
+              </div>
+              <span className="px-2.5 py-0.5 rounded-full bg-blue-50 text-blue-600 dark:bg-blue-950/60 dark:text-blue-300 text-[10px] font-black uppercase tracking-wider border border-blue-200 dark:border-blue-800">
+                DRAFT #{autoSlipNo.slice(-4) || '84'}
+              </span>
             </div>
 
             <div>
-              <label className="block text-xs font-semibold text-text-light-secondary dark:text-slate-300 uppercase tracking-wider mb-1.5">
-                Challan/Slip No <span className="text-[10px] text-slate-400 font-sans">(Autoset)</span>
+              <label className="block text-[11px] font-extrabold text-slate-700 dark:text-slate-300 mb-1.5">
+                Customer / Party Name
               </label>
-              <input
-                type="text"
-                value={slipNo}
-                onChange={e => setSlipNo(e.target.value)}
-                className="block w-full py-1.5 px-3 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-md text-xs focus:outline-none font-mono"
-                placeholder={autoSlipNo}
-              />
-            </div>
-
-            <div>
-              <label className="block text-xs font-semibold text-text-light-secondary dark:text-slate-300 uppercase tracking-wider mb-1.5">Select Client Party</label>
               <select
                 value={slipPartyId}
                 onChange={e => setSlipPartyId(e.target.value)}
-                className="block w-full py-1.5 px-3 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-md text-xs focus:outline-none dark:text-white"
+                className="w-full py-2.5 px-3.5 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-2xl text-xs font-bold focus:outline-none focus:ring-2 focus:ring-blue-500 dark:text-white cursor-pointer"
               >
-                <option value="">-- Choose Party --</option>
+                <option value="">-- Select Customer Party --</option>
                 {parties.map(p => (
                   <option key={p.id} value={p.id}>{p.name}</option>
                 ))}
               </select>
             </div>
 
-            <div>
-              <label className="block text-xs font-semibold text-text-light-secondary dark:text-slate-300 uppercase tracking-wider mb-1.5">Select Vehicle (Master-defined)</label>
-              <select
-                value={slipVehicleId}
-                onChange={e => setSlipVehicleId(e.target.value)}
-                className="block w-full py-1.5 px-3 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-md text-xs focus:outline-none dark:text-white"
-              >
-                <option value="">-- Choose Vehicle --</option>
-                {vehicles.map(v => (
-                  <option key={v.id} value={v.id}>{v.vehicleNo} ({v.driverName})</option>
-                ))}
-              </select>
+            <div className="grid grid-cols-2 gap-2.5">
+              <div>
+                <label className="block text-[11px] font-extrabold text-slate-700 dark:text-slate-300 mb-1.5">
+                  Vehicle / Truck No
+                </label>
+                <select
+                  value={slipVehicleId}
+                  onChange={e => {
+                    setSlipVehicleId(e.target.value);
+                    const vObj = vehicles.find(v => v.id === e.target.value);
+                    if (vObj && !driverSig) {
+                      setDriverSig(vObj.driverName || 'Driver');
+                    }
+                  }}
+                  className="w-full py-2.5 px-3 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-2xl text-xs font-bold focus:outline-none dark:text-white cursor-pointer font-mono"
+                >
+                  <option value="">-- Truck No --</option>
+                  {vehicles.map(v => (
+                    <option key={v.id} value={v.id}>{v.vehicleNo}</option>
+                  ))}
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-[11px] font-extrabold text-slate-700 dark:text-slate-300 mb-1.5">
+                  Driver Contact / Sig
+                </label>
+                <input
+                  type="text"
+                  value={driverSig}
+                  onChange={e => setDriverSig(e.target.value)}
+                  className="w-full py-2.5 px-3 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-2xl text-xs font-bold focus:outline-none dark:text-white font-mono"
+                  placeholder="Driver Name / Mobile"
+                />
+              </div>
             </div>
 
-            <div>
-              <label className="block text-xs font-semibold text-text-light-secondary dark:text-slate-300 uppercase tracking-wider mb-1.5">Driver Signature Name</label>
-              <input
-                type="text"
-                value={driverSig}
-                onChange={e => setDriverSig(e.target.value)}
-                className="block w-full py-1.5 px-3 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-md text-xs focus:outline-none dark:text-white"
-                placeholder="Driver signature label"
-              />
+            <div className="grid grid-cols-2 gap-2.5">
+              <div>
+                <label className="block text-[11px] font-extrabold text-slate-700 dark:text-slate-300 mb-1.5">
+                  Receiver Name / Sig
+                </label>
+                <input
+                  type="text"
+                  value={receiverSig}
+                  onChange={e => setReceiverSig(e.target.value)}
+                  className="w-full py-2.5 px-3 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-2xl text-xs font-bold focus:outline-none dark:text-white"
+                  placeholder="Receiver Signature"
+                />
+              </div>
+
+              <div className="relative">
+                <label className="block text-[11px] font-extrabold text-slate-700 dark:text-slate-300 mb-1.5">
+                  Dispatch Date
+                </label>
+                <button
+                  type="button"
+                  onClick={() => setOpenSlipDatePicker(prev => !prev)}
+                  className="w-full flex items-center justify-between py-2.5 px-3 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-2xl text-xs font-bold text-slate-800 dark:text-white cursor-pointer hover:bg-slate-100 dark:hover:bg-slate-800 transition"
+                >
+                  <span className={slipDate ? 'font-mono' : 'text-slate-400 font-normal'}>{slipDate || 'dd-mm-yyyy'}</span>
+                  <Calendar className="h-3.5 w-3.5 text-blue-600 dark:text-blue-400" />
+                </button>
+                {openSlipDatePicker && (
+                  <CustomDatePickerModal
+                    selectedDate={slipDate}
+                    onSelectDate={(newDate) => {
+                      setSlipDate(newDate);
+                      setOpenSlipDatePicker(false);
+                    }}
+                    onClose={() => setOpenSlipDatePicker(false)}
+                  />
+                )}
+              </div>
             </div>
 
-            <div>
-              <label className="block text-xs font-semibold text-text-light-secondary dark:text-slate-300 uppercase tracking-wider mb-1.5">Receiver Signature Name</label>
-              <input
-                type="text"
-                value={receiverSig}
-                onChange={e => setReceiverSig(e.target.value)}
-                className="block w-full py-1.5 px-3 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-md text-xs focus:outline-none dark:text-white"
-                placeholder="Receiver/Client signature label"
-              />
+            {/* Loaded Reels Header with + Scan to Add */}
+            <div className="flex items-center justify-between pt-1">
+              <div className="text-xs font-black text-slate-900 dark:text-white">
+                Loaded Reels ({selectedReelNos.length})
+              </div>
+              {onOpenScanner && (
+                <button
+                  type="button"
+                  onClick={onOpenScanner}
+                  className="text-xs font-extrabold text-blue-600 dark:text-blue-400 hover:underline flex items-center gap-1 cursor-pointer"
+                >
+                  <span>+ Scan to Add</span>
+                </button>
+              )}
+            </div>
+
+            {/* Total Calculation Row Card */}
+            <div className="p-3.5 bg-slate-50 dark:bg-slate-900/70 border border-dashed border-slate-300 dark:border-slate-700 rounded-2xl flex items-center justify-between">
+              <div>
+                <div className="text-[10px] font-black uppercase text-slate-400 tracking-wider">
+                  CHALLAN TOTAL WEIGHT
+                </div>
+                <div className="text-xl font-black font-mono text-slate-900 dark:text-white mt-0.5">
+                  {reels.filter(r => selectedReelNos.includes(r.reelNo)).reduce((sum, r) => sum + (r.weight || 0), 0).toLocaleString()} <span className="text-xs font-bold text-slate-400">KG</span>
+                </div>
+              </div>
+              <span className={`px-2.5 py-1 rounded-full text-[10px] font-black uppercase tracking-wider ${
+                selectedReelNos.length > 0
+                  ? 'bg-emerald-50 text-emerald-600 dark:bg-emerald-950/60 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800'
+                  : 'bg-slate-100 text-slate-400 dark:bg-slate-800 dark:text-slate-500'
+              }`}>
+                {selectedReelNos.length > 0 ? '✓ Ready to Dispatch' : '0 Reels Selected'}
+              </span>
             </div>
 
             <button
               type="submit"
-              className="w-full bg-primary hover:bg-blue-800 text-white font-semibold py-2 rounded-md text-xs transition shadow flex items-center justify-center gap-1"
+              className="w-full bg-gradient-to-r from-blue-600 via-indigo-600 to-blue-700 hover:from-blue-700 hover:to-indigo-700 text-white font-extrabold py-3.5 px-4 rounded-2xl text-xs uppercase tracking-wider shadow-lg shadow-blue-500/25 transition cursor-pointer flex items-center justify-center gap-2"
             >
-              <FileText className="h-4.5 w-4.5" />
-              Create Draft Packing Slip
+              <Truck className="h-4 w-4" />
+              <span>Print Gate Pass &amp; Dispatch</span>
             </button>
           </div>
 

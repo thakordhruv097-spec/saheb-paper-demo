@@ -21,12 +21,18 @@ import {
   Pencil,
   Truck,
   Check,
-  SlidersHorizontal,
-  Package,
   CheckCircle2,
+  Zap,
+  Volume2,
+  VolumeX,
+  Tag,
 } from 'lucide-react';
 
-export const QRScannerView: React.FC = () => {
+interface QRScannerViewProps {
+  onOpenPrintStudio?: (reel?: Reel, code?: string) => void;
+}
+
+export const QRScannerView: React.FC<QRScannerViewProps> = ({ onOpenPrintStudio }) => {
   const { t } = useTranslation();
   const navigate = useNavigate();
 
@@ -40,6 +46,8 @@ export const QRScannerView: React.FC = () => {
 
   const [scanError, setScanError] = useState('');
   const [isScanning, setIsScanning] = useState(true);
+  const [torchActive, setTorchActive] = useState(false);
+  const [soundEnabled, setSoundEnabled] = useState(true);
   const scannerRef = useRef<Html5QrcodeScanner | null>(null);
 
   // Manual Reel Entry Input State
@@ -65,9 +73,30 @@ export const QRScannerView: React.FC = () => {
   const [dispatchError, setDispatchError] = useState('');
   const [toastMsg, setToastMsg] = useState('');
 
+  // Tactical Web Audio Beep Generator
+  const playBeep = () => {
+    if (!soundEnabled) return;
+    try {
+      const audioCtx = new (window.AudioContext || (window as any).webkitAudioContext)();
+      const osc = audioCtx.createOscillator();
+      const gain = audioCtx.createGain();
+      osc.connect(gain);
+      gain.connect(audioCtx.destination);
+      osc.type = 'sine';
+      osc.frequency.setValueAtTime(880, audioCtx.currentTime); // A5 note
+      gain.gain.setValueAtTime(0.25, audioCtx.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.12);
+      osc.start();
+      osc.stop(audioCtx.currentTime + 0.12);
+    } catch (e) {
+      console.warn('Audio Context error', e);
+    }
+  };
+
   const processScannedCode = (code: string) => {
     const targetCode = code.trim().toUpperCase();
     setScanError('');
+    playBeep();
 
     if (targetCode.startsWith('LOT-')) {
       const lotsList = getRawMaterialLots();
@@ -109,7 +138,7 @@ export const QRScannerView: React.FC = () => {
         try {
           const scanner = new Html5QrcodeScanner(
             'pure-camera-viewfinder',
-            { fps: 15, qrbox: { width: 260, height: 260 } },
+            { fps: 15, qrbox: { width: 250, height: 250 } },
             false
           );
 
@@ -202,8 +231,9 @@ export const QRScannerView: React.FC = () => {
         'Operator'
       );
 
+      playBeep();
       setShowDispatchModal(false);
-      setToastMsg(`Reel ${scanResult.reel.reelNo} dispatched to ${partyObj?.name || 'Customer'}! Stock updated (MINUS).`);
+      setToastMsg(`Reel ${scanResult.reel.reelNo} dispatched to ${partyObj?.name || 'Customer'}! Stock decremented.`);
       setTimeout(() => setToastMsg(''), 4000);
       handleResetScanner();
     } catch (err: any) {
@@ -212,44 +242,104 @@ export const QRScannerView: React.FC = () => {
   };
 
   return (
-    <div className="min-h-[85vh] flex flex-col items-center justify-center font-sans p-4 relative select-none text-left">
+    <div className="w-full max-w-2xl mx-auto flex flex-col items-center justify-center font-sans p-2 sm:p-4 relative select-none text-left">
       
       {/* Toast Alert */}
       {toastMsg && (
-        <div className="fixed top-5 right-5 z-50 bg-slate-900 text-white px-4 py-3 rounded-2xl shadow-xl border border-slate-700 flex items-center gap-2 text-xs font-bold animate-in fade-in slide-in-from-top-2">
-          <CheckCircle2 className="h-4.5 w-4.5 text-blue-400" />
+        <div className="fixed top-5 left-1/2 -translate-x-1/2 z-50 bg-slate-900 text-white px-5 py-3 rounded-full shadow-2xl border border-slate-700 flex items-center gap-2.5 text-xs font-bold animate-in fade-in slide-in-from-top-3">
+          <CheckCircle2 className="h-4 w-4 text-emerald-400 shrink-0" />
           <span>{toastMsg}</span>
         </div>
       )}
 
       {/* 1. DUAL MODE: CAMERA SCANNER & MANUAL TYPE SEARCH */}
       {!scanResult ? (
-        <div className="w-full max-w-md bg-white dark:bg-surface-dark border border-slate-200 dark:border-slate-700/80 rounded-3xl p-6 shadow-2xl text-center space-y-5">
+        <div className="w-full bg-white dark:bg-surface-dark border border-slate-200 dark:border-slate-700/80 rounded-3xl p-4 sm:p-6 shadow-xl space-y-4">
           
           <div className="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-3">
             <div className="flex items-center gap-2.5">
               <div className="p-2 rounded-xl bg-blue-50 dark:bg-blue-950/50 text-blue-600 dark:text-blue-400">
                 <Camera className="h-5 w-5" />
               </div>
-              <span className="font-black text-sm text-slate-900 dark:text-white uppercase tracking-wider">
-                Live QR &amp; Barcode Scanner
-              </span>
+              <div>
+                <span className="font-extrabold text-sm text-slate-900 dark:text-white uppercase tracking-wider block">
+                  Industrial Reel Scanner
+                </span>
+                <span className="text-[10px] text-slate-500 font-semibold">Live Camera &amp; Barcode Reader</span>
+              </div>
             </div>
-            <span className="px-2.5 py-0.5 rounded-full bg-emerald-100 text-emerald-700 dark:bg-emerald-950/60 dark:text-emerald-300 text-[10px] font-black uppercase tracking-wider animate-pulse">
-              Camera Active
+            <span className="px-2.5 py-1 rounded-full bg-emerald-100 text-emerald-700 dark:bg-emerald-950/60 dark:text-emerald-300 text-[10px] font-black uppercase tracking-wider flex items-center gap-1.5">
+              <span className="h-1.5 w-1.5 rounded-full bg-emerald-500 animate-ping inline-block" />
+              Scanner Ready
             </span>
           </div>
 
-          {/* Camera Viewfinder */}
-          <div className="relative overflow-hidden rounded-2xl border-2 border-blue-500/40 bg-slate-900 shadow-inner">
-            <div id="pure-camera-viewfinder" className="w-full min-h-[280px]" />
+          {/* Camera Viewfinder with Modern Laser Frame Overlay */}
+          <div className="relative overflow-hidden rounded-2xl bg-[#090D16] shadow-2xl border border-slate-800 min-h-[260px] sm:min-h-[300px] flex items-center justify-center">
+            
+            {/* HTML5 QR Code Mount */}
+            <div id="pure-camera-viewfinder" className="w-full h-full min-h-[260px] z-10" />
+
+            {/* Target Laser Box Overlay */}
+            <div className="absolute inset-0 pointer-events-none flex items-center justify-center z-20">
+              <div className="relative w-48 h-48 sm:w-56 sm:h-56 rounded-2xl">
+                {/* 4 Corner Markers */}
+                <div className="absolute top-0 left-0 w-6 h-6 border-t-4 border-l-4 border-sky-400 rounded-tl-xl" />
+                <div className="absolute top-0 right-0 w-6 h-6 border-t-4 border-r-4 border-sky-400 rounded-tr-xl" />
+                <div className="absolute bottom-0 left-0 w-6 h-6 border-b-4 border-l-4 border-sky-400 rounded-bl-xl" />
+                <div className="absolute bottom-0 right-0 w-6 h-6 border-b-4 border-r-4 border-sky-400 rounded-br-xl" />
+
+                {/* Animated Laser Sweep Line */}
+                <div className="absolute left-2 right-2 h-0.5 bg-gradient-to-r from-transparent via-sky-400 to-transparent shadow-[0_0_12px_#38BDF8] animate-pulse" style={{ top: '50%' }} />
+              </div>
+            </div>
+
+            {/* Viewfinder Bottom Controls Bar */}
+            <div className="absolute bottom-3 left-3 right-3 flex items-center justify-between z-30 pointer-events-auto">
+              <button
+                type="button"
+                onClick={() => {
+                  setTorchActive(!torchActive);
+                  setToastMsg(torchActive ? 'Torch Turned OFF' : 'Torch Turned ON');
+                  setTimeout(() => setToastMsg(''), 2000);
+                }}
+                className={`px-3 py-1.5 rounded-full text-[11px] font-bold backdrop-blur-md border flex items-center gap-1.5 transition cursor-pointer ${
+                  torchActive
+                    ? 'bg-amber-400 text-slate-900 border-amber-300'
+                    : 'bg-white/15 text-white border-white/20 hover:bg-white/25'
+                }`}
+              >
+                <Zap className="h-3.5 w-3.5" />
+                <span>Torch {torchActive ? 'ON' : 'OFF'}</span>
+              </button>
+
+              <span className="text-[11px] font-bold text-white/70 hidden sm:inline">Aim at Reel QR Code</span>
+
+              <button
+                type="button"
+                onClick={() => {
+                  setSoundEnabled(!soundEnabled);
+                  if (!soundEnabled) playBeep();
+                }}
+                className={`px-3 py-1.5 rounded-full text-[11px] font-bold backdrop-blur-md border flex items-center gap-1.5 transition cursor-pointer ${
+                  soundEnabled
+                    ? 'bg-sky-400 text-slate-950 border-sky-300'
+                    : 'bg-white/15 text-white/70 border-white/20'
+                }`}
+              >
+                {soundEnabled ? <Volume2 className="h-3.5 w-3.5" /> : <VolumeX className="h-3.5 w-3.5" />}
+                <span>Beep {soundEnabled ? 'ON' : 'Muted'}</span>
+              </button>
+            </div>
           </div>
 
-          {/* MANUAL TYPE / SEARCH FALLBACK SECTION */}
+          {/* MANUAL TYPE / BARCODE GUN SEARCH SECTION */}
           <div className="pt-2 border-t border-slate-100 dark:border-slate-800 space-y-3">
             <div className="flex items-center justify-between text-xs">
-              <span className="font-bold text-slate-500 dark:text-slate-400 uppercase text-[10px]">Manual Entry / Search Reel</span>
-              <span className="text-[10px] text-blue-500 font-semibold">Or Type Code</span>
+              <span className="font-extrabold text-slate-700 dark:text-slate-300 uppercase text-[11px] tracking-wider">
+                Manual Entry / Barcode Gun
+              </span>
+              <span className="text-[10px] text-blue-600 dark:text-blue-400 font-bold">Fast Search</span>
             </div>
 
             <form onSubmit={handleManualSearch} className="flex gap-2">
@@ -257,37 +347,40 @@ export const QRScannerView: React.FC = () => {
                 type="text"
                 value={manualCodeInput}
                 onChange={e => setManualCodeInput(e.target.value)}
-                placeholder="Type Reel No (e.g. RL-1001)..."
-                className="flex-1 px-3.5 py-2.5 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-2xl text-xs font-bold text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500 uppercase placeholder:normal-case font-mono"
+                placeholder="Type or scan barcode (e.g. RL-1048)..."
+                className="flex-1 px-4 py-3 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-2xl text-xs font-bold text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500 uppercase placeholder:normal-case font-mono"
               />
               <button
                 type="submit"
-                className="px-4 py-2.5 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white rounded-2xl text-xs font-bold shadow-md transition cursor-pointer shrink-0 flex items-center gap-1.5"
+                className="px-5 py-3 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white rounded-2xl text-xs font-black shadow-md transition cursor-pointer shrink-0 flex items-center gap-1.5"
               >
                 <Search className="h-4 w-4" />
                 <span>Search</span>
               </button>
             </form>
 
-            {/* Quick Reel Select Dropdown */}
+            {/* Quick Stock Selector */}
             {reelsList.length > 0 && (
-              <select
-                onChange={e => {
-                  if (e.target.value) {
-                    processScannedCode(e.target.value);
-                    setIsScanning(false);
-                  }
-                }}
-                defaultValue=""
-                className="w-full py-2.5 px-3 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-2xl text-xs font-bold text-slate-700 dark:text-slate-200 focus:outline-none cursor-pointer"
-              >
-                <option value="" disabled>-- Or Select Reel from Stock List --</option>
-                {reelsList.slice(-15).reverse().map(r => (
-                  <option key={r.reelNo} value={r.reelNo}>
-                    {r.reelNo} &bull; {r.product} &bull; {r.weight}kg ({r.status})
-                  </option>
-                ))}
-              </select>
+              <div className="space-y-1.5">
+                <div className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Recent Stock Quick Pick:</div>
+                <select
+                  onChange={e => {
+                    if (e.target.value) {
+                      processScannedCode(e.target.value);
+                      setIsScanning(false);
+                    }
+                  }}
+                  defaultValue=""
+                  className="w-full py-2.5 px-3.5 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-2xl text-xs font-bold text-slate-700 dark:text-slate-200 focus:outline-none cursor-pointer"
+                >
+                  <option value="" disabled>-- Or Select Reel directly from Stock --</option>
+                  {reelsList.slice(-20).reverse().map(r => (
+                    <option key={r.reelNo} value={r.reelNo}>
+                      {r.reelNo} &bull; {r.product} &bull; {r.weight}kg ({r.status})
+                    </option>
+                  ))}
+                </select>
+              </div>
             )}
           </div>
 
@@ -300,41 +393,40 @@ export const QRScannerView: React.FC = () => {
         </div>
       ) : (
         /* 2. SCAN RESULT CARD WITH DETAILS, INLINE EDIT, & DIRECT DISPATCH */
-        <div className="w-full max-w-md bg-white dark:bg-surface-dark border border-slate-200 dark:border-slate-700/80 rounded-3xl p-6 shadow-2xl space-y-5 animate-in zoom-in-95 duration-200">
+        <div className="w-full bg-white dark:bg-surface-dark border-2 border-blue-500 dark:border-blue-500 rounded-3xl p-5 sm:p-6 shadow-2xl space-y-4 animate-in zoom-in-95 duration-200">
           
           <div className="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-3">
             <div className="flex items-center gap-2.5">
               <div className="p-2 rounded-xl bg-emerald-50 dark:bg-emerald-950/50 text-emerald-600 dark:text-emerald-400">
                 <CheckCircle className="h-5 w-5" />
               </div>
-              <span className="font-black text-sm text-slate-900 dark:text-white uppercase tracking-wider">
-                Reel Verification &amp; Dispatch
-              </span>
+              <div>
+                <span className="font-extrabold text-sm text-slate-900 dark:text-white uppercase tracking-wider block">
+                  Reel Verified in Stock
+                </span>
+                <span className="text-[10px] text-emerald-600 font-bold">Ready for Loading Sheet</span>
+              </div>
             </div>
             <button onClick={handleResetScanner} className="p-1.5 rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-400 cursor-pointer">
               <X className="h-5 w-5" />
             </button>
           </div>
 
-          {/* Code Badge */}
-          <div className="p-4 bg-slate-50 dark:bg-slate-900/60 rounded-2xl border border-slate-200 dark:border-slate-800 flex items-center justify-between">
+          {/* Reel Header & Weight Badge */}
+          <div className="p-4 bg-slate-50 dark:bg-slate-900/80 rounded-2xl border border-slate-200 dark:border-slate-800 flex items-center justify-between">
             <div>
-              <span className="text-[10px] font-black uppercase text-slate-400 tracking-wider block">Scanned Code</span>
-              <span className="text-lg font-black font-mono text-blue-600 dark:text-blue-400">{scanResult.code}</span>
+              <span className="text-[10px] font-black uppercase text-slate-400 tracking-wider block">REEL IDENTIFIER</span>
+              <span className="text-xl font-black font-mono text-blue-600 dark:text-blue-400">{scanResult.code}</span>
             </div>
-            {scanResult.reel && !isEditing && (
-              <button
-                type="button"
-                onClick={() => setIsEditing(true)}
-                className="px-3 py-1.5 bg-blue-50 dark:bg-blue-950/40 text-blue-600 dark:text-blue-400 hover:bg-blue-100 rounded-xl text-xs font-bold flex items-center gap-1.5 border border-blue-200 dark:border-blue-800 transition cursor-pointer"
-              >
-                <Pencil className="h-3.5 w-3.5" />
-                <span>Edit Specs</span>
-              </button>
-            )}
+            <div className="text-right">
+              <span className="text-[10px] font-black uppercase text-slate-400 tracking-wider block">NET WEIGHT</span>
+              <span className="text-xl font-black font-mono text-emerald-600 dark:text-emerald-400">
+                {scanResult.reel ? `${scanResult.reel.weight.toLocaleString()} KG` : 'N/A'}
+              </span>
+            </div>
           </div>
 
-          {/* ITEM DETAILS CARD (EDITABLE INLINE) */}
+          {/* ITEM DETAILS SPECS GRID */}
           {scanResult.reel ? (
             isEditing ? (
               /* Inline Edit Mode */
@@ -406,23 +498,23 @@ export const QRScannerView: React.FC = () => {
               </div>
             ) : (
               /* Display View Mode */
-              <div className="grid grid-cols-2 gap-3 text-xs font-semibold">
-                <div className="p-3 bg-slate-50 dark:bg-slate-900/40 rounded-xl border border-slate-200 dark:border-slate-800">
-                  <span className="text-[10px] text-slate-400 font-bold block uppercase">Product</span>
-                  <span className="font-bold text-slate-900 dark:text-white">{scanResult.reel.product}</span>
+              <div className="grid grid-cols-2 gap-2.5 text-xs">
+                <div className="p-3 bg-slate-50 dark:bg-slate-900/60 rounded-xl border border-slate-200 dark:border-slate-800">
+                  <span className="text-[10px] text-slate-400 font-bold block uppercase tracking-wider">Product Quality</span>
+                  <span className="font-extrabold text-slate-900 dark:text-white mt-0.5 block">{scanResult.reel.product}</span>
                 </div>
-                <div className="p-3 bg-slate-50 dark:bg-slate-900/40 rounded-xl border border-slate-200 dark:border-slate-800">
-                  <span className="text-[10px] text-slate-400 font-bold block uppercase">Size &amp; GSM</span>
-                  <span className="font-bold text-slate-900 dark:text-white">{scanResult.reel.size} cm &bull; {scanResult.reel.gsm} GSM</span>
+                <div className="p-3 bg-slate-50 dark:bg-slate-900/60 rounded-xl border border-slate-200 dark:border-slate-800">
+                  <span className="text-[10px] text-slate-400 font-bold block uppercase tracking-wider">GSM &amp; Deckle</span>
+                  <span className="font-extrabold text-slate-900 dark:text-white mt-0.5 block">{scanResult.reel.gsm} GSM &bull; {scanResult.reel.size} cm</span>
                 </div>
-                <div className="p-3 bg-slate-50 dark:bg-slate-900/40 rounded-xl border border-slate-800">
-                  <span className="text-[10px] text-slate-400 font-bold block uppercase">Reel Weight</span>
-                  <span className="font-bold text-slate-900 dark:text-white font-mono">{scanResult.reel.weight.toLocaleString()} kg</span>
+                <div className="p-3 bg-slate-50 dark:bg-slate-900/60 rounded-xl border border-slate-200 dark:border-slate-800">
+                  <span className="text-[10px] text-slate-400 font-bold block uppercase tracking-wider">Production Date</span>
+                  <span className="font-extrabold text-slate-900 dark:text-white mt-0.5 block">{scanResult.reel.productionDate || 'Today'}</span>
                 </div>
-                <div className="p-3 bg-slate-50 dark:bg-slate-900/40 rounded-xl border border-slate-800">
-                  <span className="text-[10px] text-slate-400 font-bold block uppercase">Status / Grade</span>
-                  <span className={`font-black ${scanResult.reel.status === 'DISPATCHED' ? 'text-purple-600' : 'text-emerald-600 dark:text-emerald-400'}`}>
-                    {scanResult.reel.status === 'DISPATCHED' ? 'DISPATCHED' : `Grade ${scanResult.reel.qcGrade}`}
+                <div className="p-3 bg-slate-50 dark:bg-slate-900/60 rounded-xl border border-slate-200 dark:border-slate-800">
+                  <span className="text-[10px] text-slate-400 font-bold block uppercase tracking-wider">QC Clearance</span>
+                  <span className={`font-black mt-0.5 block ${scanResult.reel.status === 'DISPATCHED' ? 'text-purple-600' : 'text-emerald-600 dark:text-emerald-400'}`}>
+                    {scanResult.reel.status === 'DISPATCHED' ? 'ALREADY DISPATCHED' : `Grade ${scanResult.reel.qcGrade} Passed`}
                   </span>
                 </div>
               </div>
@@ -433,33 +525,58 @@ export const QRScannerView: React.FC = () => {
             </div>
           )}
 
-          {/* ACTION BUTTONS: DIRECT DISPATCH & TRACEABILITY */}
-          <div className="space-y-2.5 pt-2">
+          {/* ACTION BUTTONS */}
+          <div className="space-y-2 pt-2">
             {scanResult.reel && scanResult.reel.status !== 'DISPATCHED' && (
               <button
                 type="button"
                 onClick={() => setShowDispatchModal(true)}
-                className="w-full bg-gradient-to-r from-blue-600 via-indigo-600 to-blue-700 hover:from-blue-700 hover:to-indigo-700 text-white font-black py-3.5 px-4 rounded-2xl text-xs uppercase tracking-wider shadow-lg shadow-blue-500/25 transition cursor-pointer flex items-center justify-center gap-2"
+                className="w-full bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white font-black py-3.5 px-4 rounded-2xl text-xs uppercase tracking-wider shadow-lg shadow-emerald-500/25 transition cursor-pointer flex items-center justify-center gap-2"
               >
                 <Truck className="h-4 w-4" />
-                <span>Confirm &amp; Dispatch Reel Now (Auto-Minus)</span>
+                <span>Quick Dispatch This Reel Now (Auto-Minus)</span>
               </button>
             )}
 
-            <button
-              onClick={() => navigate('/traceability')}
-              className="w-full bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 text-slate-700 dark:text-slate-200 font-bold py-3 px-4 rounded-2xl text-xs uppercase tracking-wider transition cursor-pointer flex items-center justify-center gap-2 border border-slate-200 dark:border-slate-700"
-            >
-              <span>View Full Traceability Graph</span>
-              <ArrowRight className="h-4 w-4" />
-            </button>
+            {/* Print Reel QR Label Button */}
+            {onOpenPrintStudio && (
+              <button
+                type="button"
+                onClick={() => onOpenPrintStudio(scanResult.reel, scanResult.code)}
+                className="w-full bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white font-black py-3 px-4 rounded-2xl text-xs uppercase tracking-wider shadow-md transition cursor-pointer flex items-center justify-center gap-2"
+              >
+                <Tag className="h-4 w-4" />
+                <span>Print Reel Barcode / QR Label</span>
+              </button>
+            )}
+
+            <div className="flex gap-2">
+              {scanResult.reel && !isEditing && (
+                <button
+                  type="button"
+                  onClick={() => setIsEditing(true)}
+                  className="flex-1 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 text-slate-700 dark:text-slate-200 font-bold py-2.5 px-3 rounded-2xl text-xs uppercase tracking-wider transition cursor-pointer flex items-center justify-center gap-1.5 border border-slate-200 dark:border-slate-700"
+                >
+                  <Pencil className="h-3.5 w-3.5" />
+                  <span>Edit Specs</span>
+                </button>
+              )}
+
+              <button
+                onClick={() => navigate('/traceability')}
+                className="flex-1 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 text-slate-700 dark:text-slate-200 font-bold py-2.5 px-3 rounded-2xl text-xs uppercase tracking-wider transition cursor-pointer flex items-center justify-center gap-1.5 border border-slate-200 dark:border-slate-700"
+              >
+                <span>Traceability</span>
+                <ArrowRight className="h-3.5 w-3.5" />
+              </button>
+            </div>
 
             <button
               onClick={handleResetScanner}
-              className="w-full bg-slate-50 dark:bg-slate-900 text-slate-500 hover:text-slate-800 dark:hover:text-white font-bold py-2.5 px-4 rounded-2xl text-xs uppercase tracking-wider transition cursor-pointer flex items-center justify-center gap-2"
+              className="w-full bg-slate-50 dark:bg-slate-900 text-slate-600 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white font-extrabold py-2.5 px-4 rounded-2xl text-xs uppercase tracking-wider transition cursor-pointer flex items-center justify-center gap-2"
             >
-              <RefreshCw className="h-4 w-4" />
-              <span>Scan Next Reel / Reset</span>
+              <RefreshCw className="h-3.5 w-3.5" />
+              <span>Scan Next Reel</span>
             </button>
           </div>
 

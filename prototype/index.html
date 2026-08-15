@@ -1,0 +1,1438 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <title>Saheb Paper - Dispatch & Reel Scanner</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;700;800&display=swap" rel="stylesheet">
+  
+  <style>
+    :root {
+      --bg: #F8FAFC;
+      --card-bg: #FFFFFF;
+      --card-border: #E2E8F0;
+      --text-main: #0F172A;
+      --text-muted: #64748B;
+      --text-subtle: #94A3B8;
+      
+      --brand: #2563EB;
+      --brand-light: #EFF6FF;
+      --brand-hover: #1D4ED8;
+      
+      --success: #059669;
+      --success-light: #ECFDF5;
+      --success-border: #A7F3D0;
+      
+      --amber: #D97706;
+      --amber-light: #FFFBEB;
+      
+      --danger: #DC2626;
+      --danger-light: #FEF2F2;
+      
+      --radius-xl: 22px;
+      --radius-lg: 16px;
+      --radius-md: 12px;
+      --radius-sm: 8px;
+      
+      --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+      --shadow-md: 0 4px 6px -1px rgba(15, 23, 42, 0.06), 0 2px 4px -2px rgba(15, 23, 42, 0.04);
+      --shadow-lg: 0 10px 15px -3px rgba(15, 23, 42, 0.08), 0 4px 6px -4px rgba(15, 23, 42, 0.03);
+      --shadow-float: 0 20px 25px -5px rgba(37, 99, 235, 0.25), 0 8px 10px -6px rgba(37, 99, 235, 0.2);
+    }
+
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    body {
+      font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, sans-serif;
+      background-color: var(--bg);
+      color: var(--text-main);
+      min-height: 100vh;
+      display: flex;
+      justify-content: center;
+      padding: 0;
+      margin: 0;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    .app-container {
+      width: 100%;
+      max-width: 440px;
+      min-height: 100vh;
+      background: #FFFFFF;
+      display: flex;
+      flex-direction: column;
+      position: relative;
+      box-shadow: 0 0 50px rgba(0, 0, 0, 0.06);
+    }
+
+    /* ─── Top App Bar ─── */
+    .app-header {
+      position: sticky;
+      top: 0;
+      z-index: 40;
+      background: rgba(255, 255, 255, 0.92);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      border-bottom: 1px solid var(--card-border);
+      padding: 14px 18px 12px;
+    }
+
+    .header-top {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 12px;
+    }
+
+    .brand-group {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .logo-badge {
+      width: 38px;
+      height: 38px;
+      background: linear-gradient(135deg, #1E40AF 0%, #3B82F6 100%);
+      color: white;
+      border-radius: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 800;
+      font-size: 17px;
+      box-shadow: 0 4px 10px rgba(37, 99, 235, 0.3);
+    }
+
+    .brand-title {
+      font-size: 15px;
+      font-weight: 800;
+      letter-spacing: -0.3px;
+      color: #0F172A;
+      line-height: 1.2;
+    }
+
+    .brand-sub {
+      font-size: 11px;
+      font-weight: 600;
+      color: var(--text-muted);
+      display: flex;
+      align-items: center;
+      gap: 5px;
+    }
+
+    .live-dot {
+      width: 7px;
+      height: 7px;
+      background: var(--success);
+      border-radius: 50%;
+      display: inline-block;
+      box-shadow: 0 0 0 2px rgba(5, 150, 105, 0.2);
+      animation: pulse-dot 2s infinite;
+    }
+
+    @keyframes pulse-dot {
+      0%, 100% { transform: scale(1); opacity: 1; }
+      50% { transform: scale(1.3); opacity: 0.7; }
+    }
+
+    .header-actions {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .header-btn {
+      width: 36px;
+      height: 36px;
+      border-radius: 10px;
+      border: 1px solid var(--card-border);
+      background: var(--bg);
+      color: var(--text-muted);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      position: relative;
+    }
+
+    .badge-count {
+      position: absolute;
+      top: -3px;
+      right: -3px;
+      background: var(--brand);
+      color: white;
+      font-size: 10px;
+      font-weight: 700;
+      width: 17px;
+      height: 17px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border: 2px solid white;
+    }
+
+    /* ─── iOS Style Segmented Control ─── */
+    .segmented-control {
+      display: flex;
+      background: #F1F5F9;
+      padding: 3px;
+      border-radius: 12px;
+      position: relative;
+      gap: 2px;
+    }
+
+    .segment-tab {
+      flex: 1;
+      padding: 8px 0;
+      border: none;
+      background: transparent;
+      color: var(--text-muted);
+      font-size: 12px;
+      font-weight: 700;
+      font-family: inherit;
+      border-radius: 9px;
+      cursor: pointer;
+      transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+    }
+
+    .segment-tab.active {
+      background: #FFFFFF;
+      color: var(--brand);
+      box-shadow: 0 2px 6px rgba(0, 0, 0, 0.07);
+    }
+
+    .segment-tab svg {
+      width: 15px;
+      height: 15px;
+    }
+
+    /* ─── Content Scroll View ─── */
+    .scroll-content {
+      flex: 1;
+      overflow-y: auto;
+      padding: 16px 16px 100px;
+      background: #F8FAFC;
+    }
+
+    .view-panel {
+      display: none;
+      animation: fadeIn 0.2s ease;
+    }
+
+    .view-panel.active {
+      display: block;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(4px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    /* ─── Modern Card UI ─── */
+    .card-modern {
+      background: #FFFFFF;
+      border: 1px solid var(--card-border);
+      border-radius: var(--radius-lg);
+      padding: 18px;
+      margin-bottom: 14px;
+      box-shadow: var(--shadow-sm);
+    }
+
+    .card-modern:hover {
+      box-shadow: var(--shadow-md);
+      transition: box-shadow 0.2s;
+    }
+
+    .card-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 14px;
+    }
+
+    .card-title-text {
+      font-size: 14px;
+      font-weight: 800;
+      color: var(--text-main);
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .chip-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      padding: 4px 9px;
+      border-radius: 20px;
+      font-size: 11px;
+      font-weight: 700;
+    }
+
+    .chip-blue {
+      background: var(--brand-light);
+      color: var(--brand);
+    }
+
+    .chip-green {
+      background: var(--success-light);
+      color: var(--success);
+    }
+
+    .chip-amber {
+      background: var(--amber-light);
+      color: var(--amber);
+    }
+
+    /* ─── Today Summary Bar ─── */
+    .dispatch-meter-card {
+      background: linear-gradient(135deg, #1E293B 0%, #0F172A 100%);
+      color: white;
+      border-radius: var(--radius-lg);
+      padding: 18px;
+      margin-bottom: 14px;
+      box-shadow: var(--shadow-md);
+      position: relative;
+      overflow: hidden;
+    }
+
+    .meter-top {
+      display: flex;
+      justify-content: space-between;
+      align-items: baseline;
+      margin-bottom: 6px;
+    }
+
+    .meter-label {
+      font-size: 12px;
+      font-weight: 600;
+      color: #94A3B8;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    .meter-val {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 24px;
+      font-weight: 800;
+      color: #38BDF8;
+    }
+
+    .meter-progress-track {
+      width: 100%;
+      height: 8px;
+      background: rgba(255, 255, 255, 0.12);
+      border-radius: 10px;
+      overflow: hidden;
+      margin: 10px 0 12px;
+    }
+
+    .meter-progress-fill {
+      height: 100%;
+      background: linear-gradient(90deg, #38BDF8 0%, #34D399 100%);
+      border-radius: 10px;
+      transition: width 0.4s ease;
+    }
+
+    .meter-sub-stats {
+      display: flex;
+      justify-content: space-between;
+      border-top: 1px solid rgba(255, 255, 255, 0.08);
+      padding-top: 10px;
+      margin-top: 4px;
+    }
+
+    .sub-stat-item {
+      display: flex;
+      flex-direction: column;
+    }
+
+    .sub-stat-label {
+      font-size: 10px;
+      color: #94A3B8;
+      font-weight: 600;
+    }
+
+    .sub-stat-num {
+      font-size: 14px;
+      font-weight: 700;
+      color: #F1F5F9;
+      font-family: 'JetBrains Mono', monospace;
+    }
+
+    /* ─── Form Inputs Clean Style ─── */
+    .field-group {
+      margin-bottom: 12px;
+    }
+
+    .field-label {
+      display: block;
+      font-size: 12px;
+      font-weight: 700;
+      color: #334155;
+      margin-bottom: 6px;
+    }
+
+    .input-clean {
+      width: 100%;
+      padding: 12px 14px;
+      border: 1.5px solid #E2E8F0;
+      background: #F8FAFC;
+      border-radius: var(--radius-md);
+      font-size: 14px;
+      font-weight: 600;
+      font-family: inherit;
+      color: var(--text-main);
+      outline: none;
+      transition: all 0.15s;
+    }
+
+    .input-clean:focus {
+      border-color: var(--brand);
+      background: #FFFFFF;
+      box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.12);
+    }
+
+    select.input-clean {
+      appearance: none;
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%2364748b' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
+      background-repeat: no-repeat;
+      background-position: right 14px center;
+      padding-right: 38px;
+    }
+
+    /* ─── Loaded Reels Queue (Real-world feel) ─── */
+    .queue-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin: 16px 0 8px;
+    }
+
+    .queue-title {
+      font-size: 13px;
+      font-weight: 800;
+      color: var(--text-main);
+    }
+
+    .reel-item-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 12px 14px;
+      background: #FFFFFF;
+      border: 1px solid var(--card-border);
+      border-radius: var(--radius-md);
+      margin-bottom: 8px;
+      box-shadow: var(--shadow-sm);
+    }
+
+    .reel-item-left {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .reel-icon-box {
+      width: 36px;
+      height: 36px;
+      border-radius: 10px;
+      background: #EFF6FF;
+      color: var(--brand);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 800;
+      font-size: 12px;
+    }
+
+    .reel-no {
+      font-family: 'JetBrains Mono', monospace;
+      font-weight: 800;
+      font-size: 14px;
+      color: #0F172A;
+    }
+
+    .reel-specs {
+      font-size: 11px;
+      color: var(--text-muted);
+      font-weight: 600;
+    }
+
+    .reel-wt-badge {
+      font-family: 'JetBrains Mono', monospace;
+      font-weight: 700;
+      font-size: 13px;
+      color: #059669;
+      background: #ECFDF5;
+      padding: 4px 8px;
+      border-radius: 8px;
+    }
+
+    .btn-delete-reel {
+      background: none;
+      border: none;
+      color: #94A3B8;
+      cursor: pointer;
+      padding: 4px;
+      margin-left: 8px;
+    }
+
+    .btn-delete-reel:hover {
+      color: var(--danger);
+    }
+
+    /* ─── Camera / Live Scanner Module ─── */
+    .scanner-viewfinder {
+      position: relative;
+      width: 100%;
+      height: 240px;
+      background: #090D16;
+      border-radius: var(--radius-lg);
+      overflow: hidden;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
+      margin-bottom: 14px;
+    }
+
+    .video-mock-bg {
+      position: absolute;
+      inset: 0;
+      background: radial-gradient(circle at center, #1E293B 0%, #090D16 100%);
+      opacity: 0.9;
+    }
+
+    .grid-lines {
+      position: absolute;
+      inset: 0;
+      background-size: 20px 20px;
+      background-image: linear-gradient(to right, rgba(255, 255, 255, 0.03) 1px, transparent 1px),
+                        linear-gradient(to bottom, rgba(255, 255, 255, 0.03) 1px, transparent 1px);
+    }
+
+    /* Target Box */
+    .scanner-box {
+      position: relative;
+      width: 160px;
+      height: 160px;
+      border-radius: 18px;
+      z-index: 2;
+    }
+
+    .corner-tl, .corner-tr, .corner-bl, .corner-br {
+      position: absolute;
+      width: 24px;
+      height: 24px;
+      border-color: #38BDF8;
+      border-style: solid;
+    }
+
+    .corner-tl { top: 0; left: 0; border-width: 4px 0 0 4px; border-top-left-radius: 12px; }
+    .corner-tr { top: 0; right: 0; border-width: 4px 4px 0 0; border-top-right-radius: 12px; }
+    .corner-bl { bottom: 0; left: 0; border-width: 0 0 4px 4px; border-bottom-left-radius: 12px; }
+    .corner-br { bottom: 0; right: 0; border-width: 0 4px 4px 0; border-bottom-right-radius: 12px; }
+
+    .laser-line {
+      position: absolute;
+      left: 6px;
+      right: 6px;
+      height: 2px;
+      background: linear-gradient(90deg, transparent, #38BDF8, #34D399, transparent);
+      box-shadow: 0 0 12px #38BDF8;
+      animation: laser-sweep 2.2s ease-in-out infinite;
+    }
+
+    @keyframes laser-sweep {
+      0%, 100% { top: 10px; opacity: 0.3; }
+      50% { top: 145px; opacity: 1; }
+    }
+
+    .scanner-controls {
+      position: absolute;
+      bottom: 12px;
+      left: 14px;
+      right: 14px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      z-index: 5;
+    }
+
+    .scanner-tool-btn {
+      background: rgba(255, 255, 255, 0.15);
+      backdrop-filter: blur(8px);
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      color: white;
+      padding: 6px 12px;
+      border-radius: 20px;
+      font-size: 11px;
+      font-weight: 700;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      cursor: pointer;
+    }
+
+    .scanner-tool-btn.active {
+      background: #38BDF8;
+      color: #0F172A;
+      border-color: #38BDF8;
+    }
+
+    /* ─── Instant Scanned Result Card ─── */
+    .scanned-reel-preview {
+      background: #FFFFFF;
+      border: 2px solid var(--brand);
+      border-radius: var(--radius-lg);
+      padding: 16px;
+      margin-bottom: 14px;
+      box-shadow: 0 8px 20px rgba(37, 99, 235, 0.12);
+      animation: slideUp 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+
+    @keyframes slideUp {
+      from { transform: translateY(12px); opacity: 0; }
+      to { transform: translateY(0); opacity: 1; }
+    }
+
+    .reel-meta-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 8px;
+      margin: 12px 0 14px;
+    }
+
+    .meta-box {
+      background: #F8FAFC;
+      border: 1px solid #E2E8F0;
+      border-radius: 10px;
+      padding: 8px 10px;
+    }
+
+    .meta-lbl {
+      font-size: 10px;
+      font-weight: 700;
+      color: var(--text-muted);
+      text-transform: uppercase;
+    }
+
+    .meta-val {
+      font-size: 13px;
+      font-weight: 800;
+      color: var(--text-main);
+      margin-top: 2px;
+    }
+
+    /* ─── Action Buttons ─── */
+    .btn-action-primary {
+      width: 100%;
+      background: linear-gradient(135deg, #2563EB 0%, #1D4ED8 100%);
+      color: white;
+      border: none;
+      padding: 14px 18px;
+      border-radius: var(--radius-md);
+      font-size: 14px;
+      font-weight: 800;
+      font-family: inherit;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      cursor: pointer;
+      box-shadow: 0 4px 14px rgba(37, 99, 235, 0.3);
+      transition: all 0.15s;
+    }
+
+    .btn-action-primary:active {
+      transform: scale(0.98);
+    }
+
+    .btn-action-success {
+      width: 100%;
+      background: linear-gradient(135deg, #059669 0%, #047857 100%);
+      color: white;
+      border: none;
+      padding: 14px 18px;
+      border-radius: var(--radius-md);
+      font-size: 14px;
+      font-weight: 800;
+      font-family: inherit;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      cursor: pointer;
+      box-shadow: 0 4px 14px rgba(5, 150, 105, 0.25);
+      transition: all 0.15s;
+    }
+
+    .btn-action-success:active {
+      transform: scale(0.98);
+    }
+
+    .btn-action-secondary {
+      width: 100%;
+      background: #F1F5F9;
+      color: #334155;
+      border: 1px solid #E2E8F0;
+      padding: 11px 16px;
+      border-radius: var(--radius-md);
+      font-size: 13px;
+      font-weight: 700;
+      font-family: inherit;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      cursor: pointer;
+      margin-top: 8px;
+    }
+
+    /* ─── Search & Stock Category Filter ─── */
+    .filter-pills-row {
+      display: flex;
+      gap: 6px;
+      overflow-x: auto;
+      padding-bottom: 8px;
+      margin-bottom: 12px;
+      scrollbar-width: none;
+    }
+
+    .filter-pills-row::-webkit-scrollbar {
+      display: none;
+    }
+
+    .f-pill {
+      padding: 6px 12px;
+      background: #FFFFFF;
+      border: 1px solid var(--card-border);
+      border-radius: 20px;
+      font-size: 11px;
+      font-weight: 700;
+      color: var(--text-muted);
+      white-space: nowrap;
+      cursor: pointer;
+    }
+
+    .f-pill.active {
+      background: #0F172A;
+      color: #FFFFFF;
+      border-color: #0F172A;
+    }
+
+    /* ─── Stock Inventory Item ─── */
+    .stock-card {
+      background: #FFFFFF;
+      border: 1px solid var(--card-border);
+      border-radius: var(--radius-md);
+      padding: 14px;
+      margin-bottom: 10px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .stock-title {
+      font-size: 13px;
+      font-weight: 800;
+      color: #0F172A;
+    }
+
+    .stock-desc {
+      font-size: 11px;
+      color: var(--text-muted);
+      font-weight: 600;
+      margin-top: 2px;
+    }
+
+    .stock-qty-box {
+      text-align: right;
+    }
+
+    .stock-qty-num {
+      font-family: 'JetBrains Mono', monospace;
+      font-weight: 800;
+      font-size: 15px;
+      color: var(--brand);
+    }
+
+    .stock-qty-sub {
+      font-size: 10px;
+      font-weight: 700;
+      color: var(--text-muted);
+    }
+
+    /* ─── Floating Quick Action FAB ─── */
+    .fab-bottom {
+      position: fixed;
+      bottom: 74px;
+      right: 20px;
+      z-index: 30;
+      background: linear-gradient(135deg, #2563EB 0%, #1E40AF 100%);
+      color: white;
+      border: none;
+      padding: 12px 20px;
+      border-radius: 30px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 13px;
+      font-weight: 800;
+      font-family: inherit;
+      box-shadow: var(--shadow-float);
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .fab-bottom:active {
+      transform: scale(0.95);
+    }
+
+    /* ─── Bottom Navigation Bar ─── */
+    .tabbar {
+      position: fixed;
+      bottom: 0;
+      width: 100%;
+      max-width: 440px;
+      background: rgba(255, 255, 255, 0.95);
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      border-top: 1px solid var(--card-border);
+      display: flex;
+      justify-content: space-around;
+      padding: 8px 0 16px;
+      z-index: 45;
+    }
+
+    .tabbar-item {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 3px;
+      background: none;
+      border: none;
+      color: #94A3B8;
+      font-size: 10px;
+      font-weight: 700;
+      cursor: pointer;
+      font-family: inherit;
+      width: 60px;
+    }
+
+    .tabbar-item.active {
+      color: var(--brand);
+    }
+
+    .tabbar-item svg {
+      width: 22px;
+      height: 22px;
+    }
+
+    /* ─── Toast Notification (Tactile) ─── */
+    .toast-pop {
+      position: fixed;
+      top: 16px;
+      left: 50%;
+      transform: translateX(-50%) translateY(-100px);
+      background: #0F172A;
+      color: #FFFFFF;
+      padding: 12px 18px;
+      border-radius: 30px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-size: 13px;
+      font-weight: 700;
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.25);
+      z-index: 100;
+      transition: transform 0.35s cubic-bezier(0.34, 1.56, 0.64, 1);
+      width: 90%;
+      max-width: 380px;
+    }
+
+    .toast-pop.show {
+      transform: translateX(-50%) translateY(0);
+    }
+
+    .toast-icon-green {
+      width: 22px;
+      height: 22px;
+      background: #059669;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: white;
+      font-size: 12px;
+      flex-shrink: 0;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- In-app Notification -->
+  <div id="toast" class="toast-pop">
+    <div class="toast-icon-green">✓</div>
+    <span id="toastMsg">Reel RL-1049 added to loading sheet!</span>
+  </div>
+
+  <div class="app-container">
+
+    <!-- ─── Top Sticky App Bar ─── -->
+    <header class="app-header">
+      <div class="header-top">
+        <div class="brand-group">
+          <div class="logo-badge">SP</div>
+          <div>
+            <div class="brand-title">Saheb Paper ERP</div>
+            <div class="brand-sub">
+              <span class="live-dot"></span> Gate #1 Dispatch Desk
+            </div>
+          </div>
+        </div>
+
+        <div class="header-actions">
+          <button class="header-btn" onclick="triggerScanModal()" title="Fast Scan">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 7V5a2 2 0 0 1 2-2h2"/><path d="M17 3h2a2 2 0 0 1 2 2v2"/><path d="M21 17v2a2 2 0 0 1-2 2h-2"/><path d="M7 21H5a2 2 0 0 1-2-2v-2"/></svg>
+          </button>
+          <button class="header-btn" title="Cart">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4Z"/><path d="M3 6h18"/><path d="M16 10a4 4 0 0 1-8 0"/></svg>
+            <span class="badge-count" id="headerCount">2</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- Segmented Control (Dispatch / Scanner / Finished Stock) -->
+      <div class="segmented-control">
+        <button class="segment-tab active" data-tab="dispatch" onclick="setTab('dispatch')">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 18V6a2 2 0 0 0-2-2H4a2 2 0 0 0-2 2v11a1 1 0 0 0 1 1h2"/><path d="M15 18H9"/><path d="M19 18h2a1 1 0 0 0 1-1v-3.65a1 1 0 0 0-.22-.624l-3.48-4.35A1 1 0 0 0 17.52 8H14"/><circle cx="17" cy="18" r="2"/><circle cx="7" cy="18" r="2"/></svg>
+          Dispatch
+        </button>
+        <button class="segment-tab" data-tab="scanner" onclick="setTab('scanner')">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 7V5a2 2 0 0 1 2-2h2"/><path d="M17 3h2a2 2 0 0 1 2 2v2"/><path d="M21 17v2a2 2 0 0 1-2 2h-2"/><path d="M7 21H5a2 2 0 0 1-2-2v-2"/><circle cx="12" cy="12" r="3"/></svg>
+          Scan Reel
+        </button>
+        <button class="segment-tab" data-tab="stock" onclick="setTab('stock')">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16Z"/></svg>
+          Stock (48)
+        </button>
+      </div>
+    </header>
+
+    <!-- ─── Content Scroll Area ─── -->
+    <div class="scroll-content">
+
+      <!-- ============================================== -->
+      <!-- TAB 1: DISPATCH MANIFEST (CHALLAN CREATION)    -->
+      <!-- ============================================== -->
+      <div class="view-panel active" id="tab-dispatch">
+
+        <!-- Dispatch Shift Progress -->
+        <div class="dispatch-meter-card">
+          <div class="meter-top">
+            <div class="meter-label">Today's Loaded Weight</div>
+            <div class="meter-val" id="meterWeight">8,450 <span style="font-size:14px;color:#94A3B8">KG</span></div>
+          </div>
+          <div class="meter-progress-track">
+            <div class="meter-progress-fill" style="width: 68%;"></div>
+          </div>
+          <div class="meter-sub-stats">
+            <div class="sub-stat-item">
+              <span class="sub-stat-label">DISPATCHED REELS</span>
+              <span class="sub-stat-num" id="meterReels">14 Reels</span>
+            </div>
+            <div class="sub-stat-item">
+              <span class="sub-stat-label">ACTIVE TRUCKS</span>
+              <span class="sub-stat-num">3 Trucks</span>
+            </div>
+            <div class="sub-stat-item">
+              <span class="sub-stat-label">DAY TARGET</span>
+              <span class="sub-stat-num">12.5 MT</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Active Challan Builder -->
+        <div class="card-modern">
+          <div class="card-head">
+            <div class="card-title-text">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--brand)" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+              Create Gate Pass Challan
+            </div>
+            <span class="chip-badge chip-blue">DRAFT #84</span>
+          </div>
+
+          <div class="field-group">
+            <label class="field-label">Customer / Party Name</label>
+            <select class="input-clean" id="partySelect">
+              <option value="Baba Tissue Pvt Ltd">Baba Tissue Pvt. Ltd. (Surat)</option>
+              <option value="Royal Paper Converters">Royal Paper Converters (Ahmedabad)</option>
+              <option value="Mahavir Packagings">Mahavir Packagings (Vapi)</option>
+            </select>
+          </div>
+
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
+            <div class="field-group">
+              <label class="field-label">Vehicle / Truck No</label>
+              <input type="text" class="input-clean" value="GJ-05-BX-4421" style="font-family:'JetBrains Mono',monospace;text-transform:uppercase;">
+            </div>
+            <div class="field-group">
+              <label class="field-label">Driver Contact</label>
+              <input type="text" class="input-clean" value="98251-XXXXX" placeholder="Phone no">
+            </div>
+          </div>
+
+          <!-- Loaded Reels in Challan -->
+          <div class="queue-header">
+            <div class="queue-title">Loaded Reels (<span id="queueCount">2</span>)</div>
+            <button onclick="setTab('scanner')" style="background:none;border:none;color:var(--brand);font-size:12px;font-weight:700;cursor:pointer;">+ Scan to Add</button>
+          </div>
+
+          <div id="loadedReelsList">
+            <!-- Item 1 -->
+            <div class="reel-item-row" id="reel-RL-1048">
+              <div class="reel-item-left">
+                <div class="reel-icon-box">01</div>
+                <div>
+                  <div class="reel-no">RL-1048</div>
+                  <div class="reel-specs">Napkin 16 GSM · 30 cm · Virgin</div>
+                </div>
+              </div>
+              <div style="display:flex;align-items:center;">
+                <div class="reel-wt-badge">1,240 kg</div>
+                <button class="btn-delete-reel" onclick="removeLoadedReel('RL-1048', 1240)" title="Remove">✕</button>
+              </div>
+            </div>
+
+            <!-- Item 2 -->
+            <div class="reel-item-row" id="reel-RL-1047">
+              <div class="reel-item-left">
+                <div class="reel-icon-box">02</div>
+                <div>
+                  <div class="reel-no">RL-1047</div>
+                  <div class="reel-specs">Toilet Tissue 18 GSM · 22 cm</div>
+                </div>
+              </div>
+              <div style="display:flex;align-items:center;">
+                <div class="reel-wt-badge">980 kg</div>
+                <button class="btn-delete-reel" onclick="removeLoadedReel('RL-1047', 980)" title="Remove">✕</button>
+              </div>
+            </div>
+          </div>
+
+          <!-- Total Calculation Row -->
+          <div style="display:flex;justify-content:space-between;align-items:center;padding:12px 14px;background:#F8FAFC;border-radius:var(--radius-md);margin:14px 0 16px;border:1px dashed #CBD5E1;">
+            <div>
+              <div style="font-size:11px;font-weight:700;color:var(--text-muted);text-transform:uppercase;">Challan Total Weight</div>
+              <div style="font-size:18px;font-weight:900;color:#0F172A;font-family:'JetBrains Mono',monospace;" id="challanTotalWt">2,220 KG</div>
+            </div>
+            <span class="chip-badge chip-green">✓ Ready to Dispatch</span>
+          </div>
+
+          <button class="btn-action-primary" onclick="completeDispatch()">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M14 18V6a2 2 0 0 0-2-2H4a2 2 0 0 0-2 2v11a1 1 0 0 0 1 1h2"/><path d="M15 18H9"/><path d="M19 18h2a1 1 0 0 0 1-1v-3.65a1 1 0 0 0-.22-.624l-3.48-4.35A1 1 0 0 0 17.52 8H14"/><circle cx="17" cy="18" r="2"/><circle cx="7" cy="18" r="2"/></svg>
+            Print Gate Pass & Dispatch
+          </button>
+        </div>
+
+        <!-- Recent Dispatches -->
+        <div style="margin-top:20px;">
+          <div class="card-head">
+            <div class="card-title-text">Recent Gate Passes</div>
+            <span style="font-size:12px;color:var(--text-muted);font-weight:600;">Today</span>
+          </div>
+
+          <div class="card-modern" style="padding:14px;display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;">
+            <div style="display:flex;gap:12px;align-items:center;">
+              <div style="width:38px;height:38px;border-radius:10px;background:#ECFDF5;color:#059669;display:flex;align-items:center;justify-content:center;font-weight:800;">
+                ✓
+              </div>
+              <div>
+                <div style="font-size:13px;font-weight:800;color:#0F172A;">GP-2026-089 · Baba Tissue</div>
+                <div style="font-size:11px;color:var(--text-muted);font-weight:600;">4 Reels · 4,820 KG · GJ-05-BX-4421</div>
+              </div>
+            </div>
+            <span class="chip-badge chip-green">Dispatched</span>
+          </div>
+
+          <div class="card-modern" style="padding:14px;display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;">
+            <div style="display:flex;gap:12px;align-items:center;">
+              <div style="width:38px;height:38px;border-radius:10px;background:#ECFDF5;color:#059669;display:flex;align-items:center;justify-content:center;font-weight:800;">
+                ✓
+              </div>
+              <div>
+                <div style="font-size:13px;font-weight:800;color:#0F172A;">GP-2026-088 · Royal Paper</div>
+                <div style="font-size:11px;color:var(--text-muted);font-weight:600;">3 Reels · 3,630 KG · GJ-27-TT-9910</div>
+              </div>
+            </div>
+            <span class="chip-badge chip-green">Dispatched</span>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- ============================================== -->
+      <!-- TAB 2: INDUSTRIAL QR / BARCODE SCANNER         -->
+      <!-- ============================================== -->
+      <div class="view-panel" id="tab-scanner">
+
+        <!-- Live Camera Viewfinder -->
+        <div class="scanner-viewfinder">
+          <div class="video-mock-bg"></div>
+          <div class="grid-lines"></div>
+
+          <!-- Aim Target Box -->
+          <div class="scanner-box">
+            <div class="corner-tl"></div>
+            <div class="corner-tr"></div>
+            <div class="corner-bl"></div>
+            <div class="corner-br"></div>
+            <div class="laser-line"></div>
+          </div>
+
+          <div class="scanner-controls">
+            <button class="scanner-tool-btn" id="torchBtn" onclick="toggleTorch()">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
+              Torch
+            </button>
+            <div style="color:rgba(255,255,255,0.7);font-size:11px;font-weight:700;">Aim at Reel QR Code</div>
+            <button class="scanner-tool-btn active" id="audioBtn" onclick="toggleSound()">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><path d="M15.54 8.46a5 5 0 0 1 0 7.07"/></svg>
+              Beep ON
+            </button>
+          </div>
+        </div>
+
+        <!-- Quick Manual / Barcode Gun Input -->
+        <div style="display:flex;gap:8px;margin-bottom:14px;">
+          <input type="text" id="scannerInput" class="input-clean" placeholder="Type or Barcode Gun Reel # (e.g. RL-1049)" style="font-family:'JetBrains Mono',monospace;text-transform:uppercase;">
+          <button class="btn-action-primary" style="width:auto;padding:12px 18px;" onclick="handleManualScan()">
+            Scan
+          </button>
+        </div>
+
+        <!-- Scanned Reel Result (Appears when scanned) -->
+        <div class="scanned-reel-preview" id="scanSuccessCard">
+          <div style="display:flex;justify-content:space-between;align-items:flex-start;">
+            <div>
+              <span class="chip-badge chip-green" style="margin-bottom:6px;">✓ VERIFIED IN STOCK</span>
+              <div style="font-family:'JetBrains Mono',monospace;font-size:20px;font-weight:900;color:#0F172A;" id="scannedReelNo">RL-1049</div>
+            </div>
+            <div style="text-align:right;">
+              <div style="font-size:10px;font-weight:700;color:var(--text-muted);text-transform:uppercase;">NET WEIGHT</div>
+              <div style="font-family:'JetBrains Mono',monospace;font-size:18px;font-weight:900;color:#059669;" id="scannedReelWt">1,310 KG</div>
+            </div>
+          </div>
+
+          <div class="reel-meta-grid">
+            <div class="meta-box">
+              <div class="meta-lbl">Paper Quality</div>
+              <div class="meta-val" id="scannedQuality">Napkin Tissue (Virgin)</div>
+            </div>
+            <div class="meta-box">
+              <div class="meta-lbl">GSM & Deckle Size</div>
+              <div class="meta-val" id="scannedGsmSize">16 GSM · 30.0 cm</div>
+            </div>
+            <div class="meta-box">
+              <div class="meta-lbl">Rewinder M/C #</div>
+              <div class="meta-val">Rewinder #2 (Shift A)</div>
+            </div>
+            <div class="meta-box">
+              <div class="meta-lbl">QC Clearance</div>
+              <div class="meta-val" style="color:#059669;">Grade A · Passed</div>
+            </div>
+          </div>
+
+          <button class="btn-action-success" onclick="addScannedReelToChallan()">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+            Add to Current Dispatch Challan
+          </button>
+          
+          <button class="btn-action-secondary" onclick="simulateNextScan()">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12a9 9 0 1 1-9-9c2.52 0 4.93 1 6.74 2.74L21 8"/><path d="M21 3v5h-5"/></svg>
+            Simulate Next Reel Scan
+          </button>
+        </div>
+
+        <!-- Quick Scan Preset Buttons for easy mobile demo -->
+        <div class="card-modern" style="margin-top:14px;padding:14px;">
+          <div style="font-size:11px;font-weight:700;color:var(--text-muted);text-transform:uppercase;margin-bottom:8px;">
+            Tap to test instant scan:
+          </div>
+          <div style="display:flex;gap:6px;flex-wrap:wrap;">
+            <button class="f-pill active" onclick="loadSampleReel('RL-1049', 'Napkin Tissue (Virgin)', '16 GSM · 30.0 cm', 1310)">RL-1049 (1,310 kg)</button>
+            <button class="f-pill" onclick="loadSampleReel('RL-1050', 'Toilet Paper (Soft)', '18 GSM · 22.5 cm', 1150)">RL-1050 (1,150 kg)</button>
+            <button class="f-pill" onclick="loadSampleReel('RL-1051', 'Facial Tissue (Ultra)', '13.5 GSM · 40 cm', 1420)">RL-1051 (1,420 kg)</button>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- ============================================== -->
+      <!-- TAB 3: FINISHED STOCK INVENTORY               -->
+      <!-- ============================================== -->
+      <div class="view-panel" id="tab-stock">
+
+        <!-- Search Bar -->
+        <div style="position:relative;margin-bottom:12px;">
+          <input type="text" class="input-clean" placeholder="Search Reel #, GSM, Size, or Quality..." style="padding-left:38px;">
+          <svg style="position:absolute;left:14px;top:13px;color:#94A3B8;" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+        </div>
+
+        <!-- Filter Chips -->
+        <div class="filter-pills-row">
+          <button class="f-pill active">All Categories (48)</button>
+          <button class="f-pill">Napkin 16 GSM</button>
+          <button class="f-pill">Toilet 18 GSM</button>
+          <button class="f-pill">Facial 13 GSM</button>
+          <button class="f-pill">Kraft 24 GSM</button>
+        </div>
+
+        <!-- Stock Cards -->
+        <div class="stock-card">
+          <div>
+            <div class="stock-title">Napkin Tissue · 16 GSM · 30 cm</div>
+            <div class="stock-desc">Virgin Pulp · 2 Ply · Bay A1 to A4</div>
+          </div>
+          <div class="stock-qty-box">
+            <div class="stock-qty-num">24 Reels</div>
+            <div class="stock-qty-sub">31,200 KG</div>
+          </div>
+        </div>
+
+        <div class="stock-card">
+          <div>
+            <div class="stock-title">Toilet Tissue · 18 GSM · 22.5 cm</div>
+            <div class="stock-desc">Semi-Virgin · 1 Ply · Bay B2</div>
+          </div>
+          <div class="stock-qty-box">
+            <div class="stock-qty-num">16 Reels</div>
+            <div class="stock-qty-sub">18,800 KG</div>
+          </div>
+        </div>
+
+        <div class="stock-card">
+          <div>
+            <div class="stock-title">Facial Tissue · 13.5 GSM · 40 cm</div>
+            <div class="stock-desc">Ultra Soft · 2 Ply · Bay C1</div>
+          </div>
+          <div class="stock-qty-box">
+            <div class="stock-qty-num">8 Reels</div>
+            <div class="stock-qty-sub">12,450 KG</div>
+          </div>
+        </div>
+
+        <div class="stock-card">
+          <div>
+            <div class="stock-title">Towel Grade · 22 GSM · 45 cm</div>
+            <div class="stock-desc">High Absorb · Bay D1</div>
+          </div>
+          <div class="stock-qty-box">
+            <div class="stock-qty-num">4 Reels</div>
+            <div class="stock-qty-sub">5,200 KG</div>
+          </div>
+        </div>
+
+      </div>
+
+    </div>
+
+    <!-- ─── Floating Action Button (Quick Scanner) ─── -->
+    <button class="fab-bottom" id="quickFab" onclick="setTab('scanner')">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M3 7V5a2 2 0 0 1 2-2h2"/><path d="M17 3h2a2 2 0 0 1 2 2v2"/><path d="M21 17v2a2 2 0 0 1-2 2h-2"/><path d="M7 21H5a2 2 0 0 1-2-2v-2"/><circle cx="12" cy="12" r="3"/></svg>
+      Scan Reel
+    </button>
+
+    <!-- ─── Bottom Mobile Nav ─── -->
+    <nav class="tabbar">
+      <button class="tabbar-item">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+        Home
+      </button>
+      <button class="tabbar-item">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 20a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V8l-7 5V8l-7 5V4a2 2 0 0 0-2-2H4a2 2 0 0 0-2 2Z"/></svg>
+        Plant
+      </button>
+      <button class="tabbar-item active">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M14 18V6a2 2 0 0 0-2-2H4a2 2 0 0 0-2 2v11a1 1 0 0 0 1 1h2"/><path d="M15 18H9"/><path d="M19 18h2a1 1 0 0 0 1-1v-3.65a1 1 0 0 0-.22-.624l-3.48-4.35A1 1 0 0 0 17.52 8H14"/><circle cx="17" cy="18" r="2"/><circle cx="7" cy="18" r="2"/></svg>
+        Dispatch
+      </button>
+      <button class="tabbar-item">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>
+        Reports
+      </button>
+    </nav>
+
+  </div>
+
+  <script>
+    // State
+    let loadedReels = [
+      { no: 'RL-1048', quality: 'Napkin 16 GSM', size: '30 cm', wt: 1240 },
+      { no: 'RL-1047', quality: 'Toilet Tissue 18 GSM', size: '22 cm', wt: 980 }
+    ];
+    let currentScannedReel = { no: 'RL-1049', quality: 'Napkin Tissue (Virgin)', size: '16 GSM · 30.0 cm', wt: 1310 };
+    let soundEnabled = true;
+
+    // Web Audio Beep generator for tactile scanner feedback
+    function playBeep() {
+      if (!soundEnabled) return;
+      try {
+        const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        const osc = audioCtx.createOscillator();
+        const gain = audioCtx.createGain();
+        osc.connect(gain);
+        gain.connect(audioCtx.destination);
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(880, audioCtx.currentTime); // A5 note
+        gain.gain.setValueAtTime(0.2, audioCtx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.12);
+        osc.start();
+        osc.stop(audioCtx.currentTime + 0.12);
+      } catch (e) {}
+    }
+
+    function toggleSound() {
+      soundEnabled = !soundEnabled;
+      const btn = document.getElementById('audioBtn');
+      if (soundEnabled) {
+        btn.classList.add('active');
+        btn.innerHTML = `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><path d="M15.54 8.46a5 5 0 0 1 0 7.07"/></svg> Beep ON`;
+        playBeep();
+      } else {
+        btn.classList.remove('active');
+        btn.innerHTML = `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><line x1="23" y1="9" x2="17" y2="15"/><line x1="17" y1="9" x2="23" y2="15"/></svg> Muted`;
+      }
+    }
+
+    function toggleTorch() {
+      const btn = document.getElementById('torchBtn');
+      btn.classList.toggle('active');
+      showToast(btn.classList.contains('active') ? 'Torch Flash Turned ON' : 'Torch Turned OFF');
+    }
+
+    function setTab(tabName) {
+      document.querySelectorAll('.segment-tab').forEach(btn => {
+        btn.classList.toggle('active', btn.dataset.tab === tabName);
+      });
+      document.querySelectorAll('.view-panel').forEach(panel => {
+        panel.classList.toggle('active', panel.id === `tab-${tabName}`);
+      });
+
+      const fab = document.getElementById('quickFab');
+      if (tabName === 'scanner') {
+        fab.style.display = 'none';
+      } else {
+        fab.style.display = 'flex';
+      }
+    }
+
+    function triggerScanModal() {
+      setTab('scanner');
+    }
+
+    function loadSampleReel(no, quality, size, wt) {
+      currentScannedReel = { no, quality, size, wt };
+      document.getElementById('scannedReelNo').textContent = no;
+      document.getElementById('scannedQuality').textContent = quality;
+      document.getElementById('scannedGsmSize').textContent = size;
+      document.getElementById('scannedReelWt').textContent = wt.toLocaleString() + ' KG';
+      playBeep();
+      showToast(`Scanned ${no} (${wt} kg)`);
+    }
+
+    function handleManualScan() {
+      const input = document.getElementById('scannerInput');
+      const val = input.value.trim().toUpperCase() || 'RL-1049';
+      loadSampleReel(val, 'Napkin Tissue (Virgin)', '16 GSM · 30.0 cm', 1310);
+      input.value = '';
+    }
+
+    function simulateNextScan() {
+      const randomId = 'RL-' + Math.floor(1050 + Math.random() * 50);
+      const wt = Math.floor(1000 + Math.random() * 500);
+      loadSampleReel(randomId, 'Napkin Tissue 16 GSM', '30 cm · Virgin', wt);
+    }
+
+    function addScannedReelToChallan() {
+      if (loadedReels.some(r => r.no === currentScannedReel.no)) {
+        showToast(`${currentScannedReel.no} is already in the Challan!`);
+        return;
+      }
+
+      loadedReels.push({ ...currentScannedReel });
+      playBeep();
+      showToast(`Added ${currentScannedReel.no} to Challan!`);
+      renderLoadedReels();
+      setTab('dispatch');
+    }
+
+    function removeLoadedReel(reelNo, wt) {
+      loadedReels = loadedReels.filter(r => r.no !== reelNo);
+      renderLoadedReels();
+      showToast(`Removed ${reelNo}`);
+    }
+
+    function renderLoadedReels() {
+      const list = document.getElementById('loadedReelsList');
+      let totalWt = 0;
+
+      list.innerHTML = loadedReels.map((reel, idx) => {
+        totalWt += reel.wt;
+        return `
+          <div class="reel-item-row" id="reel-${reel.no}">
+            <div class="reel-item-left">
+              <div class="reel-icon-box">${(idx + 1).toString().padStart(2, '0')}</div>
+              <div>
+                <div class="reel-no">${reel.no}</div>
+                <div class="reel-specs">${reel.quality} · ${reel.size || ''}</div>
+              </div>
+            </div>
+            <div style="display:flex;align-items:center;">
+              <div class="reel-wt-badge">${reel.wt.toLocaleString()} kg</div>
+              <button class="btn-delete-reel" onclick="removeLoadedReel('${reel.no}', ${reel.wt})" title="Remove">✕</button>
+            </div>
+          </div>
+        `;
+      }).join('');
+
+      document.getElementById('queueCount').textContent = loadedReels.length;
+      document.getElementById('headerCount').textContent = loadedReels.length;
+      document.getElementById('challanTotalWt').textContent = `${totalWt.toLocaleString()} KG`;
+    }
+
+    function completeDispatch() {
+      if (loadedReels.length === 0) {
+        showToast('Please add at least 1 reel before dispatch!');
+        return;
+      }
+      playBeep();
+      showToast('Gate Pass GP-2026-090 Created & Dispatched!');
+      loadedReels = [];
+      renderLoadedReels();
+    }
+
+    function showToast(msg) {
+      const toast = document.getElementById('toast');
+      document.getElementById('toastMsg').textContent = msg;
+      toast.classList.add('show');
+      setTimeout(() => toast.classList.remove('show'), 2500);
+    }
+  </script>
+</body>
+</html>
