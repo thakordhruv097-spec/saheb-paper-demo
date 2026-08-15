@@ -15,7 +15,31 @@ import {
 import type { PackingSlip, Reel, PendingOrder } from '../../data/types';
 import * as XLSX from 'xlsx';
 import { CustomDatePickerModal } from '../../components/CustomDatePickerModal';
-import { Truck, Plus, FileText, CheckCircle, FileSpreadsheet, AlertTriangle, Printer, Trash2, Search, ListFilter, PackageCheck, Package, Calendar, ChevronDown, ChevronUp } from 'lucide-react';
+import {
+  Truck,
+  Plus,
+  FileText,
+  CheckCircle,
+  FileSpreadsheet,
+  AlertTriangle,
+  Printer,
+  Trash2,
+  Search,
+  ListFilter,
+  PackageCheck,
+  Package,
+  Calendar,
+  ChevronDown,
+  ChevronUp,
+  Zap,
+  SlidersHorizontal,
+  LayoutGrid,
+  List,
+  CheckSquare,
+  Square,
+  X,
+  RotateCcw,
+} from 'lucide-react';
 
 interface DispatchViewProps {
   initialTab?: 'orders' | 'create_slip' | 'slips_list';
@@ -42,6 +66,23 @@ export const DispatchView: React.FC<DispatchViewProps> = ({ initialTab = 'orders
     setActiveTab(initialTab);
   }, [initialTab]);
 
+  // Tactile Web Audio Beep Sound
+  const playBeep = () => {
+    try {
+      const audioCtx = new (window.AudioContext || (window as any).webkitAudioContext)();
+      const osc = audioCtx.createOscillator();
+      const gain = audioCtx.createGain();
+      osc.type = 'sine';
+      osc.frequency.setValueAtTime(880, audioCtx.currentTime);
+      gain.gain.setValueAtTime(0.12, audioCtx.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.1);
+      osc.connect(gain);
+      gain.connect(audioCtx.destination);
+      osc.start();
+      osc.stop(audioCtx.currentTime + 0.1);
+    } catch (e) {}
+  };
+
   // Success / Error States
   const [successMsg, setSuccessMsg] = useState('');
   const [errorMsg, setErrorMsg] = useState('');
@@ -50,6 +91,13 @@ export const DispatchView: React.FC<DispatchViewProps> = ({ initialTab = 'orders
   const [orderSearchQuery, setOrderSearchQuery] = useState('');
   const [slipSearchQuery, setSlipSearchQuery] = useState('');
   const [showAllReels, setShowAllReels] = useState(false);
+
+  // Fast Reel Selection Filter States
+  const [reelSearchQuery, setReelSearchQuery] = useState('');
+  const [reelGsmFilter, setReelGsmFilter] = useState<'ALL' | number>('ALL');
+  const [reelGradeFilter, setReelGradeFilter] = useState<'ALL' | 'A' | 'B'>('ALL');
+  const [reelViewMode, setReelViewMode] = useState<'grid' | 'table'>('grid');
+  const [barcodeGunInput, setBarcodeGunInput] = useState('');
 
   const filteredOrders = useMemo(() => {
     const q = orderSearchQuery.toLowerCase().trim();
@@ -113,6 +161,76 @@ export const DispatchView: React.FC<DispatchViewProps> = ({ initialTab = 'orders
     return reels.filter(r => r.status === 'IN_STOCK' || r.status === 'IN_STOCK_B');
   }, [reels]);
 
+  // Unique GSMs present in available reels for quick filter pills
+  const uniqueGsms = useMemo(() => {
+    const set = new Set<number>();
+    availableReels.forEach(r => {
+      if (r.gsm) set.add(r.gsm);
+    });
+    return Array.from(set).sort((a, b) => a - b);
+  }, [availableReels]);
+
+  // Real-time filtered available reels
+  const filteredAvailableReels = useMemo(() => {
+    return availableReels.filter(r => {
+      if (reelGsmFilter !== 'ALL' && r.gsm !== reelGsmFilter) return false;
+      if (reelGradeFilter !== 'ALL' && (r.qcGrade || 'A').toUpperCase() !== reelGradeFilter) return false;
+      if (reelSearchQuery.trim()) {
+        const q = reelSearchQuery.toLowerCase().trim();
+        const matchReelNo = r.reelNo.toLowerCase().includes(q);
+        const matchProd = (r.product || '').toLowerCase().includes(q);
+        const matchGsm = String(r.gsm).includes(q);
+        const matchWeight = String(r.weight).includes(q);
+        if (!matchReelNo && !matchProd && !matchGsm && !matchWeight) return false;
+      }
+      return true;
+    });
+  }, [availableReels, reelGsmFilter, reelGradeFilter, reelSearchQuery]);
+
+  // Fast Batch Selection Actions
+  const handleSelectAllFiltered = () => {
+    const allNos = filteredAvailableReels.map(r => r.reelNo);
+    setSelectedReelNos(prev => Array.from(new Set([...prev, ...allNos])));
+    playBeep();
+  };
+
+  const handleDeselectAllFiltered = () => {
+    const filteredSet = new Set(filteredAvailableReels.map(r => r.reelNo));
+    setSelectedReelNos(prev => prev.filter(no => !filteredSet.has(no)));
+    playBeep();
+  };
+
+  const handleSelectTopN = (n: number) => {
+    const unselected = filteredAvailableReels.filter(r => !selectedReelNos.includes(r.reelNo));
+    const toAdd = unselected.slice(0, n).map(r => r.reelNo);
+    if (toAdd.length > 0) {
+      setSelectedReelNos(prev => [...prev, ...toAdd]);
+      playBeep();
+    }
+  };
+
+  const handleBarcodeGunSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    const raw = barcodeGunInput.trim();
+    if (!raw) return;
+    const codes = raw.split(/[\s,]+/).filter(Boolean);
+    const validCodesToAdd: string[] = [];
+    codes.forEach(code => {
+      const found = availableReels.find(r => r.reelNo.toUpperCase() === code.toUpperCase());
+      if (found) {
+        validCodesToAdd.push(found.reelNo);
+      }
+    });
+    if (validCodesToAdd.length > 0) {
+      setSelectedReelNos(prev => Array.from(new Set([...prev, ...validCodesToAdd])));
+      playBeep();
+      setBarcodeGunInput('');
+      setSuccessMsg(`Added ${validCodesToAdd.length} reel(s) via barcode gun: ${validCodesToAdd.join(', ')}`);
+    } else {
+      setErrorMsg(`Reel '${raw}' not found in active available warehouse stock.`);
+    }
+  };
+
   // Handle Order submit
   const handleOrderSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -155,9 +273,11 @@ export const DispatchView: React.FC<DispatchViewProps> = ({ initialTab = 'orders
 
   // Toggle reel selection
   const handleToggleReel = (rNo: string) => {
-    setSelectedReelNos(prev =>
-      prev.includes(rNo) ? prev.filter(n => n !== rNo) : [...prev, rNo]
-    );
+    setSelectedReelNos(prev => {
+      const exists = prev.includes(rNo);
+      playBeep();
+      return exists ? prev.filter(n => n !== rNo) : [...prev, rNo];
+    });
   };
 
   // Handle Draft Packing Slip creation
@@ -168,8 +288,8 @@ export const DispatchView: React.FC<DispatchViewProps> = ({ initialTab = 'orders
 
     const targetSlipNo = slipNo.trim() || autoSlipNo;
 
-    if (!slipPartyId || !slipVehicleId || selectedReelNos.length === 0 || !driverSig || !receiverSig) {
-      setErrorMsg('Please select Party, Vehicle, at least 1 Reel, and input Driver + Receiver signatures');
+    if (!slipPartyId || !slipVehicleId.trim() || selectedReelNos.length === 0) {
+      setErrorMsg('Please select Customer Party, enter Vehicle / Truck No, and select at least 1 Reel.');
       return;
     }
 
@@ -183,10 +303,10 @@ export const DispatchView: React.FC<DispatchViewProps> = ({ initialTab = 'orders
       slipNo: targetSlipNo,
       date: slipDate,
       partyId: slipPartyId,
-      vehicleId: slipVehicleId,
+      vehicleId: slipVehicleId.trim(),
       reelNos: [...selectedReelNos],
-      driverSignature: driverSig,
-      receiverSignature: receiverSig,
+      driverSignature: driverSig.trim() || 'Driver On Duty',
+      receiverSignature: receiverSig.trim() || 'Gate Verified',
       status: 'DRAFT',
     };
 
@@ -625,37 +745,43 @@ export const DispatchView: React.FC<DispatchViewProps> = ({ initialTab = 'orders
 
             <div className="grid grid-cols-2 gap-2.5">
               <div>
-                <label className="block text-[11px] font-extrabold text-slate-700 dark:text-slate-300 mb-1.5">
-                  Vehicle / Truck No
+                <label className="block text-[11px] font-extrabold text-slate-700 dark:text-slate-300 mb-1.5 flex items-center justify-between">
+                  <span>Vehicle / Truck No</span>
                 </label>
-                <select
-                  value={slipVehicleId}
-                  onChange={e => {
-                    setSlipVehicleId(e.target.value);
-                    const vObj = vehicles.find(v => v.id === e.target.value);
-                    if (vObj && !driverSig) {
-                      setDriverSig(vObj.driverName || 'Driver');
-                    }
-                  }}
-                  className="w-full py-2.5 px-3 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-2xl text-xs font-bold focus:outline-none dark:text-white cursor-pointer font-mono"
-                >
-                  <option value="">-- Truck No --</option>
-                  {vehicles.map(v => (
-                    <option key={v.id} value={v.id}>{v.vehicleNo}</option>
-                  ))}
-                </select>
+                <div className="relative">
+                  <input
+                    type="text"
+                    list="dispatch-truck-suggestions"
+                    value={slipVehicleId}
+                    onChange={e => {
+                      const val = e.target.value;
+                      setSlipVehicleId(val);
+                      const vObj = vehicles.find(v => v.vehicleNo.toLowerCase() === val.toLowerCase() || v.id === val);
+                      if (vObj && vObj.driverName && !driverSig) {
+                        setDriverSig(vObj.driverName);
+                      }
+                    }}
+                    className="w-full py-2.5 px-3 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-2xl text-xs font-bold focus:outline-none dark:text-white uppercase font-mono placeholder:normal-case placeholder:font-sans"
+                    placeholder="e.g. GJ-05-BX-4921"
+                  />
+                  <datalist id="dispatch-truck-suggestions">
+                    {vehicles.map(v => (
+                      <option key={v.id} value={v.vehicleNo}>{v.driverName ? `Driver: ${v.driverName}` : ''}</option>
+                    ))}
+                  </datalist>
+                </div>
               </div>
 
               <div>
                 <label className="block text-[11px] font-extrabold text-slate-700 dark:text-slate-300 mb-1.5">
-                  Driver Contact / Sig
+                  Driver Name / Mobile
                 </label>
                 <input
                   type="text"
                   value={driverSig}
                   onChange={e => setDriverSig(e.target.value)}
                   className="w-full py-2.5 px-3 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-2xl text-xs font-bold focus:outline-none dark:text-white font-mono"
-                  placeholder="Driver Name / Mobile"
+                  placeholder="e.g. Ramesh (98765-43210)"
                 />
               </div>
             </div>
@@ -743,35 +869,292 @@ export const DispatchView: React.FC<DispatchViewProps> = ({ initialTab = 'orders
             </button>
           </div>
 
-          {/* Reel Selection Ledger (2/3 width) */}
-          <div className="lg:col-span-2 bg-white dark:bg-surface-dark border border-slate-200 dark:border-slate-700/80 rounded-2xl p-4 sm:p-5 shadow-xs space-y-3">
-            <div className="flex justify-between items-center border-b pb-2 dark:border-slate-700/80">
-              <h3 className="text-xs font-black text-slate-800 dark:text-white uppercase tracking-wider">
-                Select Available Warehouse Reels ({selectedReelNos.length} Selected)
-              </h3>
-              {availableReels.length > 0 && (
-                <span className="text-[10px] font-bold text-slate-400 font-mono">
-                  Showing {showAllReels ? availableReels.length : Math.min(6, availableReels.length)} of {availableReels.length} Reels
-                </span>
-              )}
+          {/* Reel Selection Ledger (2/3 width) - FAST BATCH & MULTI-SELECTION ENGINE */}
+          <div className="lg:col-span-2 bg-white dark:bg-surface-dark border border-slate-200 dark:border-slate-700/80 rounded-3xl p-4 sm:p-5 shadow-xs space-y-3.5 text-left">
+            
+            {/* 1. Header with Tally & View Switcher */}
+            <div className="flex flex-wrap items-center justify-between gap-2 border-b border-slate-100 dark:border-slate-800 pb-3">
+              <div className="space-y-0.5">
+                <div className="flex items-center gap-2">
+                  <h3 className="text-xs font-black text-slate-900 dark:text-white uppercase tracking-wider">
+                    Warehouse Stock Reels
+                  </h3>
+                  <span className="px-2 py-0.5 rounded-full bg-blue-50 text-blue-600 dark:bg-blue-950/60 dark:text-blue-300 text-[10px] font-black font-mono">
+                    {selectedReelNos.length} Selected ({reels.filter(r => selectedReelNos.includes(r.reelNo)).reduce((s, r) => s + (r.weight || 0), 0).toLocaleString()} kg)
+                  </span>
+                </div>
+                <p className="text-[11px] text-slate-500 font-semibold">
+                  Showing {filteredAvailableReels.length} of {availableReels.length} available reels
+                </p>
+              </div>
+
+              {/* View Switcher: Grid vs Table */}
+              <div className="flex items-center gap-1 bg-slate-100 dark:bg-slate-900 p-1 rounded-xl">
+                <button
+                  type="button"
+                  onClick={() => setReelViewMode('grid')}
+                  className={`p-1.5 rounded-lg transition cursor-pointer ${
+                    reelViewMode === 'grid'
+                      ? 'bg-white dark:bg-slate-800 text-blue-600 shadow-xs'
+                      : 'text-slate-500 hover:text-slate-800 dark:hover:text-white'
+                  }`}
+                  title="Card Grid View"
+                >
+                  <LayoutGrid className="h-3.5 w-3.5" />
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setReelViewMode('table')}
+                  className={`p-1.5 rounded-lg transition cursor-pointer ${
+                    reelViewMode === 'table'
+                      ? 'bg-white dark:bg-slate-800 text-blue-600 shadow-xs'
+                      : 'text-slate-500 hover:text-slate-800 dark:hover:text-white'
+                  }`}
+                  title="Compact High-Density Table View"
+                >
+                  <List className="h-3.5 w-3.5" />
+                </button>
+              </div>
             </div>
 
-            {availableReels.length === 0 ? (
-              <p className="text-xs text-slate-500 py-8 text-center bg-slate-50 dark:bg-slate-900/60 border border-dashed border-slate-200 dark:border-slate-700 rounded-xl">
-                No A-Grade or B-Grade reels in warehouse stock. Log QC tests first.
+            {/* 2. Fast Barcode Gun Multi-Add Bar & Real-time Search */}
+            <div className="grid grid-cols-1 sm:grid-cols-12 gap-2">
+              {/* Barcode Gun / Manual Rapid Entry */}
+              <div className="sm:col-span-7 flex gap-1.5">
+                <input
+                  type="text"
+                  value={barcodeGunInput}
+                  onChange={e => setBarcodeGunInput(e.target.value)}
+                  onKeyDown={e => {
+                    if (e.key === 'Enter') {
+                      handleBarcodeGunSubmit(e);
+                    }
+                  }}
+                  placeholder="⚡ Type / Gun Scan Reel (e.g. RL-1048) & Enter..."
+                  className="w-full py-2 px-3 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-xs font-bold focus:outline-none dark:text-white font-mono"
+                />
+                <button
+                  type="button"
+                  onClick={handleBarcodeGunSubmit}
+                  className="px-3.5 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-xs font-black uppercase tracking-wider shrink-0 cursor-pointer shadow-sm flex items-center gap-1"
+                >
+                  <Plus className="h-3.5 w-3.5" />
+                  <span>Add</span>
+                </button>
+              </div>
+
+              {/* Text Search Filter */}
+              <div className="sm:col-span-5 relative">
+                <Search className="h-3.5 w-3.5 text-slate-400 absolute left-2.5 top-1/2 -translate-y-1/2" />
+                <input
+                  type="text"
+                  value={reelSearchQuery}
+                  onChange={e => setReelSearchQuery(e.target.value)}
+                  placeholder="Filter by No, Weight..."
+                  className="w-full py-2 pl-8 pr-2.5 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-xs font-bold focus:outline-none dark:text-white"
+                />
+              </div>
+            </div>
+
+            {/* 3. Fast Batch Selection Buttons & GSM Filter Chips */}
+            <div className="space-y-2 pt-1 border-t border-slate-100 dark:border-slate-800">
+              
+              {/* Quick 1-Click Batch Actions */}
+              <div className="flex flex-wrap items-center gap-1.5">
+                <span className="text-[10px] font-black text-slate-400 uppercase tracking-wider mr-1">
+                  Batch Select:
+                </span>
+                
+                <button
+                  type="button"
+                  onClick={handleSelectAllFiltered}
+                  className="px-2.5 py-1 rounded-lg bg-blue-50 dark:bg-blue-950/50 hover:bg-blue-100 text-blue-700 dark:text-blue-300 text-xs font-extrabold border border-blue-200 dark:border-blue-800 cursor-pointer transition flex items-center gap-1"
+                >
+                  <CheckSquare className="h-3 w-3" />
+                  <span>Select All Filtered ({filteredAvailableReels.length})</span>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => handleSelectTopN(5)}
+                  className="px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 text-slate-700 dark:text-slate-300 text-xs font-extrabold cursor-pointer transition"
+                >
+                  + 5 Reels
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => handleSelectTopN(10)}
+                  className="px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 text-slate-700 dark:text-slate-300 text-xs font-extrabold cursor-pointer transition"
+                >
+                  + 10 Reels
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => handleSelectTopN(20)}
+                  className="px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 text-slate-700 dark:text-slate-300 text-xs font-extrabold cursor-pointer transition"
+                >
+                  + 20 Reels
+                </button>
+
+                {selectedReelNos.length > 0 && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setSelectedReelNos([]);
+                      playBeep();
+                    }}
+                    className="px-2.5 py-1 rounded-lg bg-red-50 dark:bg-red-950/40 hover:bg-red-100 text-red-600 dark:text-red-400 text-xs font-extrabold border border-red-200 dark:border-red-800 cursor-pointer transition ml-auto flex items-center gap-1"
+                  >
+                    <X className="h-3 w-3" />
+                    <span>Clear Selection</span>
+                  </button>
+                )}
+              </div>
+
+              {/* GSM Filter Chips */}
+              <div className="flex flex-wrap items-center gap-1.5 pt-1">
+                <span className="text-[10px] font-black text-slate-400 uppercase tracking-wider mr-1">
+                  GSM Filter:
+                </span>
+
+                <button
+                  type="button"
+                  onClick={() => setReelGsmFilter('ALL')}
+                  className={`px-2.5 py-0.5 rounded-full text-xs font-bold cursor-pointer transition ${
+                    reelGsmFilter === 'ALL'
+                      ? 'bg-slate-900 dark:bg-white text-white dark:text-slate-900'
+                      : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 hover:bg-slate-200'
+                  }`}
+                >
+                  All GSM ({availableReels.length})
+                </button>
+
+                {uniqueGsms.map(gsm => {
+                  const count = availableReels.filter(r => r.gsm === gsm).length;
+                  return (
+                    <button
+                      key={gsm}
+                      type="button"
+                      onClick={() => setReelGsmFilter(gsm)}
+                      className={`px-2.5 py-0.5 rounded-full text-xs font-bold cursor-pointer transition ${
+                        reelGsmFilter === gsm
+                          ? 'bg-blue-600 text-white shadow-xs'
+                          : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 hover:bg-slate-200'
+                      }`}
+                    >
+                      {gsm} GSM ({count})
+                    </button>
+                  );
+                })}
+
+                {/* Grade Filter */}
+                <div className="flex items-center gap-1 ml-auto">
+                  <button
+                    type="button"
+                    onClick={() => setReelGradeFilter(prev => (prev === 'A' ? 'ALL' : 'A'))}
+                    className={`px-2 py-0.5 rounded-lg text-[10px] font-extrabold cursor-pointer transition ${
+                      reelGradeFilter === 'A'
+                        ? 'bg-emerald-600 text-white'
+                        : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400'
+                    }`}
+                  >
+                    Grade A Only
+                  </button>
+                </div>
+              </div>
+
+            </div>
+
+            {/* 4. REELS LIST: Grid Cards Mode or Compact Table Mode */}
+            {filteredAvailableReels.length === 0 ? (
+              <p className="text-xs text-slate-500 py-10 text-center bg-slate-50 dark:bg-slate-900/60 border border-dashed border-slate-200 dark:border-slate-700 rounded-2xl font-semibold">
+                No warehouse reels match your current filter. Try resetting the GSM or Search query.
               </p>
+            ) : reelViewMode === 'table' ? (
+              
+              /* HIGH-DENSITY COMPACT TABLE VIEW */
+              <div className="border border-slate-200 dark:border-slate-800 rounded-2xl overflow-hidden max-h-[500px] overflow-y-auto">
+                <table className="w-full text-left text-xs border-collapse">
+                  <thead className="sticky top-0 bg-slate-100 dark:bg-slate-900 text-slate-500 uppercase text-[10px] font-black tracking-wider z-10">
+                    <tr className="border-b border-slate-200 dark:border-slate-800">
+                      <th className="py-2 px-3 w-10 text-center">
+                        <input
+                          type="checkbox"
+                          checked={filteredAvailableReels.length > 0 && filteredAvailableReels.every(r => selectedReelNos.includes(r.reelNo))}
+                          onChange={e => {
+                            if (e.target.checked) handleSelectAllFiltered();
+                            else handleDeselectAllFiltered();
+                          }}
+                          className="h-3.5 w-3.5 rounded text-blue-600 cursor-pointer"
+                        />
+                      </th>
+                      <th className="py-2 px-3">Reel Number</th>
+                      <th className="py-2 px-3">Product Spec</th>
+                      <th className="py-2 px-3">GSM</th>
+                      <th className="py-2 px-3">Size</th>
+                      <th className="py-2 px-3">Weight</th>
+                      <th className="py-2 px-3">Dia / Joints</th>
+                      <th className="py-2 px-3 text-right">QC Grade</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-slate-100 dark:divide-slate-800 font-semibold">
+                    {filteredAvailableReels.map(reel => {
+                      const isChecked = selectedReelNos.includes(reel.reelNo);
+                      return (
+                        <tr
+                          key={reel.reelNo}
+                          onClick={() => handleToggleReel(reel.reelNo)}
+                          className={`cursor-pointer transition select-none ${
+                            isChecked
+                              ? 'bg-blue-50/70 dark:bg-blue-950/30 text-blue-950 dark:text-blue-100'
+                              : 'hover:bg-slate-50 dark:hover:bg-slate-800/40 text-slate-800 dark:text-slate-200'
+                          }`}
+                        >
+                          <td className="py-2.5 px-3 text-center">
+                            <input
+                              type="checkbox"
+                              checked={isChecked}
+                              onChange={() => {}} // handled by row click
+                              className="h-3.5 w-3.5 rounded text-blue-600 cursor-pointer"
+                            />
+                          </td>
+                          <td className="py-2.5 px-3 font-mono font-bold">{reel.reelNo}</td>
+                          <td className="py-2.5 px-3 text-[11px] truncate max-w-[150px]">{reel.product}</td>
+                          <td className="py-2.5 px-3">{reel.gsm}</td>
+                          <td className="py-2.5 px-3">{reel.size} cm</td>
+                          <td className="py-2.5 px-3 font-mono font-bold text-emerald-600 dark:text-emerald-400">{reel.weight} kg</td>
+                          <td className="py-2.5 px-3 text-[11px] text-slate-500">{reel.dia}mm ({reel.joint} J)</td>
+                          <td className="py-2.5 px-3 text-right">
+                            <span className={`px-2 py-0.5 rounded text-[9px] font-black uppercase ${
+                              reel.qcGrade === 'A'
+                                ? 'bg-emerald-100 dark:bg-emerald-950/50 text-emerald-700 dark:text-emerald-300'
+                                : 'bg-amber-100 dark:bg-amber-950/50 text-amber-700 dark:text-amber-300'
+                            }`}>
+                              Grade {reel.qcGrade || 'A'}
+                            </span>
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
             ) : (
+
+              /* GRID CARDS VIEW */
               <div className="space-y-2.5">
                 <div className={`grid grid-cols-1 sm:grid-cols-2 gap-2.5 pr-1 ${showAllReels ? 'max-h-[550px] overflow-y-auto' : ''}`}>
-                  {(showAllReels ? availableReels : availableReels.slice(0, 6)).map(reel => {
+                  {(showAllReels ? filteredAvailableReels : filteredAvailableReels.slice(0, 8)).map(reel => {
                     const isChecked = selectedReelNos.includes(reel.reelNo);
                     return (
                       <div
                         key={reel.reelNo}
                         onClick={() => handleToggleReel(reel.reelNo)}
-                        className={`p-3 border rounded-xl cursor-pointer transition select-none space-y-2 ${
+                        className={`p-3 border rounded-2xl cursor-pointer transition select-none space-y-2 ${
                           isChecked
-                            ? 'border-primary bg-blue-50/20 dark:border-blue-500 ring-1 ring-primary'
+                            ? 'border-blue-600 bg-blue-50/30 dark:border-blue-500 dark:bg-blue-950/20 ring-1 ring-blue-500'
                             : 'border-slate-200/80 hover:bg-slate-50 dark:border-slate-700/80 dark:hover:bg-slate-800/40'
                         }`}
                       >
@@ -787,35 +1170,23 @@ export const DispatchView: React.FC<DispatchViewProps> = ({ initialTab = 'orders
                               type="checkbox"
                               checked={isChecked}
                               onChange={() => {}} // handled by div click
-                              className="h-3.5 w-3.5 rounded border-slate-300 text-primary focus:ring-0 cursor-pointer"
+                              className="h-3.5 w-3.5 rounded border-slate-300 text-blue-600 focus:ring-0 cursor-pointer"
                             />
                           </div>
                         </div>
 
-                        <div className="grid grid-cols-2 gap-y-1.5 text-[11px] text-slate-600 dark:text-slate-400">
+                        <div className="grid grid-cols-3 gap-y-1 text-[11px] text-slate-600 dark:text-slate-400">
                           <div>
-                            <span className="font-medium text-slate-400 block uppercase tracking-wider text-[9px]">Reel No</span>
-                            <span className="font-bold text-slate-800 dark:text-white text-xs font-mono">{reel.reelNo}</span>
+                            <span className="font-medium text-slate-400 block uppercase tracking-wider text-[8px]">GSM</span>
+                            <span className="font-bold text-slate-800 dark:text-white">{reel.gsm}</span>
                           </div>
                           <div>
-                            <span className="font-medium text-slate-400 block uppercase tracking-wider text-[9px]">Weight</span>
-                            <span className="font-bold text-slate-800 dark:text-white text-xs">{reel.weight} kg</span>
+                            <span className="font-medium text-slate-400 block uppercase tracking-wider text-[8px]">Weight</span>
+                            <span className="font-bold text-emerald-600 dark:text-emerald-400 font-mono">{reel.weight} kg</span>
                           </div>
                           <div>
-                            <span className="font-medium text-slate-400 block uppercase tracking-wider text-[9px]">Diameter</span>
-                            <span className="font-bold text-slate-800 dark:text-white text-xs">{reel.dia} mm</span>
-                          </div>
-                          <div>
-                            <span className="font-medium text-slate-400 block uppercase tracking-wider text-[9px]">Joints</span>
-                            <span className="font-bold text-slate-800 dark:text-white text-xs">{reel.joint}</span>
-                          </div>
-                          <div>
-                            <span className="font-medium text-slate-400 block uppercase tracking-wider text-[9px]">Produced</span>
-                            <span className="font-medium text-slate-800 dark:text-white text-xs">{reel.productionDate}</span>
-                          </div>
-                          <div>
-                            <span className="font-medium text-slate-400 block uppercase tracking-wider text-[9px]">GSM</span>
-                            <span className="font-bold text-slate-800 dark:text-white text-xs">{reel.gsm}</span>
+                            <span className="font-medium text-slate-400 block uppercase tracking-wider text-[8px]">Size</span>
+                            <span className="font-bold text-slate-800 dark:text-white">{reel.size} cm</span>
                           </div>
                         </div>
                       </div>
@@ -823,11 +1194,11 @@ export const DispatchView: React.FC<DispatchViewProps> = ({ initialTab = 'orders
                   })}
                 </div>
 
-                {availableReels.length > 6 && (
+                {filteredAvailableReels.length > 8 && (
                   <button
                     type="button"
                     onClick={() => setShowAllReels(!showAllReels)}
-                    className="w-full py-2 px-3 rounded-xl bg-slate-100/90 hover:bg-slate-200/80 dark:bg-slate-800 dark:hover:bg-slate-700 text-primary dark:text-blue-400 font-extrabold text-xs transition cursor-pointer flex items-center justify-center gap-1.5 border border-slate-200/80 dark:border-slate-700 shadow-2xs mt-1"
+                    className="w-full py-2 px-3 rounded-xl bg-slate-100/90 hover:bg-slate-200/80 dark:bg-slate-800 dark:hover:bg-slate-700 text-blue-600 dark:text-blue-400 font-extrabold text-xs transition cursor-pointer flex items-center justify-center gap-1.5 border border-slate-200/80 dark:border-slate-700 shadow-2xs mt-1"
                   >
                     {showAllReels ? (
                       <>
@@ -837,13 +1208,14 @@ export const DispatchView: React.FC<DispatchViewProps> = ({ initialTab = 'orders
                     ) : (
                       <>
                         <ChevronDown className="h-3.5 w-3.5" />
-                        <span>View More Reels (Showing 6 of {availableReels.length})</span>
+                        <span>View All {filteredAvailableReels.length} Filtered Reels</span>
                       </>
                     )}
                   </button>
                 )}
               </div>
             )}
+
           </div>
 
         </form>
