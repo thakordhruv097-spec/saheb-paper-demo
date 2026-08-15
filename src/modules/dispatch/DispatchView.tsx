@@ -40,6 +40,7 @@ import {
   X,
   RotateCcw,
   ScanBarcode,
+  Eye,
 } from 'lucide-react';
 
 interface DispatchViewProps {
@@ -116,20 +117,27 @@ export const DispatchView: React.FC<DispatchViewProps> = ({ initialTab = 'orders
     });
   }, [orders, orderSearchQuery, parties, products]);
 
+  // Packing Slip List Filter States
+  const [slipStatusFilter, setSlipStatusFilter] = useState<'ALL' | 'DRAFT' | 'CONFIRMED'>('ALL');
+  const [slipPartyFilter, setSlipPartyFilter] = useState<'ALL' | string>('ALL');
+
   const filteredSlips = useMemo(() => {
     const q = slipSearchQuery.toLowerCase().trim();
-    if (!q) return slips;
     return slips.filter(slip => {
-      const partyObj = parties.find(p => p.id === slip.partyId);
-      const vehicleObj = vehicles.find(v => v.id === slip.vehicleId);
-      return (
-        slip.slipNo.toLowerCase().includes(q) ||
-        slip.date.toLowerCase().includes(q) ||
-        (partyObj && partyObj.name.toLowerCase().includes(q)) ||
-        (vehicleObj && vehicleObj.vehicleNo.toLowerCase().includes(q))
-      );
+      if (slipStatusFilter !== 'ALL' && slip.status !== slipStatusFilter) return false;
+      if (slipPartyFilter !== 'ALL' && slip.partyId !== slipPartyFilter) return false;
+      if (q) {
+        const partyObj = parties.find(p => p.id === slip.partyId);
+        const vehicleObj = vehicles.find(v => v.id === slip.vehicleId);
+        const matchNo = slip.slipNo.toLowerCase().includes(q);
+        const matchDate = slip.date.toLowerCase().includes(q);
+        const matchParty = partyObj && partyObj.name.toLowerCase().includes(q);
+        const matchVehicle = vehicleObj && (vehicleObj.vehicleNo.toLowerCase().includes(q) || (slip.vehicleId || '').toLowerCase().includes(q));
+        if (!matchNo && !matchDate && !matchParty && !matchVehicle) return false;
+      }
+      return true;
     });
-  }, [slips, slipSearchQuery, parties, vehicles]);
+  }, [slips, slipSearchQuery, slipStatusFilter, slipPartyFilter, parties, vehicles]);
 
   // 1. Order Creation States
   const [selectedPartyId, setSelectedPartyId] = useState('');
@@ -1425,180 +1433,388 @@ export const DispatchView: React.FC<DispatchViewProps> = ({ initialTab = 'orders
         </form>
       )}
 
-      {/* 3. TAB: Packing Slips & Challans List */}
+      {/* 3. TAB: Packing Slips & Challans List (Modern Filterable Ledger) */}
       {activeTab === 'slips_list' && (
-        <div className="bg-white dark:bg-surface-dark border border-border-light dark:border-slate-700 rounded-lg p-5 shadow-sm space-y-4">
-          <h3 className="text-sm font-bold text-slate-800 dark:text-white uppercase tracking-wider mb-2 border-b pb-2 dark:border-slate-700">
-            Registered Packing Slips
-          </h3>
+        <div className="space-y-4 text-left">
+          
+          {/* Top KPI Metrics Row */}
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+            <div className="bg-white dark:bg-surface-dark border border-slate-200 dark:border-slate-800 rounded-2xl p-3.5 shadow-2xs">
+              <span className="text-[10px] font-black uppercase tracking-wider text-slate-400 block">Total Challans</span>
+              <span className="text-xl font-black text-slate-900 dark:text-white font-mono">{slips.length}</span>
+              <span className="text-[10px] text-slate-500 block mt-0.5">Recorded Gate Passes</span>
+            </div>
 
-          {/* Search bar */}
-          <div className="bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg p-2.5 flex items-center gap-2">
-            <Search className="h-4.5 w-4.5 text-slate-400 shrink-0" />
-            <input
-              type="text"
-              value={slipSearchQuery}
-              onChange={e => setSlipSearchQuery(e.target.value)}
-              placeholder="Search challans by number, customer, vehicle, or date..."
-              className="bg-transparent border-none text-xs focus:outline-none w-full dark:text-white"
-            />
+            <div className="bg-white dark:bg-surface-dark border border-slate-200 dark:border-slate-800 rounded-2xl p-3.5 shadow-2xs">
+              <span className="text-[10px] font-black uppercase tracking-wider text-emerald-600 dark:text-emerald-400 block">Dispatched Slips</span>
+              <span className="text-xl font-black text-emerald-600 dark:text-emerald-400 font-mono">
+                {slips.filter(s => s.status !== 'DRAFT').length}
+              </span>
+              <span className="text-[10px] text-slate-500 block mt-0.5">Finalized &amp; Decremented</span>
+            </div>
+
+            <div className="bg-white dark:bg-surface-dark border border-slate-200 dark:border-slate-800 rounded-2xl p-3.5 shadow-2xs">
+              <span className="text-[10px] font-black uppercase tracking-wider text-amber-600 dark:text-amber-400 block">Pending Drafts</span>
+              <span className="text-xl font-black text-amber-600 dark:text-amber-400 font-mono">
+                {slips.filter(s => s.status === 'DRAFT').length}
+              </span>
+              <span className="text-[10px] text-slate-500 block mt-0.5">Awaiting Confirmation</span>
+            </div>
+
+            <div className="bg-white dark:bg-surface-dark border border-slate-200 dark:border-slate-800 rounded-2xl p-3.5 shadow-2xs">
+              <span className="text-[10px] font-black uppercase tracking-wider text-blue-600 dark:text-blue-400 block">Total Linked Reels</span>
+              <span className="text-xl font-black text-blue-600 dark:text-blue-400 font-mono">
+                {slips.reduce((sum, s) => sum + s.reelNos.length, 0)}
+              </span>
+              <span className="text-[10px] text-slate-500 block mt-0.5">Dispatched Reel Units</span>
+            </div>
           </div>
 
-          {filteredSlips.length === 0 ? (
-            <p className="text-xs text-text-light-secondary py-4 text-center">No packing slips match your search criteria.</p>
-          ) : (
-            <div className="space-y-4">
-              {/* Desktop/Tablet Table */}
-              <div className="hidden md:block">
-                <table className="w-full text-left text-xs border-collapse">
-                  <thead>
-                    <tr className="border-b border-slate-100 dark:border-slate-700 text-text-light-secondary dark:text-slate-400">
-                      <th className="py-2.5 font-bold uppercase">Challan Number</th>
-                      <th className="py-2.5 font-bold uppercase">Date</th>
-                      <th className="py-2.5 font-bold uppercase">Party / Customer</th>
-                      <th className="py-2.5 font-bold uppercase">Vehicle</th>
-                      <th className="py-2.5 font-bold uppercase">Reels Linked</th>
-                      <th className="py-2.5 font-bold uppercase">Challan Status</th>
-                      <th className="py-2.5 font-bold uppercase text-right">Actions</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-slate-100 dark:divide-slate-700">
-                    {filteredSlips
-                      .slice()
-                      .sort((a, b) => b.slipNo.localeCompare(a.slipNo))
-                      .map(slip => {
-                        const partyObj = parties.find(p => p.id === slip.partyId);
-                        const vehicleObj = vehicles.find(v => v.id === slip.vehicleId);
-                        return (
-                          <tr key={slip.id} className="hover:bg-slate-50 dark:hover:bg-slate-800/20">
-                            <td className="py-2.5 font-bold font-mono text-slate-800 dark:text-white">{slip.slipNo}</td>
-                            <td className="py-2.5 text-text-light-secondary dark:text-slate-400">{slip.date}</td>
-                            <td className="py-2.5 font-semibold text-slate-800 dark:text-white">{partyObj?.name}</td>
-                            <td className="py-2.5 font-bold font-mono text-primary dark:text-blue-400">{vehicleObj?.vehicleNo}</td>
-                            <td className="py-2.5">{slip.reelNos.length} reels</td>
-                            <td className="py-2.5">
-                              <span className={`px-2 py-0.5 rounded text-[9px] font-bold ${
-                                slip.status === 'DRAFT' ? 'bg-amber-100 dark:bg-amber-950/20 text-amber-700' : 'bg-emerald-100 dark:bg-emerald-950/20 text-emerald-700'
-                              }`}>
-                                {slip.status}
-                              </span>
-                            </td>
-                            <td className="py-2.5 text-right flex justify-end gap-1.5">
-                              <button
-                                onClick={() => setViewingSlip(slip)}
-                                className="px-2.5 py-1 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 rounded text-[10px] font-bold transition shadow-sm"
-                              >
-                                Details
-                              </button>
-                              
-                              {slip.status === 'DRAFT' ? (
-                                <button
-                                  onClick={() => handleConfirmDispatch(slip.id)}
-                                  className="px-2.5 py-1 bg-primary hover:bg-blue-800 text-white rounded text-[10px] font-bold shadow-sm transition"
-                                >
-                                  Confirm Dispatch
-                                </button>
-                              ) : (
-                                <>
-                                  <button
-                                    onClick={() => handleExportExcel(slip)}
-                                    title="Export XLS"
-                                    className="p-1 text-emerald-600 hover:bg-emerald-50 dark:hover:bg-emerald-950/20 rounded border border-emerald-200 dark:border-emerald-900"
-                                  >
-                                    <FileSpreadsheet className="h-4.5 w-4.5" />
-                                  </button>
-                                  <button
-                                    onClick={() => { setViewingSlip(slip); setTimeout(() => window.print(), 100); }}
-                                    title="Print Challan PDF"
-                                    className="p-1 text-primary hover:bg-blue-50 dark:hover:bg-blue-950/20 rounded border border-blue-200 dark:border-blue-900"
-                                  >
-                                    <Printer className="h-4.5 w-4.5" />
-                                  </button>
-                                </>
-                              )}
-                            </td>
-                          </tr>
-                        );
-                      })}
-                  </tbody>
-                </table>
+          {/* Filter Toolbar Container */}
+          <div className="bg-white dark:bg-surface-dark border border-slate-200 dark:border-slate-800 rounded-3xl p-4 sm:p-5 shadow-xs space-y-3">
+            
+            {/* Header Title + Fast Search */}
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-100 dark:border-slate-800 pb-3">
+              <div>
+                <h3 className="text-xs font-black text-slate-900 dark:text-white uppercase tracking-wider">
+                  Registered Delivery Challans
+                </h3>
+                <p className="text-[11px] text-slate-500 font-semibold">
+                  Showing {filteredSlips.length} of {slips.length} total slips
+                </p>
               </div>
 
-              {/* Mobile Stacked Cards */}
-              <div className="block md:hidden space-y-3">
-                {filteredSlips
-                  .slice()
-                  .sort((a, b) => b.slipNo.localeCompare(a.slipNo))
-                  .map(slip => {
-                    const partyObj = parties.find(p => p.id === slip.partyId);
-                    const vehicleObj = vehicles.find(v => v.id === slip.vehicleId);
-                    return (
-                      <div key={slip.id} className="p-4 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl space-y-2 text-xs text-left">
-                        <div className="flex justify-between items-center border-b pb-2 dark:border-slate-800">
-                          <span className="font-bold text-slate-800 dark:text-white font-mono">{slip.slipNo}</span>
-                          <span className={`px-2 py-0.5 rounded text-[9px] font-bold uppercase ${
-                            slip.status === 'DRAFT' ? 'bg-amber-100 dark:bg-amber-950/20 text-amber-700' : 'bg-emerald-100 dark:bg-emerald-950/20 text-emerald-700'
-                          }`}>
-                            {slip.status}
-                          </span>
-                        </div>
-                        <div className="grid grid-cols-2 gap-y-2 text-[11px] text-slate-600 dark:text-slate-400">
-                          <div>
-                            <span className="font-medium text-slate-400 block uppercase tracking-wider text-[9px]">Date</span>
-                            <span className="font-medium text-slate-800 dark:text-white">{slip.date}</span>
-                          </div>
-                          <div>
-                            <span className="font-medium text-slate-400 block uppercase tracking-wider text-[9px]">Customer Party</span>
-                            <span className="font-semibold text-slate-800 dark:text-white">{partyObj?.name}</span>
-                          </div>
-                          <div>
-                            <span className="font-medium text-slate-400 block uppercase tracking-wider text-[9px]">Vehicle No</span>
-                            <span className="font-bold text-primary dark:text-blue-400 font-mono">{vehicleObj?.vehicleNo}</span>
-                          </div>
-                          <div>
-                            <span className="font-medium text-slate-400 block uppercase tracking-wider text-[9px]">Reels Linked</span>
-                            <span className="font-bold text-slate-800 dark:text-white">{slip.reelNos.length} reels</span>
-                          </div>
-                        </div>
-                        <div className="pt-2 border-t dark:border-slate-800 flex justify-end gap-1.5">
-                          <button
-                            onClick={() => setViewingSlip(slip)}
-                            className="px-2.5 py-1 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 rounded text-[10px] font-bold transition shadow-sm"
-                          >
-                            Details
-                          </button>
-                          {slip.status === 'DRAFT' ? (
-                            <button
-                              onClick={() => handleConfirmDispatch(slip.id)}
-                              className="px-2.5 py-1 bg-primary hover:bg-blue-800 text-white rounded text-[10px] font-bold shadow-sm transition"
-                            >
-                              Confirm Dispatch
-                            </button>
-                          ) : (
-                            <>
-                              <button
-                                onClick={() => handleExportExcel(slip)}
-                                title="Export XLS"
-                                className="p-1 text-emerald-600 hover:bg-emerald-50 dark:hover:bg-emerald-950/20 rounded border border-emerald-200 dark:border-emerald-900"
-                              >
-                                <FileSpreadsheet className="h-4.5 w-4.5" />
-                              </button>
-                              <button
-                                onClick={() => { setViewingSlip(slip); setTimeout(() => window.print(), 100); }}
-                                title="Print Challan PDF"
-                                className="p-1 text-primary hover:bg-blue-50 dark:hover:bg-blue-950/20 rounded border border-blue-200 dark:border-blue-900"
-                              >
-                                <Printer className="h-4.5 w-4.5" />
-                              </button>
-                            </>
-                          )}
-                        </div>
-                      </div>
-                    );
-                  })}
+              {/* Search Bar */}
+              <div className="relative w-full sm:w-80">
+                <Search className="h-3.5 w-3.5 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
+                <input
+                  type="text"
+                  value={slipSearchQuery}
+                  onChange={e => setSlipSearchQuery(e.target.value)}
+                  placeholder="Search Challan No, Customer, Vehicle, Date..."
+                  className="w-full py-2 pl-9 pr-7 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-xs font-bold focus:outline-none dark:text-white"
+                />
+                {slipSearchQuery && (
+                  <button
+                    type="button"
+                    onClick={() => setSlipSearchQuery('')}
+                    className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 cursor-pointer"
+                  >
+                    <X className="h-3.5 w-3.5" />
+                  </button>
+                )}
               </div>
             </div>
-          )}
+
+            {/* Quick Filter Row: Status Chips & Customer Dropdown */}
+            <div className="flex flex-wrap items-center justify-between gap-2.5 pt-0.5">
+              
+              {/* Status Chips */}
+              <div className="flex flex-wrap items-center gap-1.5">
+                <span className="text-[10px] font-black text-slate-400 uppercase tracking-wider mr-1">
+                  Status:
+                </span>
+                
+                <button
+                  type="button"
+                  onClick={() => setSlipStatusFilter('ALL')}
+                  className={`px-3 py-1 rounded-full text-xs font-bold cursor-pointer transition ${
+                    slipStatusFilter === 'ALL'
+                      ? 'bg-slate-900 dark:bg-white text-white dark:text-slate-900 shadow-xs'
+                      : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 hover:bg-slate-200'
+                  }`}
+                >
+                  All ({slips.length})
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => setSlipStatusFilter('CONFIRMED')}
+                  className={`px-3 py-1 rounded-full text-xs font-bold cursor-pointer transition flex items-center gap-1.5 ${
+                    slipStatusFilter === 'CONFIRMED'
+                      ? 'bg-emerald-600 text-white shadow-xs'
+                      : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 hover:bg-slate-200'
+                  }`}
+                >
+                  <span className="h-1.5 w-1.5 rounded-full bg-emerald-400"></span>
+                  <span>Dispatched ({slips.filter(s => s.status !== 'DRAFT').length})</span>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => setSlipStatusFilter('DRAFT')}
+                  className={`px-3 py-1 rounded-full text-xs font-bold cursor-pointer transition flex items-center gap-1.5 ${
+                    slipStatusFilter === 'DRAFT'
+                      ? 'bg-amber-600 text-white shadow-xs'
+                      : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 hover:bg-slate-200'
+                  }`}
+                >
+                  <span className="h-1.5 w-1.5 rounded-full bg-amber-400"></span>
+                  <span>Drafts ({slips.filter(s => s.status === 'DRAFT').length})</span>
+                </button>
+              </div>
+
+              {/* Customer / Party Dropdown Filter */}
+              <div className="flex items-center gap-2">
+                <span className="text-[10px] font-black text-slate-400 uppercase tracking-wider">Party:</span>
+                <select
+                  value={slipPartyFilter}
+                  onChange={e => setSlipPartyFilter(e.target.value)}
+                  className="py-1 px-2.5 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-xs font-bold text-slate-800 dark:text-white focus:outline-none cursor-pointer"
+                >
+                  <option value="ALL">All Parties ({parties.length})</option>
+                  {parties.map(p => (
+                    <option key={p.id} value={p.id}>
+                      {p.name}
+                    </option>
+                  ))}
+                </select>
+
+                {(slipStatusFilter !== 'ALL' || slipPartyFilter !== 'ALL' || slipSearchQuery) && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setSlipStatusFilter('ALL');
+                      setSlipPartyFilter('ALL');
+                      setSlipSearchQuery('');
+                    }}
+                    className="px-2.5 py-1 text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/30 rounded-lg text-xs font-bold transition cursor-pointer flex items-center gap-1"
+                  >
+                    <X className="h-3 w-3" />
+                    <span>Reset</span>
+                  </button>
+                )}
+              </div>
+
+            </div>
+
+            {/* Table / Empty state */}
+            {filteredSlips.length === 0 ? (
+              <div className="py-12 text-center space-y-2">
+                <FileText className="h-8 w-8 text-slate-300 dark:text-slate-600 mx-auto" />
+                <p className="text-xs font-bold text-slate-500">No packing slips match your current filter.</p>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setSlipStatusFilter('ALL');
+                    setSlipPartyFilter('ALL');
+                    setSlipSearchQuery('');
+                  }}
+                  className="px-3 py-1 bg-blue-50 text-blue-600 dark:bg-blue-950/40 dark:text-blue-300 rounded-lg text-xs font-bold cursor-pointer"
+                >
+                  Clear Filters
+                </button>
+              </div>
+            ) : (
+              <div>
+                {/* Desktop/Tablet High Density Table */}
+                <div className="hidden md:block overflow-x-auto">
+                  <table className="w-full text-left text-xs border-collapse">
+                    <thead>
+                      <tr className="border-b border-slate-100 dark:border-slate-800 text-[10px] font-black uppercase tracking-wider text-slate-400 bg-slate-50/50 dark:bg-slate-900/30">
+                        <th className="py-3 px-3">Challan Number</th>
+                        <th className="py-3 px-3">Date</th>
+                        <th className="py-3 px-3">Party / Customer</th>
+                        <th className="py-3 px-3">Vehicle No</th>
+                        <th className="py-3 px-3">Linked Reels</th>
+                        <th className="py-3 px-3">Status</th>
+                        <th className="py-3 px-3 text-right">Actions</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-slate-100 dark:divide-slate-800/80">
+                      {filteredSlips
+                        .slice()
+                        .sort((a, b) => b.slipNo.localeCompare(a.slipNo))
+                        .map(slip => {
+                          const partyObj = parties.find(p => p.id === slip.partyId);
+                          const vehicleObj = vehicles.find(v => v.id === slip.vehicleId || v.vehicleNo === slip.vehicleId);
+                          const vehicleDisplay = vehicleObj ? vehicleObj.vehicleNo : (slip.vehicleId || 'N/A');
+                          
+                          // Calculate Total Weight for slip
+                          const linkedReels = reels.filter(r => slip.reelNos.includes(r.reelNo));
+                          const totalWeightKg = linkedReels.reduce((sum, r) => sum + (r.weight || 0), 0);
+
+                          return (
+                            <tr key={slip.id} className="hover:bg-slate-50/80 dark:hover:bg-slate-800/30 transition">
+                              <td className="py-3 px-3">
+                                <button
+                                  type="button"
+                                  onClick={() => setViewingSlip(slip)}
+                                  className="font-mono font-bold text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300 hover:underline cursor-pointer flex items-center gap-1.5"
+                                >
+                                  <FileText className="h-3.5 w-3.5 shrink-0 opacity-70" />
+                                  <span>{slip.slipNo}</span>
+                                </button>
+                              </td>
+                              <td className="py-3 px-3 font-semibold text-slate-600 dark:text-slate-400">{slip.date}</td>
+                              <td className="py-3 px-3 font-bold text-slate-900 dark:text-white">
+                                {partyObj?.name || 'Walk-in Customer'}
+                              </td>
+                              <td className="py-3 px-3 font-mono font-bold text-slate-700 dark:text-slate-300">
+                                <span className="px-2 py-0.5 rounded-md bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 text-[11px] font-mono">
+                                  {vehicleDisplay}
+                                </span>
+                              </td>
+                              <td className="py-3 px-3">
+                                <span className="font-bold text-slate-800 dark:text-slate-200">
+                                  {slip.reelNos.length} reels
+                                </span>
+                                {totalWeightKg > 0 && (
+                                  <span className="text-[10px] text-slate-400 font-mono ml-1.5">
+                                    ({totalWeightKg.toLocaleString()} kg)
+                                  </span>
+                                )}
+                              </td>
+                              <td className="py-3 px-3">
+                                <span className={`inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[9px] font-black uppercase tracking-wider ${
+                                  slip.status === 'DRAFT'
+                                    ? 'bg-amber-100 text-amber-800 dark:bg-amber-950/50 dark:text-amber-300'
+                                    : 'bg-emerald-100 text-emerald-800 dark:bg-emerald-950/50 dark:text-emerald-300'
+                                }`}>
+                                  <span className={`h-1.5 w-1.5 rounded-full ${slip.status === 'DRAFT' ? 'bg-amber-500' : 'bg-emerald-500'}`}></span>
+                                  <span>{slip.status === 'DRAFT' ? 'Draft Gate Pass' : 'Dispatched'}</span>
+                                </span>
+                              </td>
+                              <td className="py-3 px-3 text-right">
+                                <div className="flex items-center justify-end gap-1.5">
+                                  <button
+                                    onClick={() => setViewingSlip(slip)}
+                                    className="px-2.5 py-1 bg-blue-50 hover:bg-blue-100 text-blue-700 dark:bg-blue-950/50 dark:hover:bg-blue-900/60 dark:text-blue-300 rounded-lg text-[10px] font-black transition cursor-pointer flex items-center gap-1"
+                                  >
+                                    <Eye className="h-3 w-3" />
+                                    <span>Receipt</span>
+                                  </button>
+                                  
+                                  {slip.status === 'DRAFT' ? (
+                                    <button
+                                      onClick={() => handleConfirmDispatch(slip.id)}
+                                      className="px-2.5 py-1 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white rounded-lg text-[10px] font-black shadow-xs transition cursor-pointer"
+                                    >
+                                      Confirm
+                                    </button>
+                                  ) : (
+                                    <>
+                                      <button
+                                        onClick={() => handleExportExcel(slip)}
+                                        title="Export Excel (.xlsx)"
+                                        className="p-1.5 text-emerald-600 hover:bg-emerald-50 dark:hover:bg-emerald-950/30 rounded-lg border border-emerald-200 dark:border-emerald-900/80 cursor-pointer transition"
+                                      >
+                                        <FileSpreadsheet className="h-3.5 w-3.5" />
+                                      </button>
+                                      <button
+                                        onClick={() => {
+                                          setViewingSlip(slip);
+                                          setTimeout(() => window.print(), 100);
+                                        }}
+                                        title="Print Receipt (1-Page)"
+                                        className="p-1.5 text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-950/30 rounded-lg border border-blue-200 dark:border-blue-900/80 cursor-pointer transition"
+                                      >
+                                        <Printer className="h-3.5 w-3.5" />
+                                      </button>
+                                    </>
+                                  )}
+                                </div>
+                              </td>
+                            </tr>
+                          );
+                        })}
+                    </tbody>
+                  </table>
+                </div>
+
+                {/* Mobile Responsive Cards */}
+                <div className="block md:hidden space-y-2.5">
+                  {filteredSlips
+                    .slice()
+                    .sort((a, b) => b.slipNo.localeCompare(a.slipNo))
+                    .map(slip => {
+                      const partyObj = parties.find(p => p.id === slip.partyId);
+                      const vehicleObj = vehicles.find(v => v.id === slip.vehicleId || v.vehicleNo === slip.vehicleId);
+                      const vehicleDisplay = vehicleObj ? vehicleObj.vehicleNo : (slip.vehicleId || 'N/A');
+                      const linkedReels = reels.filter(r => slip.reelNos.includes(r.reelNo));
+                      const totalWeightKg = linkedReels.reduce((sum, r) => sum + (r.weight || 0), 0);
+
+                      return (
+                        <div
+                          key={slip.id}
+                          className="p-3.5 bg-slate-50 dark:bg-slate-900/80 border border-slate-200 dark:border-slate-800 rounded-2xl space-y-2.5 text-xs text-left shadow-2xs"
+                        >
+                          <div className="flex justify-between items-center border-b pb-2 dark:border-slate-800">
+                            <span className="font-bold text-blue-600 dark:text-blue-400 font-mono text-xs">
+                              {slip.slipNo}
+                            </span>
+                            <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[9px] font-black uppercase ${
+                              slip.status === 'DRAFT'
+                                ? 'bg-amber-100 text-amber-800 dark:bg-amber-950/50 dark:text-amber-300'
+                                : 'bg-emerald-100 text-emerald-800 dark:bg-emerald-950/50 dark:text-emerald-300'
+                            }`}>
+                              <span className={`h-1.5 w-1.5 rounded-full ${slip.status === 'DRAFT' ? 'bg-amber-500' : 'bg-emerald-500'}`}></span>
+                              <span>{slip.status}</span>
+                            </span>
+                          </div>
+
+                          <div className="grid grid-cols-2 gap-y-2 text-[11px]">
+                            <div>
+                              <span className="font-bold text-slate-400 block uppercase text-[8px]">Date</span>
+                              <span className="font-semibold text-slate-800 dark:text-slate-200">{slip.date}</span>
+                            </div>
+                            <div>
+                              <span className="font-bold text-slate-400 block uppercase text-[8px]">Customer Party</span>
+                              <span className="font-bold text-slate-900 dark:text-white truncate block">{partyObj?.name || 'Walk-in'}</span>
+                            </div>
+                            <div>
+                              <span className="font-bold text-slate-400 block uppercase text-[8px]">Vehicle No</span>
+                              <span className="font-bold text-primary dark:text-blue-400 font-mono">{vehicleDisplay}</span>
+                            </div>
+                            <div>
+                              <span className="font-bold text-slate-400 block uppercase text-[8px]">Reels &amp; Weight</span>
+                              <span className="font-bold text-slate-800 dark:text-white">{slip.reelNos.length} reels ({totalWeightKg} kg)</span>
+                            </div>
+                          </div>
+
+                          <div className="pt-2 border-t dark:border-slate-800 flex items-center justify-end gap-1.5">
+                            <button
+                              onClick={() => setViewingSlip(slip)}
+                              className="px-3 py-1.5 bg-blue-50 dark:bg-blue-950/50 text-blue-600 dark:text-blue-300 rounded-xl text-[10px] font-black"
+                            >
+                              View Receipt
+                            </button>
+                            {slip.status === 'DRAFT' ? (
+                              <button
+                                onClick={() => handleConfirmDispatch(slip.id)}
+                                className="px-3 py-1.5 bg-primary text-white rounded-xl text-[10px] font-black"
+                              >
+                                Confirm
+                              </button>
+                            ) : (
+                              <>
+                                <button
+                                  onClick={() => handleExportExcel(slip)}
+                                  className="p-1.5 text-emerald-600 rounded-lg border border-emerald-200 dark:border-emerald-800"
+                                >
+                                  <FileSpreadsheet className="h-3.5 w-3.5" />
+                                </button>
+                                <button
+                                  onClick={() => {
+                                    setViewingSlip(slip);
+                                    setTimeout(() => window.print(), 100);
+                                  }}
+                                  className="p-1.5 text-blue-600 rounded-lg border border-blue-200 dark:border-blue-800"
+                                >
+                                  <Printer className="h-3.5 w-3.5" />
+                                </button>
+                              </>
+                            )}
+                          </div>
+                        </div>
+                      );
+                    })}
+                </div>
+              </div>
+            )}
+
+          </div>
+
         </div>
       )}
 
