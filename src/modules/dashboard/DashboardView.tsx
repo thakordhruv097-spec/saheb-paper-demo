@@ -47,7 +47,7 @@ export const DashboardView: React.FC = () => {
   const { user } = useAuth();
   const { t } = useTranslation();
   const navigate = useNavigate();
-  const { timeframe, selectedDate } = useDateFilter();
+  const { timeframe, selectedDate, dateTick } = useDateFilter();
 
   const [period, setPeriod] = useState<'month' | 'year'>('month');
   const [refreshKey, setRefreshKey] = useState(0);
@@ -63,7 +63,7 @@ export const DashboardView: React.FC = () => {
     };
   }, []);
 
-  // Re-sync data when selectedDate or timeframe changes
+  // Re-sync data when selectedDate, timeframe, or dateTick changes
   useEffect(() => {
     setIsRefreshing(true);
     const timer = setTimeout(() => {
@@ -72,7 +72,7 @@ export const DashboardView: React.FC = () => {
     }, 200);
 
     return () => clearTimeout(timer);
-  }, [selectedDate, timeframe]);
+  }, [selectedDate, timeframe, dateTick]);
 
   // Re-sync all data when refreshKey increments
   const materials = useMemo(() => getRawMaterials(), [refreshKey]);

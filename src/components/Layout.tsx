@@ -65,7 +65,7 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
   const [bellOpen, setBellOpen] = useState(false);
 
   // Global Date & Timeframe Filter Context (Only active for Admin & Management)
-  const { timeframe, setTimeframe, selectedDate, setSelectedDate, handlePrevDate, handleNextDate } = useDateFilter();
+  const { timeframe, setTimeframe, selectedDate, setSelectedDate, handlePrevDate, handleNextDate, systemToday } = useDateFilter();
   const [isDatePickerModalOpen, setIsDatePickerModalOpen] = useState(false);
 
   // Profile Modal state
@@ -512,13 +512,7 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
 
                 <button
                   onClick={handleNextDate}
-                  disabled={(() => {
-                    const d = new Date();
-                    const yyyy = d.getFullYear();
-                    const mm = String(d.getMonth() + 1).padStart(2, '0');
-                    const dd = String(d.getDate()).padStart(2, '0');
-                    return selectedDate >= `${yyyy}-${mm}-${dd}`;
-                  })()}
+                  disabled={selectedDate >= systemToday}
                   className="p-1.5 rounded-lg bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 transition cursor-pointer shadow-2xs disabled:opacity-30 disabled:cursor-not-allowed disabled:pointer-events-none"
                   title="Next Date"
                 >
@@ -1239,17 +1233,7 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
                 <span className="text-[10px] mt-0.5 font-bold tracking-tight">Production</span>
               </button>
 
-              <button
-                onClick={() => navigate('/qr-scanner')}
-                className="flex flex-col items-center justify-center flex-1 py-1 group cursor-pointer"
-              >
-                <div className="w-12 h-12 rounded-full text-white flex items-center justify-center -mt-6 shadow-xl active:scale-90 transition-all bg-gradient-to-tr from-blue-600 to-indigo-600 shadow-blue-500/40 ring-4 ring-white dark:ring-slate-900 group-hover:shadow-blue-500/60">
-                  <QrCode className="h-6 w-6" />
-                </div>
-                <span className="text-[10px] mt-0.5 font-extrabold text-slate-500 dark:text-slate-400 group-hover:text-primary transition-colors">
-                  Scan
-                </span>
-              </button>
+
 
               <button
                 onClick={() => navigate('/finished-stock-dispatch')}
