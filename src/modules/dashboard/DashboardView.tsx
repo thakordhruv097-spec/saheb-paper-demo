@@ -286,7 +286,7 @@ export const DashboardView: React.FC = () => {
                       {new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'short', day: 'numeric', year: 'numeric' })}
                     </span>
                   </div>
-                  <p className="text-xs sm:text-sm text-amber-100 mt-1">Welcome back, {user.displayName} (Boiler Operator) • Shift Monitoring & Fuel Logs</p>
+                  <p className="text-xs sm:text-sm text-amber-100 mt-1">Real-Time Boiler Shift Monitoring, Steam Generation &amp; Fuel Logs</p>
                 </div>
                 <div className="flex items-center gap-2 self-start sm:self-auto">
                   <button
@@ -447,7 +447,7 @@ export const DashboardView: React.FC = () => {
                       {new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'short', day: 'numeric', year: 'numeric' })}
                     </span>
                   </div>
-                  <p className="text-xs sm:text-sm text-blue-100 mt-1">Welcome back, {user.displayName} (Pulp Operator) • Raw Material Batching & Dosing</p>
+                  <p className="text-xs sm:text-sm text-blue-100 mt-1">Raw Material Batching, Chemical Dosing &amp; Hydrapulper Telemetry</p>
                 </div>
                 <div className="flex items-center gap-2 self-start sm:self-auto">
                   <button onClick={handleRefresh} className={`p-2.5 bg-white/20 hover:bg-white/30 text-white backdrop-blur-md rounded-xl transition cursor-pointer ${isRefreshing ? 'animate-spin' : ''}`}>
@@ -538,7 +538,7 @@ export const DashboardView: React.FC = () => {
                       {new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'short', day: 'numeric', year: 'numeric' })}
                     </span>
                   </div>
-                  <p className="text-xs sm:text-sm text-purple-100 mt-1">Welcome back, {user.displayName} (Rewinder Operator) • Roll-to-Reel Cutting & QR Traceability</p>
+                  <p className="text-xs sm:text-sm text-purple-100 mt-1">Roll-to-Reel Cutting, Barcode Tagging &amp; Quality Traceability</p>
                 </div>
                 <div className="flex items-center gap-2 self-start sm:self-auto">
                   <button onClick={handleRefresh} className={`p-2.5 bg-white/20 hover:bg-white/30 text-white backdrop-blur-md rounded-xl transition cursor-pointer ${isRefreshing ? 'animate-spin' : ''}`}>
@@ -653,7 +653,7 @@ export const DashboardView: React.FC = () => {
                       {new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'short', day: 'numeric', year: 'numeric' })}
                     </span>
                   </div>
-                  <p className="text-xs sm:text-sm text-teal-100 mt-1">Welcome back, {user.displayName} (Machine Operator) • Paper Roll Production & Quality Control</p>
+                  <p className="text-xs sm:text-sm text-teal-100 mt-1">Paper Roll Production, GSM Consistency & Quality Telemetry</p>
                 </div>
                 <div className="flex items-center gap-2 self-start sm:self-auto">
                   <button onClick={handleRefresh} className={`p-2.5 bg-white/20 hover:bg-white/30 text-white backdrop-blur-md rounded-xl transition cursor-pointer ${isRefreshing ? 'animate-spin' : ''}`}>
@@ -680,6 +680,7 @@ export const DashboardView: React.FC = () => {
                 </div>
                 <div className="bg-white/10 backdrop-blur-md border border-white/20 rounded-2xl p-4">
                   <div className="text-xs text-teal-100 font-medium">Machine Status</div>
+                  <div className="text-2xl font-black mt-1 text-emerald-300">ACTIVE</div>
                 </div>
               </div>
             </div>
@@ -711,7 +712,7 @@ export const DashboardView: React.FC = () => {
                       {new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'short', day: 'numeric', year: 'numeric' })}
                     </span>
                   </div>
-                  <p className="text-xs sm:text-sm text-sky-100 mt-1">Welcome back, {user.displayName} (Dispatch Staff) • Reel Inventory, Packing Slips & Shipments</p>
+                  <p className="text-xs sm:text-sm text-sky-100 mt-1">Warehouse Reel Inventory, Packing Slips & Shipments</p>
                 </div>
                 <div className="flex items-center gap-2 self-start sm:self-auto">
                   <button onClick={handleRefresh} className={`p-2.5 bg-white/20 hover:bg-white/30 text-white backdrop-blur-md rounded-xl transition cursor-pointer ${isRefreshing ? 'animate-spin' : ''}`}>
@@ -730,12 +731,12 @@ export const DashboardView: React.FC = () => {
                   <div className="text-2xl font-black mt-1">{totalStockWeight.toLocaleString()} kg</div>
                 </div>
                 <div className="bg-white/10 backdrop-blur-md border border-white/20 rounded-2xl p-4">
-                  <div className="text-xs text-sky-100 font-medium">Dispatched Today</div>
-                  <div className="text-2xl font-black mt-1">{dispatchedWeightToday.toLocaleString()} kg</div>
+                  <div className="text-xs text-sky-100 font-medium">Pending Orders</div>
+                  <div className="text-2xl font-black mt-1 text-amber-300">{pendingOrdersList.filter(o => o.status === 'PENDING').length} orders</div>
                 </div>
                 <div className="bg-white/10 backdrop-blur-md border border-white/20 rounded-2xl p-4">
-                  <div className="text-xs text-sky-100 font-medium">Pending Orders</div>
-                  <div className="text-2xl font-black mt-1 text-amber-300">{pendingOrdersList.length} orders</div>
+                  <div className="text-xs text-sky-100 font-medium">Dispatched Today</div>
+                  <div className="text-2xl font-black mt-1">{dispatchedWeightToday.toLocaleString()} kg</div>
                 </div>
               </div>
             </div>
@@ -820,7 +821,7 @@ export const DashboardView: React.FC = () => {
                       {new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'short', day: 'numeric', year: 'numeric' })}
                     </span>
                   </div>
-                  <p className="text-xs sm:text-sm text-amber-100 mt-1">Welcome back, {user.displayName} (Store Manager) • Machine Spare Parts, Bearings & Consumables</p>
+                  <p className="text-xs sm:text-sm text-amber-100 mt-1">Machine Spare Parts, Bearings & Consumables Inventory</p>
                 </div>
                 <div className="flex items-center gap-2 self-start sm:self-auto">
                   <button onClick={handleRefresh} className={`p-2.5 bg-white/20 hover:bg-white/30 text-white backdrop-blur-md rounded-xl transition cursor-pointer ${isRefreshing ? 'animate-spin' : ''}`}>
@@ -869,7 +870,7 @@ export const DashboardView: React.FC = () => {
                       {new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'short', day: 'numeric', year: 'numeric' })}
                     </span>
                   </div>
-                  <p className="text-xs sm:text-sm text-cyan-100 mt-1">Welcome back, {user.displayName} (ETP Operator) • Effluent Water Recycling, pH & Environmental Audit</p>
+                  <p className="text-xs sm:text-sm text-cyan-100 mt-1">Effluent Water Recycling, pH & Environmental Audit</p>
                 </div>
                 <div className="flex items-center gap-2 self-start sm:self-auto">
                   <button onClick={handleRefresh} className={`p-2.5 bg-white/20 hover:bg-white/30 text-white backdrop-blur-md rounded-xl transition cursor-pointer ${isRefreshing ? 'animate-spin' : ''}`}>
@@ -1061,15 +1062,15 @@ export const DashboardView: React.FC = () => {
                 <div>
                   <div className="flex flex-wrap items-center gap-3">
                     <h2 className="text-2xl sm:text-3xl font-extrabold tracking-tight">
-                      Welcome back, {user?.displayName || 'Admin'}
+                      Saheb Paper Mill Dashboard
                     </h2>
                     <span className="hidden sm:inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-white/20 dark:bg-white/10 backdrop-blur-md text-[11px] font-extrabold tracking-wider text-white border border-white/30 shadow-xs shrink-0">
                       <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
-                      Mill Operations Live
+                      Live Operations Telemetry
                     </span>
                   </div>
                   <p className="text-xs sm:text-sm text-blue-100/90 font-medium mt-1">
-                    Real-time Saheb Paper production telemetry, stock reserves & dispatch status
+                    Real-time production telemetry, finished stock reserves &amp; dispatch status
                   </p>
                 </div>
 
