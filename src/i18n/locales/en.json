@@ -34,7 +34,7 @@
     "orders": "Order Bookings",
     "utilities_etp": "Utilities & ETP",
     "finished_stock_dispatch": "Stock Categorization",
-    "experiment": "Dispatch Slips"
+    "experiment": "Dispatch Receipt"
   },
   "dashboard": {
     "title": "Dashboard",

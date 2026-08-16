@@ -446,7 +446,7 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
     { id: 'rewinding_reel_conversion', path: '/rewinding-reel-conversion', label: t('nav.rewinder', 'Rewinder Section'), icon: RotateCw },
     { id: 'lab', path: '/lab', label: 'Lab Quality Control', icon: Beaker },
     { id: 'utilities_etp', path: '/utilities-etp', label: t('nav.utilities_etp', 'Utilities and ETP'), icon: Flame },
-    { id: 'experiment', path: '/experiment', label: t('nav.experiment', 'Dispatch Slips'), icon: Truck },
+    { id: 'experiment', path: '/experiment', label: t('nav.experiment', 'Dispatch Receipt'), icon: Truck },
     { id: 'finished_stock_dispatch', path: '/finished-stock-dispatch', label: t('nav.finished_stock_dispatch', 'Stock Categorization'), icon: Layers },
     { id: 'spareparts_management', path: '/spareparts-management', label: t('nav.store', 'Store Inventory'), icon: Wrench },
     { id: 'monthly_yearly_reporting', path: '/monthly-yearly-reporting', label: t('nav.reports', 'Reports'), icon: BarChart2 },

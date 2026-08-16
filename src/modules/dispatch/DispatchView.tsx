@@ -534,7 +534,7 @@ export const DispatchView: React.FC<DispatchViewProps> = ({ initialTab = 'orders
               <div>
                 <div className="flex flex-wrap items-center gap-3">
                   <h2 className="text-xl sm:text-2xl font-black tracking-tight font-heading">
-                    {initialTab === 'orders' ? 'Order Bookings' : 'Dispatch Slips'}
+                    {initialTab === 'orders' ? 'Order Bookings' : 'Dispatch Receipt'}
                   </h2>
                 </div>
               </div>
