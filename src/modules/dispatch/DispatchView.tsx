@@ -1,4 +1,5 @@
 import React, { useState, useMemo, useEffect, useRef } from 'react';
+import { createPortal } from 'react-dom';
 import { useAuth } from '../auth/AuthContext';
 import { useTranslation } from 'react-i18next';
 import {
@@ -509,7 +510,11 @@ export const DispatchView: React.FC<DispatchViewProps> = ({ initialTab = 'orders
   };
 
   const handlePrintChallan = () => {
+    document.body.classList.add('printing-challan');
     window.print();
+    setTimeout(() => {
+      document.body.classList.remove('printing-challan');
+    }, 1500);
   };
 
   return (
@@ -2110,7 +2115,7 @@ export const DispatchView: React.FC<DispatchViewProps> = ({ initialTab = 'orders
         // Active page for on-screen paged view
         const currentActivePage = Math.min(Math.max(1, receiptPage), totalPages);
 
-        return (
+        return createPortal(
           <div
             id="printable-receipt-modal"
             className="fixed inset-0 bg-slate-900/70 backdrop-blur-xs z-50 flex items-center justify-center p-2 sm:p-4 overflow-y-auto print:static print:block print:w-full print:h-auto print:overflow-visible print:bg-white print:p-0 print:m-0 print:z-auto"
@@ -2456,7 +2461,8 @@ export const DispatchView: React.FC<DispatchViewProps> = ({ initialTab = 'orders
               </div>
 
             </div>
-          </div>
+          </div>,
+          document.body
         );
       })()}
 
