@@ -504,6 +504,48 @@ export const FinishStockView: React.FC<FinishStockViewProps> = ({ hideHeader = f
             );
           })}
         </div>
+
+        {/* Row 5: Ply Filter Chips */}
+        <div className="flex flex-wrap items-center gap-2 pt-1 border-t border-slate-100 dark:border-slate-800/60">
+          <span className="text-[10px] font-black text-slate-400 uppercase tracking-wider min-w-[65px]">
+            PLY:
+          </span>
+
+          <button
+            type="button"
+            onClick={() => handlePlyChange('ALL')}
+            className={`px-3 py-1 rounded-full text-xs font-bold cursor-pointer transition ${
+              filterPly === 'ALL'
+                ? 'bg-amber-900 dark:bg-amber-600 text-white shadow-xs'
+                : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700'
+            }`}
+          >
+            All Ply
+          </button>
+
+          {availablePlys.map(ply => {
+            const count = tabReels.filter(r =>
+              (filterProduct === 'ALL' || r.product === filterProduct) &&
+              (filterGsm === 'ALL' || r.gsm === Number(filterGsm)) &&
+              (filterSize === 'ALL' || r.size === Number(filterSize)) &&
+              r.ply === ply
+            ).length;
+            return (
+              <button
+                key={ply}
+                type="button"
+                onClick={() => handlePlyChange(String(ply))}
+                className={`px-3 py-1 rounded-full text-xs font-bold cursor-pointer transition ${
+                  filterPly === String(ply)
+                    ? 'bg-amber-600 text-white shadow-xs'
+                    : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700'
+                }`}
+              >
+                {ply} Ply ({count})
+              </button>
+            );
+          })}
+        </div>
       </div>
 
       {/* Grouped Stock View */}

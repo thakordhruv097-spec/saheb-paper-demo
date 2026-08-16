@@ -99,6 +99,7 @@ export const DispatchView: React.FC<DispatchViewProps> = ({ initialTab = 'orders
   const [reelProductFilter, setReelProductFilter] = useState<'ALL' | string>('ALL');
   const [reelGsmFilter, setReelGsmFilter] = useState<'ALL' | number>('ALL');
   const [reelSizeFilter, setReelSizeFilter] = useState<'ALL' | number>('ALL');
+  const [reelPlyFilter, setReelPlyFilter] = useState<'ALL' | number>('ALL');
   const [reelGradeFilter, setReelGradeFilter] = useState<'ALL' | 'A' | 'B'>('ALL');
   const [reelViewMode, setReelViewMode] = useState<'grid' | 'table'>('grid');
   const [barcodeGunInput, setBarcodeGunInput] = useState('');
@@ -199,12 +200,22 @@ export const DispatchView: React.FC<DispatchViewProps> = ({ initialTab = 'orders
     return Array.from(set).sort((a, b) => a - b);
   }, [availableReels]);
 
+  // Unique Plys present in available reels for quick filter pills
+  const uniquePlys = useMemo(() => {
+    const set = new Set<number>();
+    availableReels.forEach(r => {
+      if (r.ply) set.add(r.ply);
+    });
+    return Array.from(set).sort((a, b) => a - b);
+  }, [availableReels]);
+
   // Real-time filtered available reels
   const filteredAvailableReels = useMemo(() => {
     return availableReels.filter(r => {
       if (reelProductFilter !== 'ALL' && r.product !== reelProductFilter) return false;
       if (reelGsmFilter !== 'ALL' && r.gsm !== reelGsmFilter) return false;
       if (reelSizeFilter !== 'ALL' && r.size !== reelSizeFilter) return false;
+      if (reelPlyFilter !== 'ALL' && r.ply !== reelPlyFilter) return false;
       if (reelGradeFilter !== 'ALL' && (r.qcGrade || 'A').toUpperCase() !== reelGradeFilter) return false;
       if (reelSearchQuery.trim()) {
         const q = reelSearchQuery.toLowerCase().trim();
@@ -217,7 +228,7 @@ export const DispatchView: React.FC<DispatchViewProps> = ({ initialTab = 'orders
       }
       return true;
     });
-  }, [availableReels, reelProductFilter, reelGsmFilter, reelSizeFilter, reelGradeFilter, reelSearchQuery]);
+  }, [availableReels, reelProductFilter, reelGsmFilter, reelSizeFilter, reelPlyFilter, reelGradeFilter, reelSearchQuery]);
 
   // Predictive typing suggestions when user types in the rapid entry box
   const typingReelMatches = useMemo(() => {
@@ -1234,6 +1245,48 @@ export const DispatchView: React.FC<DispatchViewProps> = ({ initialTab = 'orders
                       }`}
                     >
                       {sz} cm ({count})
+                    </button>
+                  );
+                })}
+              </div>
+
+              {/* Row E: Ply Filter Chips */}
+              <div className="flex flex-wrap items-center gap-1.5 pt-0.5">
+                <span className="text-[10px] font-black text-slate-400 uppercase tracking-wider mr-1">
+                  Ply:
+                </span>
+
+                <button
+                  type="button"
+                  onClick={() => setReelPlyFilter('ALL')}
+                  className={`px-2.5 py-0.5 rounded-full text-xs font-bold cursor-pointer transition ${
+                    reelPlyFilter === 'ALL'
+                      ? 'bg-amber-900 dark:bg-amber-600 text-white'
+                      : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 hover:bg-slate-200'
+                  }`}
+                >
+                  All Ply
+                </button>
+
+                {uniquePlys.map(ply => {
+                  const count = availableReels.filter(r =>
+                    (reelProductFilter === 'ALL' || r.product === reelProductFilter) &&
+                    (reelGsmFilter === 'ALL' || r.gsm === reelGsmFilter) &&
+                    (reelSizeFilter === 'ALL' || r.size === reelSizeFilter) &&
+                    r.ply === ply
+                  ).length;
+                  return (
+                    <button
+                      key={ply}
+                      type="button"
+                      onClick={() => setReelPlyFilter(ply)}
+                      className={`px-2.5 py-0.5 rounded-full text-xs font-bold cursor-pointer transition ${
+                        reelPlyFilter === ply
+                          ? 'bg-amber-600 text-white shadow-xs'
+                          : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 hover:bg-slate-200'
+                      }`}
+                    >
+                      {ply} Ply ({count})
                     </button>
                   );
                 })}
