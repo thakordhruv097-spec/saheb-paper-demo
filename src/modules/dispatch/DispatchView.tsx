@@ -757,40 +757,48 @@ export const DispatchView: React.FC<DispatchViewProps> = ({ initialTab = 'orders
               e.preventDefault();
             }
           }}
-          className="grid grid-cols-1 lg:grid-cols-3 gap-5 items-start"
+          className="flex flex-col gap-5 w-full items-stretch"
         >
           
-          {/* Challan Card (1/3 width) - Modern Gate Pass UI */}
-          <div className="bg-white dark:bg-surface-dark border border-slate-200 dark:border-slate-700/80 rounded-3xl p-5 shadow-sm space-y-4 text-left">
-            <div className="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-3">
-              <div className="flex items-center gap-2">
-                <FileText className="h-5 w-5 text-blue-600 dark:text-blue-400" />
-                <h3 className="text-sm font-extrabold text-slate-900 dark:text-white tracking-tight">
-                  Create Gate Pass Challan
-                </h3>
+          {/* Top Challan Header & Dispatch Form (Full-Width Card) */}
+          <div className="bg-white dark:bg-surface-dark border border-slate-200 dark:border-slate-700/80 rounded-3xl p-5 sm:p-6 shadow-sm space-y-4 text-left w-full">
+            <div className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-100 dark:border-slate-800 pb-3.5">
+              <div className="flex items-center gap-2.5">
+                <div className="p-2 rounded-xl bg-blue-50 dark:bg-blue-950/60 text-blue-600 dark:text-blue-400">
+                  <FileText className="h-5 w-5" />
+                </div>
+                <div>
+                  <h3 className="text-base font-extrabold text-slate-900 dark:text-white tracking-tight">
+                    Create Gate Pass Challan
+                  </h3>
+                  <p className="text-xs text-slate-500 font-medium">
+                    Fill dispatch details above and select warehouse reels below
+                  </p>
+                </div>
               </div>
-              <span className="px-2.5 py-0.5 rounded-full bg-blue-50 text-blue-600 dark:bg-blue-950/60 dark:text-blue-300 text-[10px] font-black uppercase tracking-wider border border-blue-200 dark:border-blue-800">
+              <span className="px-3 py-1 rounded-full bg-blue-50 text-blue-600 dark:bg-blue-950/60 dark:text-blue-300 text-xs font-black uppercase tracking-wider border border-blue-200 dark:border-blue-800 font-mono">
                 DRAFT #{autoSlipNo.slice(-4) || '84'}
               </span>
             </div>
 
-            <div>
-              <label className="block text-[11px] font-extrabold text-slate-700 dark:text-slate-300 mb-1.5">
-                Customer / Party Name
-              </label>
-              <select
-                value={slipPartyId}
-                onChange={e => setSlipPartyId(e.target.value)}
-                className="w-full py-2.5 px-3.5 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-2xl text-xs font-bold focus:outline-none focus:ring-2 focus:ring-blue-500 dark:text-white cursor-pointer"
-              >
-                <option value="">-- Select Customer Party --</option>
-                {parties.map(p => (
-                  <option key={p.id} value={p.id}>{p.name}</option>
-                ))}
-              </select>
-            </div>
+            {/* Form Fields in 4-Column Responsive Grid */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+              <div>
+                <label className="block text-[11px] font-extrabold text-slate-700 dark:text-slate-300 mb-1.5">
+                  Customer / Party Name
+                </label>
+                <select
+                  value={slipPartyId}
+                  onChange={e => setSlipPartyId(e.target.value)}
+                  className="w-full py-2.5 px-3.5 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-2xl text-xs font-bold focus:outline-none focus:ring-2 focus:ring-blue-500 dark:text-white cursor-pointer"
+                >
+                  <option value="">-- Select Customer Party --</option>
+                  {parties.map(p => (
+                    <option key={p.id} value={p.id}>{p.name}</option>
+                  ))}
+                </select>
+              </div>
 
-            <div className="grid grid-cols-2 gap-2.5">
               <div>
                 <label className="block text-[11px] font-extrabold text-slate-700 dark:text-slate-300 mb-1.5 flex items-center justify-between">
                   <span>Vehicle / Truck No</span>
@@ -808,7 +816,7 @@ export const DispatchView: React.FC<DispatchViewProps> = ({ initialTab = 'orders
                         setDriverSig(vObj.driverName);
                       }
                     }}
-                    className="w-full py-2.5 px-3 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-2xl text-xs font-bold focus:outline-none dark:text-white uppercase font-mono placeholder:normal-case placeholder:font-sans"
+                    className="w-full py-2.5 px-3.5 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-2xl text-xs font-bold focus:outline-none dark:text-white uppercase font-mono placeholder:normal-case placeholder:font-sans"
                     placeholder="e.g. GJ-05-BX-4921"
                   />
                   <datalist id="dispatch-truck-suggestions">
@@ -827,23 +835,8 @@ export const DispatchView: React.FC<DispatchViewProps> = ({ initialTab = 'orders
                   type="text"
                   value={driverSig}
                   onChange={e => setDriverSig(e.target.value)}
-                  className="w-full py-2.5 px-3 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-2xl text-xs font-bold focus:outline-none dark:text-white font-mono"
+                  className="w-full py-2.5 px-3.5 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-2xl text-xs font-bold focus:outline-none dark:text-white font-mono"
                   placeholder="e.g. Ramesh (98765-43210)"
-                />
-              </div>
-            </div>
-
-            <div className="grid grid-cols-2 gap-2.5">
-              <div>
-                <label className="block text-[11px] font-extrabold text-slate-700 dark:text-slate-300 mb-1.5">
-                  Receiver Name / Sig
-                </label>
-                <input
-                  type="text"
-                  value={receiverSig}
-                  onChange={e => setReceiverSig(e.target.value)}
-                  className="w-full py-2.5 px-3 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-2xl text-xs font-bold focus:outline-none dark:text-white"
-                  placeholder="Receiver Signature"
                 />
               </div>
 
@@ -854,10 +847,10 @@ export const DispatchView: React.FC<DispatchViewProps> = ({ initialTab = 'orders
                 <button
                   type="button"
                   onClick={() => setOpenSlipDatePicker(prev => !prev)}
-                  className="w-full flex items-center justify-between py-2.5 px-3 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-2xl text-xs font-bold text-slate-800 dark:text-white cursor-pointer hover:bg-slate-100 dark:hover:bg-slate-800 transition"
+                  className="w-full flex items-center justify-between py-2.5 px-3.5 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-2xl text-xs font-bold text-slate-800 dark:text-white cursor-pointer hover:bg-slate-100 dark:hover:bg-slate-800 transition"
                 >
                   <span className={slipDate ? 'font-mono' : 'text-slate-400 font-normal'}>{slipDate || 'dd-mm-yyyy'}</span>
-                  <Calendar className="h-3.5 w-3.5 text-blue-600 dark:text-blue-400" />
+                  <Calendar className="h-4 w-4 text-blue-600 dark:text-blue-400" />
                 </button>
                 {openSlipDatePicker && (
                   <CustomDatePickerModal
@@ -872,55 +865,56 @@ export const DispatchView: React.FC<DispatchViewProps> = ({ initialTab = 'orders
               </div>
             </div>
 
-            {/* Loaded Reels Header with + Scan to Add */}
-            <div className="flex items-center justify-between pt-1">
-              <div className="text-xs font-black text-slate-900 dark:text-white">
-                Loaded Reels ({selectedReelNos.length})
+            {/* Bottom summary bar with Weight Tally + Dispatch Action Button */}
+            <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-4 pt-3 border-t border-slate-100 dark:border-slate-800">
+              <div className="flex items-center gap-4 flex-wrap">
+                <div className="px-4 py-2.5 bg-slate-50 dark:bg-slate-900/80 border border-slate-200 dark:border-slate-700/80 rounded-2xl flex items-center gap-3">
+                  <span className="text-[11px] font-black text-slate-400 uppercase tracking-wider">
+                    Total Loaded:
+                  </span>
+                  <span className="text-sm font-black font-mono text-primary dark:text-blue-400">
+                    {selectedReelNos.length} Reels
+                  </span>
+                  <span className="text-slate-300 dark:text-slate-700">|</span>
+                  <span className="text-base font-black font-mono text-emerald-600 dark:text-emerald-400">
+                    {reels.filter(r => selectedReelNos.includes(r.reelNo)).reduce((sum, r) => sum + (r.weight || 0), 0).toLocaleString()} <span className="text-xs text-slate-400 font-normal">KG</span>
+                  </span>
+                </div>
+
+                <div className="text-xs text-slate-500 font-semibold">
+                  {receiverSig ? (
+                    <span className="text-slate-600 dark:text-slate-300">Receiver: {receiverSig}</span>
+                  ) : null}
+                </div>
               </div>
-              {onOpenScanner && (
+
+              <div className="flex items-center gap-3 shrink-0">
+                {onOpenScanner && (
+                  <button
+                    type="button"
+                    onClick={onOpenScanner}
+                    className="px-4 py-3 rounded-2xl text-xs font-black text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-950/40 hover:bg-blue-100 border border-blue-200 dark:border-blue-800 cursor-pointer transition flex items-center gap-1.5"
+                  >
+                    <span>+ QR Camera Scan</span>
+                  </button>
+                )}
+
                 <button
-                  type="button"
-                  onClick={onOpenScanner}
-                  className="text-xs font-extrabold text-blue-600 dark:text-blue-400 hover:underline flex items-center gap-1 cursor-pointer"
+                  type="submit"
+                  className="bg-gradient-to-r from-blue-600 via-indigo-600 to-blue-700 hover:from-blue-700 hover:to-indigo-700 text-white font-extrabold py-3 px-6 rounded-2xl text-xs uppercase tracking-wider shadow-lg shadow-blue-500/25 transition cursor-pointer flex items-center justify-center gap-2"
                 >
-                  <span>+ Scan to Add</span>
+                  <Truck className="h-4 w-4" />
+                  <span>Print Gate Pass &amp; Dispatch</span>
                 </button>
-              )}
-            </div>
-
-            {/* Total Calculation Row Card */}
-            <div className="p-3.5 bg-slate-50 dark:bg-slate-900/70 border border-dashed border-slate-300 dark:border-slate-700 rounded-2xl flex items-center justify-between">
-              <div>
-                <div className="text-[10px] font-black uppercase text-slate-400 tracking-wider">
-                  CHALLAN TOTAL WEIGHT
-                </div>
-                <div className="text-xl font-black font-mono text-slate-900 dark:text-white mt-0.5">
-                  {reels.filter(r => selectedReelNos.includes(r.reelNo)).reduce((sum, r) => sum + (r.weight || 0), 0).toLocaleString()} <span className="text-xs font-bold text-slate-400">KG</span>
-                </div>
               </div>
-              <span className={`px-2.5 py-1 rounded-full text-[10px] font-black uppercase tracking-wider ${
-                selectedReelNos.length > 0
-                  ? 'bg-emerald-50 text-emerald-600 dark:bg-emerald-950/60 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800'
-                  : 'bg-slate-100 text-slate-400 dark:bg-slate-800 dark:text-slate-500'
-              }`}>
-                {selectedReelNos.length > 0 ? '✓ Ready to Dispatch' : '0 Reels Selected'}
-              </span>
             </div>
-
-            <button
-              type="submit"
-              className="w-full bg-gradient-to-r from-blue-600 via-indigo-600 to-blue-700 hover:from-blue-700 hover:to-indigo-700 text-white font-extrabold py-3.5 px-4 rounded-2xl text-xs uppercase tracking-wider shadow-lg shadow-blue-500/25 transition cursor-pointer flex items-center justify-center gap-2"
-            >
-              <Truck className="h-4 w-4" />
-              <span>Print Gate Pass &amp; Dispatch</span>
-            </button>
           </div>
 
-          {/* Reel Selection Ledger (2/3 width) - FAST BATCH & MULTI-SELECTION ENGINE */}
-          <div className="lg:col-span-2 bg-white dark:bg-surface-dark border border-slate-200 dark:border-slate-700/80 rounded-3xl p-4 sm:p-5 shadow-xs space-y-3.5 text-left">
+          {/* Reel Selection Ledger (Full Width Card) - FAST BATCH & MULTI-SELECTION ENGINE */}
+          <div className="bg-white dark:bg-surface-dark border border-slate-200 dark:border-slate-700/80 rounded-3xl p-5 sm:p-6 shadow-xs space-y-4 text-left w-full">
             
-            {/* 1. Header with Tally, Search Bar (Picture 3 Spot) & View Switcher */}
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 border-b border-slate-100 dark:border-slate-800 pb-3">
+            {/* 1. Header with Tally, Search Bar & View Switcher */}
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 border-b border-slate-100 dark:border-slate-800 pb-3.5">
               <div className="space-y-0.5">
                 <div className="flex items-center gap-2">
                   <h3 className="text-xs font-black text-slate-900 dark:text-white uppercase tracking-wider">
@@ -1372,8 +1366,8 @@ export const DispatchView: React.FC<DispatchViewProps> = ({ initialTab = 'orders
             ) : (
 
               /* GRID CARDS VIEW */
-              <div className="space-y-2.5">
-                <div className={`grid grid-cols-1 sm:grid-cols-2 gap-2.5 pr-1 ${showAllReels ? 'max-h-[550px] overflow-y-auto' : ''}`}>
+              <div className="space-y-3">
+                <div className={`grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-3 pr-1 ${showAllReels ? 'max-h-[600px] overflow-y-auto' : ''}`}>
                   {(showAllReels ? filteredAvailableReels : filteredAvailableReels.slice(0, 8)).map(reel => {
                     const isChecked = selectedReelNos.includes(reel.reelNo);
                     return (
