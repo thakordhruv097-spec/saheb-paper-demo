@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useEffect } from 'react';
+import React, { useState, useMemo, useEffect, useRef } from 'react';
 import { useAuth } from '../auth/AuthContext';
 import { useTranslation } from 'react-i18next';
 import {
@@ -41,6 +41,8 @@ import {
   RotateCcw,
   ScanBarcode,
   Eye,
+  Building2,
+  Check,
 } from 'lucide-react';
 
 interface DispatchViewProps {
@@ -157,6 +159,39 @@ export const DispatchView: React.FC<DispatchViewProps> = ({ initialTab = 'orders
   const [driverName, setDriverName] = useState('');
   const [driverMobile, setDriverMobile] = useState('');
   const [receiverSig, setReceiverSig] = useState('');
+
+  // Custom Party Selection Dropdown States
+  const [isPartyDropdownOpen, setIsPartyDropdownOpen] = useState(false);
+  const [partySearchQuery, setPartySearchQuery] = useState('');
+  const partyDropdownRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (partyDropdownRef.current && !partyDropdownRef.current.contains(event.target as Node)) {
+        setIsPartyDropdownOpen(false);
+      }
+    };
+    if (isPartyDropdownOpen) {
+      document.addEventListener('mousedown', handleClickOutside);
+    }
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, [isPartyDropdownOpen]);
+
+  const filteredPartyOptions = useMemo(() => {
+    const q = partySearchQuery.toLowerCase().trim();
+    if (!q) return parties;
+    return parties.filter(p =>
+      p.name.toLowerCase().includes(q) ||
+      (p.contact && p.contact.toLowerCase().includes(q)) ||
+      (p.address && p.address.toLowerCase().includes(q))
+    );
+  }, [parties, partySearchQuery]);
+
+  const selectedParty = useMemo(() => {
+    return parties.find(p => p.id === slipPartyId);
+  }, [parties, slipPartyId]);
 
   // 3. Active Challan Detail Modal (for PDF/Excel print review)
   const [viewingSlip, setViewingSlip] = useState<PackingSlip | null>(null);
@@ -795,20 +830,112 @@ export const DispatchView: React.FC<DispatchViewProps> = ({ initialTab = 'orders
 
             {/* Form Fields in 5-Column Responsive Grid */}
             <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3.5">
-              <div>
-                <label className="block text-[11px] font-extrabold text-slate-700 dark:text-slate-300 mb-1.5">
-                  Customer / Party Name
+              {/* Custom Modern Searchable Party Dropdown */}
+              <div className="relative" ref={partyDropdownRef}>
+                <label className="block text-[11px] font-extrabold text-slate-700 dark:text-slate-300 mb-1.5 flex items-center justify-between">
+                  <span>Customer / Party Name</span>
+                  {selectedParty && (
+                    <span className="text-[10px] text-blue-600 dark:text-blue-400 font-bold">
+                      Selected
+                    </span>
+                  )}
                 </label>
-                <select
-                  value={slipPartyId}
-                  onChange={e => setSlipPartyId(e.target.value)}
-                  className="w-full py-2.5 px-3 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-2xl text-xs font-bold focus:outline-none focus:ring-2 focus:ring-blue-500 dark:text-white cursor-pointer"
+
+                <button
+                  type="button"
+                  onClick={() => {
+                    setIsPartyDropdownOpen(prev => !prev);
+                    setPartySearchQuery('');
+                  }}
+                  className={`w-full flex items-center justify-between py-2.5 px-3 bg-slate-50 dark:bg-slate-900 border rounded-2xl text-xs font-bold transition cursor-pointer text-left ${
+                    isPartyDropdownOpen
+                      ? 'border-blue-500 ring-2 ring-blue-500/20 bg-white dark:bg-slate-800'
+                      : 'border-slate-200 dark:border-slate-700 hover:border-slate-300 dark:hover:border-slate-600'
+                  }`}
                 >
-                  <option value="">-- Select Customer Party --</option>
-                  {parties.map(p => (
-                    <option key={p.id} value={p.id}>{p.name}</option>
-                  ))}
-                </select>
+                  <div className="flex items-center gap-2 min-w-0 flex-1">
+                    <Building2 className={`h-4 w-4 shrink-0 ${selectedParty ? 'text-blue-600 dark:text-blue-400' : 'text-slate-400'}`} />
+                    <span className={`truncate ${selectedParty ? 'text-slate-900 dark:text-white font-extrabold' : 'text-slate-400 font-normal'}`}>
+                      {selectedParty ? selectedParty.name : '-- Select Customer Party --'}
+                    </span>
+                  </div>
+                  <div className="flex items-center gap-1 shrink-0 ml-1.5">
+                    {selectedParty && (
+                      <span
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setSlipPartyId('');
+                        }}
+                        className="p-1 text-slate-400 hover:text-red-500 cursor-pointer rounded-full hover:bg-slate-100 dark:hover:bg-slate-700"
+                        title="Clear party"
+                      >
+                        <X className="h-3 w-3" />
+                      </span>
+                    )}
+                    <ChevronDown className={`h-4 w-4 text-slate-400 transition-transform duration-200 ${isPartyDropdownOpen ? 'rotate-180 text-blue-600' : ''}`} />
+                  </div>
+                </button>
+
+                {/* Dropdown Popup Menu */}
+                {isPartyDropdownOpen && (
+                  <div className="absolute top-full left-0 right-0 mt-1.5 bg-white dark:bg-slate-800 rounded-2xl shadow-2xl border border-slate-200 dark:border-slate-700 z-50 overflow-hidden animate-in fade-in zoom-in-95 duration-150 min-w-[240px]">
+                    {/* Search inside Dropdown */}
+                    <div className="p-2 border-b border-slate-100 dark:border-slate-700/80 bg-slate-50/70 dark:bg-slate-900/60">
+                      <div className="relative">
+                        <Search className="h-3.5 w-3.5 text-slate-400 absolute left-2.5 top-1/2 -translate-y-1/2" />
+                        <input
+                          type="text"
+                          value={partySearchQuery}
+                          onChange={e => setPartySearchQuery(e.target.value)}
+                          placeholder="Search customer party..."
+                          className="w-full py-1.5 pl-8 pr-3 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-xs font-semibold focus:outline-none dark:text-white"
+                          autoFocus
+                          onClick={e => e.stopPropagation()}
+                        />
+                      </div>
+                    </div>
+
+                    {/* Party Options List */}
+                    <div className="max-h-56 overflow-y-auto p-1.5 space-y-1">
+                      {filteredPartyOptions.length === 0 ? (
+                        <div className="py-4 text-center text-xs text-slate-400 font-semibold">
+                          No matching customer party found
+                        </div>
+                      ) : (
+                        filteredPartyOptions.map(p => {
+                          const isSelected = slipPartyId === p.id;
+                          return (
+                            <button
+                              key={p.id}
+                              type="button"
+                              onClick={() => {
+                                setSlipPartyId(p.id);
+                                setIsPartyDropdownOpen(false);
+                              }}
+                              className={`w-full flex items-center justify-between p-2.5 rounded-xl text-xs font-bold transition text-left cursor-pointer ${
+                                isSelected
+                                  ? 'bg-blue-50 dark:bg-blue-950/60 text-blue-700 dark:text-blue-300 font-extrabold'
+                                  : 'hover:bg-slate-50 dark:hover:bg-slate-700/60 text-slate-800 dark:text-slate-200'
+                              }`}
+                            >
+                              <div className="min-w-0 flex-1 pr-2">
+                                <div className="truncate text-slate-900 dark:text-white font-extrabold">{p.name}</div>
+                                {(p.contact || p.address) && (
+                                  <div className="text-[10px] text-slate-400 font-normal truncate mt-0.5">
+                                    {p.contact} {p.address ? `• ${p.address}` : ''}
+                                  </div>
+                                )}
+                              </div>
+                              {isSelected && (
+                                <Check className="h-4 w-4 text-blue-600 dark:text-blue-400 shrink-0" />
+                              )}
+                            </button>
+                          );
+                        })
+                      )}
+                    </div>
+                  </div>
+                )}
               </div>
 
               <div>
