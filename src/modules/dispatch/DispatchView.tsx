@@ -154,7 +154,8 @@ export const DispatchView: React.FC<DispatchViewProps> = ({ initialTab = 'orders
   const [slipPartyId, setSlipPartyId] = useState('');
   const [slipVehicleId, setSlipVehicleId] = useState('');
   const [selectedReelNos, setSelectedReelNos] = useState<string[]>([]);
-  const [driverSig, setDriverSig] = useState('');
+  const [driverName, setDriverName] = useState('');
+  const [driverMobile, setDriverMobile] = useState('');
   const [receiverSig, setReceiverSig] = useState('');
 
   // 3. Active Challan Detail Modal (for PDF/Excel print review)
@@ -359,6 +360,16 @@ export const DispatchView: React.FC<DispatchViewProps> = ({ initialTab = 'orders
       setErrorMsg(`Challan number ${targetSlipNo} has already been logged.`);
       return;
     }
+    if (driverMobile.trim()) {
+      if (driverMobile.length !== 10 || !/^[6-9]\d{9}$/.test(driverMobile)) {
+        setErrorMsg('Please enter a valid 10-digit Indian Mobile Number starting with 6, 7, 8, or 9 (e.g. 9876543210).');
+        return;
+      }
+    }
+
+    const driverFormatted = driverName.trim()
+      ? (driverMobile.trim() ? `${driverName.trim()} (+91 ${driverMobile.trim()})` : driverName.trim())
+      : (driverMobile.trim() ? `Driver (+91 ${driverMobile.trim()})` : 'Driver On Duty');
 
     const newSlip: PackingSlip = {
       id: `slip-${Date.now()}`,
@@ -367,7 +378,7 @@ export const DispatchView: React.FC<DispatchViewProps> = ({ initialTab = 'orders
       partyId: slipPartyId,
       vehicleId: slipVehicleId.trim(),
       reelNos: [...selectedReelNos],
-      driverSignature: driverSig.trim() || 'Driver On Duty',
+      driverSignature: driverFormatted,
       receiverSignature: receiverSig.trim() || 'Gate Verified',
       status: 'DRAFT',
     };
@@ -381,7 +392,8 @@ export const DispatchView: React.FC<DispatchViewProps> = ({ initialTab = 'orders
     setSlipPartyId('');
     setSlipVehicleId('');
     setSelectedReelNos([]);
-    setDriverSig('');
+    setDriverName('');
+    setDriverMobile('');
     setReceiverSig('');
     setActiveTab('slips_list');
   };
@@ -781,8 +793,8 @@ export const DispatchView: React.FC<DispatchViewProps> = ({ initialTab = 'orders
               </span>
             </div>
 
-            {/* Form Fields in 4-Column Responsive Grid */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+            {/* Form Fields in 5-Column Responsive Grid */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3.5">
               <div>
                 <label className="block text-[11px] font-extrabold text-slate-700 dark:text-slate-300 mb-1.5">
                   Customer / Party Name
@@ -790,7 +802,7 @@ export const DispatchView: React.FC<DispatchViewProps> = ({ initialTab = 'orders
                 <select
                   value={slipPartyId}
                   onChange={e => setSlipPartyId(e.target.value)}
-                  className="w-full py-2.5 px-3.5 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-2xl text-xs font-bold focus:outline-none focus:ring-2 focus:ring-blue-500 dark:text-white cursor-pointer"
+                  className="w-full py-2.5 px-3 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-2xl text-xs font-bold focus:outline-none focus:ring-2 focus:ring-blue-500 dark:text-white cursor-pointer"
                 >
                   <option value="">-- Select Customer Party --</option>
                   {parties.map(p => (
@@ -812,11 +824,17 @@ export const DispatchView: React.FC<DispatchViewProps> = ({ initialTab = 'orders
                       const val = e.target.value;
                       setSlipVehicleId(val);
                       const vObj = vehicles.find(v => v.vehicleNo.toLowerCase() === val.toLowerCase() || v.id === val);
-                      if (vObj && vObj.driverName && !driverSig) {
-                        setDriverSig(vObj.driverName);
+                      if (vObj) {
+                        if (vObj.driverName && !driverName) {
+                          setDriverName(vObj.driverName);
+                        }
+                        if (vObj.driverContact && !driverMobile) {
+                          const cleanMob = vObj.driverContact.replace(/\D/g, '').slice(0, 10);
+                          setDriverMobile(cleanMob);
+                        }
                       }
                     }}
-                    className="w-full py-2.5 px-3.5 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-2xl text-xs font-bold focus:outline-none dark:text-white uppercase font-mono placeholder:normal-case placeholder:font-sans"
+                    className="w-full py-2.5 px-3 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-2xl text-xs font-bold focus:outline-none dark:text-white uppercase font-mono placeholder:normal-case placeholder:font-sans"
                     placeholder="e.g. GJ-05-BX-4921"
                   />
                   <datalist id="dispatch-truck-suggestions">
@@ -829,15 +847,50 @@ export const DispatchView: React.FC<DispatchViewProps> = ({ initialTab = 'orders
 
               <div>
                 <label className="block text-[11px] font-extrabold text-slate-700 dark:text-slate-300 mb-1.5">
-                  Driver Name / Mobile
+                  Driver Name
                 </label>
                 <input
                   type="text"
-                  value={driverSig}
-                  onChange={e => setDriverSig(e.target.value)}
-                  className="w-full py-2.5 px-3.5 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-2xl text-xs font-bold focus:outline-none dark:text-white font-mono"
-                  placeholder="e.g. Ramesh (98765-43210)"
+                  value={driverName}
+                  onChange={e => setDriverName(e.target.value)}
+                  className="w-full py-2.5 px-3 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-2xl text-xs font-bold focus:outline-none dark:text-white"
+                  placeholder="e.g. Ramesh Patel"
                 />
+              </div>
+
+              <div>
+                <label className="block text-[11px] font-extrabold text-slate-700 dark:text-slate-300 mb-1.5 flex items-center justify-between">
+                  <span>Driver Mobile</span>
+                  <span className={`text-[10px] font-mono font-bold ${
+                    driverMobile.length === 10
+                      ? (/^[6-9]/.test(driverMobile) ? 'text-emerald-600 dark:text-emerald-400' : 'text-red-500')
+                      : driverMobile.length > 0 ? 'text-amber-500' : 'text-slate-400'
+                  }`}>
+                    {driverMobile.length}/10
+                  </span>
+                </label>
+                <div className="relative flex items-center">
+                  <span className="absolute left-3 text-xs font-black text-slate-400 select-none">
+                    +91
+                  </span>
+                  <input
+                    type="tel"
+                    inputMode="numeric"
+                    pattern="[6-9][0-9]{9}"
+                    maxLength={10}
+                    value={driverMobile}
+                    onChange={e => {
+                      const cleanDigits = e.target.value.replace(/\D/g, '').slice(0, 10);
+                      setDriverMobile(cleanDigits);
+                    }}
+                    className={`w-full py-2.5 pl-10 pr-2.5 bg-slate-50 dark:bg-slate-900 border rounded-2xl text-xs font-bold font-mono focus:outline-none dark:text-white ${
+                      driverMobile.length === 10
+                        ? (/^[6-9]/.test(driverMobile) ? 'border-emerald-500 ring-1 ring-emerald-500/30' : 'border-red-500 ring-1 ring-red-500/30')
+                        : 'border-slate-200 dark:border-slate-700'
+                    }`}
+                    placeholder="9876543210"
+                  />
+                </div>
               </div>
 
               <div className="relative">
