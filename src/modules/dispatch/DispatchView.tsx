@@ -2115,10 +2115,20 @@ export const DispatchView: React.FC<DispatchViewProps> = ({ initialTab = 'orders
             id="printable-receipt-modal"
             className="fixed inset-0 bg-slate-900/70 backdrop-blur-xs z-50 flex items-center justify-center p-2 sm:p-4 overflow-y-auto print:static print:block print:w-full print:h-auto print:overflow-visible print:bg-white print:p-0 print:m-0 print:z-auto"
           >
-            <div className="bg-white text-slate-900 rounded-3xl max-w-4xl w-full p-4 sm:p-6 space-y-4 shadow-2xl my-auto print:shadow-none print:w-full print:max-w-none print:p-0 print:m-0 print:rounded-none print:space-y-0 print:block print:overflow-visible">
+            <div className="bg-white text-slate-900 rounded-3xl max-w-4xl w-full p-4 sm:p-6 space-y-4 shadow-2xl my-auto relative print:shadow-none print:w-full print:max-w-none print:p-0 print:m-0 print:rounded-none print:space-y-0 print:block print:overflow-visible">
               
+              {/* Floating Top-Right Close Button */}
+              <button
+                type="button"
+                onClick={() => setViewingSlip(null)}
+                className="absolute top-3.5 right-3.5 sm:top-4 sm:right-4 p-2 text-slate-400 hover:text-slate-700 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 rounded-full transition cursor-pointer z-30 print:hidden shadow-xs"
+                title="Close"
+              >
+                <X className="h-4 w-4" />
+              </button>
+
               {/* Modal Top Toolbar (Hidden while printing) */}
-              <div className="flex flex-col sm:flex-row justify-between sm:items-center gap-3 border-b border-slate-200 pb-3 print:hidden">
+              <div className="flex flex-col sm:flex-row justify-between sm:items-center gap-3 border-b border-slate-200 pb-3 pr-10 print:hidden">
                 <div className="flex items-center gap-2.5">
                   <div className="p-2 rounded-xl bg-blue-50 text-blue-600">
                     <FileText className="h-5 w-5" />
@@ -2185,7 +2195,7 @@ export const DispatchView: React.FC<DispatchViewProps> = ({ initialTab = 'orders
                     </div>
                   )}
 
-                  {/* Action Buttons */}
+                  {/* Action Button */}
                   <button
                     type="button"
                     onClick={handlePrintChallan}
@@ -2193,13 +2203,6 @@ export const DispatchView: React.FC<DispatchViewProps> = ({ initialTab = 'orders
                   >
                     <Printer className="h-4 w-4" />
                     <span>Print All Pages ({totalPages})</span>
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setViewingSlip(null)}
-                    className="p-2 text-slate-400 hover:text-slate-700 rounded-xl hover:bg-slate-100 cursor-pointer"
-                  >
-                    <X className="h-5 w-5" />
                   </button>
                 </div>
               </div>
