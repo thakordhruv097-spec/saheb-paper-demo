@@ -2113,9 +2113,9 @@ export const DispatchView: React.FC<DispatchViewProps> = ({ initialTab = 'orders
         return (
           <div
             id="printable-receipt-modal"
-            className="fixed inset-0 bg-slate-900/70 backdrop-blur-xs z-50 flex items-center justify-center p-2 sm:p-4 overflow-y-auto print:fixed print:inset-0 print:bg-white print:z-[999999] print:p-0 print:m-0 print:block print:w-full print:h-full"
+            className="fixed inset-0 bg-slate-900/70 backdrop-blur-xs z-50 flex items-center justify-center p-2 sm:p-4 overflow-y-auto print:static print:block print:w-full print:h-auto print:overflow-visible print:bg-white print:p-0 print:m-0 print:z-auto"
           >
-            <div className="bg-white text-slate-900 rounded-3xl max-w-4xl w-full p-4 sm:p-6 space-y-4 shadow-2xl my-auto print:shadow-none print:w-full print:max-w-none print:p-0 print:m-0 print:rounded-none">
+            <div className="bg-white text-slate-900 rounded-3xl max-w-4xl w-full p-4 sm:p-6 space-y-4 shadow-2xl my-auto print:shadow-none print:w-full print:max-w-none print:p-0 print:m-0 print:rounded-none print:space-y-0 print:block print:overflow-visible">
               
               {/* Modal Top Toolbar (Hidden while printing) */}
               <div className="flex flex-col sm:flex-row justify-between sm:items-center gap-3 border-b border-slate-200 pb-3 print:hidden">
@@ -2205,7 +2205,7 @@ export const DispatchView: React.FC<DispatchViewProps> = ({ initialTab = 'orders
               </div>
 
               {/* PRINTABLE RECEIPT CONTAINER (Multi-Page A4 Sheet Stack) */}
-              <div className="bg-slate-100/60 p-2 sm:p-4 rounded-2xl space-y-6 print:bg-white print:p-0 print:space-y-0">
+              <div className="bg-slate-100/60 p-2 sm:p-4 rounded-2xl space-y-6 print:bg-white print:p-0 print:m-0 print:space-y-0 print:block print:overflow-visible">
                 {pages.map((pageReels, pageIndex) => {
                   const pageNumber = pageIndex + 1;
                   const isLastPage = pageNumber === totalPages;
@@ -2219,6 +2219,12 @@ export const DispatchView: React.FC<DispatchViewProps> = ({ initialTab = 'orders
                       className={`bg-white p-5 sm:p-7 text-black font-sans shadow-md border border-slate-200 rounded-xl print:shadow-none print:border-none print:p-0 print:m-0 print:rounded-none print-page-break ${
                         isHiddenOnScreen ? 'hidden print:block' : 'block'
                       }`}
+                      style={{
+                        pageBreakAfter: pageIndex < totalPages - 1 ? 'always' : 'auto',
+                        breakAfter: pageIndex < totalPages - 1 ? 'page' : 'auto',
+                        pageBreakInside: 'avoid',
+                        breakInside: 'avoid',
+                      }}
                     >
                       {/* 1. Header Banner & Metadata (Full on Page 1, Compact Continuation on Page 2+) */}
                       {pageIndex === 0 ? (
