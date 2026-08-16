@@ -43,6 +43,7 @@ import {
   ChevronLeft,
   ChevronRight,
   Beaker,
+  Tag,
 } from 'lucide-react';
 
 interface LayoutProps {
@@ -449,7 +450,8 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
     { id: 'experiment', path: '/experiment', label: t('nav.experiment', 'Dispatch Receipt'), icon: Truck },
     { id: 'finished_stock_dispatch', path: '/finished-stock-dispatch', label: t('nav.finished_stock_dispatch', 'Stock Categorization'), icon: Layers },
     { id: 'spareparts_management', path: '/spareparts-management', label: t('nav.store', 'Store Inventory'), icon: Wrench },
-    { id: 'monthly_yearly_reporting', path: '/monthly-yearly-reporting', label: t('nav.reports', 'Reports'), icon: BarChart2 },
+    { id: 'label_studio', path: '/label-studio', label: 'Label Studio', icon: Tag },
+    { id: 'monthly_yearly_reporting', path: '/monthly-yearly-reporting', label: t('nav.reports', 'Mill Reports'), icon: BarChart2 },
     { id: 'admin_panel_audit', path: '/admin-panel-audit', label: t('nav.admin_masters', 'Settings'), icon: Settings },
   ];
 
@@ -460,7 +462,7 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
     const core = visibleMenuItems.filter(i => ['dashboard'].includes(i.id));
     const production = visibleMenuItems.filter(i => ['raw_material_stock', 'pulp_mill_operations', 'machine_production', 'rewinding_reel_conversion', 'lab'].includes(i.id));
     const operations = visibleMenuItems.filter(i => ['orders', 'utilities_etp', 'experiment', 'finished_stock_dispatch', 'spareparts_management'].includes(i.id));
-    const admin = visibleMenuItems.filter(i => ['monthly_yearly_reporting', 'admin_panel_audit'].includes(i.id));
+    const admin = visibleMenuItems.filter(i => ['label_studio', 'monthly_yearly_reporting', 'admin_panel_audit'].includes(i.id));
 
     return [
       { title: 'Core Navigation', items: core },

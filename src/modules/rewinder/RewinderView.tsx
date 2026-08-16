@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { useAuth } from '../auth/AuthContext';
 import { useTranslation } from 'react-i18next';
 import { getRolls, getReels, getProducts, saveSingleReel, saveReelsFromRoll } from '../../data/index';
@@ -21,6 +21,7 @@ import {
   SlidersHorizontal,
   Layers,
   RotateCcw,
+  AlertTriangle,
 } from 'lucide-react';
 
 export const RewinderView: React.FC = () => {
@@ -34,10 +35,15 @@ export const RewinderView: React.FC = () => {
   // Filter State
   const [selectedProductFilter, setSelectedProductFilter] = useState('all');
 
-  // Helper functions for Reel No auto-increment
+  // Helper functions for Reel No auto-increment (Paper Mill Format e.g. 260500571)
   const parseAndIncrementReelNo = (lastNo: string): string => {
-    if (!lastNo || !lastNo.trim()) return 'RL-1001';
-    const match = lastNo.match(/^(.*?)(\d+)$/);
+    if (!lastNo || !lastNo.trim()) return '260500571';
+    const cleanNo = lastNo.trim();
+    if (/^\d+$/.test(cleanNo)) {
+      const num = parseInt(cleanNo, 10);
+      return String(num + 1);
+    }
+    const match = cleanNo.match(/^(.*?)(\d+)$/);
     if (match) {
       const prefix = match[1];
       const numStr = match[2];
@@ -45,7 +51,7 @@ export const RewinderView: React.FC = () => {
       const paddedNum = String(nextNum).padStart(numStr.length, '0');
       return `${prefix}${paddedNum}`;
     }
-    return `${lastNo}-1`;
+    return '260500571';
   };
 
   const getInitialReelNo = (existingReels: Reel[], offset = 0): string => {
@@ -59,7 +65,7 @@ export const RewinderView: React.FC = () => {
         return current;
       }
     }
-    return `RL-${1001 + offset}`;
+    return String(260500571 + offset);
   };
 
   // Add Reel Modal Form State (Rudra DEMO2 style)
@@ -67,16 +73,41 @@ export const RewinderView: React.FC = () => {
   const [reelForm, setReelForm] = useState({
     reelNo: getInitialReelNo(getReels(), 0),
     runningRollNo: 'M-001',
-    runningSize: '1650 mm',
+    runningSize: '',
     productName: masterProducts[0]?.name || 'Napkin Tissue',
     gsm: '16',
     size: '30 cm',
-    ply: '2',
+    ply: '1',
     dia: '900',
     joint: '0',
-    weightKg: '1500',
-    brokeKg: '100',
+    weightKg: '',
+    brokeKg: '0',
   });
+
+  const [reelsCutCount, setReelsCutCount] = useState<number>(3);
+  const [cutReels, setCutReels] = useState<Array<{ id: string; reelNo: string; size: string; weightKg: string; joint: string }>>([
+    { id: 'cut-0', reelNo: '260500571', size: '30 cm', weightKg: '', joint: '' },
+    { id: 'cut-1', reelNo: '260500572', size: '30 cm', weightKg: '', joint: '' },
+    { id: 'cut-2', reelNo: '260500573', size: '30 cm', weightKg: '', joint: '' },
+  ]);
+
+  useEffect(() => {
+    if (isAddModalOpen && cutReels.length === 0) {
+      const existing = getReels();
+      let curNo = getInitialReelNo(existing, 0);
+      const items = [];
+      for (let i = 0; i < reelsCutCount; i++) {
+        items.push({
+          id: `cut-${i}`,
+          reelNo: i === 0 ? curNo : (curNo = parseAndIncrementReelNo(curNo)),
+          size: '30 cm',
+          weightKg: '',
+          joint: '',
+        });
+      }
+      setCutReels(items);
+    }
+  }, [isAddModalOpen]);
 
   const [modalError, setModalError] = useState('');
   const [toastMsg, setToastMsg] = useState('');
@@ -255,11 +286,39 @@ export const RewinderView: React.FC = () => {
   const handleOpenAddModal = () => {
     setModalError('');
     const latestReels = getReels();
+    const availableRolls = getRolls();
     const nextNo = getInitialReelNo(latestReels, 0);
-    setReelForm(prev => ({
-      ...prev,
-      reelNo: nextNo,
-    }));
+
+    if (availableRolls.length > 0) {
+      const firstRoll = availableRolls[0];
+      setReelForm({
+        reelNo: nextNo,
+        runningRollNo: firstRoll.rollNo,
+        productName: firstRoll.product,
+        gsm: String(firstRoll.gsm),
+        runningSize: `${firstRoll.width / 10} cm`,
+        weightKg: String(firstRoll.weight),
+        size: '30 cm',
+        ply: '1',
+        dia: '900',
+        joint: '',
+        brokeKg: '0',
+      });
+    } else {
+      setReelForm({
+        reelNo: nextNo,
+        runningRollNo: 'M-001',
+        productName: masterProducts[0]?.name || 'Napkin Tissue',
+        gsm: '16',
+        runningSize: '',
+        weightKg: '',
+        size: '30 cm',
+        ply: '1',
+        dia: '900',
+        joint: '',
+        brokeKg: '0',
+      });
+    }
     setIsAddModalOpen(true);
   };
 
@@ -267,56 +326,78 @@ export const RewinderView: React.FC = () => {
     e.preventDefault();
     setModalError('');
 
-    if (!reelForm.reelNo.trim()) {
-      setModalError('Please enter a valid Reel No.');
-      return;
-    }
-    if (!reelForm.weightKg || parseFloat(reelForm.weightKg) <= 0) {
-      setModalError('Reel Weight must be a positive number.');
+    const availableRolls = getRolls();
+    if (availableRolls.length === 0) {
+      setModalError('Roll not in stock');
       return;
     }
 
-    const brokeKg = parseFloat(reelForm.brokeKg) || 0;
-    const weightKg = parseFloat(reelForm.weightKg) || 0;
+    if (!reelForm.runningRollNo.trim()) {
+      setModalError('Please enter Roll No');
+      return;
+    }
+
+    const selectedRoll = availableRolls.find(r => r.rollNo === reelForm.runningRollNo);
+    if (!selectedRoll) {
+      setModalError('Roll not in stock');
+      return;
+    }
+
+    if (!cutReels || cutReels.length === 0) {
+      setModalError('Please configure at least 1 cut reel.');
+      return;
+    }
+
+    const totalRollWeight = parseFloat(reelForm.weightKg) || 0;
+    const gsmVal = parseFloat(reelForm.gsm) || 16;
+    const plyVal = parseInt(reelForm.ply) || 1;
     const diaVal = parseFloat(reelForm.dia) || 900;
-    const jointVal = parseInt(reelForm.joint) || 0;
-    const plyVal = parseInt(reelForm.ply) || 2;
-    const gsmVal = parseFloat(reelForm.gsm) || 18;
 
-    const newReelRecord: Reel = {
-      reelNo: reelForm.reelNo.trim(),
-      parentRollNo: reelForm.runningRollNo || 'M-001',
-      product: reelForm.productName,
-      gsm: gsmVal,
-      size: parseFloat(reelForm.size) || 30,
-      ply: plyVal,
-      weight: weightKg,
-      dia: diaVal,
-      joint: jointVal,
-      status: 'QC_PENDING',
-      qcGrade: 'PENDING',
-      productionDate: `${new Date().toISOString().substring(0, 10)} ${new Date().toLocaleTimeString('en-US', { hour12: false }).substring(0, 5)}`,
-    };
+    let sumCutWeight = 0;
+    const savedRecords: Reel[] = [];
+
+    for (let i = 0; i < cutReels.length; i++) {
+      const item = cutReels[i];
+      if (!item.reelNo.trim()) {
+        setModalError(`Please enter a valid Reel No for cut reel #${i + 1}.`);
+        return;
+      }
+      const weightKg = parseFloat(item.weightKg) || 0;
+      sumCutWeight += weightKg;
+      const sizeNum = parseFloat(item.size) || parseFloat(reelForm.size) || 30;
+
+      const record: Reel = {
+        reelNo: item.reelNo.trim(),
+        parentRollNo: reelForm.runningRollNo || 'M-001',
+        product: reelForm.productName,
+        gsm: gsmVal,
+        size: sizeNum,
+        ply: plyVal,
+        weight: weightKg,
+        dia: diaVal,
+        joint: parseInt(item.joint) || 0,
+        status: 'QC_PENDING',
+        qcGrade: 'PENDING',
+        productionDate: `${new Date().toISOString().substring(0, 10)} ${new Date().toLocaleTimeString('en-US', { hour12: false }).substring(0, 5)}`,
+      };
+      savedRecords.push(record);
+    }
+
+    const brokeKg = Math.max(0, totalRollWeight - sumCutWeight);
 
     try {
-      saveSingleReel(newReelRecord, brokeKg, user?.displayName || 'System');
+      savedRecords.forEach((rec, idx) => {
+        saveSingleReel(rec, idx === savedRecords.length - 1 ? brokeKg : 0, user?.displayName || 'System');
+      });
+
       const updatedReels = getReels();
       setReels(updatedReels);
 
-      // Auto-increment Reel No for next entry!
-      const nextNo = parseAndIncrementReelNo(newReelRecord.reelNo);
-      setReelForm(prev => ({
-        ...prev,
-        reelNo: nextNo,
-        weightKg: '1500',
-        brokeKg: '100',
-      }));
-
       setIsAddModalOpen(false);
-      setToastMsg(`Reel ${newReelRecord.reelNo} logged successfully!`);
+      setToastMsg(`${savedRecords.length} Cut Reels logged successfully!`);
       setTimeout(() => setToastMsg(''), 4000);
     } catch (err: any) {
-      setModalError(err.message || 'Error saving reel entry.');
+      setModalError(err.message || 'Error saving cut reel entries.');
     }
   };
 
@@ -658,19 +739,19 @@ export const RewinderView: React.FC = () => {
         </div>
       </div>
 
-      {/* ADD REEL ENTRY MODAL (Matching Rudra DEMO2 Screenshot + Auto-Increment Reel No!) */}
+      {/* ADD REEL ENTRY MODAL (Matching Rudra DEMO2 Screenshot + Single Outer GSM Input + 1-17 Cut Reels!) */}
       {isAddModalOpen && (
-        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-          <div className="bg-white dark:bg-surface-dark border border-slate-200 dark:border-slate-700/80 rounded-3xl max-w-2xl w-full p-6 space-y-4 shadow-2xl animate-in fade-in zoom-in-95 duration-150">
+        <div className="fixed inset-0 bg-slate-900/70 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <div className="bg-[#0f172a] border border-slate-800 rounded-3xl max-w-3xl w-full p-6 space-y-4 shadow-2xl text-white animate-in fade-in zoom-in-95 duration-150 max-h-[90vh] overflow-y-auto custom-scrollbar">
             {/* Modal Header */}
-            <div className="flex justify-between items-center border-b border-slate-100 dark:border-slate-800 pb-3">
-              <h3 className="text-base font-black text-slate-900 dark:text-white">
-                Log Rewinder Reel &amp; Broke (Rule 6)
+            <div className="flex justify-between items-center border-b border-slate-800 pb-3">
+              <h3 className="text-base font-black text-white flex items-center gap-2">
+                <span>Log Rewinder Reel &amp; Broke (Rule 6)</span>
               </h3>
               <button
                 type="button"
                 onClick={() => setIsAddModalOpen(false)}
-                className="p-1.5 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800 transition cursor-pointer"
+                className="p-1.5 text-slate-400 hover:text-white rounded-xl hover:bg-slate-800 transition cursor-pointer"
               >
                 <X className="h-5 w-5" />
               </button>
@@ -678,62 +759,110 @@ export const RewinderView: React.FC = () => {
 
             <form onSubmit={handleSaveSingleReel} className="space-y-4">
               {modalError && (
-                <div className="p-3 bg-red-50 dark:bg-red-950/40 border border-red-200 dark:border-red-800 text-red-700 dark:text-red-300 rounded-xl text-xs font-bold">
-                  {modalError}
+                <div className="px-3 py-2 bg-red-950/80 border border-red-800 text-red-300 rounded-xl text-xs font-bold flex items-center gap-2">
+                  <AlertCircle className="h-4 w-4 shrink-0 text-red-400" />
+                  <span>{modalError}</span>
                 </div>
               )}
 
-              {/* Row 1: Reel No (Auto-Incremented!), Running Roll No, Running Size */}
+              {/* Row 1: Running Roll No (Select from Stock), Reels Cut (1-17 Max), Running Size */}
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                 <div>
-                  <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">
-                    Reel No (Unique)
-                  </label>
-                  <input
-                    type="text"
-                    required
-                    value={reelForm.reelNo}
-                    onChange={e => setReelForm({ ...reelForm, reelNo: e.target.value })}
-                    className="w-full p-3 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white rounded-xl text-xs font-bold font-mono focus:ring-2 focus:ring-blue-500 focus:outline-none"
-                    placeholder="e.g. RL-982"
-                  />
-                </div>
-                <div>
-                  <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">
+                  <label className="block text-xs font-bold text-slate-300 mb-1">
                     Running Roll No
                   </label>
                   <input
                     type="text"
+                    required
+                    list="running-rolls-list"
                     value={reelForm.runningRollNo}
-                    onChange={e => setReelForm({ ...reelForm, runningRollNo: e.target.value })}
-                    className="w-full p-3 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white rounded-xl text-xs font-bold focus:ring-2 focus:ring-blue-500 focus:outline-none"
+                    onChange={e => {
+                      const selectedNo = e.target.value;
+                      const rollsList = getRolls();
+                      const matched = rollsList.find(r => r.rollNo === selectedNo);
+                      if (matched) {
+                        setReelForm(prev => ({
+                          ...prev,
+                          runningRollNo: matched.rollNo,
+                          productName: matched.product,
+                          gsm: String(matched.gsm),
+                          runningSize: `${matched.width / 10} cm`,
+                          weightKg: String(matched.weight),
+                        }));
+                      } else {
+                        setReelForm(prev => ({ ...prev, runningRollNo: selectedNo }));
+                      }
+                    }}
+                    className="w-full p-2.5 bg-slate-900/90 border border-slate-700 text-white rounded-xl text-xs font-bold focus:ring-2 focus:ring-blue-500 focus:outline-none"
                     placeholder="e.g. M-001"
                   />
+                  <datalist id="running-rolls-list">
+                    {getRolls().map(roll => (
+                      <option key={roll.rollNo} value={roll.rollNo}>
+                        {roll.rollNo} ({roll.product} &bull; {roll.gsm} GSM &bull; {roll.weight}kg)
+                      </option>
+                    ))}
+                  </datalist>
                 </div>
                 <div>
-                  <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">
-                    Running Size
+                  <label className="block text-xs font-bold text-slate-300 mb-1">
+                    Reels Cut (1 to 17 Max)
+                  </label>
+                  <select
+                    value={reelsCutCount}
+                    onChange={e => {
+                      const count = Math.min(17, Math.max(1, Number(e.target.value)));
+                      setReelsCutCount(count);
+                      
+                      // Auto regenerate cut reels list
+                      const existing = getReels();
+                      let curNo = getInitialReelNo(existing, 0);
+                      const items = [];
+                      for (let i = 0; i < count; i++) {
+                        const prev = cutReels[i];
+                        items.push({
+                          id: `cut-${i}`,
+                          reelNo: prev?.reelNo || (i === 0 ? curNo : (curNo = parseAndIncrementReelNo(curNo))),
+                          size: prev?.size || reelForm.size || '30',
+                          weightKg: prev?.weightKg || '',
+                          joint: prev?.joint || '',
+                        });
+                      }
+                      setCutReels(items);
+                    }}
+                    className="w-full p-2.5 bg-slate-900/90 border border-slate-700 text-white rounded-xl text-xs font-bold focus:ring-2 focus:ring-blue-500 focus:outline-none cursor-pointer"
+                  >
+                    {Array.from({ length: 17 }, (_, i) => i + 1).map(n => (
+                      <option key={n} value={n}>
+                        {n} {n === 1 ? 'Reel' : 'Reels'}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-xs font-bold text-slate-300 mb-1">
+                    Running Size (cm)
                   </label>
                   <input
                     type="text"
                     value={reelForm.runningSize}
                     onChange={e => setReelForm({ ...reelForm, runningSize: e.target.value })}
-                    className="w-full p-3 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white rounded-xl text-xs font-bold focus:ring-2 focus:ring-blue-500 focus:outline-none"
-                    placeholder="e.g. 1650 mm"
+                    className="w-full p-2.5 bg-slate-900/90 border border-slate-700 text-white rounded-xl text-xs font-bold focus:ring-2 focus:ring-blue-500 focus:outline-none"
+                    placeholder="e.g. 165 cm"
                   />
                 </div>
               </div>
 
-              {/* Row 2: Product, GSM, Size, Ply */}
+              {/* Row 2: Product, Total Weight (kg), Ply, GSM (SINGLE GSM BOX OUTSIDE CONFIGURE CUT REELS) */}
               <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
                 <div>
-                  <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">
+                  <label className="block text-xs font-bold text-slate-300 mb-1">
                     Product
                   </label>
                   <select
                     value={reelForm.productName}
                     onChange={e => setReelForm({ ...reelForm, productName: e.target.value })}
-                    className="w-full p-3 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white rounded-xl text-xs font-bold focus:ring-2 focus:ring-blue-500 focus:outline-none cursor-pointer"
+                    className="w-full p-2.5 bg-slate-900/90 border border-slate-700 text-white rounded-xl text-xs font-bold focus:ring-2 focus:ring-blue-500 focus:outline-none cursor-pointer"
                   >
                     {masterProducts.map(p => (
                       <option key={p.id} value={p.name}>
@@ -743,104 +872,154 @@ export const RewinderView: React.FC = () => {
                   </select>
                 </div>
                 <div>
-                  <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">
-                    GSM
-                  </label>
-                  <input
-                    type="number"
-                    value={reelForm.gsm}
-                    onChange={e => setReelForm({ ...reelForm, gsm: e.target.value })}
-                    className="w-full p-3 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white rounded-xl text-xs font-bold font-mono focus:ring-2 focus:ring-blue-500 focus:outline-none"
-                  />
-                </div>
-                <div>
-                  <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">
-                    Size
-                  </label>
-                  <input
-                    type="text"
-                    value={reelForm.size}
-                    onChange={e => setReelForm({ ...reelForm, size: e.target.value })}
-                    className="w-full p-3 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white rounded-xl text-xs font-bold focus:ring-2 focus:ring-blue-500 focus:outline-none"
-                    placeholder="e.g. 30 cm"
-                  />
-                </div>
-                <div>
-                  <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">
-                    Ply
-                  </label>
-                  <input
-                    type="number"
-                    value={reelForm.ply}
-                    onChange={e => setReelForm({ ...reelForm, ply: e.target.value })}
-                    className="w-full p-3 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white rounded-xl text-xs font-bold font-mono focus:ring-2 focus:ring-blue-500 focus:outline-none"
-                  />
-                </div>
-              </div>
-
-              {/* Row 3: Reel Weight, Broke/Wastage, Dia, Joint Count */}
-              <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-                <div>
-                  <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">
-                    Reel Weight (kg)
+                  <label className="block text-xs font-bold text-slate-300 mb-1">
+                    Total Weight (kg)
                   </label>
                   <input
                     type="number"
                     required
-                    placeholder="1500"
+                    placeholder="5000"
                     value={reelForm.weightKg}
                     onChange={e => setReelForm({ ...reelForm, weightKg: e.target.value })}
-                    className="w-full p-3 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white rounded-xl text-xs font-bold font-mono focus:ring-2 focus:ring-blue-500 focus:outline-none"
+                    className="w-full p-2.5 bg-slate-900/90 border border-slate-700 text-white rounded-xl text-xs font-bold font-mono focus:ring-2 focus:ring-blue-500 focus:outline-none"
                   />
                 </div>
                 <div>
-                  <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">
-                    Broke / Wastage (kg)
+                  <label className="block text-xs font-bold text-slate-300 mb-1">
+                    Ply
                   </label>
-                  <input
-                    type="number"
-                    placeholder="100"
-                    value={reelForm.brokeKg}
-                    onChange={e => setReelForm({ ...reelForm, brokeKg: e.target.value })}
-                    className="w-full p-3 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white rounded-xl text-xs font-bold font-mono focus:ring-2 focus:ring-blue-500 focus:outline-none"
-                  />
+                  <select
+                    value={reelForm.ply}
+                    onChange={e => setReelForm({ ...reelForm, ply: e.target.value })}
+                    className="w-full p-2.5 bg-slate-900/90 border border-slate-700 text-white rounded-xl text-xs font-bold focus:ring-2 focus:ring-blue-500 focus:outline-none cursor-pointer"
+                  >
+                    <option value="1">1 Ply</option>
+                    <option value="2">2 Ply</option>
+                    <option value="3">3 Ply</option>
+                  </select>
                 </div>
                 <div>
-                  <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">
-                    Dia (mm)
+                  <label className="block text-xs font-bold text-slate-300 mb-1">
+                    GSM
                   </label>
                   <input
                     type="number"
-                    value={reelForm.dia}
-                    onChange={e => setReelForm({ ...reelForm, dia: e.target.value })}
-                    className="w-full p-3 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white rounded-xl text-xs font-bold font-mono focus:ring-2 focus:ring-blue-500 focus:outline-none"
-                  />
-                </div>
-                <div>
-                  <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">
-                    Joint Count
-                  </label>
-                  <input
-                    type="number"
-                    value={reelForm.joint}
-                    onChange={e => setReelForm({ ...reelForm, joint: e.target.value })}
-                    className="w-full p-3 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white rounded-xl text-xs font-bold font-mono focus:ring-2 focus:ring-blue-500 focus:outline-none"
+                    required
+                    value={reelForm.gsm}
+                    onChange={e => setReelForm({ ...reelForm, gsm: e.target.value })}
+                    className="w-full p-2.5 bg-slate-900/90 border border-slate-700 text-white rounded-xl text-xs font-bold font-mono focus:ring-2 focus:ring-blue-500 focus:outline-none"
+                    placeholder="16"
                   />
                 </div>
               </div>
 
-              {/* Info Banner */}
-              <div className="p-3.5 rounded-2xl text-xs font-bold flex items-center gap-2.5 bg-[#E7F9EF] text-emerald-800 border border-emerald-200 dark:bg-emerald-950/40 dark:text-emerald-300 dark:border-emerald-800">
-                <AlertCircle className="h-4.5 w-4.5 text-emerald-600 shrink-0" />
-                <span>Broke quantity automatically adds back into Raw Material &gt; Broke stock (Rule 6).</span>
+              {/* Total Summary Meter Banner */}
+              {(() => {
+                const sumCutWeight = cutReels.reduce((sum, r) => sum + (parseFloat(r.weightKg) || 0), 0);
+                const totalRollWeight = parseFloat(reelForm.weightKg) || 0;
+                return (
+                  <div className="p-3 rounded-2xl bg-slate-900/80 border border-slate-800 flex items-center justify-between text-xs font-mono font-bold">
+                    <span className="text-slate-400">
+                      Sum of Cut Reels:{' '}
+                      <span className={sumCutWeight > 0 ? 'text-emerald-400 font-black' : 'text-slate-300'}>
+                        {sumCutWeight.toLocaleString()} kg
+                      </span>{' '}
+                      / Total Roll: {totalRollWeight.toLocaleString()} kg
+                    </span>
+                    {totalRollWeight > 0 && (
+                      <span className="text-[11px] text-blue-400 font-sans font-bold">
+                        Broke: {Math.max(0, totalRollWeight - sumCutWeight).toLocaleString()} kg
+                      </span>
+                    )}
+                  </div>
+                );
+              })()}
+
+              {/* CONFIGURE CUT REELS CARD (WITHOUT INDIVIDUAL GSM INPUTS) */}
+              <div className="border border-blue-900/40 rounded-2xl bg-blue-950/20 p-4 space-y-3">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1 border-b border-blue-900/50 pb-2">
+                  <h4 className="text-xs font-black uppercase text-blue-400 tracking-wider">
+                    CONFIGURE CUT REELS [{reelsCutCount} REELS CUT]
+                  </h4>
+                  <p className="text-[11px] text-slate-400">
+                    Set individual Size, Weight &amp; Joints for each reel
+                  </p>
+                </div>
+
+                <div className="space-y-2.5 max-h-[260px] overflow-y-auto pr-1 custom-scrollbar">
+                  {cutReels.map((item, idx) => (
+                    <div
+                      key={item.id || idx}
+                      className="p-3 bg-slate-950/90 border border-slate-800 rounded-xl grid grid-cols-1 sm:grid-cols-4 gap-2.5 items-center"
+                    >
+                      {/* Reel No Badge */}
+                      <div className="flex items-center gap-2">
+                        <span className="text-xs font-black text-blue-400 font-mono">#{idx + 1}</span>
+                        <input
+                          type="text"
+                          required
+                          value={item.reelNo}
+                          onChange={e => {
+                            const val = e.target.value;
+                            setCutReels(prev => prev.map((r, i) => i === idx ? { ...r, reelNo: val } : r));
+                          }}
+                          className="w-full p-2 bg-slate-900 border border-slate-700 text-white rounded-lg text-xs font-bold font-mono focus:ring-1 focus:ring-blue-500 focus:outline-none"
+                        />
+                      </div>
+
+                      {/* Size */}
+                      <div>
+                        <input
+                          type="text"
+                          placeholder="Size (e.g. 30 cm)"
+                          value={item.size}
+                          onChange={e => {
+                            const val = e.target.value;
+                            setCutReels(prev => prev.map((r, i) => i === idx ? { ...r, size: val } : r));
+                          }}
+                          className="w-full p-2 bg-slate-900 border border-slate-700 text-white rounded-lg text-xs font-bold focus:ring-1 focus:ring-blue-500 focus:outline-none"
+                        />
+                      </div>
+
+                      {/* Weight (kg) */}
+                      <div>
+                        <input
+                          type="number"
+                          required
+                          placeholder="Weight (kg)"
+                          value={item.weightKg}
+                          onChange={e => {
+                            const val = e.target.value;
+                            setCutReels(prev => prev.map((r, i) => i === idx ? { ...r, weightKg: val } : r));
+                          }}
+                          className="w-full p-2 bg-slate-900 border border-slate-700 text-white rounded-lg text-xs font-bold font-mono focus:ring-1 focus:ring-blue-500 focus:outline-none"
+                        />
+                      </div>
+
+                      {/* Joints */}
+                      <div>
+                        <input
+                          type="number"
+                          placeholder="Joints"
+                          value={item.joint}
+                          onChange={e => {
+                            const val = e.target.value;
+                            setCutReels(prev => prev.map((r, i) => i === idx ? { ...r, joint: val } : r));
+                          }}
+                          className="w-full p-2 bg-slate-900 border border-slate-700 text-white rounded-lg text-xs font-bold font-mono focus:ring-1 focus:ring-blue-500 focus:outline-none"
+                        />
+                      </div>
+                    </div>
+                  ))}
+                </div>
               </div>
 
               {/* Actions */}
-              <div className="pt-3 flex flex-col sm:flex-row justify-end gap-3 border-t border-slate-100 dark:border-slate-800">
+              <div className="pt-2 flex flex-col sm:flex-row justify-end gap-3 border-t border-slate-800">
                 <button
                   type="button"
                   onClick={() => setIsAddModalOpen(false)}
-                  className="px-5 py-2.5 rounded-xl font-bold text-xs transition cursor-pointer bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-200 border border-slate-200 dark:border-slate-700"
+                  className="px-5 py-2.5 rounded-xl font-bold text-xs transition cursor-pointer bg-slate-800 text-slate-300 hover:bg-slate-700 border border-slate-700"
                 >
                   Cancel
                 </button>
@@ -848,7 +1027,7 @@ export const RewinderView: React.FC = () => {
                   type="submit"
                   className="px-6 py-2.5 rounded-xl font-black text-xs text-white transition cursor-pointer bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 shadow-md shadow-blue-500/25 active:scale-95"
                 >
-                  Save Reel &amp; Loop-Back Broke
+                  Save Reel Entry
                 </button>
               </div>
             </form>

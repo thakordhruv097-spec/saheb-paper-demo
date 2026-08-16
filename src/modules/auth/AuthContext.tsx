@@ -200,6 +200,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
 
     if (moduleName === 'spareparts_management') return custom.includes('spareparts_management');
+    if (moduleName === 'label_studio') return custom.includes('label_studio') || custom.includes('monthly_yearly_reporting') || userRoles.includes('Admin') || userRoles.includes('Management');
     if (moduleName === 'monthly_yearly_reporting') return custom.includes('monthly_yearly_reporting');
     if (moduleName === 'admin_panel_audit') return custom.includes('admin_panel_audit') || userRoles.includes('Admin');
     if (moduleName === 'dashboard') return custom.includes('dashboard');
