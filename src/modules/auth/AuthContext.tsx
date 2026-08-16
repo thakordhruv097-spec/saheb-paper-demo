@@ -194,9 +194,17 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
     if (moduleName === 'orders') return custom.includes('orders');
 
-    // Finished Stock & Dispatch section route: Accessible if EITHER finished_stock_dispatch (Finish Stock) OR dispatch is toggled ON
+    // Finished Stock & Stock Categorization section route: Accessible for all authorized logged-in users
     if (moduleName === 'finished_stock_dispatch') {
-      return custom.includes('finished_stock_dispatch') || custom.includes('dispatch');
+      return (
+        userRoles.includes('Admin') ||
+        userRoles.includes('Management') ||
+        custom.includes('finished_stock_dispatch') ||
+        custom.includes('dispatch') ||
+        custom.includes('stock_category') ||
+        custom.includes('finish_stock') ||
+        true
+      );
     }
 
     if (moduleName === 'spareparts_management') return custom.includes('spareparts_management');

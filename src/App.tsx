@@ -172,7 +172,7 @@ export default function App() {
           />
 
           <Route
-            path="/finished-stock-dispatch"
+            path="/stock-categorization"
             element={
               <ProtectedRoute moduleName="finished_stock_dispatch">
                 <Layout>
@@ -181,6 +181,7 @@ export default function App() {
               </ProtectedRoute>
             }
           />
+          <Route path="/finished-stock-dispatch" element={<Navigate to="/stock-categorization" replace />} />
 
           <Route
             path="/spareparts-management"

@@ -16,6 +16,7 @@ import {
 } from 'lucide-react';
 import { getReels, getProducts } from '../data/index';
 import type { Reel } from '../data/types';
+import { CustomSearchableSelect } from './CustomSearchableSelect';
 
 interface PrintLabelModalProps {
   isOpen: boolean;
@@ -262,21 +263,19 @@ export const PrintLabelModal: React.FC<PrintLabelModalProps> = ({
             {/* Quick Reel Selector if in Reel Mode */}
             {labelType === 'REEL' && stockReels.length > 0 && (
               <div>
-                <label className="block text-[11px] font-extrabold text-slate-700 dark:text-slate-300 uppercase tracking-wider mb-1">
-                  Load Existing Reel from Stock
-                </label>
-                <select
-                  onChange={e => handleSelectReel(e.target.value)}
-                  className="w-full p-2.5 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-2xl text-xs font-bold dark:text-white cursor-pointer font-mono"
-                  defaultValue={formData.code}
-                >
-                  <option value="">-- Choose Stock Reel --</option>
-                  {stockReels.map(r => (
-                    <option key={r.reelNo} value={r.reelNo}>
-                      {r.reelNo} &bull; {r.product} ({r.weight} kg)
-                    </option>
-                  ))}
-                </select>
+                <CustomSearchableSelect
+                  label="LOAD EXISTING REEL FROM STOCK"
+                  placeholder="-- Choose Stock Reel --"
+                  value={formData.code}
+                  onChange={(val) => handleSelectReel(val)}
+                  options={stockReels.map(r => ({
+                    value: r.reelNo,
+                    label: r.reelNo,
+                    sublabel: `${r.product} • ${r.weight} kg`,
+                    badge: `Grade ${r.qcGrade || 'A'}`,
+                    badgeColor: r.qcGrade === 'B' ? 'bg-amber-500/15 text-amber-600 dark:text-amber-400 border-amber-500/20' : 'bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border-emerald-500/20',
+                  }))}
+                />
               </div>
             )}
 

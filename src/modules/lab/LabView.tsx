@@ -28,6 +28,8 @@ import {
   X,
 } from 'lucide-react';
 
+import { WorkflowStepBadge, WORKFLOW_STEPS } from '../../components/WorkflowStepBadge';
+
 export const LabView: React.FC = () => {
   const { user } = useAuth();
   const { t } = useTranslation();
@@ -227,9 +229,12 @@ export const LabView: React.FC = () => {
             <Beaker className="w-5 h-5" />
           </div>
           <div>
-            <h2 className="text-base font-black text-slate-900 dark:text-white uppercase tracking-wider font-heading">
-              Sahab Paper Limited — Quality Control Laboratory
-            </h2>
+            <div className="flex flex-wrap items-center gap-2.5">
+              <h2 className="text-base font-black text-slate-900 dark:text-white uppercase tracking-wider font-heading">
+                Sahab Paper Limited — Quality Control Laboratory
+              </h2>
+              <WorkflowStepBadge stepInfo={WORKFLOW_STEPS.lab} />
+            </div>
             <p className="text-xs text-slate-500 dark:text-slate-400 font-medium tracking-tight">
               Log paper test reports, 14-sample GSM profiles, tensile/tear strength & generate official COA certificates.
             </p>
@@ -358,22 +363,22 @@ export const LabView: React.FC = () => {
         </div>
 
         {/* Ledger Table */}
-        <div className="overflow-x-auto">
+        <div className="overflow-hidden">
           <table className="w-full text-left text-xs border-collapse">
             <thead>
-              <tr className="border-b border-slate-100 dark:border-slate-800 text-slate-400 uppercase text-[10px] font-black tracking-wider">
-                <th className="py-3 px-3">Report ID</th>
-                <th className="py-3 px-3">Date / Time</th>
-                <th className="py-3 px-3">Product Quality</th>
-                <th className="py-3 px-3 font-mono">Roll No</th>
-                <th className="py-3 px-3">Shift</th>
-                <th className="py-3 px-3 font-mono">Target / Avg GSM</th>
-                <th className="py-3 px-3 font-mono">Moisture</th>
-                <th className="py-3 px-3">QC Decision</th>
-                <th className="py-3 px-3 text-right">Actions</th>
+              <tr className="border-b border-slate-200 dark:border-slate-800 text-slate-400 uppercase text-[9px] sm:text-[10px] font-black tracking-wider bg-slate-50/50 dark:bg-slate-900/60">
+                <th className="py-2.5 px-2 sm:px-3">Report ID</th>
+                <th className="py-2.5 px-2 sm:px-3">Date / Time</th>
+                <th className="py-2.5 px-2 sm:px-3">Product</th>
+                <th className="py-2.5 px-2 sm:px-3 font-mono">Roll No</th>
+                <th className="py-2.5 px-2 sm:px-3">Shift</th>
+                <th className="py-2.5 px-2 sm:px-3 font-mono">Target / Avg GSM</th>
+                <th className="py-2.5 px-2 sm:px-3 font-mono">Moisture</th>
+                <th className="py-2.5 px-2 sm:px-3">QC Decision</th>
+                <th className="py-2.5 px-2 sm:px-3 text-right">Actions</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-slate-100 dark:divide-slate-800 font-semibold">
+            <tbody className="divide-y divide-slate-100 dark:divide-slate-800 font-semibold text-[11px]">
               {filteredReports.length === 0 ? (
                 <tr>
                   <td colSpan={9} className="py-8 text-center text-xs text-slate-400 font-medium">
@@ -381,62 +386,70 @@ export const LabView: React.FC = () => {
                   </td>
                 </tr>
               ) : (
-                filteredReports.map(report => (
-                  <tr key={report.id} className="hover:bg-slate-50 dark:hover:bg-slate-800/40 transition">
-                    <td className="py-3.5 px-3 font-mono font-bold text-purple-600 dark:text-purple-400">
-                      {report.id}
-                    </td>
-                    <td className="py-3.5 px-3 font-mono text-slate-600 dark:text-slate-300">
-                      {report.date.split('-').reverse().join('.')} {report.time}
-                    </td>
-                    <td className="py-3.5 px-3 font-bold text-slate-900 dark:text-white">
-                      {report.product}
-                    </td>
-                    <td className="py-3.5 px-3 font-mono font-black text-slate-900 dark:text-white">
-                      #{report.rollNo}
-                    </td>
-                    <td className="py-3.5 px-3">
-                      <span className="px-2 py-0.5 rounded-md text-[10px] font-extrabold uppercase bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300">
-                        Shift {report.shift}
-                      </span>
-                    </td>
-                    <td className="py-3.5 px-3 font-mono">
-                      <span className="text-slate-400">{report.targetGsm}</span> / <strong className="text-slate-900 dark:text-white">{report.avgGsm} g/m²</strong>
-                    </td>
-                    <td className="py-3.5 px-3 font-mono font-bold text-slate-800 dark:text-slate-200">
-                      {report.moisturePct.toFixed(2)}%
-                    </td>
-                    <td className="py-3.5 px-3">
-                      <span className={`px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase border ${
-                        report.qcStatus === 'GRADE_A' ? 'bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-950/40 dark:text-emerald-300 dark:border-emerald-800' :
-                        report.qcStatus === 'GRADE_B' ? 'bg-amber-50 text-amber-700 border-amber-200 dark:bg-amber-950/40 dark:text-amber-300 dark:border-amber-800' :
-                        'bg-red-50 text-red-700 border-red-200 dark:bg-red-950/40 dark:text-red-300 dark:border-red-800'
-                      }`}>
-                        {report.qcStatus.replace('_', ' ')}
-                      </span>
-                    </td>
-                    <td className="py-3.5 px-3 text-right space-x-1.5">
-                      <button
-                        onClick={() => printPaperTestReport(report)}
-                        className="px-2.5 py-1.5 rounded-xl bg-purple-50 dark:bg-purple-950/40 hover:bg-purple-100 text-purple-700 dark:text-purple-300 font-bold transition text-[11px] cursor-pointer inline-flex items-center gap-1 border border-purple-200 dark:border-purple-800"
-                        title="Print PDF Certificate"
-                      >
-                        <Printer className="h-3.5 w-3.5" />
-                        <span>Print PDF</span>
-                      </button>
+                filteredReports.map(report => {
+                  // Format long IDs cleanly
+                  const displayId = report.id.length > 22 ? report.id.replace(/-R-\d+/, '') : report.id;
+                  const displayRollNo = report.rollNo.startsWith('#') ? report.rollNo : `#${report.rollNo}`;
+                  return (
+                    <tr key={report.id} className="hover:bg-slate-50 dark:hover:bg-slate-800/40 transition">
+                      <td className="py-2.5 px-2 sm:px-3 font-mono font-bold text-purple-600 dark:text-purple-400 text-[11px] truncate max-w-[140px]" title={report.id}>
+                        {displayId}
+                      </td>
+                      <td className="py-2.5 px-2 sm:px-3 font-mono text-slate-600 dark:text-slate-300 text-[11px]">
+                        {report.date.split('-').reverse().join('.')} {report.time}
+                      </td>
+                      <td className="py-2.5 px-2 sm:px-3 font-bold text-slate-900 dark:text-white text-[11px] truncate max-w-[110px]" title={report.product}>
+                        {report.product}
+                      </td>
+                      <td className="py-2.5 px-2 sm:px-3 font-mono font-black text-slate-900 dark:text-white text-[11px]">
+                        {displayRollNo}
+                      </td>
+                      <td className="py-2.5 px-2 sm:px-3 text-center whitespace-nowrap">
+                        <span className="inline-block px-2 py-0.5 rounded-md text-[10px] font-black uppercase bg-blue-500/10 dark:bg-blue-400/10 text-blue-600 dark:text-blue-400 border border-blue-500/20 leading-none">
+                          Shift {report.shift}
+                        </span>
+                      </td>
+                      <td className="py-2.5 px-2 sm:px-3 font-mono text-[11px]">
+                        <span className="text-slate-400">{report.targetGsm}</span>/<strong className="text-slate-900 dark:text-white">{report.avgGsm}g/m²</strong>
+                      </td>
+                      <td className="py-2.5 px-2 sm:px-3 font-mono font-bold text-slate-800 dark:text-slate-200 text-[11px]">
+                        {report.moisturePct.toFixed(2)}%
+                      </td>
+                      <td className="py-2.5 px-2 sm:px-3 whitespace-nowrap">
+                        <span className={`px-2 py-0.5 rounded-full text-[9px] font-black uppercase border tracking-tight inline-flex items-center gap-1 ${
+                          report.qcStatus === 'GRADE_A' ? 'bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-950/40 dark:text-emerald-300 dark:border-emerald-800' :
+                          report.qcStatus === 'GRADE_B' ? 'bg-amber-50 text-amber-700 border-amber-200 dark:bg-amber-950/40 dark:text-amber-300 dark:border-amber-800' :
+                          'bg-red-50 text-red-700 border-red-200 dark:bg-red-950/40 dark:text-red-300 dark:border-red-800'
+                        }`}>
+                          <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
+                          <span>{report.qcStatus.replace('_', ' ')}</span>
+                        </span>
+                      </td>
+                      <td className="py-2.5 px-2 sm:px-3 text-right whitespace-nowrap">
+                        <div className="inline-flex items-center justify-end gap-1.5">
+                          <button
+                            onClick={() => printPaperTestReport(report)}
+                            className="px-2.5 py-1 rounded-xl bg-purple-600 hover:bg-purple-700 text-white font-black transition text-[10px] cursor-pointer inline-flex items-center gap-1 shadow-xs leading-none whitespace-nowrap"
+                            title="Print PDF Certificate"
+                          >
+                            <Printer className="h-3 w-3 shrink-0" />
+                            <span>Print PDF</span>
+                          </button>
 
-                      {user?.role === 'Admin' && (
-                        <button
-                          onClick={e => handleDeleteReport(report.id, e)}
-                          className="p-1.5 rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-red-50 text-slate-400 hover:text-red-600 transition cursor-pointer"
-                          title="Delete Record"
-                        >
-                          <Trash2 className="h-3.5 w-3.5" />
-                        </button>
-                      )}
-                    </td>
-                  </tr>
-                ))
+                          {user?.role === 'Admin' && (
+                            <button
+                              onClick={e => handleDeleteReport(report.id, e)}
+                              className="p-1 rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-red-50 text-slate-400 hover:text-red-600 transition cursor-pointer shrink-0"
+                              title="Delete Record"
+                            >
+                              <Trash2 className="h-3.5 w-3.5" />
+                            </button>
+                          )}
+                        </div>
+                      </td>
+                    </tr>
+                  );
+                })
               )}
             </tbody>
           </table>

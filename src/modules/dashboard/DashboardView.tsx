@@ -756,7 +756,7 @@ export const DashboardView: React.FC = () => {
                   </div>
                 </div>
                 <button
-                  onClick={() => navigate('/finished-stock-dispatch')}
+                  onClick={() => navigate('/stock-categorization')}
                   className="text-xs font-extrabold text-sky-600 dark:text-sky-400 hover:underline cursor-pointer self-start sm:self-auto"
                 >
                   Open Dispatch Center &gt;

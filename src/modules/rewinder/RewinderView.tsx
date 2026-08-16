@@ -3,6 +3,7 @@ import { useAuth } from '../auth/AuthContext';
 import { useTranslation } from 'react-i18next';
 import { getRolls, getReels, getProducts, saveSingleReel, saveReelsFromRoll } from '../../data/index';
 import type { MachineRoll, Reel } from '../../data/types';
+import { CustomSearchableSelect } from '../../components/CustomSearchableSelect';
 import { QRCodeSVG } from 'qrcode.react';
 import {
   RotateCw,
@@ -23,6 +24,8 @@ import {
   RotateCcw,
   AlertTriangle,
 } from 'lucide-react';
+
+import { WorkflowStepBadge, WORKFLOW_STEPS } from '../../components/WorkflowStepBadge';
 
 export const RewinderView: React.FC = () => {
   const { t } = useTranslation();
@@ -254,6 +257,47 @@ export const RewinderView: React.FC = () => {
     });
   }, [reels, filterProduct, filterGsm, filterSize, filterPly, selectedProductFilter, statusFilter, dateFilter, searchTerm]);
 
+  // Group filtered reels into distinct cut entry batches (by parent roll + production timestamp)
+  const groupedBatches = useMemo(() => {
+    const groups: {
+      batchId: string;
+      parentRollNo: string;
+      product: string;
+      productionDate: string;
+      reels: Reel[];
+      totalWeight: number;
+      totalBroke: number;
+      netWeight: number;
+    }[] = [];
+
+    [...filteredReels].reverse().forEach(reel => {
+      const key = `${reel.parentRollNo}_${reel.productionDate}`;
+      let group = groups.find(g => g.batchId === key);
+      const brokeVal = Number(reel.joint || 0) * 15 + 20;
+      const netKg = Math.max(0, reel.weight - brokeVal);
+
+      if (!group) {
+        group = {
+          batchId: key,
+          parentRollNo: reel.parentRollNo,
+          product: reel.product,
+          productionDate: reel.productionDate,
+          reels: [],
+          totalWeight: 0,
+          totalBroke: 0,
+          netWeight: 0,
+        };
+        groups.push(group);
+      }
+      group.reels.push(reel);
+      group.totalWeight += reel.weight;
+      group.totalBroke += brokeVal;
+      group.netWeight += netKg;
+    });
+
+    return groups;
+  }, [filteredReels]);
+
   const activeCascadingFilterCount = useMemo(() => {
     let c = 0;
     if (filterProduct !== 'ALL') c++;
@@ -296,7 +340,7 @@ export const RewinderView: React.FC = () => {
         runningRollNo: firstRoll.rollNo,
         productName: firstRoll.product,
         gsm: String(firstRoll.gsm),
-        runningSize: `${firstRoll.width / 10} cm`,
+        runningSize: `${firstRoll.width} cm`,
         weightKg: String(firstRoll.weight),
         size: '30 cm',
         ply: '1',
@@ -509,7 +553,10 @@ export const RewinderView: React.FC = () => {
       <div className="bg-white dark:bg-surface-dark border border-slate-200 dark:border-slate-700/80 rounded-3xl p-5 sm:p-6 shadow-sm space-y-5">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-100 dark:border-slate-800 pb-4">
           <div>
-            <h3 className="text-base font-black text-slate-900 dark:text-white tracking-tight">Rewinder Reel Production Log</h3>
+            <div className="flex flex-wrap items-center gap-2.5">
+              <h3 className="text-base font-black text-slate-900 dark:text-white tracking-tight">Rewinder Reel Production Log</h3>
+              <WorkflowStepBadge stepInfo={WORKFLOW_STEPS.rewinder} />
+            </div>
             <p className="text-xs text-slate-500 dark:text-slate-400 font-medium mt-0.5">
               Date: {new Date().toLocaleDateString('en-GB')} &bull; Broke automatically increases Raw Material Stock (Rule 6)
             </p>
@@ -644,99 +691,113 @@ export const RewinderView: React.FC = () => {
           </div>
         </div>
 
-        {/* Desktop Table View */}
-        <div className="hidden md:block overflow-x-auto">
-          <table className="w-full text-left text-xs border-collapse">
-            <thead>
-              <tr className="bg-slate-50 dark:bg-slate-900/80 text-slate-400 uppercase tracking-wider font-extrabold text-[10px]">
-                <th className="p-3.5 rounded-l-xl">Reel No</th>
-                <th className="p-3.5">Running Roll</th>
-                <th className="p-3.5">Product</th>
-                <th className="p-3.5">GSM / Size / Ply</th>
-                <th className="p-3.5">Dia / Joint</th>
-                <th className="p-3.5 text-right">Reel Weight</th>
-                <th className="p-3.5 text-right text-red-500">Broke (kg)</th>
-                <th className="p-3.5 text-right rounded-r-xl font-black">Net Stock Weight</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-slate-100 dark:divide-slate-800 font-medium">
-              {filteredReels.length === 0 ? (
-                <tr>
-                  <td colSpan={8} className="p-8 text-center text-slate-400 font-medium">
-                    No rewinder reels recorded matching filter. Click &quot;+ Add Reel Entry&quot; to log finished reels.
-                  </td>
-                </tr>
-              ) : (
-                filteredReels.map(reel => {
-                  const brokeVal = Number(reel.joint || 0) * 15 + 20;
-                  const netKg = Math.max(0, reel.weight - brokeVal);
-                  return (
-                    <tr key={reel.reelNo} className="hover:bg-slate-50/60 dark:hover:bg-slate-800/40 transition">
-                      <td className="p-3.5 font-black text-blue-600 dark:text-blue-400">{reel.reelNo}</td>
-                      <td className="p-3.5 text-slate-500 dark:text-slate-400 font-mono">{reel.parentRollNo}</td>
-                      <td className="p-3.5 font-extrabold text-slate-900 dark:text-white">{reel.product}</td>
-                      <td className="p-3.5 text-slate-600 dark:text-slate-300">
-                        {reel.gsm} GSM | {reel.size} cm | {reel.ply} Ply
-                      </td>
-                      <td className="p-3.5 text-slate-600 dark:text-slate-300">
-                        {reel.dia} mm | {reel.joint} Joint
-                      </td>
-                      <td className="p-3.5 text-right font-black text-slate-900 dark:text-white">
-                        {reel.weight.toLocaleString()} kg
-                      </td>
-                      <td className="p-3.5 text-right font-black text-red-500">
-                        +{brokeVal} kg
-                      </td>
-                      <td className="p-3.5 text-right font-black text-slate-900 dark:text-white">
-                        {netKg.toLocaleString()} kg
-                      </td>
-                    </tr>
-                  );
-                })
-              )}
-            </tbody>
-          </table>
-        </div>
-
-        {/* Mobile View Cards */}
-        <div className="block md:hidden space-y-3">
-          {filteredReels.length === 0 ? (
-            <p className="text-center text-slate-400 py-6 text-xs">No rewinder reels recorded.</p>
-          ) : (
-            filteredReels.map(reel => {
-              const brokeVal = Number(reel.joint || 0) * 15 + 20;
-              const netKg = Math.max(0, reel.weight - brokeVal);
-              return (
-                <div key={reel.reelNo} className="p-4 rounded-2xl bg-slate-50 dark:bg-slate-900/60 border border-slate-200/80 dark:border-slate-800 space-y-2">
-                  <div className="flex items-center justify-between">
-                    <span className="text-sm font-black text-blue-600 dark:text-blue-400">{reel.reelNo}</span>
-                    <span className="text-xs font-black px-2.5 py-0.5 rounded-lg bg-emerald-100 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300">
-                      Net: {netKg.toLocaleString()} kg
+        {/* Distinct Grouped Cut Batches View */}
+        {groupedBatches.length === 0 ? (
+          <div className="p-8 text-center text-slate-400 font-medium bg-slate-50 dark:bg-slate-900/40 rounded-2xl border border-slate-200 dark:border-slate-800">
+            No rewinder reels recorded matching filter. Click &quot;+ Add Reel Entry&quot; to log finished reels.
+          </div>
+        ) : (
+          <div className="space-y-6">
+            {groupedBatches.map(batch => (
+              <div key={batch.batchId} className="bg-slate-50 dark:bg-slate-900/60 border border-slate-200 dark:border-slate-800 rounded-3xl overflow-hidden shadow-sm space-y-0">
+                {/* Batch Header Bar */}
+                <div className="bg-slate-100 dark:bg-slate-800/80 p-4 border-b border-slate-200 dark:border-slate-700/80 flex flex-wrap items-center justify-between gap-3">
+                  <div className="flex items-center gap-3">
+                    <div className="px-3 py-1 rounded-xl bg-blue-600/15 dark:bg-blue-500/20 border border-blue-500/30 text-blue-700 dark:text-blue-300 text-xs font-black font-mono flex items-center gap-1.5">
+                      <span className="w-2 h-2 rounded-full bg-blue-500 animate-pulse" />
+                      <span>RUNNING ROLL: #{batch.parentRollNo}</span>
+                    </div>
+                    <span className="text-xs font-black text-slate-900 dark:text-white">
+                      {batch.product} &bull; <span className="text-blue-600 dark:text-blue-400">{batch.reels.length} {batch.reels.length === 1 ? 'Reel Cut' : 'Reels Cut'}</span>
+                    </span>
+                    <span className="text-[11px] text-slate-500 dark:text-slate-400 font-mono">
+                      ({batch.productionDate})
                     </span>
                   </div>
-                  <div className="grid grid-cols-2 gap-2 text-xs pt-1">
-                    <div>
-                      <span className="text-slate-400 block text-[10px] uppercase font-bold">Product</span>
-                      <span className="font-bold text-slate-900 dark:text-white">{reel.product}</span>
-                    </div>
-                    <div>
-                      <span className="text-slate-400 block text-[10px] uppercase font-bold">Reel Weight</span>
-                      <span className="font-extrabold text-slate-900 dark:text-white">{reel.weight.toLocaleString()} kg</span>
-                    </div>
-                    <div>
-                      <span className="text-slate-400 block text-[10px] uppercase font-bold">GSM / Size / Ply</span>
-                      <span className="font-semibold text-slate-700 dark:text-slate-300">{reel.gsm} GSM &bull; {reel.size}cm &bull; {reel.ply}P</span>
-                    </div>
-                    <div>
-                      <span className="text-slate-400 block text-[10px] uppercase font-bold">Broke (Returned)</span>
-                      <span className="font-bold text-red-500">+{brokeVal} kg</span>
-                    </div>
+                  <div className="flex items-center gap-3 text-xs font-bold">
+                    <span className="text-slate-600 dark:text-slate-300">Total: <strong className="text-slate-900 dark:text-white">{batch.totalWeight.toLocaleString()} kg</strong></span>
+                    <span className="text-red-500">Broke: <strong>+{batch.totalBroke.toLocaleString()} kg</strong></span>
+                    <span className="text-emerald-700 dark:text-emerald-400 bg-emerald-100 dark:bg-emerald-950/60 px-2.5 py-0.5 rounded-lg border border-emerald-300 dark:border-emerald-800/60">Net Stock: <strong>{batch.netWeight.toLocaleString()} kg</strong></span>
                   </div>
                 </div>
-              );
-            })
-          )}
-        </div>
+
+                {/* Desktop Reels Table for this Batch */}
+                <div className="hidden md:block overflow-x-auto p-2">
+                  <table className="w-full text-left text-xs border-collapse">
+                    <thead>
+                      <tr className="text-slate-400 uppercase tracking-wider font-extrabold text-[10px] border-b border-slate-200/60 dark:border-slate-800">
+                        <th className="p-3">Reel No</th>
+                        <th className="p-3">Running Roll</th>
+                        <th className="p-3">Product</th>
+                        <th className="p-3">GSM / Size / Ply</th>
+                        <th className="p-3">Joint</th>
+                        <th className="p-3 text-right">Reel Weight</th>
+                        <th className="p-3 text-right text-red-500">Broke (kg)</th>
+                        <th className="p-3 text-right font-black">Net Stock Weight</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-slate-200/60 dark:divide-slate-800 font-medium">
+                      {batch.reels.map(reel => {
+                        const brokeVal = Number(reel.joint || 0) * 15 + 20;
+                        const netKg = Math.max(0, reel.weight - brokeVal);
+                        return (
+                          <tr key={reel.reelNo} className="hover:bg-slate-100/60 dark:hover:bg-slate-800/40 transition">
+                            <td className="p-3 font-black text-blue-600 dark:text-blue-400 font-mono">{reel.reelNo}</td>
+                            <td className="p-3 text-slate-500 dark:text-slate-400 font-mono">{reel.parentRollNo}</td>
+                            <td className="p-3 font-bold text-slate-900 dark:text-white">{reel.product}</td>
+                            <td className="p-3 text-slate-600 dark:text-slate-300">
+                              {reel.gsm} GSM | {reel.size} cm | {reel.ply} Ply
+                            </td>
+                            <td className="p-3 text-slate-600 dark:text-slate-300">
+                              {reel.joint} Joint
+                            </td>
+                            <td className="p-3 text-right font-black text-slate-900 dark:text-white">
+                              {reel.weight.toLocaleString()} kg
+                            </td>
+                            <td className="p-3 text-right font-black text-red-500">
+                              +{brokeVal} kg
+                            </td>
+                            <td className="p-3 text-right font-black text-slate-900 dark:text-white">
+                              {netKg.toLocaleString()} kg
+                            </td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
+                </div>
+
+                {/* Mobile View Stacked Cards for this Batch */}
+                <div className="block md:hidden p-3 space-y-2.5">
+                  {batch.reels.map(reel => {
+                    const brokeVal = Number(reel.joint || 0) * 15 + 20;
+                    const netKg = Math.max(0, reel.weight - brokeVal);
+                    return (
+                      <div key={reel.reelNo} className="p-3.5 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 space-y-2 text-xs">
+                        <div className="flex items-center justify-between">
+                          <span className="font-mono font-black text-blue-600 dark:text-blue-400">{reel.reelNo}</span>
+                          <span className="font-bold px-2 py-0.5 rounded-lg bg-emerald-100 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300 text-[10px]">
+                            Net: {netKg.toLocaleString()} kg
+                          </span>
+                        </div>
+                        <div className="grid grid-cols-2 gap-2 text-[11px] pt-1">
+                          <div>
+                            <span className="text-slate-400 block text-[9px] uppercase font-bold">Specs</span>
+                            <span className="font-bold text-slate-800 dark:text-slate-200">{reel.gsm} GSM &bull; {reel.size}cm</span>
+                          </div>
+                          <div>
+                            <span className="text-slate-400 block text-[9px] uppercase font-bold">Reel Weight</span>
+                            <span className="font-extrabold text-slate-900 dark:text-white">{reel.weight.toLocaleString()} kg</span>
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
       </div>
 
       {/* ADD REEL ENTRY MODAL (Matching Rudra DEMO2 Screenshot + Single Outer GSM Input + 1-17 Cut Reels!) */}
@@ -779,14 +840,16 @@ export const RewinderView: React.FC = () => {
                     onChange={e => {
                       const selectedNo = e.target.value;
                       const rollsList = getRolls();
-                      const matched = rollsList.find(r => r.rollNo === selectedNo);
+                      const matched = rollsList.find(
+                        r => r.rollNo.trim().toLowerCase() === selectedNo.trim().toLowerCase()
+                      );
                       if (matched) {
                         setReelForm(prev => ({
                           ...prev,
                           runningRollNo: matched.rollNo,
                           productName: matched.product,
                           gsm: String(matched.gsm),
-                          runningSize: `${matched.width / 10} cm`,
+                          runningSize: `${matched.width} cm`,
                           weightKg: String(matched.weight),
                         }));
                       } else {
@@ -856,20 +919,16 @@ export const RewinderView: React.FC = () => {
               {/* Row 2: Product, Total Weight (kg), Ply, GSM (SINGLE GSM BOX OUTSIDE CONFIGURE CUT REELS) */}
               <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
                 <div>
-                  <label className="block text-xs font-bold text-slate-300 mb-1">
-                    Product
-                  </label>
-                  <select
+                  <CustomSearchableSelect
+                    label="PRODUCT"
+                    placeholder="-- Select Product --"
                     value={reelForm.productName}
-                    onChange={e => setReelForm({ ...reelForm, productName: e.target.value })}
-                    className="w-full p-2.5 bg-slate-900/90 border border-slate-700 text-white rounded-xl text-xs font-bold focus:ring-2 focus:ring-blue-500 focus:outline-none cursor-pointer"
-                  >
-                    {masterProducts.map(p => (
-                      <option key={p.id} value={p.name}>
-                        {p.name}
-                      </option>
-                    ))}
-                  </select>
+                    onChange={(val) => setReelForm({ ...reelForm, productName: val })}
+                    options={masterProducts.map(p => ({
+                      value: p.name,
+                      label: p.name,
+                    }))}
+                  />
                 </div>
                 <div>
                   <label className="block text-xs font-bold text-slate-300 mb-1">
@@ -1094,7 +1153,7 @@ export const RewinderView: React.FC = () => {
                   <div className="space-y-1 text-xs">
                     <span className="font-black text-blue-600 dark:text-blue-400 text-sm block">{reel.reelNo}</span>
                     <p className="font-bold text-slate-800 dark:text-white">{reel.product} &bull; {reel.gsm} GSM &bull; {reel.size}cm &bull; {reel.ply}P</p>
-                    <p className="text-[11px] text-slate-500 font-mono">Weight: {reel.weight} kg | Dia: {reel.dia} mm | Roll: #{reel.parentRollNo}</p>
+                    <p className="text-[11px] text-slate-500 font-mono">Weight: {reel.weight} kg | Roll: #{reel.parentRollNo}</p>
                   </div>
                   <div className="p-2 bg-white rounded-lg border shadow-2xs shrink-0">
                     <QRCodeSVG value={JSON.stringify({ reelNo: reel.reelNo, product: reel.product, weight: reel.weight, gsm: reel.gsm })} size={64} />

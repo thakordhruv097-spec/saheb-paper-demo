@@ -143,7 +143,7 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
       const mainScroll = mainEl ? mainEl.scrollTop : 0;
       const windowScroll = window.scrollY || document.documentElement.scrollTop || 0;
       const currentScrollY = Math.max(mainScroll, windowScroll);
-      
+
       // Threshold: only trigger if scroll distance is greater than 8px
       const diff = Math.abs(currentScrollY - lastScrollY.current);
       if (diff < 8) return;
@@ -158,7 +158,7 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
         setShowBottomNav(true);
         setShowHeader(true);
       }
-      
+
       lastScrollY.current = currentScrollY;
     };
 
@@ -332,7 +332,7 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
   // Computes alert notifications
   const rawNotifications = useMemo(() => {
     const list: { id: string; type: 'stock' | 'qc' | 'order'; title: string; desc: string }[] = [];
-    
+
     // 1. Low Stock Thresholds
     try {
       const materials = getRawMaterials();
@@ -448,7 +448,7 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
     { id: 'lab', path: '/lab', label: 'Lab Quality Control', icon: Beaker },
     { id: 'utilities_etp', path: '/utilities-etp', label: t('nav.utilities_etp', 'Utilities and ETP'), icon: Flame },
     { id: 'experiment', path: '/experiment', label: t('nav.experiment', 'Dispatch Receipt'), icon: Truck },
-    { id: 'finished_stock_dispatch', path: '/finished-stock-dispatch', label: t('nav.finished_stock_dispatch', 'Stock Categorization'), icon: Layers },
+    { id: 'finished_stock_dispatch', path: '/stock-categorization', label: t('nav.finished_stock_dispatch', 'Stock Categorization'), icon: Layers },
     { id: 'spareparts_management', path: '/spareparts-management', label: t('nav.store', 'Store Inventory'), icon: Wrench },
     { id: 'label_studio', path: '/label-studio', label: 'Label Studio', icon: Tag },
     { id: 'monthly_yearly_reporting', path: '/monthly-yearly-reporting', label: t('nav.reports', 'Mill Reports'), icon: BarChart2 },
@@ -483,14 +483,12 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
 
   return (
     <div className="min-h-screen bg-bg-light dark:bg-bg-dark text-text-light-primary dark:text-slate-100 flex flex-col transition-colors duration-200">
-      
+
       {/* 1. Header (Common across all sizes) - Wow Glassmorphic Design */}
-      <header className={`sticky top-0 z-30 bg-white/90 dark:bg-slate-900/90 backdrop-blur-xl border-b border-slate-200/80 dark:border-slate-800 shadow-2xs h-16 flex items-center justify-between px-4 lg:px-6 transition-all duration-300 ${
-        user ? 'md:ml-64' : ''
-      } ${
-        showHeader ? 'translate-y-0 opacity-100' : '-translate-y-full opacity-0 pointer-events-none'
-      }`}>
-        
+      <header className={`sticky top-0 z-30 bg-white/90 dark:bg-slate-900/90 backdrop-blur-xl border-b border-slate-200/80 dark:border-slate-800 shadow-2xs h-16 flex items-center justify-between px-4 lg:px-6 transition-all duration-300 ${user ? 'md:ml-64' : ''
+        } ${showHeader ? 'translate-y-0 opacity-100' : '-translate-y-full opacity-0 pointer-events-none'
+        }`}>
+
         {/* Left Side Logo & Back Navigation */}
         <div className="flex items-center gap-3 shrink-0">
           {location.pathname !== '/' ? (
@@ -544,7 +542,7 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
 
         {/* Right Side Combined Controls & Profile Container */}
         <div className="flex items-center gap-2 sm:gap-3">
-          
+
           {/* RIGHT SIDE DATE & TIMEFRAME FILTER CONTROLS BAR (Placed to the left side of Theme Toggle Button) */}
           {(location.pathname === '/' || location.pathname === '/monthly-yearly-reporting') && (user?.role === 'Admin' || user?.role === 'Management') && (
             <div className="hidden md:flex items-center gap-2 bg-slate-100/90 dark:bg-slate-800/90 p-1.5 rounded-2xl border border-slate-200/80 dark:border-slate-700 shadow-xs mr-1 sm:mr-2">
@@ -554,11 +552,10 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
                   <button
                     key={tf}
                     onClick={() => setTimeframe(tf)}
-                    className={`px-3 py-1 text-xs font-extrabold rounded-lg capitalize transition cursor-pointer ${
-                      timeframe === tf
+                    className={`px-3 py-1 text-xs font-extrabold rounded-lg capitalize transition cursor-pointer ${timeframe === tf
                         ? 'bg-primary text-white shadow-xs'
                         : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
-                    }`}
+                      }`}
                   >
                     {tf === 'day' ? 'Day' : tf === 'week' ? 'Week' : tf === 'month' ? 'Month' : 'All'}
                   </button>
@@ -576,7 +573,7 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
                 </button>
 
                 <div className="relative" ref={headerDatePickerRef}>
-                  <div 
+                  <div
                     onClick={() => setIsDatePickerModalOpen(prev => !prev)}
                     className="flex items-center bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg px-3 py-1 shadow-2xs group cursor-pointer hover:bg-slate-50 dark:hover:bg-slate-800/80 transition select-none"
                     title="Click to select date"
@@ -635,7 +632,7 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
             </button>
 
             {bellOpen && (
-              <div 
+              <div
                 onClick={(e) => e.stopPropagation()}
                 className="absolute right-0 top-full mt-2 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl shadow-2xl py-3 w-80 sm:w-88 z-50 max-h-96 overflow-y-auto font-sans"
               >
@@ -652,7 +649,7 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
                     <span className="text-xs px-2.5 py-0.5 rounded-full bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300 font-extrabold border border-emerald-200 dark:border-emerald-800">Healthy</span>
                   )}
                 </div>
-                
+
                 <div className="divide-y divide-slate-100 dark:divide-slate-700">
                   {activeNotifications.length === 0 ? (
                     <div className="p-6 text-center text-xs text-slate-500 dark:text-slate-400 font-medium">
@@ -663,10 +660,9 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
                       <div key={n.id} className="p-3.5 hover:bg-slate-50 dark:hover:bg-slate-700/60 transition text-left space-y-1.5 relative group">
                         <div className="flex items-start justify-between gap-2">
                           <div className="flex items-center gap-2 min-w-0">
-                            <span className={`h-2 w-2 rounded-full shrink-0 ${
-                              n.type === 'stock' ? 'bg-amber-500' :
-                              n.type === 'qc' ? 'bg-purple-500' : 'bg-red-500'
-                            }`}></span>
+                            <span className={`h-2 w-2 rounded-full shrink-0 ${n.type === 'stock' ? 'bg-amber-500' :
+                                n.type === 'qc' ? 'bg-purple-500' : 'bg-red-500'
+                              }`}></span>
                             <span className="text-sm font-bold text-slate-900 dark:text-slate-100 truncate">{n.title}</span>
                           </div>
                           <button
@@ -770,10 +766,9 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
       </header>
 
       <div className="flex flex-1 relative overflow-hidden">
-        
-        {/* 2. Left Sidebar (Tablet/Desktop: md:flex) - WOW Dynamic Sidebar Fixed on Left */}
+        {/* 2. Left Sidebar (Tablet/Desktop: md:flex) - Completely Locked Stationary Left Sidebar */}
         {user && (
-          <aside className="hidden md:flex flex-col fixed top-0 left-0 bottom-0 w-64 bg-white dark:bg-slate-900 border-r border-slate-200/80 dark:border-slate-800 z-40 select-none shadow-xs">
+          <aside className="hidden md:flex flex-col fixed top-0 left-0 bottom-0 w-64 bg-white dark:bg-slate-900 border-r border-slate-200/80 dark:border-slate-800 z-40 select-none shadow-xs overflow-hidden h-screen">
             {/* Sidebar Top Header with Logo (Flush at top-0 with 0 extra space) */}
             <div className="h-16 px-4 flex items-center gap-3 border-b border-slate-200/80 dark:border-slate-800 shrink-0 cursor-pointer group select-none" onClick={() => navigate('/')}>
               <img src="/logo.png" alt="Saheb Paper Logo" className="h-9 w-9 object-contain rounded-xl shadow-md shadow-blue-600/10 group-hover:scale-105 transition-transform duration-200 border border-slate-200 dark:border-slate-700 bg-white p-0.5 shrink-0" />
@@ -792,8 +787,8 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
               </div>
             </div>
 
-            {/* Sidebar Navigation Sections */}
-            <div className="flex flex-col gap-2.5 overflow-y-auto flex-1 px-3 py-2.5 pb-20 no-scrollbar scroll-smooth">
+            {/* Locked Sidebar Navigation Sections (No Inner Scroll - Locked In Position) */}
+            <div className="flex flex-col gap-2 flex-1 px-3 py-2.5 overflow-hidden select-none">
               
               {/* Render Categorized Dynamic Sections */}
               {sidebarSections.map((section) => (
@@ -810,16 +805,14 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
                         <button
                           key={item.id}
                           onClick={() => navigate(item.path)}
-                          className={`w-full flex items-center justify-between px-3 py-2 rounded-xl transition-all duration-200 text-left cursor-pointer group ${
-                            isActive
+                          className={`w-full flex items-center justify-between px-3 py-2 rounded-xl transition-all duration-200 text-left cursor-pointer group ${isActive
                               ? 'bg-gradient-to-r from-blue-600 via-indigo-600 to-blue-700 text-white font-black shadow-md shadow-blue-600/25'
                               : 'text-slate-600 dark:text-slate-300 hover:bg-slate-100/90 dark:hover:bg-slate-800/90 hover:text-slate-900 dark:hover:text-white font-bold'
-                          }`}
+                            }`}
                         >
                           <div className="flex items-center gap-2.5 min-w-0">
-                            <Icon className={`h-4 w-4 flex-shrink-0 transition-transform duration-200 ${
-                              isActive ? 'text-white' : 'text-slate-400 group-hover:text-primary dark:group-hover:text-blue-400'
-                            }`} />
+                            <Icon className={`h-4 w-4 flex-shrink-0 transition-transform duration-200 ${isActive ? 'text-white' : 'text-slate-400 group-hover:text-primary dark:group-hover:text-blue-400'
+                              }`} />
                             <span className="text-xs font-sans tracking-wide leading-tight truncate">
                               {item.label}
                             </span>
@@ -843,9 +836,8 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
           ref={mainRef}
           onTouchStart={handleTouchStart}
           onTouchEnd={handleTouchEnd}
-          className={`flex-1 flex flex-col overflow-y-auto pb-32 md:pb-6 relative min-w-0 ${
-            user ? 'md:ml-64' : ''
-          } dashboard-main-scrollbar`}
+          className={`flex-1 flex flex-col overflow-y-auto pb-32 md:pb-6 relative min-w-0 ${user ? 'md:ml-64' : ''
+            } dashboard-main-scrollbar`}
         >
           {/* Actual children page content */}
           <div className="p-2 sm:p-4 lg:p-6 flex-1 flex flex-col">{children}</div>
@@ -876,7 +868,7 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
                 <X className="h-5 w-5" />
               </button>
             </div>
-            
+
             {/* Drawer Navigation List */}
             <div className="flex flex-col gap-1.5 flex-1 overflow-y-auto pr-1">
 
@@ -890,11 +882,10 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
                       navigate(item.path);
                       setMobileMenuOpen(false);
                     }}
-                    className={`flex items-center gap-3 px-4 py-3 rounded-xl text-left text-xs font-bold transition cursor-pointer ${
-                      isActive
+                    className={`flex items-center gap-3 px-4 py-3 rounded-xl text-left text-xs font-bold transition cursor-pointer ${isActive
                         ? 'bg-slate-900 text-white dark:bg-white dark:text-slate-900 font-extrabold shadow-sm'
                         : 'text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800'
-                    }`}
+                      }`}
                   >
                     <Icon className="h-4.5 w-4.5" />
                     <span>{item.label}</span>
@@ -925,13 +916,11 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
       {user && (
         <>
           {/* Subtle Background Backdrop Mask to prevent page content bleed */}
-          <div className={`fixed bottom-0 left-0 right-0 h-20 bg-gradient-to-t from-slate-100 via-slate-100/90 to-transparent dark:from-slate-950 dark:via-slate-950/90 pointer-events-none z-30 md:hidden transition-all duration-300 ${
-            showBottomNav ? 'opacity-100' : 'opacity-0'
-          }`} />
+          <div className={`fixed bottom-0 left-0 right-0 h-20 bg-gradient-to-t from-slate-100 via-slate-100/90 to-transparent dark:from-slate-950 dark:via-slate-950/90 pointer-events-none z-30 md:hidden transition-all duration-300 ${showBottomNav ? 'opacity-100' : 'opacity-0'
+            }`} />
           {/* 5-TAB SYNCHRONIZED MOBILE BOTTOM NAVIGATION (Home -> Production -> Scan -> Dispatch -> More) */}
-          <nav className={`fixed bottom-3 left-3 right-3 h-16 bg-white/95 dark:bg-slate-900/95 backdrop-blur-xl border border-slate-200/80 dark:border-slate-800/80 rounded-3xl shadow-2xl flex md:hidden items-center justify-around px-1.5 z-40 select-none transition-all duration-300 ease-in-out ${
-            showBottomNav ? 'translate-y-0 opacity-100' : 'translate-y-[calc(100%+2rem)] opacity-0 pointer-events-none'
-          }`}>
+          <nav className={`fixed bottom-3 left-3 right-3 h-16 bg-white/95 dark:bg-slate-900/95 backdrop-blur-xl border border-slate-200/80 dark:border-slate-800/80 rounded-3xl shadow-2xl flex md:hidden items-center justify-around px-1.5 z-40 select-none transition-all duration-300 ease-in-out ${showBottomNav ? 'translate-y-0 opacity-100' : 'translate-y-[calc(100%+2rem)] opacity-0 pointer-events-none'
+            }`}>
             {mobileTabs.map((tab, idx) => {
               const isActive = activeTabIndex === idx;
               const isScanTab = tab.id === 'scan';
@@ -948,16 +937,14 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
                     className="flex flex-col items-center justify-center flex-1 py-1 group cursor-pointer"
                     title={tab.label}
                   >
-                    <div className={`w-11 h-11 rounded-full text-white flex items-center justify-center -mt-5 shadow-xl active:scale-90 transition-all ${
-                      isActive
+                    <div className={`w-11 h-11 rounded-full text-white flex items-center justify-center -mt-5 shadow-xl active:scale-90 transition-all ${isActive
                         ? 'bg-gradient-to-tr from-blue-600 to-indigo-600 shadow-blue-500/50 ring-4 ring-white dark:ring-slate-900 scale-105'
                         : 'bg-gradient-to-tr from-blue-600 to-indigo-600 shadow-blue-500/40 ring-4 ring-white dark:ring-slate-900 group-hover:scale-105'
-                    }`}>
+                      }`}>
                       <Icon className="h-5 w-5" />
                     </div>
-                    <span className={`text-[10px] mt-0.5 font-extrabold transition-colors ${
-                      isActive ? 'text-primary dark:text-blue-400 font-black' : 'text-slate-500 dark:text-slate-400'
-                    }`}>
+                    <span className={`text-[10px] mt-0.5 font-extrabold transition-colors ${isActive ? 'text-primary dark:text-blue-400 font-black' : 'text-slate-500 dark:text-slate-400'
+                      }`}>
                       {tab.label}
                     </span>
                   </button>
@@ -971,11 +958,10 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
                     if (typeof navigator !== 'undefined' && navigator.vibrate) navigator.vibrate(10);
                     navigate(tab.path);
                   }}
-                  className={`flex flex-col items-center justify-center flex-1 py-1 transition-all cursor-pointer ${
-                    isActive 
-                      ? 'text-primary dark:text-blue-400 font-extrabold scale-105' 
+                  className={`flex flex-col items-center justify-center flex-1 py-1 transition-all cursor-pointer ${isActive
+                      ? 'text-primary dark:text-blue-400 font-extrabold scale-105'
                       : 'text-slate-400 dark:text-slate-500 hover:text-slate-600 dark:hover:text-slate-300'
-                  }`}
+                    }`}
                   title={tab.label}
                 >
                   <div className={`p-1 rounded-xl transition-all ${isActive ? 'bg-blue-50 dark:bg-blue-950/60 shadow-xs' : ''}`}>
@@ -986,14 +972,14 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
               );
             })}
           </nav>
-      </>
+        </>
       )}
 
       {/* MY PROFILE EDIT MODAL */}
       {isProfileModalOpen && user && (
         <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4">
           <div className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-3xl shadow-2xl w-full max-w-lg overflow-hidden animate-in fade-in zoom-in-95 duration-200">
-            
+
             {/* Modal Header */}
             <div className="bg-gradient-to-r from-primary to-blue-600 p-6 text-white flex items-center justify-between">
               <div className="flex items-center gap-3.5">

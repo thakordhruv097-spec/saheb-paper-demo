@@ -446,12 +446,56 @@ body.print-a4-labels .qr-label-card {
   border-radius: 4px !important;
 }
 
-@keyframes slideUp {
-  from {
-    transform: translateY(100%);
+
+/* ==========================================================================
+   EXCLUSIVE LABEL PRINTING RULE (Hides all background, inputs & navigation)
+   ========================================================================== */
+@media print {
+  html, body, #root {
+    background: #ffffff !important;
+    background-color: #ffffff !important;
+    color: #000000 !important;
+    margin: 0 !important;
+    padding: 0 !important;
   }
-  to {
-    transform: translateY(0);
+
+  /* Hide every element on the page */
+  body * {
+    visibility: hidden !important;
+  }
+
+  /* Show ONLY printable label elements and their children */
+  #printable-label-card,
+  #printable-label-card *,
+  #printable-rm-lot-card,
+  #printable-rm-lot-card *,
+  #printable-reel-label,
+  #printable-reel-label *,
+  .printable-qr-card,
+  .printable-qr-card * {
+    visibility: visible !important;
+  }
+
+  /* Position printable label cleanly at top center */
+  #printable-label-card,
+  #printable-rm-lot-card,
+  #printable-reel-label,
+  .printable-qr-card {
+    position: fixed !important;
+    left: 50% !important;
+    top: 5mm !important;
+    transform: translateX(-50%) !important;
+    width: 280px !important;
+    max-width: 280px !important;
+    margin: 0 auto !important;
+    padding: 16px !important;
+    background: #ffffff !important;
+    color: #000000 !important;
+    box-shadow: none !important;
+    border: 2px solid #000000 !important;
+    border-radius: 16px !important;
+    page-break-inside: avoid !important;
+    break-inside: avoid !important;
   }
 }
 

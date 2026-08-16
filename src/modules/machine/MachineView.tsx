@@ -1,15 +1,20 @@
 import React, { useState, useMemo } from 'react';
 import { useAuth } from '../auth/AuthContext';
 import { useTranslation } from 'react-i18next';
-import { getRolls, saveRoll, getProducts, getFormulaForDate } from '../../data/index';
+import { useNavigate } from 'react-router-dom';
+import { getRolls, saveRoll, getProducts, getFormulaForDate, getFormulaInfoForDate } from '../../data/index';
 import type { MachineRoll } from '../../data/types';
 import { CustomDatePickerModal } from '../../components/CustomDatePickerModal';
 import { DataFilterBar } from '../../components/DataFilterBar';
+import { CustomSearchableSelect } from '../../components/CustomSearchableSelect';
 import { Cog, Plus, Info, Search, Calendar } from 'lucide-react';
+
+import { WorkflowStepBadge, WORKFLOW_STEPS } from '../../components/WorkflowStepBadge';
 
 export const MachineView: React.FC = () => {
   const { t } = useTranslation();
   const { user } = useAuth();
+  const navigate = useNavigate();
 
   const [rolls, setRolls] = useState<MachineRoll[]>(() => getRolls());
   const products = getProducts();
@@ -56,11 +61,14 @@ export const MachineView: React.FC = () => {
   });
   const [openDatePicker, setOpenDatePicker] = useState(false);
 
+  // Check if today's date is using previous day's formula
+  const formulaInfo = useMemo(() => getFormulaInfoForDate(dateStr), [dateStr]);
+
   const [rollNo, setRollNo] = useState(() => localStorage.getItem('draft_roll_no') || '');
   const [selectedProductId, setSelectedProductId] = useState(() => localStorage.getItem('draft_roll_product_id') || '');
   const [weightStr, setWeightStr] = useState(() => localStorage.getItem('draft_roll_weight') || '');
   const [gsmStr, setGsmStr] = useState(() => localStorage.getItem('draft_roll_gsm') || '');
-  const [widthStr, setWidthStr] = useState(() => localStorage.getItem('draft_roll_width') || '');
+  const [widthStr, setWidthStr] = useState(() => localStorage.getItem('draft_roll_width') || '30');
   const [shift, setShift] = useState<'A' | 'B'>(() => (localStorage.getItem('draft_roll_shift') as 'A' | 'B') || 'A');
   const [startTime, setStartTime] = useState(() => localStorage.getItem('draft_roll_start_time') || '08:00');
   const [offTime, setOffTime] = useState(() => localStorage.getItem('draft_roll_off_time') || '16:00');
@@ -107,13 +115,13 @@ export const MachineView: React.FC = () => {
     return `R-${cleanDate}-${padIndex}`;
   }, [dateStr, rolls]);
 
-  // Set default GSM when product is selected
+  // Set default GSM & Size when product is selected
   const handleProductSelect = (id: string) => {
     setSelectedProductId(id);
     const prod = products.find(p => p.id === id);
     if (prod) {
       setGsmStr(String(prod.gsm));
-      setWidthStr(String(prod.size * 100)); // size (cm) to width (mm) estimation, e.g. 2700mm
+      setWidthStr(String(prod.size || 30));
     }
   };
 
@@ -144,12 +152,8 @@ export const MachineView: React.FC = () => {
       return;
     }
 
-    // Check if formula exists for target date
+    // Get pulp mill recipe formula for target date (with automatic fallback)
     const formula = getFormulaForDate(dateStr);
-    if (!formula) {
-      setErrorMsg(t('machine.no_formula_error'));
-      return;
-    }
 
     const rollObj: MachineRoll = {
       rollNo: targetRollNo,
@@ -173,7 +177,7 @@ export const MachineView: React.FC = () => {
       setRollNo('');
       setWeightStr('');
       setGsmStr('');
-      setWidthStr('');
+      setWidthStr('30');
       setDowntimeReason('');
       clearDraft();
     } catch (err: any) {
@@ -189,7 +193,7 @@ export const MachineView: React.FC = () => {
     <div className="space-y-6 font-sans pb-12">
       
       {/* 1. HERO GRADIENT HEADER BANNER */}
-      <div className="bg-gradient-to-r from-blue-700 via-indigo-600 to-slate-900 rounded-3xl p-6 sm:p-8 text-white shadow-xl relative overflow-hidden">
+      <div className="bg-gradient-to-r from-blue-700 via-indigo-600 to-slate-900 rounded-3xl p-6 sm:p-8 text-white shadow-xl relative z-20">
         <div className="absolute -top-16 -right-16 w-64 h-64 rounded-full bg-white/10 blur-xl pointer-events-none" />
         <div className="absolute -bottom-20 -left-20 w-80 h-80 rounded-full bg-blue-400/10 blur-2xl pointer-events-none" />
 
@@ -201,6 +205,7 @@ export const MachineView: React.FC = () => {
             <div>
               <div className="flex flex-wrap items-center gap-3">
                 <h2 className="text-2xl sm:text-3xl font-black tracking-tight">{t('machine.title')}</h2>
+                <WorkflowStepBadge stepInfo={WORKFLOW_STEPS.machine} />
               </div>
             </div>
           </div>
@@ -219,6 +224,25 @@ export const MachineView: React.FC = () => {
           </h3>
 
           <form onSubmit={handleSubmit} className="space-y-6">
+            {formulaInfo.isPreviousDay && (
+              <div className="p-3.5 bg-gradient-to-r from-amber-500/15 via-orange-500/10 to-amber-500/15 text-amber-900 dark:text-amber-300 text-xs rounded-2xl border border-amber-300/80 dark:border-amber-700/80 font-bold flex flex-col sm:flex-row sm:items-center justify-between gap-3 animate-in fade-in shadow-xs">
+                <div className="flex items-center gap-2.5">
+                  <div className="p-1.5 rounded-xl bg-amber-500/20 text-amber-600 dark:text-amber-400 shrink-0">
+                    <Info className="h-4 w-4" />
+                  </div>
+                  <span>Notice: No Pulp Mill formula saved for {dateStr}. Using previous day's formula ({formulaInfo.formulaDate}) for raw material auto-deduction.</span>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => navigate('/pulp-mill-operations')}
+                  className="px-3.5 py-1.5 bg-gradient-to-r from-amber-600 to-orange-600 hover:from-amber-700 hover:to-orange-700 text-white rounded-xl text-[10px] font-black uppercase tracking-wider transition shrink-0 cursor-pointer shadow-sm active:scale-95 flex items-center gap-1"
+                >
+                  <span>Set Today's Formula</span>
+                  <span>→</span>
+                </button>
+              </div>
+            )}
+
             {successMsg && (
               <div className="p-3.5 bg-emerald-50 dark:bg-emerald-950/20 text-emerald-600 dark:text-emerald-400 text-xs rounded-2xl border border-emerald-200 dark:border-emerald-800 font-bold">
                 {successMsg}
@@ -290,21 +314,20 @@ export const MachineView: React.FC = () => {
                   />
                 </div>
                 <div>
-                  <label className="block text-[11px] font-black text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-1.5">
-                    Product Type
-                  </label>
-                  <select
+                  <CustomSearchableSelect
+                    label="PRODUCT TYPE"
+                    placeholder="-- Select Product --"
                     value={selectedProductId}
-                    onChange={e => handleProductSelect(e.target.value)}
-                    className="block w-full py-2.5 px-3.5 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-2xl text-xs font-bold focus:outline-none focus:ring-2 focus:ring-primary dark:text-white cursor-pointer"
-                  >
-                    <option value="">-- Select Product --</option>
-                    {filteredProducts.map(p => (
-                      <option key={p.id} value={p.id}>
-                        {p.name} ({p.gsm} GSM)
-                      </option>
-                    ))}
-                  </select>
+                    onChange={(val) => {
+                      setSelectedProductId(val);
+                      handleProductSelect(val);
+                    }}
+                    options={filteredProducts.map(p => ({
+                      value: p.id,
+                      label: p.name,
+                    }))}
+                    required
+                  />
                 </div>
                 <div>
                   <label className="block text-[11px] font-black text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-1.5">
@@ -334,14 +357,14 @@ export const MachineView: React.FC = () => {
                   </div>
                   <div>
                     <label className="block text-[11px] font-black text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-1.5">
-                      Roll Width (MM)
+                      Roll Size (cm)
                     </label>
                     <input
                       type="number"
                       value={widthStr}
                       onChange={e => setWidthStr(e.target.value)}
                       className="block w-full py-2.5 px-3.5 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-2xl text-xs font-bold focus:outline-none focus:ring-2 focus:ring-primary dark:text-white"
-                      placeholder="2700"
+                      placeholder="270"
                     />
                   </div>
                 </div>
@@ -464,8 +487,8 @@ export const MachineView: React.FC = () => {
                       <span className="font-bold text-slate-800 dark:text-slate-200 block">{r.gsm}</span>
                     </div>
                     <div>
-                      <span className="text-slate-400 uppercase text-[9px] block">Roll Width</span>
-                      <span className="font-bold text-slate-800 dark:text-slate-200 block">{r.width} mm</span>
+                      <span className="text-slate-400 uppercase text-[9px] block">Roll Size</span>
+                      <span className="font-bold text-slate-800 dark:text-slate-200 block">{r.width} cm</span>
                     </div>
                   </div>
                   {r.downtimeReason && (

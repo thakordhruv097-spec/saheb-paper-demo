@@ -94,9 +94,21 @@ export const QRScannerView: React.FC<QRScannerViewProps> = ({ onOpenPrintStudio 
   };
 
   const processScannedCode = (code: string) => {
-    const targetCode = code.trim().toUpperCase();
+    let targetCode = code.trim().toUpperCase();
     setScanError('');
     playBeep();
+
+    // Check if QR code is old Full JSON format
+    if (code.trim().startsWith('{')) {
+      try {
+        const parsed = JSON.parse(code);
+        if (parsed.reelNo) {
+          targetCode = String(parsed.reelNo).trim().toUpperCase();
+        }
+      } catch (e) {
+        console.warn('Scanned text is not valid JSON, using raw value');
+      }
+    }
 
     if (targetCode.startsWith('LOT-')) {
       const lotsList = getRawMaterialLots();

@@ -64,9 +64,25 @@ export const LabelStudioView: React.FC = () => {
   const [prodDateTime, setProdDateTime] = useState('2026-08-16 17:00');
   const [notesInstructions, setNotesInstructions] = useState('Standard Tissue Reel • Wrap Sealed');
 
-  // Label Size & Print Copies
+  // Label Size, Print Copies, and System Mode (Test ID-only vs Old Full JSON)
   const [labelSize, setLabelSize] = useState('4" x 6" (Thermal Sticker 100x150mm)');
   const [copies, setCopies] = useState<number>(1);
+  const [qrEncodingMode, setQrEncodingMode] = useState<'id_only' | 'full_json'>('id_only');
+
+  const computedQrValue = useMemo(() => {
+    if (qrEncodingMode === 'full_json') {
+      return JSON.stringify({
+        mill: 'SAHEB PAPER PVT. LTD.',
+        reelNo: barcodeNo || '260500571',
+        product: productTitle || 'Napkin Tissue',
+        gsm: gsm || '22',
+        size: sizeWidth || '27',
+        weight: netWeightKg || '1200',
+        date: '2026-08-16',
+      });
+    }
+    return qrCodeEmbedValue || barcodeNo || '260500571';
+  }, [qrEncodingMode, barcodeNo, qrCodeEmbedValue, productTitle, gsm, sizeWidth, netWeightKg]);
 
   // Handle Reel Select Change
   const handleSelectReelFromStock = (reelNo: string) => {
@@ -247,41 +263,82 @@ export const LabelStudioView: React.FC = () => {
 
 
 
-          {/* Row 7: Label Size & Copies */}
-          <div className="flex flex-col sm:flex-row items-center justify-between gap-4 pt-2">
-            <div className="flex items-center gap-3 w-full sm:w-auto">
-              <label className="text-xs font-bold text-slate-400 whitespace-nowrap">
-                Label Size:
-              </label>
-              <select
-                value={labelSize}
-                onChange={e => setLabelSize(e.target.value)}
-                className="p-2.5 bg-[#0e172e] border border-slate-700/80 text-white rounded-xl text-xs font-bold cursor-pointer focus:outline-none"
-              >
-                <option value='4" x 6" (Thermal Sticker 100x150mm)'>
-                  4" x 6" (Thermal Sticker 100x150mm)
-                </option>
-                <option value='3" x 4" (Compact Sticker 75x100mm)'>
-                  3" x 4" (Compact Sticker 75x100mm)
-                </option>
-              </select>
-            </div>
+          {/* Row 7: Label Size, Mode Toggle & Copies */}
+          <div className="space-y-3 pt-2 border-t border-slate-800/80">
+            {/* System Mode Switcher (Test ID-Only vs Old System) */}
+            <div className="p-3 bg-[#080d1b] border border-blue-500/30 rounded-2xl flex flex-col sm:flex-row items-center justify-between gap-3">
+              <div>
+                <span className="text-xs font-black text-white flex items-center gap-1.5">
+                  <span className="h-2 w-2 rounded-full bg-emerald-400 animate-pulse"></span>
+                  QR Encoding Mode:
+                </span>
+                <p className="text-[10px] text-slate-400 mt-0.5">
+                  {qrEncodingMode === 'id_only'
+                    ? '⚡ Test System: Encodes only ID (260500571) for instant backend lookup'
+                    : '📦 Old System: Encodes full JSON text payload into QR code'}
+                </p>
+              </div>
 
-            <div className="flex items-center gap-2">
-              <span className="text-xs font-bold text-slate-400">Copies:</span>
-              {[1, 2, 4].map(c => (
+              <div className="flex items-center gap-1.5 shrink-0 bg-slate-900 p-1 rounded-xl border border-slate-700">
                 <button
-                  key={c}
-                  onClick={() => setCopies(c)}
-                  className={`px-3 py-1.5 rounded-xl font-bold text-xs transition cursor-pointer ${
-                    copies === c
-                      ? 'bg-blue-600 text-white shadow-md shadow-blue-500/20'
-                      : 'bg-[#0e172e] border border-slate-700/80 text-slate-300 hover:bg-slate-800'
+                  onClick={() => setQrEncodingMode('id_only')}
+                  className={`px-3 py-1.5 rounded-lg text-[11px] font-bold transition cursor-pointer ${
+                    qrEncodingMode === 'id_only'
+                      ? 'bg-blue-600 text-white shadow-sm'
+                      : 'text-slate-400 hover:text-white'
                   }`}
                 >
-                  {c}x
+                  ⚡ ID-Only (Test System)
                 </button>
-              ))}
+
+                <button
+                  onClick={() => setQrEncodingMode('full_json')}
+                  className={`px-3 py-1.5 rounded-lg text-[11px] font-bold transition cursor-pointer ${
+                    qrEncodingMode === 'full_json'
+                      ? 'bg-blue-600 text-white shadow-sm'
+                      : 'text-slate-400 hover:text-white'
+                  }`}
+                >
+                  📦 Full Payload (Old System)
+                </button>
+              </div>
+            </div>
+
+            <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
+              <div className="flex items-center gap-3 w-full sm:w-auto">
+                <label className="text-xs font-bold text-slate-400 whitespace-nowrap">
+                  Label Size:
+                </label>
+                <select
+                  value={labelSize}
+                  onChange={e => setLabelSize(e.target.value)}
+                  className="p-2.5 bg-[#0e172e] border border-slate-700/80 text-white rounded-xl text-xs font-bold cursor-pointer focus:outline-none"
+                >
+                  <option value='4" x 6" (Thermal Sticker 100x150mm)'>
+                    4" x 6" (Thermal Sticker 100x150mm)
+                  </option>
+                  <option value='3" x 4" (Compact Sticker 75x100mm)'>
+                    3" x 4" (Compact Sticker 75x100mm)
+                  </option>
+                </select>
+              </div>
+
+              <div className="flex items-center gap-2">
+                <span className="text-xs font-bold text-slate-400">Copies:</span>
+                {[1, 2, 4].map(c => (
+                  <button
+                    key={c}
+                    onClick={() => setCopies(c)}
+                    className={`px-3 py-1.5 rounded-xl font-bold text-xs transition cursor-pointer ${
+                      copies === c
+                        ? 'bg-blue-600 text-white shadow-md shadow-blue-500/20'
+                        : 'bg-[#0e172e] border border-slate-700/80 text-slate-300 hover:bg-slate-800'
+                    }`}
+                  >
+                    {c}x
+                  </button>
+                ))}
+              </div>
             </div>
           </div>
         </div>
@@ -294,33 +351,33 @@ export const LabelStudioView: React.FC = () => {
             </span>
           </div>
 
-          {/* Thermal Sticker Printable Card (Exact Match to User Image) */}
+          {/* Thermal Sticker Printable Card (Large QR Code, Zero Blank Space) */}
           <div
             id="printable-label-card"
-            className="w-full max-w-[340px] bg-white text-slate-950 p-6 rounded-3xl shadow-2xl space-y-5 text-center flex flex-col items-center justify-center border border-slate-200/90 mx-auto"
+            className="w-full max-w-[280px] bg-white text-slate-950 p-4 rounded-2xl shadow-2xl space-y-3 text-center flex flex-col items-center justify-center border-2 border-slate-950 mx-auto"
           >
             {/* 1. Header: SAHEB PAPER PVT. LTD. */}
-            <div className="border-b-2 border-slate-950 pb-3 w-full">
-              <h2 className="text-base sm:text-lg font-black tracking-wide uppercase text-slate-950 leading-tight">
+            <div className="border-b-2 border-slate-950 pb-2 w-full">
+              <h2 className="text-sm sm:text-base font-black tracking-wide uppercase text-slate-950 leading-tight">
                 SAHEB PAPER PVT. LTD.
               </h2>
             </div>
 
-            {/* 2. QR Code Frame (Rounded Card matching image) */}
-            <div className="p-3 bg-white border border-slate-200/90 rounded-3xl flex flex-col items-center justify-center shadow-xs my-1">
+            {/* 2. Edge-to-Edge Large QR Code (No white blank space) */}
+            <div className="w-full flex items-center justify-center py-1">
               <QRCodeSVG
-                value={qrCodeEmbedValue || barcodeNo || 'RL-975'}
-                size={165}
+                value={computedQrValue}
+                size={230}
                 level="L"
-                includeMargin={true}
+                includeMargin={false}
                 bgColor="#ffffff"
                 fgColor="#000000"
               />
             </div>
 
             {/* 3. QR Code Name */}
-            <div className="pt-2 border-t border-slate-100 w-full">
-              <p className="text-[10px] font-bold uppercase tracking-widest text-slate-400">
+            <div className="pt-2 border-t-2 border-slate-950 w-full">
+              <p className="text-[10px] font-black uppercase tracking-widest text-slate-500">
                 QR CODE NAME
               </p>
               <p className="text-xl font-black font-mono text-slate-950 mt-0.5 tracking-wider">
