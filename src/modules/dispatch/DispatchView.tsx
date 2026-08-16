@@ -2220,69 +2220,95 @@ export const DispatchView: React.FC<DispatchViewProps> = ({ initialTab = 'orders
                         isHiddenOnScreen ? 'hidden print:block' : 'block'
                       }`}
                     >
-                      {/* 1. Header Banner */}
-                      <div className="border-b-2 border-black pb-2 mb-3 text-left flex justify-between items-start">
-                        <div>
-                          <h1 className="text-xl sm:text-2xl font-black tracking-tight text-black uppercase leading-tight">
-                            SAHEB PAPER PVT. LTD.
-                          </h1>
-                          <p className="text-[10px] sm:text-[11px] font-bold text-slate-700 uppercase tracking-[0.18em]">
-                            FINISHED STOCK MANAGEMENT &bull; TISSUE PAPER MILL
-                          </p>
-                        </div>
-                        <div className="text-right">
-                          <span className="text-[10px] font-mono font-black text-slate-600 uppercase border border-slate-300 px-2 py-0.5 rounded bg-slate-50">
-                            Page {pageNumber} of {totalPages}
-                          </span>
-                        </div>
-                      </div>
+                      {/* 1. Header Banner & Metadata (Full on Page 1, Compact Continuation on Page 2+) */}
+                      {pageIndex === 0 ? (
+                        <>
+                          <div className="border-b-2 border-black pb-2 mb-3 text-left flex justify-between items-start">
+                            <div>
+                              <h1 className="text-xl sm:text-2xl font-black tracking-tight text-black uppercase leading-tight">
+                                SAHEB PAPER PVT. LTD.
+                              </h1>
+                              <p className="text-[10px] sm:text-[11px] font-bold text-slate-700 uppercase tracking-[0.18em]">
+                                FINISHED STOCK MANAGEMENT &bull; TISSUE PAPER MILL
+                              </p>
+                            </div>
+                            <div className="text-right">
+                              <span className="text-[10px] font-mono font-black text-slate-600 uppercase border border-slate-300 px-2 py-0.5 rounded bg-slate-50">
+                                Page {pageNumber} of {totalPages}
+                              </span>
+                            </div>
+                          </div>
 
-                      {/* 2. Document Title & Badge */}
-                      <div className="text-center my-2 space-y-1">
-                        <h2 className="text-base sm:text-lg font-black tracking-[0.25em] text-black uppercase">
-                          DISPATCH RECEIPT
-                        </h2>
-                        <div>
-                          <span className="inline-block bg-[#E65100] text-white text-[10px] font-black uppercase px-4 py-0.5 rounded shadow-2xs">
-                            FINALIZED
-                          </span>
-                        </div>
-                      </div>
+                          {/* 2. Document Title & Badge */}
+                          <div className="text-center my-2 space-y-1">
+                            <h2 className="text-base sm:text-lg font-black tracking-[0.25em] text-black uppercase">
+                              DISPATCH RECEIPT
+                            </h2>
+                            <div>
+                              <span className="inline-block bg-[#E65100] text-white text-[10px] font-black uppercase px-4 py-0.5 rounded shadow-2xs">
+                                FINALIZED
+                              </span>
+                            </div>
+                          </div>
 
-                      {/* 3. Metadata Box with Party & Driver Mobile Numbers */}
-                      <div className="border border-slate-300 rounded p-3 text-xs text-left grid grid-cols-2 sm:grid-cols-3 gap-y-2.5 gap-x-3 font-sans bg-white mb-3.5">
-                        <div>
-                          <span className="text-[9px] font-extrabold text-slate-500 uppercase tracking-wider block">RECEIPT NO</span>
-                          <span className="font-bold font-mono text-black text-xs sm:text-sm">{viewingSlip.slipNo}</span>
-                        </div>
-                        <div>
-                          <span className="text-[9px] font-extrabold text-slate-500 uppercase tracking-wider block">DISPATCH DATE</span>
-                          <span className="font-bold text-black text-xs sm:text-sm">{viewingSlip.date}</span>
-                        </div>
-                        <div>
-                          <span className="text-[9px] font-extrabold text-slate-500 uppercase tracking-wider block">BILL NO</span>
-                          <span className="font-bold font-mono text-black text-xs sm:text-sm">GT/{viewingSlip.slipNo.slice(-2) || '45'}</span>
-                        </div>
-                        <div>
-                          <span className="text-[9px] font-extrabold text-slate-500 uppercase tracking-wider block">CUSTOMER / PARTY</span>
-                          <span className="font-bold text-black text-xs sm:text-sm block">{partyObj?.name || 'Walk-in'}</span>
-                          {partyObj?.contact && (
-                            <span className="text-[10px] text-slate-600 font-mono font-bold block">
-                              📱 {partyObj.contact}
+                          {/* 3. Metadata Box with Party & Driver Mobile Numbers */}
+                          <div className="border border-slate-300 rounded p-3 text-xs text-left grid grid-cols-2 sm:grid-cols-3 gap-y-2.5 gap-x-3 font-sans bg-white mb-3.5">
+                            <div>
+                              <span className="text-[9px] font-extrabold text-slate-500 uppercase tracking-wider block">RECEIPT NO</span>
+                              <span className="font-bold font-mono text-black text-xs sm:text-sm">{viewingSlip.slipNo}</span>
+                            </div>
+                            <div>
+                              <span className="text-[9px] font-extrabold text-slate-500 uppercase tracking-wider block">DISPATCH DATE</span>
+                              <span className="font-bold text-black text-xs sm:text-sm">{viewingSlip.date}</span>
+                            </div>
+                            <div>
+                              <span className="text-[9px] font-extrabold text-slate-500 uppercase tracking-wider block">BILL NO</span>
+                              <span className="font-bold font-mono text-black text-xs sm:text-sm">GT/{viewingSlip.slipNo.slice(-2) || '45'}</span>
+                            </div>
+                            <div>
+                              <span className="text-[9px] font-extrabold text-slate-500 uppercase tracking-wider block">CUSTOMER / PARTY</span>
+                              <span className="font-bold text-black text-xs sm:text-sm block">{partyObj?.name || 'Walk-in'}</span>
+                              {partyObj?.contact && (
+                                <span className="text-[10px] text-slate-600 font-mono font-bold block">
+                                  📱 {partyObj.contact}
+                                </span>
+                              )}
+                            </div>
+                            <div>
+                              <span className="text-[9px] font-extrabold text-slate-500 uppercase tracking-wider block">VEHICLE / TRUCK NO</span>
+                              <span className="font-bold font-mono text-black text-xs sm:text-sm uppercase block">{vehicleDisplay}</span>
+                            </div>
+                            <div>
+                              <span className="text-[9px] font-extrabold text-slate-500 uppercase tracking-wider block">DRIVER &amp; CONTACT</span>
+                              <span className="font-bold text-black text-xs sm:text-sm block">
+                                {viewingSlip.driverSignature || (vehicleObj?.driverName ? `${vehicleObj.driverName} (+91 ${vehicleObj.driverContact})` : 'Driver On Duty')}
+                              </span>
+                            </div>
+                          </div>
+                        </>
+                      ) : (
+                        /* Compact Continuation Header for Page 2+ */
+                        <div className="border-b-2 border-black pb-2 mb-3.5 text-left flex justify-between items-center">
+                          <div>
+                            <div className="flex items-center gap-2">
+                              <h1 className="text-base sm:text-lg font-black tracking-tight text-black uppercase leading-tight">
+                                SAHEB PAPER PVT. LTD.
+                              </h1>
+                              <span className="text-[9px] font-black uppercase text-slate-700 bg-slate-100 px-2 py-0.5 rounded border border-slate-300">
+                                DISPATCH RECEIPT (CONTD.)
+                              </span>
+                            </div>
+                            <p className="text-[10px] font-semibold text-slate-600 uppercase mt-0.5">
+                              Challan: <span className="font-mono text-black font-extrabold">{viewingSlip.slipNo}</span> &bull; Party: <span className="text-black font-extrabold">{partyObj?.name || 'Walk-in'}</span> &bull; Truck: <span className="font-mono text-black font-extrabold">{vehicleDisplay}</span>
+                            </p>
+                          </div>
+                          <div className="text-right">
+                            <span className="text-[10px] font-mono font-black text-slate-600 uppercase border border-slate-300 px-2 py-0.5 rounded bg-slate-50">
+                              Page {pageNumber} of {totalPages}
                             </span>
-                          )}
+                          </div>
                         </div>
-                        <div>
-                          <span className="text-[9px] font-extrabold text-slate-500 uppercase tracking-wider block">VEHICLE / TRUCK NO</span>
-                          <span className="font-bold font-mono text-black text-xs sm:text-sm uppercase block">{vehicleDisplay}</span>
-                        </div>
-                        <div>
-                          <span className="text-[9px] font-extrabold text-slate-500 uppercase tracking-wider block">DRIVER &amp; CONTACT</span>
-                          <span className="font-bold text-black text-xs sm:text-sm block">
-                            {viewingSlip.driverSignature || (vehicleObj?.driverName ? `${vehicleObj.driverName} (+91 ${vehicleObj.driverContact})` : 'Driver On Duty')}
-                          </span>
-                        </div>
-                      </div>
+                      )}
 
                       {/* 4. DISPATCHED REELS Table (With Spec-Group Headers) */}
                       <div className="mb-4 text-left">
