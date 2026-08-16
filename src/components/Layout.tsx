@@ -223,6 +223,89 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
     };
   }, [mobileMenuOpen]);
 
+  // Define Ordered Mobile Tabs (Home -> Production -> Scan -> Dispatch -> More)
+  const mobileTabs = useMemo(() => {
+    let prodPath = '/machine-production';
+    if (user?.role === 'PulpOperator') prodPath = '/pulp-mill-operations';
+    else if (user?.role === 'BoilerOperator') prodPath = '/utilities-etp?tab=boiler';
+    else if (user?.role === 'RewinderOperator') prodPath = '/rewinding-reel-conversion';
+    else if (user?.role === 'EtpOperator') prodPath = '/utilities-etp?tab=etp';
+
+    return [
+      { id: 'home', path: '/', label: 'Home', icon: LayoutDashboard, aliases: [] },
+      { id: 'production', path: prodPath, label: 'Production', icon: Factory, aliases: ['/machine-production', '/pulp-mill-operations', '/rewinding-reel-conversion', '/utilities-etp'] },
+      { id: 'scan', path: '/qr-scanner', label: 'Scan', icon: QrCode, aliases: ['/traceability'] },
+      { id: 'dispatch', path: '/finished-stock-dispatch', label: 'Dispatch', icon: Truck, aliases: ['/store-inventory', '/lab-testing'] },
+      { id: 'more', path: '/profile', label: 'More', icon: User, aliases: ['/admin-profile', '/role-management', '/user-management', '/monthly-yearly-reporting', '/raw-material-stock', '/experiments'] },
+    ];
+  }, [user]);
+
+  // Current Active Tab Index (0 to 4)
+  const activeTabIndex = useMemo(() => {
+    const currentPath = location.pathname;
+    // 1. Direct path match
+    for (let i = 0; i < mobileTabs.length; i++) {
+      const tab = mobileTabs[i];
+      if (tab.path === currentPath || tab.path.split('?')[0] === currentPath) return i;
+    }
+    // 2. Alias match
+    for (let i = 0; i < mobileTabs.length; i++) {
+      const tab = mobileTabs[i];
+      if (tab.aliases?.some(a => currentPath.startsWith(a.split('?')[0]))) return i;
+    }
+    return 0;
+  }, [location.pathname, mobileTabs]);
+
+  // Touch Swipe Gesture State & Handlers
+  const touchStartXRef = useRef<number | null>(null);
+  const touchStartYRef = useRef<number | null>(null);
+  const touchStartTimeRef = useRef<number | null>(null);
+
+  const handleTouchStart = (e: React.TouchEvent) => {
+    if (e.touches.length !== 1) return;
+    touchStartXRef.current = e.touches[0].clientX;
+    touchStartYRef.current = e.touches[0].clientY;
+    touchStartTimeRef.current = Date.now();
+  };
+
+  const handleTouchEnd = (e: React.TouchEvent) => {
+    if (touchStartXRef.current === null || touchStartYRef.current === null || touchStartTimeRef.current === null) return;
+    const deltaX = e.changedTouches[0].clientX - touchStartXRef.current;
+    const deltaY = e.changedTouches[0].clientY - touchStartYRef.current;
+    const elapsed = Date.now() - touchStartTimeRef.current;
+
+    touchStartXRef.current = null;
+    touchStartYRef.current = null;
+    touchStartTimeRef.current = null;
+
+    // Ignore interactive form controls and horizontal scrollable elements
+    const target = e.target as HTMLElement | null;
+    if (target) {
+      const isInteractive = ['INPUT', 'TEXTAREA', 'SELECT', 'CANVAS'].includes(target.tagName);
+      const isInsideScrollable = target.closest('table') || target.closest('.overflow-x-auto') || target.closest('[data-no-swipe="true"]');
+      if (isInteractive || isInsideScrollable) return;
+    }
+
+    // Minimum distance: 50px, duration < 600ms, and must be predominantly horizontal
+    if (Math.abs(deltaX) > 50 && Math.abs(deltaX) > 1.3 * Math.abs(deltaY) && elapsed < 600) {
+      if (deltaX < 0) {
+        // Left Swipe -> Move to NEXT Tab (Home -> Production -> Scan -> Dispatch -> More)
+        if (activeTabIndex < mobileTabs.length - 1) {
+          const nextTab = mobileTabs[activeTabIndex + 1];
+          if (typeof navigator !== 'undefined' && navigator.vibrate) navigator.vibrate(10);
+          navigate(nextTab.path);
+        }
+      } else {
+        // Right Swipe -> Move to PREVIOUS Tab (More -> Dispatch -> Scan -> Production -> Home)
+        if (activeTabIndex > 0) {
+          const prevTab = mobileTabs[activeTabIndex - 1];
+          if (typeof navigator !== 'undefined' && navigator.vibrate) navigator.vibrate(10);
+          navigate(prevTab.path);
+        }
+      }
+    }
+  };
+
   const toggleLang = (e: React.MouseEvent) => {
     e.stopPropagation();
     setLangDropdownOpen(!langDropdownOpen);
@@ -753,9 +836,11 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
           </aside>
         )}
 
-        {/* 3. Main content area */}
+        {/* 3. Main content area with Touch Gesture Swipe support */}
         <main
           ref={mainRef}
+          onTouchStart={handleTouchStart}
+          onTouchEnd={handleTouchEnd}
           className={`flex-1 flex flex-col overflow-y-auto pb-32 md:pb-6 relative min-w-0 ${
             user ? 'md:ml-64' : ''
           } dashboard-main-scrollbar`}
@@ -841,434 +926,64 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
           <div className={`fixed bottom-0 left-0 right-0 h-20 bg-gradient-to-t from-slate-100 via-slate-100/90 to-transparent dark:from-slate-950 dark:via-slate-950/90 pointer-events-none z-30 md:hidden transition-all duration-300 ${
             showBottomNav ? 'opacity-100' : 'opacity-0'
           }`} />
-
-          <nav className={`fixed bottom-3 left-3 right-3 h-16 bg-white/95 dark:bg-slate-900/95 backdrop-blur-xl border border-slate-200/80 dark:border-slate-800/80 rounded-3xl shadow-2xl flex md:hidden items-center justify-around px-2 z-40 select-none transition-all duration-300 ease-in-out ${
+          {/* 5-TAB SYNCHRONIZED MOBILE BOTTOM NAVIGATION (Home -> Production -> Scan -> Dispatch -> More) */}
+          <nav className={`fixed bottom-3 left-3 right-3 h-16 bg-white/95 dark:bg-slate-900/95 backdrop-blur-xl border border-slate-200/80 dark:border-slate-800/80 rounded-3xl shadow-2xl flex md:hidden items-center justify-around px-1.5 z-40 select-none transition-all duration-300 ease-in-out ${
             showBottomNav ? 'translate-y-0 opacity-100' : 'translate-y-[calc(100%+2rem)] opacity-0 pointer-events-none'
           }`}>
-          
-          {/* ROLE SPECIFIC BOTTOM NAV ITEMS */}
-          {user.role === 'PulpOperator' ? (
-            <>
-              {/* 1. Home */}
-              <button
-                onClick={() => navigate('/')}
-                className={`flex flex-col items-center justify-center flex-1 py-1 transition-all cursor-pointer ${
-                  location.pathname === '/' 
-                    ? 'text-primary dark:text-blue-400 font-extrabold scale-105' 
-                    : 'text-slate-400 dark:text-slate-500 hover:text-slate-600 dark:hover:text-slate-300'
-                }`}
-              >
-                <div className={`p-1 rounded-xl transition-all ${location.pathname === '/' ? 'bg-blue-50 dark:bg-blue-950/60' : ''}`}>
-                  <LayoutDashboard className="h-5 w-5" />
-                </div>
-                <span className="text-[10px] mt-0.5 font-bold tracking-tight">Home</span>
-              </button>
+            {mobileTabs.map((tab, idx) => {
+              const isActive = activeTabIndex === idx;
+              const isScanTab = tab.id === 'scan';
+              const Icon = tab.icon;
 
-              {/* 2. Pulp Mill */}
-              <button
-                onClick={() => navigate('/pulp-mill-operations')}
-                className={`flex flex-col items-center justify-center flex-1 py-1 transition-all cursor-pointer ${
-                  location.pathname === '/pulp-mill-operations' 
-                    ? 'text-primary dark:text-blue-400 font-extrabold scale-105' 
-                    : 'text-slate-400 dark:text-slate-500 hover:text-slate-600 dark:hover:text-slate-300'
-                }`}
-              >
-                <div className={`p-1 rounded-xl transition-all ${location.pathname === '/pulp-mill-operations' ? 'bg-blue-50 dark:bg-blue-950/60' : ''}`}>
-                  <Factory className="h-5 w-5" />
-                </div>
-                <span className="text-[10px] mt-0.5 font-bold tracking-tight">Pulp Mill</span>
-              </button>
+              if (isScanTab) {
+                return (
+                  <button
+                    key={tab.id}
+                    onClick={() => {
+                      if (typeof navigator !== 'undefined' && navigator.vibrate) navigator.vibrate(10);
+                      navigate(tab.path);
+                    }}
+                    className="flex flex-col items-center justify-center flex-1 py-1 group cursor-pointer"
+                    title={tab.label}
+                  >
+                    <div className={`w-11 h-11 rounded-full text-white flex items-center justify-center -mt-5 shadow-xl active:scale-90 transition-all ${
+                      isActive
+                        ? 'bg-gradient-to-tr from-blue-600 to-indigo-600 shadow-blue-500/50 ring-4 ring-white dark:ring-slate-900 scale-105'
+                        : 'bg-gradient-to-tr from-blue-600 to-indigo-600 shadow-blue-500/40 ring-4 ring-white dark:ring-slate-900 group-hover:scale-105'
+                    }`}>
+                      <Icon className="h-5 w-5" />
+                    </div>
+                    <span className={`text-[10px] mt-0.5 font-extrabold transition-colors ${
+                      isActive ? 'text-primary dark:text-blue-400 font-black' : 'text-slate-500 dark:text-slate-400'
+                    }`}>
+                      {tab.label}
+                    </span>
+                  </button>
+                );
+              }
 
-              {/* 3. Machine Production */}
-              <button
-                onClick={() => navigate('/machine-production')}
-                className={`flex flex-col items-center justify-center flex-1 py-1 transition-all cursor-pointer ${
-                  location.pathname === '/machine-production' 
-                    ? 'text-primary dark:text-blue-400 font-extrabold scale-105' 
-                    : 'text-slate-400 dark:text-slate-500 hover:text-slate-600 dark:hover:text-slate-300'
-                }`}
-              >
-                <div className={`p-1 rounded-xl transition-all ${location.pathname === '/machine-production' ? 'bg-blue-50 dark:bg-blue-950/60' : ''}`}>
-                  <Cog className="h-5 w-5" />
-                </div>
-                <span className="text-[10px] mt-0.5 font-bold tracking-tight">Production</span>
-              </button>
-
-              {/* 4. Profile */}
-              <button
-                onClick={() => navigate('/profile')}
-                className={`flex flex-col items-center justify-center flex-1 py-1 transition-all cursor-pointer ${
-                  location.pathname === '/profile' || location.pathname === '/admin-profile'
-                    ? 'text-primary dark:text-blue-400 font-extrabold scale-105' 
-                    : 'text-slate-400 dark:text-slate-500 hover:text-slate-600 dark:hover:text-slate-300'
-                }`}
-              >
-                <div className={`p-1 rounded-xl transition-all ${location.pathname === '/profile' || location.pathname === '/admin-profile' ? 'bg-blue-50 dark:bg-blue-950/60' : ''}`}>
-                  <User className="h-5 w-5" />
-                </div>
-                <span className="text-[10px] mt-0.5 font-bold tracking-tight">Profile</span>
-              </button>
-            </>
-          ) : user.role === 'BoilerOperator' ? (
-            <>
-              <button
-                onClick={() => navigate('/')}
-                className={`flex flex-col items-center justify-center flex-1 py-1 transition-all cursor-pointer ${
-                  location.pathname === '/' ? 'text-primary dark:text-blue-400 font-extrabold scale-105' : 'text-slate-400 dark:text-slate-500'
-                }`}
-              >
-                <div className={`p-1 rounded-xl transition-all ${location.pathname === '/' ? 'bg-blue-50 dark:bg-blue-950/60' : ''}`}>
-                  <LayoutDashboard className="h-5 w-5" />
-                </div>
-                <span className="text-[10px] mt-0.5 font-bold tracking-tight">Home</span>
-              </button>
-
-              <button
-                onClick={() => navigate('/utilities-etp?tab=boiler')}
-                className={`flex flex-col items-center justify-center flex-1 py-1 transition-all cursor-pointer ${
-                  location.pathname === '/utilities-etp' && (!location.search || location.search.includes('tab=boiler')) ? 'text-orange-500 dark:text-orange-400 font-extrabold scale-105' : 'text-slate-400 dark:text-slate-500'
-                }`}
-              >
-                <div className={`p-1 rounded-xl transition-all ${location.pathname === '/utilities-etp' && (!location.search || location.search.includes('tab=boiler')) ? 'bg-orange-50 dark:bg-orange-950/60' : ''}`}>
-                  <Flame className="h-5 w-5" />
-                </div>
-                <span className="text-[10px] mt-0.5 font-bold tracking-tight">Boiler</span>
-              </button>
-
-              <button
-                onClick={() => navigate('/utilities-etp?tab=etp')}
-                className={`flex flex-col items-center justify-center flex-1 py-1 transition-all cursor-pointer ${
-                  location.pathname === '/utilities-etp' && location.search.includes('tab=etp') ? 'text-teal-500 dark:text-teal-400 font-extrabold scale-105' : 'text-slate-400 dark:text-slate-500'
-                }`}
-              >
-                <div className={`p-1 rounded-xl transition-all ${location.pathname === '/utilities-etp' && location.search.includes('tab=etp') ? 'bg-teal-50 dark:bg-teal-950/60' : ''}`}>
-                  <Droplet className="h-5 w-5" />
-                </div>
-                <span className="text-[10px] mt-0.5 font-bold tracking-tight">ETP</span>
-              </button>
-
-              <button
-                onClick={() => navigate('/utilities-etp?tab=electricity')}
-                className={`flex flex-col items-center justify-center flex-1 py-1 transition-all cursor-pointer ${
-                  location.pathname === '/utilities-etp' && location.search.includes('tab=electricity') ? 'text-amber-500 dark:text-amber-400 font-extrabold scale-105' : 'text-slate-400 dark:text-slate-500'
-                }`}
-              >
-                <div className={`p-1 rounded-xl transition-all ${location.pathname === '/utilities-etp' && location.search.includes('tab=electricity') ? 'bg-amber-50 dark:bg-amber-950/60' : ''}`}>
-                  <Lightbulb className="h-5 w-5" />
-                </div>
-                <span className="text-[10px] mt-0.5 font-bold tracking-tight">Power</span>
-              </button>
-
-              <button
-                onClick={() => navigate('/profile')}
-                className={`flex flex-col items-center justify-center flex-1 py-1 transition-all cursor-pointer ${
-                  location.pathname === '/profile' ? 'text-primary dark:text-blue-400 font-extrabold scale-105' : 'text-slate-400 dark:text-slate-500'
-                }`}
-              >
-                <div className={`p-1 rounded-xl transition-all ${location.pathname === '/profile' ? 'bg-blue-50 dark:bg-blue-950/60' : ''}`}>
-                  <User className="h-5 w-5" />
-                </div>
-                <span className="text-[10px] mt-0.5 font-bold tracking-tight">Profile</span>
-              </button>
-            </>
-          ) : user.role === 'MachineOperator' ? (
-            <>
-              <button
-                onClick={() => navigate('/')}
-                className={`flex flex-col items-center justify-center flex-1 py-1 transition-all cursor-pointer ${
-                  location.pathname === '/' ? 'text-primary dark:text-blue-400 font-extrabold scale-105' : 'text-slate-400 dark:text-slate-500'
-                }`}
-              >
-                <div className={`p-1 rounded-xl transition-all ${location.pathname === '/' ? 'bg-blue-50 dark:bg-blue-950/60' : ''}`}>
-                  <LayoutDashboard className="h-5 w-5" />
-                </div>
-                <span className="text-[10px] mt-0.5 font-bold tracking-tight">Home</span>
-              </button>
-
-              <button
-                onClick={() => navigate('/machine-production')}
-                className={`flex flex-col items-center justify-center flex-1 py-1 transition-all cursor-pointer ${
-                  location.pathname === '/machine-production' ? 'text-primary dark:text-blue-400 font-extrabold scale-105' : 'text-slate-400 dark:text-slate-500'
-                }`}
-              >
-                <div className={`p-1 rounded-xl transition-all ${location.pathname === '/machine-production' ? 'bg-blue-50 dark:bg-blue-950/60' : ''}`}>
-                  <Cog className="h-5 w-5" />
-                </div>
-                <span className="text-[10px] mt-0.5 font-bold tracking-tight">Production</span>
-              </button>
-
-              <button
-                onClick={() => navigate('/profile')}
-                className={`flex flex-col items-center justify-center flex-1 py-1 transition-all cursor-pointer ${
-                  location.pathname === '/profile' ? 'text-primary dark:text-blue-400 font-extrabold scale-105' : 'text-slate-400 dark:text-slate-500'
-                }`}
-              >
-                <div className={`p-1 rounded-xl transition-all ${location.pathname === '/profile' ? 'bg-blue-50 dark:bg-blue-950/60' : ''}`}>
-                  <User className="h-5 w-5" />
-                </div>
-                <span className="text-[10px] mt-0.5 font-bold tracking-tight">Profile</span>
-              </button>
-            </>
-          ) : user.role === 'RewinderOperator' ? (
-            <>
-              {/* 1. Home */}
-              <button
-                onClick={() => navigate('/')}
-                className={`flex flex-col items-center justify-center flex-1 py-1 transition-all cursor-pointer ${
-                  location.pathname === '/' ? 'text-primary dark:text-blue-400 font-extrabold scale-105' : 'text-slate-400 dark:text-slate-500'
-                }`}
-              >
-                <div className={`p-1 rounded-xl transition-all ${location.pathname === '/' ? 'bg-blue-50 dark:bg-blue-950/60' : ''}`}>
-                  <LayoutDashboard className="h-5 w-5" />
-                </div>
-                <span className="text-[10px] mt-0.5 font-bold tracking-tight">Home</span>
-              </button>
-
-              {/* 2. Rewinder */}
-              <button
-                onClick={() => navigate('/rewinding-reel-conversion')}
-                className={`flex flex-col items-center justify-center flex-1 py-1 transition-all cursor-pointer ${
-                  location.pathname === '/rewinding-reel-conversion' ? 'text-primary dark:text-blue-400 font-extrabold scale-105' : 'text-slate-400 dark:text-slate-500'
-                }`}
-              >
-                <div className={`p-1 rounded-xl transition-all ${location.pathname === '/rewinding-reel-conversion' ? 'bg-blue-50 dark:bg-blue-950/60' : ''}`}>
-                  <RotateCw className="h-5 w-5" />
-                </div>
-                <span className="text-[10px] mt-0.5 font-bold tracking-tight">Rewinder</span>
-              </button>
-
-              {/* 3. Pure Camera Scan */}
-              <button
-                onClick={() => navigate('/qr-scanner')}
-                className="flex flex-col items-center justify-center flex-1 py-1 group cursor-pointer"
-              >
-                <div className="w-12 h-12 rounded-full text-white flex items-center justify-center -mt-6 shadow-xl active:scale-90 transition-all bg-gradient-to-tr from-blue-600 to-indigo-600 shadow-blue-500/40 ring-4 ring-white dark:ring-slate-900 group-hover:shadow-blue-500/60">
-                  <QrCode className="h-6 w-6" />
-                </div>
-                <span className="text-[10px] mt-0.5 font-extrabold text-slate-500 dark:text-slate-400 group-hover:text-primary transition-colors">
-                  Scan
-                </span>
-              </button>
-
-              {/* 4. Traceability */}
-              <button
-                onClick={() => navigate('/traceability')}
-                className={`flex flex-col items-center justify-center flex-1 py-1 transition-all cursor-pointer ${
-                  location.pathname === '/traceability' ? 'text-primary dark:text-blue-400 font-extrabold scale-105' : 'text-slate-400 dark:text-slate-500'
-                }`}
-              >
-                <div className={`p-1 rounded-xl transition-all ${location.pathname === '/traceability' ? 'bg-blue-50 dark:bg-blue-950/60' : ''}`}>
-                  <Search className="h-5 w-5" />
-                </div>
-                <span className="text-[10px] mt-0.5 font-bold tracking-tight">Traceability</span>
-              </button>
-
-              {/* 5. Profile */}
-              <button
-                onClick={() => navigate('/profile')}
-                className={`flex flex-col items-center justify-center flex-1 py-1 transition-all cursor-pointer ${
-                  location.pathname === '/profile' ? 'text-primary dark:text-blue-400 font-extrabold scale-105' : 'text-slate-400 dark:text-slate-500'
-                }`}
-              >
-                <div className={`p-1 rounded-xl transition-all ${location.pathname === '/profile' ? 'bg-blue-50 dark:bg-blue-950/60' : ''}`}>
-                  <User className="h-5 w-5" />
-                </div>
-                <span className="text-[10px] mt-0.5 font-bold tracking-tight">Profile</span>
-              </button>
-            </>
-          ) : user.role === 'WarehouseStaff' ? (
-            <>
-              <button
-                onClick={() => navigate('/')}
-                className={`flex flex-col items-center justify-center flex-1 py-1 transition-all cursor-pointer ${
-                  location.pathname === '/' ? 'text-primary dark:text-blue-400 font-extrabold scale-105' : 'text-slate-400 dark:text-slate-500'
-                }`}
-              >
-                <div className={`p-1 rounded-xl transition-all ${location.pathname === '/' ? 'bg-blue-50 dark:bg-blue-950/60' : ''}`}>
-                  <LayoutDashboard className="h-5 w-5" />
-                </div>
-                <span className="text-[10px] mt-0.5 font-bold tracking-tight">Home</span>
-              </button>
-
-              <button
-                onClick={() => navigate('/finished-stock-dispatch')}
-                className={`flex flex-col items-center justify-center flex-1 py-1 transition-all cursor-pointer ${
-                  location.pathname === '/finished-stock-dispatch' ? 'text-primary dark:text-blue-400 font-extrabold scale-105' : 'text-slate-400 dark:text-slate-500'
-                }`}
-              >
-                <div className={`p-1 rounded-xl transition-all ${location.pathname === '/finished-stock-dispatch' ? 'bg-blue-50 dark:bg-blue-950/60' : ''}`}>
-                  <Truck className="h-5 w-5" />
-                </div>
-                <span className="text-[10px] mt-0.5 font-bold tracking-tight">Dispatch</span>
-              </button>
-
-              <button
-                onClick={() => navigate('/profile')}
-                className={`flex flex-col items-center justify-center flex-1 py-1 transition-all cursor-pointer ${
-                  location.pathname === '/profile' ? 'text-primary dark:text-blue-400 font-extrabold scale-105' : 'text-slate-400 dark:text-slate-500'
-                }`}
-              >
-                <div className={`p-1 rounded-xl transition-all ${location.pathname === '/profile' ? 'bg-blue-50 dark:bg-blue-950/60' : ''}`}>
-                  <User className="h-5 w-5" />
-                </div>
-                <span className="text-[10px] mt-0.5 font-bold tracking-tight">Profile</span>
-              </button>
-            </>
-          ) : user.role === 'StoreManager' ? (
-            <>
-              <button
-                onClick={() => navigate('/')}
-                className={`flex flex-col items-center justify-center flex-1 py-1 transition-all cursor-pointer ${
-                  location.pathname === '/' ? 'text-primary dark:text-blue-400 font-extrabold scale-105' : 'text-slate-400 dark:text-slate-500'
-                }`}
-              >
-                <div className={`p-1 rounded-xl transition-all ${location.pathname === '/' ? 'bg-blue-50 dark:bg-blue-950/60' : ''}`}>
-                  <LayoutDashboard className="h-5 w-5" />
-                </div>
-                <span className="text-[10px] mt-0.5 font-bold tracking-tight">Home</span>
-              </button>
-
-              <button
-                onClick={() => navigate('/store-spares')}
-                className={`flex flex-col items-center justify-center flex-1 py-1 transition-all cursor-pointer ${
-                  location.pathname === '/store-spares' ? 'text-primary dark:text-blue-400 font-extrabold scale-105' : 'text-slate-400 dark:text-slate-500'
-                }`}
-              >
-                <div className={`p-1 rounded-xl transition-all ${location.pathname === '/store-spares' ? 'bg-blue-50 dark:bg-blue-950/60' : ''}`}>
-                  <Warehouse className="h-5 w-5" />
-                </div>
-                <span className="text-[10px] mt-0.5 font-bold tracking-tight">Store</span>
-              </button>
-
-              <button
-                onClick={() => navigate('/profile')}
-                className={`flex flex-col items-center justify-center flex-1 py-1 transition-all cursor-pointer ${
-                  location.pathname === '/profile' ? 'text-primary dark:text-blue-400 font-extrabold scale-105' : 'text-slate-400 dark:text-slate-500'
-                }`}
-              >
-                <div className={`p-1 rounded-xl transition-all ${location.pathname === '/profile' ? 'bg-blue-50 dark:bg-blue-950/60' : ''}`}>
-                  <User className="h-5 w-5" />
-                </div>
-                <span className="text-[10px] mt-0.5 font-bold tracking-tight">Profile</span>
-              </button>
-            </>
-          ) : user.role === 'EtpOperator' ? (
-            <>
-              <button
-                onClick={() => navigate('/')}
-                className={`flex flex-col items-center justify-center flex-1 py-1 transition-all cursor-pointer ${
-                  location.pathname === '/' ? 'text-primary dark:text-blue-400 font-extrabold scale-105' : 'text-slate-400 dark:text-slate-500'
-                }`}
-              >
-                <div className={`p-1 rounded-xl transition-all ${location.pathname === '/' ? 'bg-blue-50 dark:bg-blue-950/60' : ''}`}>
-                  <LayoutDashboard className="h-5 w-5" />
-                </div>
-                <span className="text-[10px] mt-0.5 font-bold tracking-tight">Home</span>
-              </button>
-
-              <button
-                onClick={() => navigate('/utilities-etp?tab=etp')}
-                className={`flex flex-col items-center justify-center flex-1 py-1 transition-all cursor-pointer ${
-                  location.pathname === '/utilities-etp' && (!location.search || location.search.includes('tab=etp')) ? 'text-teal-500 dark:text-teal-400 font-extrabold scale-105' : 'text-slate-400 dark:text-slate-500'
-                }`}
-              >
-                <div className={`p-1 rounded-xl transition-all ${location.pathname === '/utilities-etp' && (!location.search || location.search.includes('tab=etp')) ? 'bg-teal-50 dark:bg-teal-950/60' : ''}`}>
-                  <Droplet className="h-5 w-5" />
-                </div>
-                <span className="text-[10px] mt-0.5 font-bold tracking-tight">ETP</span>
-              </button>
-
-              <button
-                onClick={() => navigate('/utilities-etp?tab=electricity')}
-                className={`flex flex-col items-center justify-center flex-1 py-1 transition-all cursor-pointer ${
-                  location.pathname === '/utilities-etp' && location.search.includes('tab=electricity') ? 'text-amber-500 dark:text-amber-400 font-extrabold scale-105' : 'text-slate-400 dark:text-slate-500'
-                }`}
-              >
-                <div className={`p-1 rounded-xl transition-all ${location.pathname === '/utilities-etp' && location.search.includes('tab=electricity') ? 'bg-amber-50 dark:bg-amber-950/60' : ''}`}>
-                  <Lightbulb className="h-5 w-5" />
-                </div>
-                <span className="text-[10px] mt-0.5 font-bold tracking-tight">Power</span>
-              </button>
-
-              <button
-                onClick={() => navigate('/profile')}
-                className={`flex flex-col items-center justify-center flex-1 py-1 transition-all cursor-pointer ${
-                  location.pathname === '/profile' ? 'text-primary dark:text-blue-400 font-extrabold scale-105' : 'text-slate-400 dark:text-slate-500'
-                }`}
-              >
-                <div className={`p-1 rounded-xl transition-all ${location.pathname === '/profile' ? 'bg-blue-50 dark:bg-blue-950/60' : ''}`}>
-                  <User className="h-5 w-5" />
-                </div>
-                <span className="text-[10px] mt-0.5 font-bold tracking-tight">Profile</span>
-              </button>
-            </>
-          ) : (
-            <>
-              {/* DEFAULT ADMIN / MANAGEMENT BOTTOM NAV BAR */}
-              <button
-                onClick={() => navigate('/')}
-                className={`flex flex-col items-center justify-center flex-1 py-1 transition-all cursor-pointer ${
-                  location.pathname === '/' 
-                    ? 'text-primary dark:text-blue-400 font-extrabold scale-105' 
-                    : 'text-slate-400 dark:text-slate-500 hover:text-slate-600 dark:hover:text-slate-300'
-                }`}
-              >
-                <div className={`p-1 rounded-xl transition-all ${location.pathname === '/' ? 'bg-blue-50 dark:bg-blue-950/60' : ''}`}>
-                  <LayoutDashboard className="h-5 w-5" />
-                </div>
-                <span className="text-[10px] mt-0.5 font-bold tracking-tight">Home</span>
-              </button>
-
-              <button
-                onClick={() => {
-                  if (hasAccess('machine_production')) navigate('/machine-production');
-                  else navigate('/pulp-mill-operations');
-                }}
-                className={`flex flex-col items-center justify-center flex-1 py-1 transition-all cursor-pointer ${
-                  location.pathname.includes('machine') || location.pathname.includes('pulp')
-                    ? 'text-primary dark:text-blue-400 font-extrabold scale-105' 
-                    : 'text-slate-400 dark:text-slate-500 hover:text-slate-600 dark:hover:text-slate-300'
-                }`}
-              >
-                <div className={`p-1 rounded-xl transition-all ${location.pathname.includes('machine') || location.pathname.includes('pulp') ? 'bg-blue-50 dark:bg-blue-950/60' : ''}`}>
-                  <Factory className="h-5 w-5" />
-                </div>
-                <span className="text-[10px] mt-0.5 font-bold tracking-tight">Production</span>
-              </button>
-
-
-
-              <button
-                onClick={() => navigate('/finished-stock-dispatch')}
-                className={`flex flex-col items-center justify-center flex-1 py-1 transition-all cursor-pointer ${
-                  location.pathname === '/finished-stock-dispatch' 
-                    ? 'text-primary dark:text-blue-400 font-extrabold scale-105' 
-                    : 'text-slate-400 dark:text-slate-500 hover:text-slate-600 dark:hover:text-slate-300'
-                }`}
-              >
-                <div className={`p-1 rounded-xl transition-all ${location.pathname === '/finished-stock-dispatch' ? 'bg-blue-50 dark:bg-blue-950/60' : ''}`}>
-                  <Truck className="h-5 w-5" />
-                </div>
-                <span className="text-[10px] mt-0.5 font-bold tracking-tight">Dispatch</span>
-              </button>
-
-              <button
-                onClick={() => navigate('/profile')}
-                className={`flex flex-col items-center justify-center flex-1 py-1 transition-all cursor-pointer ${
-                  location.pathname === '/profile' || location.pathname === '/admin-profile'
-                    ? 'text-primary dark:text-blue-400 font-extrabold scale-105' 
-                    : 'text-slate-400 dark:text-slate-500 hover:text-slate-600 dark:hover:text-slate-300'
-                }`}
-              >
-                <div className={`p-1 rounded-xl transition-all ${location.pathname === '/profile' || location.pathname === '/admin-profile' ? 'bg-blue-50 dark:bg-blue-950/60' : ''}`}>
-                  <User className="h-5 w-5" />
-                </div>
-                <span className="text-[10px] mt-0.5 font-bold tracking-tight">Profile</span>
-              </button>
-            </>
-          )}
-
-        </nav>
+              return (
+                <button
+                  key={tab.id}
+                  onClick={() => {
+                    if (typeof navigator !== 'undefined' && navigator.vibrate) navigator.vibrate(10);
+                    navigate(tab.path);
+                  }}
+                  className={`flex flex-col items-center justify-center flex-1 py-1 transition-all cursor-pointer ${
+                    isActive 
+                      ? 'text-primary dark:text-blue-400 font-extrabold scale-105' 
+                      : 'text-slate-400 dark:text-slate-500 hover:text-slate-600 dark:hover:text-slate-300'
+                  }`}
+                  title={tab.label}
+                >
+                  <div className={`p-1 rounded-xl transition-all ${isActive ? 'bg-blue-50 dark:bg-blue-950/60 shadow-xs' : ''}`}>
+                    <Icon className="h-5 w-5" />
+                  </div>
+                  <span className="text-[10px] mt-0.5 font-bold tracking-tight">{tab.label}</span>
+                </button>
+              );
+            })}
+          </nav>
       </>
       )}
 
