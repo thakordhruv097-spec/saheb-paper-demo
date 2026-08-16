@@ -1,10 +1,11 @@
 import React, { useState, useMemo } from 'react';
 import { useAuth } from '../auth/AuthContext';
 import { useTranslation } from 'react-i18next';
-import { getRolls, saveRoll, getProducts, getFormulaForDate } from '../../data/index';
+import { getRolls, saveRoll, getProducts, getFormulaForDate, getGsmOptionsForProduct } from '../../data/index';
 import type { MachineRoll } from '../../data/types';
 import { CustomDatePickerModal } from '../../components/CustomDatePickerModal';
 import { DataFilterBar } from '../../components/DataFilterBar';
+import { StepHeaderBadge } from '../../components/ProcessWorkflowGuide';
 import { Cog, Plus, Info, Search, Calendar } from 'lucide-react';
 
 export const MachineView: React.FC = () => {
@@ -189,7 +190,7 @@ export const MachineView: React.FC = () => {
     <div className="space-y-6 font-sans pb-12">
       
       {/* 1. HERO GRADIENT HEADER BANNER */}
-      <div className="bg-gradient-to-r from-blue-700 via-indigo-600 to-slate-900 rounded-3xl p-6 sm:p-8 text-white shadow-xl relative overflow-hidden">
+      <div className="bg-gradient-to-r from-blue-700 via-indigo-600 to-slate-900 rounded-3xl p-6 sm:p-8 text-white shadow-xl relative overflow-visible z-20">
         <div className="absolute -top-16 -right-16 w-64 h-64 rounded-full bg-white/10 blur-xl pointer-events-none" />
         <div className="absolute -bottom-20 -left-20 w-80 h-80 rounded-full bg-blue-400/10 blur-2xl pointer-events-none" />
 
@@ -201,6 +202,7 @@ export const MachineView: React.FC = () => {
             <div>
               <div className="flex flex-wrap items-center gap-3">
                 <h2 className="text-2xl sm:text-3xl font-black tracking-tight">{t('machine.title')}</h2>
+                <StepHeaderBadge stepNumber={4} />
               </div>
             </div>
           </div>
@@ -322,15 +324,17 @@ export const MachineView: React.FC = () => {
                 <div className="grid grid-cols-2 gap-2">
                   <div>
                     <label className="block text-[11px] font-black text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-1.5">
-                      GSM
+                      GSM ({products.find(p => p.id === selectedProductId)?.name.toLowerCase().includes('toilet') ? '13 - 18' : '15 - 24'})
                     </label>
-                    <input
-                      type="number"
+                    <select
                       value={gsmStr}
                       onChange={e => setGsmStr(e.target.value)}
-                      className="block w-full py-2.5 px-3.5 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-2xl text-xs font-bold focus:outline-none focus:ring-2 focus:ring-primary dark:text-white"
-                      placeholder="17"
-                    />
+                      className="block w-full py-2.5 px-3.5 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-2xl text-xs font-bold focus:outline-none focus:ring-2 focus:ring-primary dark:text-white cursor-pointer"
+                    >
+                      {getGsmOptionsForProduct(products.find(p => p.id === selectedProductId)?.name || '').map(g => (
+                        <option key={g} value={g}>{g} GSM</option>
+                      ))}
+                    </select>
                   </div>
                   <div>
                     <label className="block text-[11px] font-black text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-1.5">

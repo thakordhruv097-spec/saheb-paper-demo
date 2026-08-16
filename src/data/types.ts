@@ -113,6 +113,7 @@ export type QCGrade = 'A' | 'B' | 'PENDING';
 export interface Reel {
   reelNo: string; // unique reel number, e.g. SAHEB-R-YYYYMMDD-XXXX
   parentRollNo: string;
+  runningSize?: string;
   product: string;
   gsm: number;
   size: number;

@@ -2,6 +2,7 @@ import React, { useState, useMemo } from 'react';
 import { useAuth } from '../auth/AuthContext';
 import { useTranslation } from 'react-i18next';
 import { getReels, updateReelQC } from '../../data/index';
+import { StepHeaderBadge } from '../../components/ProcessWorkflowGuide';
 import type { Reel } from '../../data/types';
 import {
   Package,
@@ -63,13 +64,22 @@ export const FinishStockView: React.FC<FinishStockViewProps> = ({ hideHeader = f
     return Array.from(new Set(tabReels.map(r => r.product))).sort();
   }, [tabReels]);
 
-  // Step 2: Available GSMs (Cascaded by selected Product)
+  // Step 2: Available GSMs (Cascaded by selected Product & User GSM rules: Toilet = 13..18, Napkin = 15..24)
   const availableGsms = useMemo(() => {
     let list = tabReels;
     if (filterProduct !== 'ALL') {
       list = list.filter(r => r.product === filterProduct);
     }
-    return Array.from(new Set(list.map(r => r.gsm))).sort((a, b) => a - b);
+    const setGsms = new Set<number>(list.map(r => r.gsm));
+    const p = filterProduct.toLowerCase();
+    if (p.includes('toilet')) {
+      [13, 14, 15, 16, 17, 18].forEach(g => setGsms.add(g));
+    } else if (p.includes('napkin') || p.includes('paper')) {
+      [15, 16, 17, 18, 19, 20, 21, 22, 23, 24].forEach(g => setGsms.add(g));
+    } else {
+      [13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24].forEach(g => setGsms.add(g));
+    }
+    return Array.from(setGsms).sort((a, b) => a - b);
   }, [tabReels, filterProduct]);
 
   // Step 3: Available Sizes (Cascaded by selected Product + GSM)
@@ -83,21 +93,6 @@ export const FinishStockView: React.FC<FinishStockViewProps> = ({ hideHeader = f
     }
     return Array.from(new Set(list.map(r => r.size))).sort((a, b) => a - b);
   }, [tabReels, filterProduct, filterGsm]);
-
-  // Step 4: Available Ply Values (Cascaded by selected Product + GSM + Size)
-  const availablePlys = useMemo(() => {
-    let list = tabReels;
-    if (filterProduct !== 'ALL') {
-      list = list.filter(r => r.product === filterProduct);
-    }
-    if (filterGsm !== 'ALL') {
-      list = list.filter(r => r.gsm === Number(filterGsm));
-    }
-    if (filterSize !== 'ALL') {
-      list = list.filter(r => r.size === Number(filterSize));
-    }
-    return Array.from(new Set(list.map(r => r.ply))).sort((a, b) => a - b);
-  }, [tabReels, filterProduct, filterGsm, filterSize]);
 
   // Handlers for Cascading Filter selection
   const handleProductChange = (prod: string) => {
@@ -116,10 +111,6 @@ export const FinishStockView: React.FC<FinishStockViewProps> = ({ hideHeader = f
   const handleSizeChange = (sizeVal: string) => {
     setFilterSize(sizeVal);
     setFilterPly('ALL');
-  };
-
-  const handlePlyChange = (plyVal: string) => {
-    setFilterPly(plyVal);
   };
 
   const handleClearAllFilters = () => {
@@ -254,7 +245,7 @@ export const FinishStockView: React.FC<FinishStockViewProps> = ({ hideHeader = f
       
       {/* 1. HERO GRADIENT HEADER BANNER */}
       {!hideHeader && (
-        <div className="bg-gradient-to-r from-blue-700 via-indigo-600 to-slate-900 rounded-3xl p-6 sm:p-8 text-white shadow-xl relative overflow-hidden">
+        <div className="bg-gradient-to-r from-blue-700 via-indigo-600 to-slate-900 rounded-3xl p-6 sm:p-8 text-white shadow-xl relative overflow-visible z-20">
           <div className="absolute -top-16 -right-16 w-64 h-64 rounded-full bg-white/10 blur-xl pointer-events-none" />
           <div className="absolute -bottom-20 -left-20 w-80 h-80 rounded-full bg-blue-400/10 blur-2xl pointer-events-none" />
 
@@ -266,6 +257,7 @@ export const FinishStockView: React.FC<FinishStockViewProps> = ({ hideHeader = f
               <div>
                 <div className="flex flex-wrap items-center gap-3">
                   <h2 className="text-2xl sm:text-3xl font-black tracking-tight">{t('finish_stock.title')}</h2>
+                  <StepHeaderBadge stepNumber={8} />
                   {user?.role !== 'Admin' && (
                     <span className="px-3 py-1 rounded-full bg-white/20 backdrop-blur-md text-[11px] font-extrabold tracking-wider uppercase text-white border border-white/30 shadow-xs">
                       {new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'short', day: 'numeric', year: 'numeric' })}
@@ -706,26 +698,6 @@ export const FinishStockView: React.FC<FinishStockViewProps> = ({ hideHeader = f
                   <option value="ALL">All Sizes ({availableSizes.length} available)</option>
                   {availableSizes.map(s => (
                     <option key={s} value={s}>{s} cm</option>
-                  ))}
-                </select>
-              </div>
-
-              {/* STEP 4: PLY */}
-              <div>
-                <label className="block text-[11px] font-black text-slate-600 dark:text-slate-300 uppercase tracking-wider mb-1.5 flex items-center justify-between">
-                  <span>4. Select Ply</span>
-                  <span className="text-[10px] text-slate-400 font-medium">
-                    {filterSize !== 'ALL' ? `Cascaded for Size ${filterSize} cm` : 'All Ply'}
-                  </span>
-                </label>
-                <select
-                  value={filterPly}
-                  onChange={e => handlePlyChange(e.target.value)}
-                  className="w-full py-2.5 px-3.5 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-2xl text-xs font-bold text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-primary/40 cursor-pointer"
-                >
-                  <option value="ALL">All Ply ({availablePlys.length} available)</option>
-                  {availablePlys.map(p => (
-                    <option key={p} value={p}>{p} Ply</option>
                   ))}
                 </select>
               </div>

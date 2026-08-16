@@ -15,6 +15,7 @@ import {
 import type { PackingSlip, Reel, PendingOrder } from '../../data/types';
 import * as XLSX from 'xlsx';
 import { CustomDatePickerModal } from '../../components/CustomDatePickerModal';
+import { StepHeaderBadge } from '../../components/ProcessWorkflowGuide';
 import {
   Truck,
   Plus,
@@ -82,7 +83,7 @@ export const DispatchView: React.FC<DispatchViewProps> = ({ initialTab = 'orders
       gain.connect(audioCtx.destination);
       osc.start();
       osc.stop(audioCtx.currentTime + 0.1);
-    } catch (e) {}
+    } catch (e) { }
   };
 
   // Success / Error States
@@ -181,14 +182,23 @@ export const DispatchView: React.FC<DispatchViewProps> = ({ initialTab = 'orders
     return Array.from(set).sort();
   }, [availableReels]);
 
-  // Unique GSMs present in available reels for quick filter pills
+  // Unique GSMs present in available reels for quick filter pills (Toilet = 13..18, Napkin = 15..24)
   const uniqueGsms = useMemo(() => {
     const set = new Set<number>();
     availableReels.forEach(r => {
       if (r.gsm) set.add(r.gsm);
     });
+
+    const p = (reelProductFilter || '').toLowerCase();
+    if (p.includes('toilet')) {
+      [13, 14, 15, 16, 17, 18].forEach(g => set.add(g));
+    } else if (p.includes('napkin') || p.includes('paper')) {
+      [15, 16, 17, 18, 19, 20, 21, 22, 23, 24].forEach(g => set.add(g));
+    } else {
+      [13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24].forEach(g => set.add(g));
+    }
     return Array.from(set).sort((a, b) => a - b);
-  }, [availableReels]);
+  }, [availableReels, reelProductFilter]);
 
   // Unique Sizes present in available reels for quick filter pills
   const uniqueSizes = useMemo(() => {
@@ -364,7 +374,7 @@ export const DispatchView: React.FC<DispatchViewProps> = ({ initialTab = 'orders
     savePackingSlip(newSlip, user?.displayName || 'System');
     setSlips(getPackingSlips());
     setSuccessMsg(`Draft Packing Slip #${targetSlipNo} created successfully! Reels linked: ${selectedReelNos.length}`);
-    
+
     // Reset Form
     setSlipNo('');
     setSlipPartyId('');
@@ -411,7 +421,7 @@ export const DispatchView: React.FC<DispatchViewProps> = ({ initialTab = 'orders
     }));
 
     const worksheet = XLSX.utils.json_to_sheet([]);
-    
+
     // Add Metadata header rows
     XLSX.utils.sheet_add_aoa(worksheet, [
       ["SAHEB PAPER PVT. LTD. - DELIVERY CHALLAN RECEIPT"],
@@ -453,10 +463,10 @@ export const DispatchView: React.FC<DispatchViewProps> = ({ initialTab = 'orders
 
   return (
     <div className="space-y-3 sm:space-y-6">
-      
+
       {/* Title / Hero Banner */}
       {!hideHeader && (
-        <div className="bg-gradient-to-r from-blue-700 via-indigo-600 to-slate-900 rounded-2xl p-4 sm:p-4.5 px-5 sm:px-6 text-white shadow-lg relative overflow-hidden">
+        <div className="bg-gradient-to-r from-blue-700 via-indigo-600 to-slate-900 rounded-2xl p-4 sm:p-4.5 px-5 sm:px-6 text-white shadow-lg relative overflow-visible z-20">
           <div className="absolute -right-10 -top-10 w-64 h-64 bg-blue-500/10 rounded-full blur-3xl pointer-events-none" />
           <div className="absolute -bottom-20 -left-20 w-80 h-80 rounded-full bg-blue-400/10 blur-2xl pointer-events-none" />
 
@@ -470,6 +480,7 @@ export const DispatchView: React.FC<DispatchViewProps> = ({ initialTab = 'orders
                   <h2 className="text-xl sm:text-2xl font-black tracking-tight font-heading">
                     {initialTab === 'orders' ? 'Order Bookings' : 'Dispatch Slips'}
                   </h2>
+                  <StepHeaderBadge stepNumber={initialTab === 'orders' ? 1 : 7} />
                 </div>
               </div>
             </div>
@@ -518,11 +529,10 @@ export const DispatchView: React.FC<DispatchViewProps> = ({ initialTab = 'orders
           {initialTab === 'orders' && (
             <button
               onClick={() => { setActiveTab('orders'); setSuccessMsg(''); setErrorMsg(''); }}
-              className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-black transition-all cursor-pointer ${
-                activeTab === 'orders'
+              className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-black transition-all cursor-pointer ${activeTab === 'orders'
                   ? 'bg-gradient-to-r from-blue-600 to-indigo-600 text-white shadow-md'
                   : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
-              }`}
+                }`}
             >
               <FileText className="h-4 w-4" />
               <span>Pending Customer Orders</span>
@@ -532,22 +542,20 @@ export const DispatchView: React.FC<DispatchViewProps> = ({ initialTab = 'orders
             <>
               <button
                 onClick={() => { setActiveTab('create_slip'); setSuccessMsg(''); setErrorMsg(''); }}
-                className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-black transition-all cursor-pointer ${
-                  activeTab === 'create_slip'
+                className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-black transition-all cursor-pointer ${activeTab === 'create_slip'
                     ? 'bg-gradient-to-r from-blue-600 to-indigo-600 text-white shadow-md'
                     : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
-                }`}
+                  }`}
               >
                 <Plus className="h-4 w-4" />
                 <span>Draft Packing Slip</span>
               </button>
               <button
                 onClick={() => { setActiveTab('slips_list'); setSuccessMsg(''); setErrorMsg(''); }}
-                className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-black transition-all cursor-pointer ${
-                  activeTab === 'slips_list'
+                className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-black transition-all cursor-pointer ${activeTab === 'slips_list'
                     ? 'bg-gradient-to-r from-blue-600 to-indigo-600 text-white shadow-md'
                     : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
-                }`}
+                  }`}
               >
                 <Truck className="h-4 w-4" />
                 <span>Packing Slips & Challans ({slips.length})</span>
@@ -622,11 +630,10 @@ export const DispatchView: React.FC<DispatchViewProps> = ({ initialTab = 'orders
                             <td className="py-3 px-3 text-emerald-600 dark:text-emerald-400 font-bold font-mono">{order.dispatchedQty} reels</td>
                             <td className="py-3 px-3 text-slate-500 dark:text-slate-400 font-mono text-[11px]">{order.dueDate}</td>
                             <td className="py-3 px-3 text-right">
-                              <span className={`px-2.5 py-0.5 rounded-full text-[9px] font-black uppercase tracking-wider ${
-                                order.status === 'PENDING' ? 'bg-purple-100 dark:bg-purple-950/40 text-purple-700 dark:text-purple-300 border border-purple-200' :
-                                order.status === 'PARTIAL' ? 'bg-amber-100 dark:bg-amber-950/40 text-amber-700 dark:text-amber-300 border border-amber-200' :
-                                'bg-emerald-100 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300 border border-emerald-200'
-                              }`}>
+                              <span className={`px-2.5 py-0.5 rounded-full text-[9px] font-black uppercase tracking-wider ${order.status === 'PENDING' ? 'bg-purple-100 dark:bg-purple-950/40 text-purple-700 dark:text-purple-300 border border-purple-200' :
+                                  order.status === 'PARTIAL' ? 'bg-amber-100 dark:bg-amber-950/40 text-amber-700 dark:text-amber-300 border border-amber-200' :
+                                    'bg-emerald-100 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300 border border-emerald-200'
+                                }`}>
                                 {order.status}
                               </span>
                             </td>
@@ -646,11 +653,10 @@ export const DispatchView: React.FC<DispatchViewProps> = ({ initialTab = 'orders
                       <div key={order.id} className="p-4 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl space-y-2 text-xs text-left">
                         <div className="flex justify-between items-center border-b pb-2 dark:border-slate-800">
                           <span className="font-bold text-slate-900 dark:text-white">{partyObj?.name}</span>
-                          <span className={`px-2.5 py-0.5 rounded-full text-[9px] font-black uppercase ${
-                            order.status === 'PENDING' ? 'bg-purple-100 dark:bg-purple-950/40 text-purple-700 dark:text-purple-300' :
-                            order.status === 'PARTIAL' ? 'bg-amber-100 dark:bg-amber-950/40 text-amber-700 dark:text-amber-300' :
-                            'bg-emerald-100 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300'
-                          }`}>
+                          <span className={`px-2.5 py-0.5 rounded-full text-[9px] font-black uppercase ${order.status === 'PENDING' ? 'bg-purple-100 dark:bg-purple-950/40 text-purple-700 dark:text-purple-300' :
+                              order.status === 'PARTIAL' ? 'bg-amber-100 dark:bg-amber-950/40 text-amber-700 dark:text-amber-300' :
+                                'bg-emerald-100 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300'
+                            }`}>
                             {order.status}
                           </span>
                         </div>
@@ -775,7 +781,7 @@ export const DispatchView: React.FC<DispatchViewProps> = ({ initialTab = 'orders
           }}
           className="grid grid-cols-1 lg:grid-cols-3 gap-5 items-start"
         >
-          
+
           {/* Challan Card (1/3 width) - Modern Gate Pass UI */}
           <div className="bg-white dark:bg-surface-dark border border-slate-200 dark:border-slate-700/80 rounded-3xl p-5 shadow-sm space-y-4 text-left">
             <div className="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-3">
@@ -914,11 +920,10 @@ export const DispatchView: React.FC<DispatchViewProps> = ({ initialTab = 'orders
                   {reels.filter(r => selectedReelNos.includes(r.reelNo)).reduce((sum, r) => sum + (r.weight || 0), 0).toLocaleString()} <span className="text-xs font-bold text-slate-400">KG</span>
                 </div>
               </div>
-              <span className={`px-2.5 py-1 rounded-full text-[10px] font-black uppercase tracking-wider ${
-                selectedReelNos.length > 0
+              <span className={`px-2.5 py-1 rounded-full text-[10px] font-black uppercase tracking-wider ${selectedReelNos.length > 0
                   ? 'bg-emerald-50 text-emerald-600 dark:bg-emerald-950/60 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800'
                   : 'bg-slate-100 text-slate-400 dark:bg-slate-800 dark:text-slate-500'
-              }`}>
+                }`}>
                 {selectedReelNos.length > 0 ? '✓ Ready to Dispatch' : '0 Reels Selected'}
               </span>
             </div>
@@ -934,7 +939,7 @@ export const DispatchView: React.FC<DispatchViewProps> = ({ initialTab = 'orders
 
           {/* Reel Selection Ledger (2/3 width) - FAST BATCH & MULTI-SELECTION ENGINE */}
           <div className="lg:col-span-2 bg-white dark:bg-surface-dark border border-slate-200 dark:border-slate-700/80 rounded-3xl p-4 sm:p-5 shadow-xs space-y-3.5 text-left">
-            
+
             {/* 1. Header with Tally, Search Bar (Picture 3 Spot) & View Switcher */}
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 border-b border-slate-100 dark:border-slate-800 pb-3">
               <div className="space-y-0.5">
@@ -985,11 +990,10 @@ export const DispatchView: React.FC<DispatchViewProps> = ({ initialTab = 'orders
                   <button
                     type="button"
                     onClick={() => setReelViewMode('grid')}
-                    className={`p-1.5 rounded-lg transition cursor-pointer ${
-                      reelViewMode === 'grid'
+                    className={`p-1.5 rounded-lg transition cursor-pointer ${reelViewMode === 'grid'
                         ? 'bg-white dark:bg-slate-800 text-blue-600 shadow-xs'
                         : 'text-slate-500 hover:text-slate-800 dark:hover:text-white'
-                    }`}
+                      }`}
                     title="Card Grid View"
                   >
                     <LayoutGrid className="h-3.5 w-3.5" />
@@ -997,11 +1001,10 @@ export const DispatchView: React.FC<DispatchViewProps> = ({ initialTab = 'orders
                   <button
                     type="button"
                     onClick={() => setReelViewMode('table')}
-                    className={`p-1.5 rounded-lg transition cursor-pointer ${
-                      reelViewMode === 'table'
+                    className={`p-1.5 rounded-lg transition cursor-pointer ${reelViewMode === 'table'
                         ? 'bg-white dark:bg-slate-800 text-blue-600 shadow-xs'
                         : 'text-slate-500 hover:text-slate-800 dark:hover:text-white'
-                    }`}
+                      }`}
                     title="Compact High-Density Table View"
                   >
                     <List className="h-3.5 w-3.5" />
@@ -1062,13 +1065,13 @@ export const DispatchView: React.FC<DispatchViewProps> = ({ initialTab = 'orders
 
             {/* 3. Fast Batch Selection Buttons, Product, Grade, GSM & Size Filter Chips */}
             <div className="space-y-2 pt-1 border-t border-slate-100 dark:border-slate-800">
-              
+
               {/* Row A: Quick 1-Click Batch Actions */}
               <div className="flex flex-wrap items-center gap-1.5">
                 <span className="text-[10px] font-black text-slate-400 uppercase tracking-wider mr-1">
                   Batch Select:
                 </span>
-                
+
                 <button
                   type="button"
                   onClick={handleSelectAllFiltered}
@@ -1117,7 +1120,7 @@ export const DispatchView: React.FC<DispatchViewProps> = ({ initialTab = 'orders
                 )}
               </div>
 
-              {/* Row B: Product & Grade Filter Chips */}
+              {/* Row B: Product Filter Chips */}
               <div className="flex flex-wrap items-center gap-1.5 pt-1">
                 <span className="text-[10px] font-black text-slate-400 uppercase tracking-wider mr-1">
                   Product:
@@ -1126,11 +1129,10 @@ export const DispatchView: React.FC<DispatchViewProps> = ({ initialTab = 'orders
                 <button
                   type="button"
                   onClick={() => setReelProductFilter('ALL')}
-                  className={`px-2.5 py-0.5 rounded-full text-xs font-bold cursor-pointer transition ${
-                    reelProductFilter === 'ALL'
+                  className={`px-2.5 py-0.5 rounded-full text-xs font-bold cursor-pointer transition ${reelProductFilter === 'ALL'
                       ? 'bg-slate-900 dark:bg-white text-white dark:text-slate-900'
                       : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 hover:bg-slate-200'
-                  }`}
+                    }`}
                 >
                   All Products ({availableReels.length})
                 </button>
@@ -1142,91 +1144,87 @@ export const DispatchView: React.FC<DispatchViewProps> = ({ initialTab = 'orders
                       key={prod}
                       type="button"
                       onClick={() => setReelProductFilter(prod)}
-                      className={`px-2.5 py-0.5 rounded-full text-xs font-bold cursor-pointer transition ${
-                        reelProductFilter === prod
+                      className={`px-2.5 py-0.5 rounded-full text-xs font-bold cursor-pointer transition ${reelProductFilter === prod
                           ? 'bg-emerald-600 text-white shadow-xs'
                           : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 hover:bg-slate-200'
-                      }`}
+                        }`}
                     >
                       {prod} ({count})
                     </button>
                   );
                 })}
+              </div>
 
-                {/* Grade Filter Pill Group (All, Grade A, Grade B) */}
-                <div className="flex items-center gap-1 ml-auto bg-slate-100 dark:bg-slate-900 p-0.5 rounded-xl border border-slate-200 dark:border-slate-800">
+              {/* Row C: GSM & Grade Filter Chips (Same Level) */}
+              <div className="flex flex-wrap items-center justify-between gap-1.5 pt-0.5">
+                <div className="flex flex-wrap items-center gap-1.5">
+                  <span className="text-[10px] font-black text-slate-400 uppercase tracking-wider mr-1">
+                    GSM:
+                  </span>
+
+                  <button
+                    type="button"
+                    onClick={() => setReelGsmFilter('ALL')}
+                    className={`px-2.5 py-0.5 rounded-full text-xs font-bold cursor-pointer transition ${reelGsmFilter === 'ALL'
+                        ? 'bg-blue-900 dark:bg-blue-600 text-white'
+                        : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 hover:bg-slate-200'
+                      }`}
+                  >
+                    All GSM
+                  </button>
+
+                  {uniqueGsms.map(gsm => {
+                    const count = availableReels.filter(r => r.gsm === gsm).length;
+                    return (
+                      <button
+                        key={gsm}
+                        type="button"
+                        onClick={() => setReelGsmFilter(gsm)}
+                        className={`px-2.5 py-0.5 rounded-full text-xs font-bold cursor-pointer transition ${reelGsmFilter === gsm
+                            ? 'bg-blue-600 text-white shadow-xs'
+                            : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 hover:bg-slate-200'
+                          }`}
+                      >
+                        {gsm} GSM ({count})
+                      </button>
+                    );
+                  })}
+                </div>
+
+                {/* Grade Filter Pill Group (Same Row Level) */}
+                <div className="flex items-center gap-1 bg-slate-100 dark:bg-slate-900 p-0.5 rounded-xl border border-slate-200 dark:border-slate-800 shrink-0">
                   <span className="text-[9px] font-black text-slate-400 uppercase px-1">Grade:</span>
                   <button
                     type="button"
                     onClick={() => setReelGradeFilter('ALL')}
-                    className={`px-2 py-0.5 rounded-lg text-[10px] font-extrabold cursor-pointer transition ${
-                      reelGradeFilter === 'ALL'
+                    className={`px-2 py-0.5 rounded-lg text-[10px] font-extrabold cursor-pointer transition ${reelGradeFilter === 'ALL'
                         ? 'bg-slate-800 text-white dark:bg-slate-200 dark:text-slate-900'
                         : 'text-slate-600 dark:text-slate-400 hover:text-slate-900'
-                    }`}
+                      }`}
                   >
                     All
                   </button>
                   <button
                     type="button"
                     onClick={() => setReelGradeFilter('A')}
-                    className={`px-2 py-0.5 rounded-lg text-[10px] font-extrabold cursor-pointer transition ${
-                      reelGradeFilter === 'A'
+                    className={`px-2 py-0.5 rounded-lg text-[10px] font-extrabold cursor-pointer transition ${reelGradeFilter === 'A'
                         ? 'bg-emerald-600 text-white shadow-xs'
                         : 'text-emerald-700 dark:text-emerald-400 hover:bg-emerald-50 dark:hover:bg-emerald-950/30'
-                    }`}
+                      }`}
                   >
                     Grade A
                   </button>
                   <button
                     type="button"
                     onClick={() => setReelGradeFilter('B')}
-                    className={`px-2 py-0.5 rounded-lg text-[10px] font-extrabold cursor-pointer transition ${
-                      reelGradeFilter === 'B'
+                    className={`px-2 py-0.5 rounded-lg text-[10px] font-extrabold cursor-pointer transition ${reelGradeFilter === 'B'
                         ? 'bg-amber-600 text-white shadow-xs'
                         : 'text-amber-700 dark:text-amber-400 hover:bg-amber-50 dark:hover:bg-amber-950/30'
-                    }`}
+                      }`}
                   >
                     Grade B Only
                   </button>
                 </div>
-              </div>
-
-              {/* Row C: GSM Filter Chips */}
-              <div className="flex flex-wrap items-center gap-1.5 pt-0.5">
-                <span className="text-[10px] font-black text-slate-400 uppercase tracking-wider mr-1">
-                  GSM:
-                </span>
-
-                <button
-                  type="button"
-                  onClick={() => setReelGsmFilter('ALL')}
-                  className={`px-2.5 py-0.5 rounded-full text-xs font-bold cursor-pointer transition ${
-                    reelGsmFilter === 'ALL'
-                      ? 'bg-blue-900 dark:bg-blue-600 text-white'
-                      : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 hover:bg-slate-200'
-                  }`}
-                >
-                  All GSM
-                </button>
-
-                {uniqueGsms.map(gsm => {
-                  const count = availableReels.filter(r => r.gsm === gsm).length;
-                  return (
-                    <button
-                      key={gsm}
-                      type="button"
-                      onClick={() => setReelGsmFilter(gsm)}
-                      className={`px-2.5 py-0.5 rounded-full text-xs font-bold cursor-pointer transition ${
-                        reelGsmFilter === gsm
-                          ? 'bg-blue-600 text-white shadow-xs'
-                          : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 hover:bg-slate-200'
-                      }`}
-                    >
-                      {gsm} GSM ({count})
-                    </button>
-                  );
-                })}
               </div>
 
               {/* Row D: Size Filter Chips */}
@@ -1238,11 +1236,10 @@ export const DispatchView: React.FC<DispatchViewProps> = ({ initialTab = 'orders
                 <button
                   type="button"
                   onClick={() => setReelSizeFilter('ALL')}
-                  className={`px-2.5 py-0.5 rounded-full text-xs font-bold cursor-pointer transition ${
-                    reelSizeFilter === 'ALL'
+                  className={`px-2.5 py-0.5 rounded-full text-xs font-bold cursor-pointer transition ${reelSizeFilter === 'ALL'
                       ? 'bg-indigo-900 dark:bg-indigo-500 text-white'
                       : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 hover:bg-slate-200'
-                  }`}
+                    }`}
                 >
                   All Sizes
                 </button>
@@ -1254,11 +1251,10 @@ export const DispatchView: React.FC<DispatchViewProps> = ({ initialTab = 'orders
                       key={sz}
                       type="button"
                       onClick={() => setReelSizeFilter(sz)}
-                      className={`px-2.5 py-0.5 rounded-full text-xs font-bold cursor-pointer transition ${
-                        reelSizeFilter === sz
+                      className={`px-2.5 py-0.5 rounded-full text-xs font-bold cursor-pointer transition ${reelSizeFilter === sz
                           ? 'bg-indigo-600 text-white shadow-xs'
                           : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 hover:bg-slate-200'
-                      }`}
+                        }`}
                     >
                       {sz} cm ({count})
                     </button>
@@ -1275,7 +1271,7 @@ export const DispatchView: React.FC<DispatchViewProps> = ({ initialTab = 'orders
                 No warehouse reels match your current filter. Try resetting the GSM or Search query.
               </p>
             ) : reelViewMode === 'table' ? (
-              
+
               /* HIGH-DENSITY COMPACT TABLE VIEW */
               <div className="border border-slate-200 dark:border-slate-800 rounded-2xl overflow-hidden max-h-[500px] overflow-y-auto">
                 <table className="w-full text-left text-xs border-collapse">
@@ -1308,17 +1304,16 @@ export const DispatchView: React.FC<DispatchViewProps> = ({ initialTab = 'orders
                         <tr
                           key={reel.reelNo}
                           onClick={() => handleToggleReel(reel.reelNo)}
-                          className={`cursor-pointer transition select-none ${
-                            isChecked
+                          className={`cursor-pointer transition select-none ${isChecked
                               ? 'bg-blue-50/70 dark:bg-blue-950/30 text-blue-950 dark:text-blue-100'
                               : 'hover:bg-slate-50 dark:hover:bg-slate-800/40 text-slate-800 dark:text-slate-200'
-                          }`}
+                            }`}
                         >
                           <td className="py-2.5 px-3 text-center">
                             <input
                               type="checkbox"
                               checked={isChecked}
-                              onChange={() => {}} // handled by row click
+                              onChange={() => { }} // handled by row click
                               className="h-3.5 w-3.5 rounded text-blue-600 cursor-pointer"
                             />
                           </td>
@@ -1329,11 +1324,10 @@ export const DispatchView: React.FC<DispatchViewProps> = ({ initialTab = 'orders
                           <td className="py-2.5 px-3 font-mono font-bold text-emerald-600 dark:text-emerald-400">{reel.weight} kg</td>
                           <td className="py-2.5 px-3 text-[11px] text-slate-500">{reel.dia}mm ({reel.joint} J)</td>
                           <td className="py-2.5 px-3 text-right">
-                            <span className={`px-2 py-0.5 rounded text-[9px] font-black uppercase ${
-                              reel.qcGrade === 'A'
+                            <span className={`px-2 py-0.5 rounded text-[9px] font-black uppercase ${reel.qcGrade === 'A'
                                 ? 'bg-emerald-100 dark:bg-emerald-950/50 text-emerald-700 dark:text-emerald-300'
                                 : 'bg-amber-100 dark:bg-amber-950/50 text-amber-700 dark:text-amber-300'
-                            }`}>
+                              }`}>
                               Grade {reel.qcGrade || 'A'}
                             </span>
                           </td>
@@ -1354,11 +1348,10 @@ export const DispatchView: React.FC<DispatchViewProps> = ({ initialTab = 'orders
                       <div
                         key={reel.reelNo}
                         onClick={() => handleToggleReel(reel.reelNo)}
-                        className={`p-3 border rounded-2xl cursor-pointer transition select-none space-y-2 ${
-                          isChecked
+                        className={`p-3 border rounded-2xl cursor-pointer transition select-none space-y-2 ${isChecked
                             ? 'border-blue-600 bg-blue-50/30 dark:border-blue-500 dark:bg-blue-950/20 ring-1 ring-blue-500'
                             : 'border-slate-200/80 hover:bg-slate-50 dark:border-slate-700/80 dark:hover:bg-slate-800/40'
-                        }`}
+                          }`}
                       >
                         <div className="flex justify-between items-center border-b pb-1.5 dark:border-slate-800 gap-1.5">
                           <div className="flex items-center gap-1.5 min-w-0">
@@ -1373,15 +1366,14 @@ export const DispatchView: React.FC<DispatchViewProps> = ({ initialTab = 'orders
                             )}
                           </div>
                           <div className="flex items-center gap-1.5 shrink-0">
-                            <span className={`px-1.5 py-0.5 rounded text-[8px] font-bold ${
-                              (reel.qcGrade || 'A') === 'A' ? 'bg-emerald-100 dark:bg-emerald-950/20 text-emerald-700' : 'bg-amber-100 dark:bg-amber-950/20 text-amber-700'
-                            }`}>
+                            <span className={`px-1.5 py-0.5 rounded text-[8px] font-bold ${(reel.qcGrade || 'A') === 'A' ? 'bg-emerald-100 dark:bg-emerald-950/20 text-emerald-700' : 'bg-amber-100 dark:bg-amber-950/20 text-amber-700'
+                              }`}>
                               Grade {reel.qcGrade || 'A'}
                             </span>
                             <input
                               type="checkbox"
                               checked={isChecked}
-                              onChange={() => {}} // handled by div click
+                              onChange={() => { }} // handled by div click
                               className="h-3.5 w-3.5 rounded border-slate-300 text-blue-600 focus:ring-0 cursor-pointer"
                             />
                           </div>
@@ -1436,7 +1428,7 @@ export const DispatchView: React.FC<DispatchViewProps> = ({ initialTab = 'orders
       {/* 3. TAB: Packing Slips & Challans List (Modern Filterable Ledger) */}
       {activeTab === 'slips_list' && (
         <div className="space-y-4 text-left">
-          
+
           {/* Top KPI Metrics Row */}
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
             <div className="bg-white dark:bg-surface-dark border border-slate-200 dark:border-slate-800 rounded-2xl p-3.5 shadow-2xs">
@@ -1472,7 +1464,7 @@ export const DispatchView: React.FC<DispatchViewProps> = ({ initialTab = 'orders
 
           {/* Filter Toolbar Container */}
           <div className="bg-white dark:bg-surface-dark border border-slate-200 dark:border-slate-800 rounded-3xl p-4 sm:p-5 shadow-xs space-y-3">
-            
+
             {/* Header Title + Fast Search */}
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-100 dark:border-slate-800 pb-3">
               <div>
@@ -1508,21 +1500,20 @@ export const DispatchView: React.FC<DispatchViewProps> = ({ initialTab = 'orders
 
             {/* Quick Filter Row: Status Chips & Customer Dropdown */}
             <div className="flex flex-wrap items-center justify-between gap-2.5 pt-0.5">
-              
+
               {/* Status Chips */}
               <div className="flex flex-wrap items-center gap-1.5">
                 <span className="text-[10px] font-black text-slate-400 uppercase tracking-wider mr-1">
                   Status:
                 </span>
-                
+
                 <button
                   type="button"
                   onClick={() => setSlipStatusFilter('ALL')}
-                  className={`px-3 py-1 rounded-full text-xs font-bold cursor-pointer transition ${
-                    slipStatusFilter === 'ALL'
+                  className={`px-3 py-1 rounded-full text-xs font-bold cursor-pointer transition ${slipStatusFilter === 'ALL'
                       ? 'bg-slate-900 dark:bg-white text-white dark:text-slate-900 shadow-xs'
                       : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 hover:bg-slate-200'
-                  }`}
+                    }`}
                 >
                   All ({slips.length})
                 </button>
@@ -1530,11 +1521,10 @@ export const DispatchView: React.FC<DispatchViewProps> = ({ initialTab = 'orders
                 <button
                   type="button"
                   onClick={() => setSlipStatusFilter('CONFIRMED')}
-                  className={`px-3 py-1 rounded-full text-xs font-bold cursor-pointer transition flex items-center gap-1.5 ${
-                    slipStatusFilter === 'CONFIRMED'
+                  className={`px-3 py-1 rounded-full text-xs font-bold cursor-pointer transition flex items-center gap-1.5 ${slipStatusFilter === 'CONFIRMED'
                       ? 'bg-emerald-600 text-white shadow-xs'
                       : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 hover:bg-slate-200'
-                  }`}
+                    }`}
                 >
                   <span className="h-1.5 w-1.5 rounded-full bg-emerald-400"></span>
                   <span>Dispatched ({slips.filter(s => s.status !== 'DRAFT').length})</span>
@@ -1543,11 +1533,10 @@ export const DispatchView: React.FC<DispatchViewProps> = ({ initialTab = 'orders
                 <button
                   type="button"
                   onClick={() => setSlipStatusFilter('DRAFT')}
-                  className={`px-3 py-1 rounded-full text-xs font-bold cursor-pointer transition flex items-center gap-1.5 ${
-                    slipStatusFilter === 'DRAFT'
+                  className={`px-3 py-1 rounded-full text-xs font-bold cursor-pointer transition flex items-center gap-1.5 ${slipStatusFilter === 'DRAFT'
                       ? 'bg-amber-600 text-white shadow-xs'
                       : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 hover:bg-slate-200'
-                  }`}
+                    }`}
                 >
                   <span className="h-1.5 w-1.5 rounded-full bg-amber-400"></span>
                   <span>Drafts ({slips.filter(s => s.status === 'DRAFT').length})</span>
@@ -1629,7 +1618,7 @@ export const DispatchView: React.FC<DispatchViewProps> = ({ initialTab = 'orders
                           const partyObj = parties.find(p => p.id === slip.partyId);
                           const vehicleObj = vehicles.find(v => v.id === slip.vehicleId || v.vehicleNo === slip.vehicleId);
                           const vehicleDisplay = vehicleObj ? vehicleObj.vehicleNo : (slip.vehicleId || 'N/A');
-                          
+
                           // Calculate Total Weight for slip
                           const linkedReels = reels.filter(r => slip.reelNos.includes(r.reelNo));
                           const totalWeightKg = linkedReels.reduce((sum, r) => sum + (r.weight || 0), 0);
@@ -1666,11 +1655,10 @@ export const DispatchView: React.FC<DispatchViewProps> = ({ initialTab = 'orders
                                 )}
                               </td>
                               <td className="py-3 px-3">
-                                <span className={`inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[9px] font-black uppercase tracking-wider ${
-                                  slip.status === 'DRAFT'
+                                <span className={`inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[9px] font-black uppercase tracking-wider ${slip.status === 'DRAFT'
                                     ? 'bg-amber-100 text-amber-800 dark:bg-amber-950/50 dark:text-amber-300'
                                     : 'bg-emerald-100 text-emerald-800 dark:bg-emerald-950/50 dark:text-emerald-300'
-                                }`}>
+                                  }`}>
                                   <span className={`h-1.5 w-1.5 rounded-full ${slip.status === 'DRAFT' ? 'bg-amber-500' : 'bg-emerald-500'}`}></span>
                                   <span>{slip.status === 'DRAFT' ? 'Draft Gate Pass' : 'Dispatched'}</span>
                                 </span>
@@ -1684,7 +1672,7 @@ export const DispatchView: React.FC<DispatchViewProps> = ({ initialTab = 'orders
                                     <Eye className="h-3 w-3" />
                                     <span>Receipt</span>
                                   </button>
-                                  
+
                                   {slip.status === 'DRAFT' ? (
                                     <button
                                       onClick={() => handleConfirmDispatch(slip.id)}
@@ -1743,11 +1731,10 @@ export const DispatchView: React.FC<DispatchViewProps> = ({ initialTab = 'orders
                             <span className="font-bold text-blue-600 dark:text-blue-400 font-mono text-xs">
                               {slip.slipNo}
                             </span>
-                            <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[9px] font-black uppercase ${
-                              slip.status === 'DRAFT'
+                            <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[9px] font-black uppercase ${slip.status === 'DRAFT'
                                 ? 'bg-amber-100 text-amber-800 dark:bg-amber-950/50 dark:text-amber-300'
                                 : 'bg-emerald-100 text-emerald-800 dark:bg-emerald-950/50 dark:text-emerald-300'
-                            }`}>
+                              }`}>
                               <span className={`h-1.5 w-1.5 rounded-full ${slip.status === 'DRAFT' ? 'bg-amber-500' : 'bg-emerald-500'}`}></span>
                               <span>{slip.status}</span>
                             </span>
@@ -1852,7 +1839,7 @@ export const DispatchView: React.FC<DispatchViewProps> = ({ initialTab = 'orders
             className="fixed inset-0 bg-slate-900/70 backdrop-blur-xs z-50 flex items-center justify-center p-2 sm:p-4 overflow-y-auto print:fixed print:inset-0 print:bg-white print:z-[999999] print:p-0 print:m-0 print:block print:w-full print:h-full"
           >
             <div className="bg-white text-slate-900 rounded-2xl max-w-3xl w-full p-4 sm:p-8 space-y-4 shadow-2xl my-auto print:shadow-none print:w-full print:max-w-none print:p-0 print:m-0 print:rounded-none">
-              
+
               {/* Modal Top Actions (Hidden while printing) */}
               <div className="flex justify-between items-center border-b border-slate-200 pb-3 print:hidden">
                 <div className="flex items-center gap-2">
@@ -1882,7 +1869,7 @@ export const DispatchView: React.FC<DispatchViewProps> = ({ initialTab = 'orders
 
               {/* PRINTABLE RECEIPT CONTAINER (Matches Client Reference 100%) */}
               <div className="bg-white p-2 sm:p-4 text-black font-sans select-none print:p-0">
-                
+
                 {/* 1. Header Banner */}
                 <div className="border-b-2 border-black pb-2 mb-3 text-left">
                   <h1 className="text-xl sm:text-2xl font-black tracking-tight text-black uppercase leading-tight">
