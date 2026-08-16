@@ -28,7 +28,7 @@ export const FinishStockView: React.FC<FinishStockViewProps> = ({ hideHeader = f
   const { user } = useAuth();
 
   const [reels, setReels] = useState<Reel[]>(() => getReels());
-  const [activeTab, setActiveTab] = useState<'grade_a' | 'grade_b' | 'pending_qc'>('grade_a');
+  const [activeTab, setActiveTab] = useState<'all' | 'grade_a' | 'grade_b' | 'pending_qc'>('grade_a');
   const [stockSearchQuery, setStockSearchQuery] = useState('');
   const [expandedMobileGroups, setExpandedMobileGroups] = useState<Record<string, boolean>>({});
 
@@ -51,6 +51,7 @@ export const FinishStockView: React.FC<FinishStockViewProps> = ({ hideHeader = f
   // 1. Base Reels for Active Tab
   const tabReels = useMemo(() => {
     return reels.filter(r => {
+      if (activeTab === 'all') return r.status === 'IN_STOCK' || r.status === 'IN_STOCK_B' || r.status === 'QC_PENDING';
       if (activeTab === 'grade_a') return r.status === 'IN_STOCK';
       if (activeTab === 'grade_b') return r.status === 'IN_STOCK_B';
       return r.status === 'QC_PENDING';
@@ -314,110 +315,196 @@ export const FinishStockView: React.FC<FinishStockViewProps> = ({ hideHeader = f
         </div>
       </div>
 
-      {/* 3. SUBTAB PILLS */}
-      <div className="flex bg-slate-100/90 dark:bg-slate-800/90 p-1.5 rounded-2xl border border-slate-200/80 dark:border-slate-700 max-w-max gap-1">
-        <button
-          onClick={() => setActiveTab('grade_a')}
-          className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-black transition-all cursor-pointer ${
-            activeTab === 'grade_a'
-              ? 'bg-gradient-to-r from-blue-600 to-indigo-600 text-white shadow-md'
-              : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
-          }`}
-        >
-          <CheckSquare className="h-4 w-4" />
-          <span>{t('finish_stock.grade_a')}</span>
-        </button>
-
-        <button
-          onClick={() => setActiveTab('grade_b')}
-          className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-black transition-all cursor-pointer ${
-            activeTab === 'grade_b'
-              ? 'bg-gradient-to-r from-blue-600 to-indigo-600 text-white shadow-md'
-              : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
-          }`}
-        >
-          <ListFilter className="h-4 w-4" />
-          <span>{t('finish_stock.grade_b')}</span>
-        </button>
-      </div>
-
-      {/* 4. SEARCH BAR WITH FILTER BUTTON */}
-      <div className="bg-white dark:bg-surface-dark border border-slate-200 dark:border-slate-700/80 rounded-3xl p-3 shadow-sm flex items-center justify-between gap-3">
-        <div className="flex items-center gap-3 flex-1">
-          <div className="p-2 rounded-2xl bg-blue-50 dark:bg-blue-950/50 text-primary dark:text-blue-400">
-            <Search className="h-4 w-4" />
+      {/* 3. FAST FILTER TOOLBAR (CASCADING PRODUCT, GRADE, GSM, SIZE PILL CHIPS) */}
+      <div className="bg-white dark:bg-surface-dark border border-slate-200 dark:border-slate-700/80 rounded-3xl p-4 sm:p-5 shadow-sm space-y-3.5">
+        
+        {/* Row 1: Search input + Reset Filter Action */}
+        <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2.5 flex-1 bg-slate-50 dark:bg-slate-900/60 border border-slate-200 dark:border-slate-800 rounded-2xl px-3.5 py-2.5">
+            <Search className="h-4 w-4 text-slate-400 shrink-0" />
+            <input
+              type="text"
+              value={stockSearchQuery}
+              onChange={e => setStockSearchQuery(e.target.value)}
+              placeholder="Search by product, GSM, size, ply, or Reel No..."
+              className="bg-transparent border-none text-xs font-semibold focus:outline-none w-full dark:text-white placeholder-slate-400"
+            />
+            {stockSearchQuery && (
+              <button
+                type="button"
+                onClick={() => setStockSearchQuery('')}
+                className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 cursor-pointer"
+              >
+                <X className="h-3.5 w-3.5" />
+              </button>
+            )}
           </div>
-          <input
-            type="text"
-            value={stockSearchQuery}
-            onChange={e => setStockSearchQuery(e.target.value)}
-            placeholder="Search by product, GSM, size, ply, or Reel No..."
-            className="bg-transparent border-none text-xs font-semibold focus:outline-none w-full dark:text-white placeholder-slate-400"
-          />
+
+          {(filterProduct !== 'ALL' || filterGsm !== 'ALL' || filterSize !== 'ALL' || filterPly !== 'ALL' || activeTab !== 'grade_a' || stockSearchQuery.trim()) && (
+            <button
+              type="button"
+              onClick={handleClearAllFilters}
+              className="px-3.5 py-2.5 rounded-2xl bg-red-50 hover:bg-red-100 dark:bg-red-950/40 text-red-600 dark:text-red-300 font-extrabold text-xs transition cursor-pointer flex items-center gap-1.5 border border-red-200 dark:border-red-800/60 shrink-0 shadow-2xs"
+            >
+              <RotateCcw className="h-3.5 w-3.5" />
+              <span>Reset Filters</span>
+            </button>
+          )}
         </div>
 
-        {/* Filter Popup Button */}
-        <button
-          onClick={() => setShowFilterModal(true)}
-          className={`px-3.5 py-2 rounded-2xl text-xs font-black flex items-center gap-2 transition cursor-pointer border ${
-            activeFilterCount > 0
-              ? 'bg-primary text-white border-primary shadow-md'
-              : 'bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-200 border-slate-200 dark:border-slate-700 hover:bg-slate-200'
-          }`}
-        >
-          <SlidersHorizontal className="h-4 w-4" />
-          <span>Filter</span>
-          {activeFilterCount > 0 && (
-            <span className="px-1.5 py-0.2 rounded-full bg-white text-primary text-[10px] font-black">
-              {activeFilterCount}
-            </span>
-          )}
-        </button>
-      </div>
+        {/* Row 2: Product & Grade Filter Chips */}
+        <div className="flex flex-wrap items-center gap-2 pt-1 border-t border-slate-100 dark:border-slate-800/60">
+          <span className="text-[10px] font-black text-slate-400 uppercase tracking-wider min-w-[65px]">
+            PRODUCT:
+          </span>
 
-      {/* ACTIVE FILTERS & LIVE SUMMARY BANNER */}
-      {(activeFilterCount > 0 || stockSearchQuery.trim()) && (
-        <div className="bg-gradient-to-r from-blue-50 via-indigo-50 to-slate-100 dark:from-slate-900 dark:via-indigo-950/30 dark:to-slate-900 border border-blue-200 dark:border-slate-700 rounded-2xl p-4 flex flex-wrap items-center justify-between gap-3 shadow-xs">
-          <div className="flex flex-wrap items-center gap-2">
-            <span className="text-xs font-black text-slate-700 dark:text-slate-300 flex items-center gap-1.5">
-              <Sparkles className="h-4 w-4 text-primary dark:text-blue-400" /> Active Filters:
-            </span>
-            {filterProduct !== 'ALL' && (
-              <span className="px-2.5 py-1 rounded-xl bg-white dark:bg-slate-800 text-primary dark:text-blue-400 text-xs font-black border border-blue-200 dark:border-slate-700 shadow-2xs">
-                Product: {filterProduct}
-              </span>
-            )}
-            {filterGsm !== 'ALL' && (
-              <span className="px-2.5 py-1 rounded-xl bg-white dark:bg-slate-800 text-indigo-600 dark:text-indigo-400 text-xs font-black border border-indigo-200 dark:border-slate-700 shadow-2xs">
-                GSM: {filterGsm}
-              </span>
-            )}
-            {filterSize !== 'ALL' && (
-              <span className="px-2.5 py-1 rounded-xl bg-white dark:bg-slate-800 text-purple-600 dark:text-purple-400 text-xs font-black border border-purple-200 dark:border-slate-700 shadow-2xs">
-                Size: {filterSize} cm
-              </span>
-            )}
-            {filterPly !== 'ALL' && (
-              <span className="px-2.5 py-1 rounded-xl bg-white dark:bg-slate-800 text-emerald-600 dark:text-emerald-400 text-xs font-black border border-emerald-200 dark:border-slate-700 shadow-2xs">
-                Ply: {filterPly} Ply
-              </span>
-            )}
-          </div>
+          <button
+            type="button"
+            onClick={() => handleProductChange('ALL')}
+            className={`px-3 py-1 rounded-full text-xs font-bold cursor-pointer transition ${
+              filterProduct === 'ALL'
+                ? 'bg-slate-900 dark:bg-white text-white dark:text-slate-900 shadow-xs'
+                : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700'
+            }`}
+          >
+            All Products ({tabReels.length})
+          </button>
 
-          <div className="flex items-center gap-4">
-            <div className="text-xs font-black text-slate-800 dark:text-slate-200 font-mono">
-              Matching: <span className="text-primary dark:text-blue-400">{matchingFilteredList.length} Reels</span> | <span className="text-emerald-600 dark:text-emerald-400">{matchingTotalWeightKg.toLocaleString()} kg ({matchingTotalWeightMT} MT)</span>
-            </div>
+          {availableProducts.map(prod => {
+            const count = tabReels.filter(r => r.product === prod).length;
+            return (
+              <button
+                key={prod}
+                type="button"
+                onClick={() => handleProductChange(prod)}
+                className={`px-3 py-1 rounded-full text-xs font-bold cursor-pointer transition ${
+                  filterProduct === prod
+                    ? 'bg-emerald-600 text-white shadow-xs'
+                    : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700'
+                }`}
+              >
+                {prod} ({count})
+              </button>
+            );
+          })}
 
+          {/* Grade Filter Pill Group (All, Grade A, Grade B Only) */}
+          <div className="flex items-center gap-1 ml-auto bg-slate-100 dark:bg-slate-900 p-1 rounded-2xl border border-slate-200 dark:border-slate-800 shrink-0">
+            <span className="text-[9px] font-black text-slate-400 uppercase px-1.5">GRADE:</span>
             <button
-              onClick={handleClearAllFilters}
-              className="px-3 py-1 bg-white dark:bg-slate-800 hover:bg-red-50 text-red-600 text-xs font-black rounded-xl border border-slate-200 dark:border-slate-700 transition cursor-pointer flex items-center gap-1 shrink-0"
+              type="button"
+              onClick={() => setActiveTab('all')}
+              className={`px-2.5 py-0.5 rounded-xl text-[10px] font-extrabold cursor-pointer transition ${
+                activeTab === 'all'
+                  ? 'bg-slate-800 text-white dark:bg-slate-200 dark:text-slate-900 shadow-xs'
+                  : 'text-slate-600 dark:text-slate-400 hover:text-slate-900'
+              }`}
             >
-              <RotateCcw className="h-3.5 w-3.5" /> Clear All
+              All
+            </button>
+            <button
+              type="button"
+              onClick={() => setActiveTab('grade_a')}
+              className={`px-2.5 py-0.5 rounded-xl text-[10px] font-extrabold cursor-pointer transition ${
+                activeTab === 'grade_a'
+                  ? 'bg-emerald-600 text-white shadow-xs'
+                  : 'text-emerald-700 dark:text-emerald-400 hover:bg-emerald-50 dark:hover:bg-emerald-950/30'
+              }`}
+            >
+              Grade A
+            </button>
+            <button
+              type="button"
+              onClick={() => setActiveTab('grade_b')}
+              className={`px-2.5 py-0.5 rounded-xl text-[10px] font-extrabold cursor-pointer transition ${
+                activeTab === 'grade_b'
+                  ? 'bg-amber-600 text-white shadow-xs'
+                  : 'text-amber-700 dark:text-amber-400 hover:bg-amber-50 dark:hover:bg-amber-950/30'
+              }`}
+            >
+              Grade B Only
             </button>
           </div>
         </div>
-      )}
+
+        {/* Row 3: GSM Filter Chips */}
+        <div className="flex flex-wrap items-center gap-2 pt-1 border-t border-slate-100 dark:border-slate-800/60">
+          <span className="text-[10px] font-black text-slate-400 uppercase tracking-wider min-w-[65px]">
+            GSM:
+          </span>
+
+          <button
+            type="button"
+            onClick={() => handleGsmChange('ALL')}
+            className={`px-3 py-1 rounded-full text-xs font-bold cursor-pointer transition ${
+              filterGsm === 'ALL'
+                ? 'bg-blue-900 dark:bg-blue-600 text-white shadow-xs'
+                : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700'
+            }`}
+          >
+            All GSM
+          </button>
+
+          {availableGsms.map(gsm => {
+            const count = tabReels.filter(r => (filterProduct === 'ALL' || r.product === filterProduct) && r.gsm === gsm).length;
+            return (
+              <button
+                key={gsm}
+                type="button"
+                onClick={() => handleGsmChange(String(gsm))}
+                className={`px-3 py-1 rounded-full text-xs font-bold cursor-pointer transition ${
+                  filterGsm === String(gsm)
+                    ? 'bg-blue-600 text-white shadow-xs'
+                    : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700'
+                }`}
+              >
+                {gsm} GSM ({count})
+              </button>
+            );
+          })}
+        </div>
+
+        {/* Row 4: Size Filter Chips */}
+        <div className="flex flex-wrap items-center gap-2 pt-1 border-t border-slate-100 dark:border-slate-800/60">
+          <span className="text-[10px] font-black text-slate-400 uppercase tracking-wider min-w-[65px]">
+            SIZE:
+          </span>
+
+          <button
+            type="button"
+            onClick={() => handleSizeChange('ALL')}
+            className={`px-3 py-1 rounded-full text-xs font-bold cursor-pointer transition ${
+              filterSize === 'ALL'
+                ? 'bg-purple-900 dark:bg-purple-600 text-white shadow-xs'
+                : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700'
+            }`}
+          >
+            All Sizes
+          </button>
+
+          {availableSizes.map(size => {
+            const count = tabReels.filter(r =>
+              (filterProduct === 'ALL' || r.product === filterProduct) &&
+              (filterGsm === 'ALL' || r.gsm === Number(filterGsm)) &&
+              r.size === size
+            ).length;
+            return (
+              <button
+                key={size}
+                type="button"
+                onClick={() => handleSizeChange(String(size))}
+                className={`px-3 py-1 rounded-full text-xs font-bold cursor-pointer transition ${
+                  filterSize === String(size)
+                    ? 'bg-purple-600 text-white shadow-xs'
+                    : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700'
+                }`}
+              >
+                {size} cm ({count})
+              </button>
+            );
+          })}
+        </div>
+      </div>
 
       {/* Grouped Stock View */}
       {groupedStock.length === 0 ? (
@@ -493,11 +580,8 @@ export const FinishStockView: React.FC<FinishStockViewProps> = ({ hideHeader = f
                             )
                           ) : (
                             <div className="flex justify-end gap-1.5 text-[10px] font-bold">
-                              <span className="px-2.5 py-0.5 rounded-full bg-blue-50 dark:bg-blue-950/60 text-primary dark:text-blue-300 border border-blue-200 dark:border-blue-800">
-                                GSM: {reel.qcGsmResult}
-                              </span>
-                              <span className="px-2.5 py-0.5 rounded-full bg-emerald-100 dark:bg-emerald-950/90 text-emerald-900 dark:text-emerald-200 border border-emerald-300 dark:border-emerald-700 font-extrabold">
-                                Bright: {reel.qcBrightness}%
+                              <span className="px-2.5 py-0.5 rounded-full bg-blue-50 dark:bg-blue-950/60 text-primary dark:text-blue-300 border border-blue-200 dark:border-blue-800 font-extrabold">
+                                GSM: {reel.qcGsmResult || reel.gsm}
                               </span>
                             </div>
                           )}
@@ -568,11 +652,8 @@ export const FinishStockView: React.FC<FinishStockViewProps> = ({ hideHeader = f
                               )
                             ) : (
                               <div className="flex gap-1.5 text-[10px] font-bold">
-                                <span className="px-2 py-0.5 rounded-full bg-blue-50 dark:bg-blue-950/60 text-primary dark:text-blue-300">
-                                  GSM: {reel.qcGsmResult}
-                                </span>
-                                <span className="px-2 py-0.5 rounded-full bg-emerald-100 dark:bg-emerald-950/90 text-emerald-900 dark:text-emerald-200 border border-emerald-300 dark:border-emerald-700 font-extrabold">
-                                  Bright: {reel.qcBrightness}%
+                                <span className="px-2 py-0.5 rounded-full bg-blue-50 dark:bg-blue-950/60 text-primary dark:text-blue-300 font-extrabold">
+                                  GSM: {reel.qcGsmResult || reel.gsm}
                                 </span>
                               </div>
                             )}
