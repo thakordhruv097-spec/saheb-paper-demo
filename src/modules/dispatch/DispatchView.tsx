@@ -2284,7 +2284,7 @@ export const DispatchView: React.FC<DispatchViewProps> = ({ initialTab = 'orders
                               <span className="font-bold text-black text-xs sm:text-sm block">{partyObj?.name || 'Walk-in'}</span>
                               {partyObj?.contact && (
                                 <span className="text-[10px] text-slate-600 font-mono font-bold block">
-                                  📱 {partyObj.contact}
+                                  {partyObj.contact}
                                 </span>
                               )}
                             </div>
