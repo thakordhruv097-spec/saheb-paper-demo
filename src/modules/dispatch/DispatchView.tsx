@@ -2303,18 +2303,13 @@ export const DispatchView: React.FC<DispatchViewProps> = ({ initialTab = 'orders
                       ) : (
                         /* Compact Continuation Header for Page 2+ */
                         <div className="border-b-2 border-black pb-2 mb-3.5 text-left flex justify-between items-center">
-                          <div>
-                            <div className="flex items-center gap-2">
-                              <h1 className="text-base sm:text-lg font-black tracking-tight text-black uppercase leading-tight">
-                                SAHEB PAPER PVT. LTD.
-                              </h1>
-                              <span className="text-[9px] font-black uppercase text-slate-700 bg-slate-100 px-2 py-0.5 rounded border border-slate-300">
-                                DISPATCH RECEIPT (CONTD.)
-                              </span>
-                            </div>
-                            <p className="text-[10px] font-semibold text-slate-600 uppercase mt-0.5">
-                              Challan: <span className="font-mono text-black font-extrabold">{viewingSlip.slipNo}</span> &bull; Party: <span className="text-black font-extrabold">{partyObj?.name || 'Walk-in'}</span> &bull; Truck: <span className="font-mono text-black font-extrabold">{vehicleDisplay}</span>
-                            </p>
+                          <div className="flex items-center gap-2">
+                            <h1 className="text-base sm:text-lg font-black tracking-tight text-black uppercase leading-tight">
+                              SAHEB PAPER PVT. LTD.
+                            </h1>
+                            <span className="text-[9px] font-black uppercase text-slate-700 bg-slate-100 px-2 py-0.5 rounded border border-slate-300">
+                              DISPATCH RECEIPT (CONTD.)
+                            </span>
                           </div>
                           <div className="text-right">
                             <span className="text-[10px] font-mono font-black text-slate-600 uppercase border border-slate-300 px-2 py-0.5 rounded bg-slate-50">
