@@ -721,7 +721,6 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
                     {section.items.map(item => {
                       const Icon = item.icon;
                       const isActive = location.pathname === item.path;
-
                       return (
                         <button
                           key={item.id}

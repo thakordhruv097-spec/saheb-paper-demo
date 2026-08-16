@@ -5,7 +5,6 @@ import { getFormulas, saveFormula } from '../../data/index';
 import type { PulpFormula } from '../../data/types';
 import { CustomDatePickerModal } from '../../components/CustomDatePickerModal';
 import { DataFilterBar } from '../../components/DataFilterBar';
-import { StepHeaderBadge } from '../../components/ProcessWorkflowGuide';
 import {
   Factory,
   Plus,
@@ -283,12 +282,9 @@ export const PulpMillView: React.FC = () => {
               <Factory className="w-5 h-5" />
             </div>
             <div>
-              <div className="flex items-center gap-2.5 flex-wrap">
-                <h2 className="text-base font-black text-slate-900 dark:text-white uppercase tracking-wider font-heading">
-                  Pulp Mill Daily Setup & Formula Rules
-                </h2>
-                <StepHeaderBadge stepNumber={3} />
-              </div>
+              <h2 className="text-base font-black text-slate-900 dark:text-white uppercase tracking-wider font-heading">
+                Pulp Mill Daily Setup & Formula Rules
+              </h2>
               <p className="text-xs text-slate-500 dark:text-slate-400 font-medium tracking-tight">
                 Date: <strong className="text-slate-900 dark:text-white font-mono">{dateStr.split('-').reverse().join('/')}</strong> &bull; Governs automatic raw material deduction on Machine Production.
               </p>

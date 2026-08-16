@@ -10,7 +10,6 @@ import {
 import type { RawMaterialCategory, RawMaterialItem, RawMaterialLot } from '../../data/types';
 import { CustomDatePickerModal } from '../../components/CustomDatePickerModal';
 import { DataFilterBar } from '../../components/DataFilterBar';
-import { StepHeaderBadge } from '../../components/ProcessWorkflowGuide';
 import type { FilterField } from '../../components/DataFilterBar';
 import {
   Warehouse,
@@ -150,12 +149,9 @@ export const RawMaterialView: React.FC = () => {
             <Warehouse className="w-5 h-5" />
           </div>
           <div>
-            <div className="flex items-center gap-2.5 flex-wrap">
-              <h2 className="text-base font-black text-slate-900 dark:text-white uppercase tracking-wider font-heading">
-                Raw Material Stock Inventory
-              </h2>
-              <StepHeaderBadge stepNumber={2} />
-            </div>
+            <h2 className="text-base font-black text-slate-900 dark:text-white uppercase tracking-wider font-heading">
+              Raw Material Stock Inventory
+            </h2>
             <p className="text-xs text-slate-500 dark:text-slate-400 font-medium tracking-tight">
               Monitor waste paper, chemicals, firewood stocks & log purchase inward arrivals.
             </p>

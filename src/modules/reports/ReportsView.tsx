@@ -11,7 +11,6 @@ import {
 } from '../../data/index';
 import { CustomDatePickerModal } from '../../components/CustomDatePickerModal';
 import { useDateFilter } from '../../context/DateFilterContext';
-import { StepHeaderBadge } from '../../components/ProcessWorkflowGuide';
 import * as XLSX from 'xlsx';
 import {
   FileSpreadsheet,
@@ -528,7 +527,7 @@ export const ReportsView: React.FC = () => {
   return (
     <div className="space-y-6">
       {/* 1. Compact Executive Gradient Hero Header Banner */}
-      <div className="bg-gradient-to-r from-blue-600 via-indigo-600 to-blue-900 text-white rounded-3xl py-4 px-6 md:py-4.5 md:px-7 shadow-xl shadow-blue-600/10 border border-blue-500/20 flex flex-col md:flex-row md:items-center justify-between gap-4 overflow-visible z-20 relative">
+      <div className="bg-gradient-to-r from-blue-600 via-indigo-600 to-blue-900 text-white rounded-3xl py-4 px-6 md:py-4.5 md:px-7 shadow-xl shadow-blue-600/10 border border-blue-500/20 flex flex-col md:flex-row md:items-center justify-between gap-4 overflow-hidden relative">
         {/* Background Subtle Accent Glow */}
         <div className="absolute -right-10 -bottom-10 w-48 h-48 bg-white/5 rounded-full blur-2xl pointer-events-none" />
 
@@ -539,12 +538,9 @@ export const ReportsView: React.FC = () => {
             <span>REAL-TIME BUSINESS INTELLIGENCE</span>
           </div>
 
-          <div className="flex flex-wrap items-center gap-3">
-            <h1 className="text-xl md:text-2xl font-black text-white tracking-tight font-heading">
-              Mill Reports & Analytics Dashboard
-            </h1>
-            <StepHeaderBadge stepNumber={9} />
-          </div>
+          <h1 className="text-xl md:text-2xl font-black text-white tracking-tight font-heading">
+            Mill Reports & Analytics Dashboard
+          </h1>
 
           <p className="text-xs font-semibold text-blue-100/90 mt-0.5 max-w-2xl leading-tight">
             Comprehensive date-filtered production throughput, dispatch yield ledgers, and compliance audit exports.
