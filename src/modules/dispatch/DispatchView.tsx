@@ -477,83 +477,56 @@ export const DispatchView: React.FC<DispatchViewProps> = ({ initialTab = 'orders
         </div>
       )}
 
-      {/* KPI Scorecards */}
-      {!hideHeader && (
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-          <div className="bg-white dark:bg-surface-dark border border-slate-200 dark:border-slate-700/80 rounded-3xl p-5 shadow-sm flex items-center gap-4">
-            <div className="p-3 rounded-2xl bg-indigo-50 dark:bg-indigo-950/40 text-indigo-600 dark:text-indigo-400 border border-indigo-200/60 dark:border-indigo-800/60">
-              <FileText className="h-6 w-6" />
-            </div>
-            <div>
-              <p className="text-xs font-bold text-slate-500 uppercase tracking-wider">Active Customer Orders</p>
-              <p className="text-2xl font-black text-slate-900 dark:text-white mt-0.5">{orders.filter(o => o.status !== 'COMPLETED').length} <span className="text-xs text-slate-400 font-normal">active</span></p>
-            </div>
-          </div>
-
-          <div className="bg-white dark:bg-surface-dark border border-slate-200 dark:border-slate-700/80 rounded-3xl p-5 shadow-sm flex items-center gap-4">
-            <div className="p-3 rounded-2xl bg-amber-50 dark:bg-amber-950/40 text-amber-600 dark:text-amber-400 border border-amber-200/60 dark:border-amber-800/60">
-              <Package className="h-6 w-6" />
-            </div>
-            <div>
-              <p className="text-xs font-bold text-slate-500 uppercase tracking-wider">Pending Order Reels</p>
-              <p className="text-2xl font-black text-slate-900 dark:text-white mt-0.5">{orders.reduce((sum, o) => sum + Math.max(0, o.qty - o.dispatchedQty), 0).toLocaleString()} <span className="text-xs text-slate-400 font-normal">reels due</span></p>
-            </div>
-          </div>
-
-          <div className="bg-white dark:bg-surface-dark border border-slate-200 dark:border-slate-700/80 rounded-3xl p-5 shadow-sm flex items-center gap-4">
-            <div className="p-3 rounded-2xl bg-emerald-50 dark:bg-emerald-950/40 text-emerald-600 dark:text-emerald-400 border border-emerald-200/60 dark:border-emerald-800/60">
-              <PackageCheck className="h-6 w-6" />
-            </div>
-            <div>
-              <p className="text-xs font-bold text-slate-500 uppercase tracking-wider">Completed Packing Slips</p>
-              <p className="text-2xl font-black text-slate-900 dark:text-white mt-0.5">{slips.length} <span className="text-xs text-slate-400 font-normal">challans</span></p>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Pill Navigation Tabs */}
+      {/* Enhanced Accessible Segmented Tab Bar */}
       {!hideTabs && (
-        <div className="flex bg-slate-100/90 dark:bg-slate-800/90 p-1.5 rounded-2xl border border-slate-200/80 dark:border-slate-700 max-w-max gap-1">
-          {initialTab === 'orders' && (
-            <button
-              onClick={() => { setActiveTab('orders'); setSuccessMsg(''); setErrorMsg(''); }}
-              className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-black transition-all cursor-pointer ${
-                activeTab === 'orders'
-                  ? 'bg-gradient-to-r from-blue-600 to-indigo-600 text-white shadow-md'
-                  : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
-              }`}
-            >
-              <FileText className="h-4 w-4" />
-              <span>Pending Customer Orders</span>
-            </button>
-          )}
-          {initialTab !== 'orders' && (
-            <>
+        <div className="bg-white dark:bg-slate-900/90 p-1.5 rounded-2xl border border-slate-200/90 dark:border-slate-800 shadow-sm w-full max-w-xl">
+          <div className="grid grid-cols-2 gap-1.5">
+            {initialTab === 'orders' ? (
               <button
-                onClick={() => { setActiveTab('create_slip'); setSuccessMsg(''); setErrorMsg(''); }}
-                className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-black transition-all cursor-pointer ${
-                  activeTab === 'create_slip'
-                    ? 'bg-gradient-to-r from-blue-600 to-indigo-600 text-white shadow-md'
-                    : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
-                }`}
+                type="button"
+                onClick={() => { setActiveTab('orders'); setSuccessMsg(''); setErrorMsg(''); }}
+                className="col-span-2 w-full flex items-center justify-center gap-2.5 py-3 px-4 rounded-xl text-xs sm:text-sm font-black transition-all cursor-pointer bg-gradient-to-r from-blue-600 via-indigo-600 to-blue-700 text-white shadow-md"
               >
-                <Plus className="h-4 w-4" />
-                <span>Draft Packing Slip</span>
+                <FileText className="h-4.5 w-4.5" />
+                <span>Customer Order Bookings</span>
               </button>
-              <button
-                onClick={() => { setActiveTab('slips_list'); setSuccessMsg(''); setErrorMsg(''); }}
-                className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-black transition-all cursor-pointer ${
-                  activeTab === 'slips_list'
-                    ? 'bg-gradient-to-r from-blue-600 to-indigo-600 text-white shadow-md'
-                    : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
-                }`}
-              >
-                <Truck className="h-4 w-4" />
-                <span>Packing Slips & Challans ({slips.length})</span>
-              </button>
-            </>
-          )}
+            ) : (
+              <>
+                <button
+                  type="button"
+                  onClick={() => { setActiveTab('create_slip'); setSuccessMsg(''); setErrorMsg(''); }}
+                  className={`w-full flex items-center justify-center gap-2 py-2.5 sm:py-3 px-3 sm:px-4 rounded-xl text-xs sm:text-sm font-black transition-all duration-200 cursor-pointer ${
+                    activeTab === 'create_slip'
+                      ? 'bg-gradient-to-r from-blue-600 via-indigo-600 to-blue-700 text-white shadow-md shadow-blue-600/25 scale-[1.01]'
+                      : 'text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800/80 hover:text-slate-900 dark:hover:text-white'
+                  }`}
+                >
+                  <Plus className="h-4 w-4 shrink-0" />
+                  <span className="truncate">Draft Packing Slip</span>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => { setActiveTab('slips_list'); setSuccessMsg(''); setErrorMsg(''); }}
+                  className={`w-full flex items-center justify-center gap-2 py-2.5 sm:py-3 px-3 sm:px-4 rounded-xl text-xs sm:text-sm font-black transition-all duration-200 cursor-pointer ${
+                    activeTab === 'slips_list'
+                      ? 'bg-gradient-to-r from-blue-600 via-indigo-600 to-blue-700 text-white shadow-md shadow-blue-600/25 scale-[1.01]'
+                      : 'text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800/80 hover:text-slate-900 dark:hover:text-white'
+                  }`}
+                >
+                  <Truck className="h-4 w-4 shrink-0" />
+                  <span className="truncate">Packing Slips &amp; Challans</span>
+                  <span className={`px-2 py-0.5 rounded-full text-[11px] font-black shrink-0 ${
+                    activeTab === 'slips_list' 
+                      ? 'bg-white/20 text-white border border-white/30' 
+                      : 'bg-blue-50 dark:bg-blue-950/60 text-primary dark:text-blue-400 border border-blue-200/60 dark:border-blue-800/60'
+                  }`}>
+                    {slips.length}
+                  </span>
+                </button>
+              </>
+            )}
+          </div>
         </div>
       )}
 
