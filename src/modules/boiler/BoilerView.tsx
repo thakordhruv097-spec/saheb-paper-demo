@@ -208,20 +208,36 @@ export const BoilerView: React.FC = () => {
               />
             </div>
 
-            {/* Shift Selector (Day / Night only) */}
+            {/* Shift Selector (Day / Night Segmented Buttons) */}
             <div className="space-y-1">
               <label className="block text-[11px] font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider flex items-center gap-1">
                 <Clock className="h-3.5 w-3.5 text-orange-500" />
-                Shift (Day / Night)
+                Shift
               </label>
-              <select
-                value={shift}
-                onChange={e => setShift(e.target.value as 'Day' | 'Night')}
-                className="block w-full py-2.5 px-3 bg-slate-50 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white rounded-xl text-xs font-bold focus:outline-none focus:ring-2 focus:ring-orange-500 cursor-pointer"
-              >
-                <option value="Day">Day Shift</option>
-                <option value="Night">Night Shift</option>
-              </select>
+              <div className="grid grid-cols-2 gap-1 p-1 bg-slate-100 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 rounded-xl h-[38px] items-center">
+                <button
+                  type="button"
+                  onClick={() => setShift('Day')}
+                  className={`h-full rounded-lg font-black text-xs transition-all duration-150 flex items-center justify-center cursor-pointer ${
+                    shift === 'Day'
+                      ? 'bg-white dark:bg-slate-900 text-amber-700 dark:text-amber-300 shadow-sm border border-slate-200 dark:border-slate-700'
+                      : 'text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
+                  }`}
+                >
+                  Day Shift
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setShift('Night')}
+                  className={`h-full rounded-lg font-black text-xs transition-all duration-150 flex items-center justify-center cursor-pointer ${
+                    shift === 'Night'
+                      ? 'bg-white dark:bg-slate-900 text-blue-700 dark:text-blue-300 shadow-sm border border-slate-200 dark:border-slate-700'
+                      : 'text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
+                  }`}
+                >
+                  Night Shift
+                </button>
+              </div>
             </div>
 
             {/* Wood Used */}
