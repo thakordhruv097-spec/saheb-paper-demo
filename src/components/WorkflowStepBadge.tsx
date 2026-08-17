@@ -212,26 +212,26 @@ export const WorkflowStepBadge: React.FC<WorkflowStepBadgeProps> = ({ stepInfo }
         <div
           onMouseEnter={handleMouseEnter}
           onMouseLeave={handleMouseLeave}
-          className="absolute right-0 sm:left-0 sm:right-auto top-full mt-2 w-72 p-3.5 rounded-2xl bg-[#0b1329] border border-blue-500/60 text-slate-100 shadow-2xl shadow-blue-950/95 backdrop-blur-xl space-y-2.5 animate-in fade-in zoom-in-95 duration-150 z-[9999]"
+          className="absolute right-0 sm:left-0 sm:right-auto top-full mt-2 w-72 p-3.5 rounded-2xl bg-white/95 dark:bg-[#0b1329]/95 border border-slate-200/90 dark:border-blue-500/60 text-slate-900 dark:text-slate-100 shadow-2xl shadow-slate-900/15 dark:shadow-blue-950/95 backdrop-blur-xl space-y-2.5 animate-in fade-in zoom-in-95 duration-150 z-[9999]"
         >
           {/* Header */}
-          <div className="flex items-center justify-between border-b border-slate-800 pb-2">
-            <span className="px-2 py-0.5 rounded-full bg-blue-500/20 text-blue-300 border border-blue-400/30 text-[9px] font-black uppercase tracking-wider">
+          <div className="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-2">
+            <span className="px-2 py-0.5 rounded-full bg-blue-50 dark:bg-blue-500/20 text-primary dark:text-blue-300 border border-blue-200/80 dark:border-blue-400/30 text-[9px] font-black uppercase tracking-wider">
               STEP {stepInfo.stepNumber} OF {stepInfo.totalSteps}
             </span>
-            <h4 className="text-xs font-black text-white flex items-center gap-1">
-              <Sparkles className="h-3.5 w-3.5 text-blue-400 shrink-0" />
+            <h4 className="text-xs font-black text-slate-900 dark:text-white flex items-center gap-1">
+              <Sparkles className="h-3.5 w-3.5 text-primary dark:text-blue-400 shrink-0" />
               <span>{stepInfo.title}</span>
             </h4>
           </div>
 
           {/* ⭐ VIBRANT HIGHLIGHTED "WHAT THIS PAGE DOES" BOX */}
-          <div className="p-2.5 bg-gradient-to-r from-blue-600/25 via-indigo-600/25 to-purple-600/20 rounded-xl border border-blue-400/60 shadow-sm space-y-1">
-            <p className="text-[9px] font-black uppercase tracking-wider text-blue-300 flex items-center gap-1">
-              <BookOpen className="h-3 w-3 text-blue-400 shrink-0" />
+          <div className="p-2.5 bg-gradient-to-br from-blue-50/90 via-indigo-50/70 to-purple-50/50 dark:from-blue-600/25 dark:via-indigo-600/25 dark:to-purple-600/20 rounded-xl border border-blue-200/80 dark:border-blue-400/60 shadow-2xs space-y-1">
+            <p className="text-[9px] font-black uppercase tracking-wider text-blue-700 dark:text-blue-300 flex items-center gap-1">
+              <BookOpen className="h-3 w-3 text-blue-600 dark:text-blue-400 shrink-0" />
               <span>WHAT THIS PAGE DOES:</span>
             </p>
-            <p className="text-[11px] font-bold text-slate-100 leading-snug">
+            <p className="text-[11px] font-bold text-slate-800 dark:text-slate-100 leading-snug">
               {stepInfo.whatThisPageDoes}
             </p>
           </div>
@@ -239,13 +239,13 @@ export const WorkflowStepBadge: React.FC<WorkflowStepBadgeProps> = ({ stepInfo }
           {/* Key Actions Checklist */}
           {stepInfo.keyActions && stepInfo.keyActions.length > 0 && (
             <div className="space-y-1">
-              <p className="text-[9px] font-black uppercase tracking-wider text-slate-400">
+              <p className="text-[9px] font-black uppercase tracking-wider text-slate-500 dark:text-slate-400">
                 Key Actions Here:
               </p>
               <ul className="space-y-1">
                 {stepInfo.keyActions.map((action, idx) => (
-                  <li key={idx} className="flex items-center gap-1.5 text-[11px] text-slate-300 font-semibold">
-                    <CheckCircle2 className="h-3 w-3 text-emerald-400 shrink-0" />
+                  <li key={idx} className="flex items-center gap-1.5 text-[11px] text-slate-700 dark:text-slate-300 font-semibold">
+                    <CheckCircle2 className="h-3 w-3 text-emerald-600 dark:text-emerald-400 shrink-0" />
                     <span>{action}</span>
                   </li>
                 ))}
@@ -255,13 +255,13 @@ export const WorkflowStepBadge: React.FC<WorkflowStepBadgeProps> = ({ stepInfo }
 
           {/* Next Step Box */}
           {stepInfo.nextStep ? (
-            <div className="pt-2 border-t border-slate-800/80">
-              <div className="p-2 bg-gradient-to-r from-blue-950/80 to-indigo-950/80 rounded-xl border border-blue-500/30 flex items-center justify-between gap-2">
+            <div className="pt-2 border-t border-slate-100 dark:border-slate-800/80">
+              <div className="p-2 bg-gradient-to-r from-blue-50/80 via-slate-50 to-indigo-50/80 dark:from-blue-950/80 dark:to-indigo-950/80 rounded-xl border border-blue-200 dark:border-blue-500/30 flex items-center justify-between gap-2 shadow-2xs">
                 <div className="min-w-0">
-                  <p className="text-[9px] font-black uppercase text-indigo-300 tracking-wider">
+                  <p className="text-[9px] font-black uppercase text-blue-700 dark:text-indigo-300 tracking-wider">
                     ➡️ Next: Step {stepInfo.nextStep.stepNumber}
                   </p>
-                  <p className="text-[11px] font-bold text-white truncate">{stepInfo.nextStep.title}</p>
+                  <p className="text-[11px] font-bold text-slate-900 dark:text-white truncate">{stepInfo.nextStep.title}</p>
                 </div>
                 <button
                   onClick={() => {
@@ -269,7 +269,7 @@ export const WorkflowStepBadge: React.FC<WorkflowStepBadgeProps> = ({ stepInfo }
                     setIsOpen(false);
                     navigate(stepInfo.nextStep!.route);
                   }}
-                  className="flex items-center gap-1 px-2.5 py-1 rounded-lg bg-blue-600 hover:bg-blue-500 text-white text-[11px] font-bold transition cursor-pointer shrink-0 active:scale-95"
+                  className="flex items-center gap-1 px-3 py-1.5 rounded-lg bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white text-[11px] font-bold shadow-md shadow-blue-500/25 transition cursor-pointer shrink-0 active:scale-95"
                 >
                   <span>Go</span>
                   <ArrowRight className="h-3 w-3" />
@@ -277,8 +277,8 @@ export const WorkflowStepBadge: React.FC<WorkflowStepBadgeProps> = ({ stepInfo }
               </div>
             </div>
           ) : (
-            <div className="pt-1.5 border-t border-slate-800 text-center">
-              <span className="text-[10px] font-bold text-emerald-400 flex items-center justify-center gap-1">
+            <div className="pt-1.5 border-t border-slate-100 dark:border-slate-800 text-center">
+              <span className="text-[10px] font-bold text-emerald-600 dark:text-emerald-400 flex items-center justify-center gap-1">
                 <CheckCircle2 className="h-3 w-3" />
                 Final Step • Dispatch Complete!
               </span>

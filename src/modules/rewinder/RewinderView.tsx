@@ -695,44 +695,44 @@ export const RewinderView: React.FC = () => {
             No rewinder reels recorded matching filter. Click &quot;+ Add Reel Entry&quot; to log finished reels.
           </div>
         ) : (
-          <div className="bg-[#0d1326] border border-[#1b233e] rounded-2xl overflow-hidden shadow-md">
+          <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl overflow-hidden shadow-sm">
             {/* Desktop Unified Table View */}
             <div className="hidden md:block overflow-x-auto">
               <table className="w-full text-left text-xs border-collapse">
                 <thead>
-                  <tr className="bg-[#10172d] text-slate-400 uppercase tracking-wider font-black text-[10px] border-b border-[#1f2947]">
+                  <tr className="bg-slate-50 dark:bg-slate-800/80 text-slate-700 dark:text-slate-400 uppercase tracking-wider font-black text-[10px] border-b border-slate-200 dark:border-slate-700/80">
                     <th className="py-3.5 px-4">REEL NO</th>
                     <th className="py-3.5 px-4">RUNNING ROLL</th>
                     <th className="py-3.5 px-4">PRODUCT</th>
                     <th className="py-3.5 px-4">GSM / SIZE / PLY</th>
                     <th className="py-3.5 px-4">JOINT</th>
                     <th className="py-3.5 px-4 text-right">REEL WEIGHT</th>
-                    <th className="py-3.5 px-4 text-right text-[#ef4444]">BROKE (KG)</th>
+                    <th className="py-3.5 px-4 text-right text-rose-600 dark:text-[#ef4444]">BROKE (KG)</th>
                     <th className="py-3.5 px-4 text-right font-black">NET STOCK WEIGHT</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-[#182038] font-semibold text-slate-200">
+                <tbody className="divide-y divide-slate-100 dark:divide-slate-800 font-semibold text-slate-800 dark:text-slate-200">
                   {filteredReels.map(reel => {
                     const brokeVal = Number(reel.joint || 0) * 15 + 20;
                     const netKg = Math.max(0, reel.weight - brokeVal);
                     return (
-                      <tr key={reel.reelNo} className="hover:bg-[#141b33] transition duration-150">
-                        <td className="py-3.5 px-4 font-black text-[#3b82f6] font-mono text-xs">{reel.reelNo}</td>
-                        <td className="py-3.5 px-4 text-slate-400 font-mono text-xs">{reel.parentRollNo}</td>
-                        <td className="py-3.5 px-4 font-extrabold text-white">{reel.product}</td>
-                        <td className="py-3.5 px-4 text-slate-200 font-bold">
+                      <tr key={reel.reelNo} className="hover:bg-slate-50/80 dark:hover:bg-slate-800/50 transition duration-150">
+                        <td className="py-3.5 px-4 font-black text-primary dark:text-[#3b82f6] font-mono text-xs">{reel.reelNo}</td>
+                        <td className="py-3.5 px-4 text-slate-500 dark:text-slate-400 font-mono text-xs">{reel.parentRollNo}</td>
+                        <td className="py-3.5 px-4 font-extrabold text-slate-900 dark:text-white">{reel.product}</td>
+                        <td className="py-3.5 px-4 text-slate-700 dark:text-slate-200 font-bold">
                           {reel.gsm} GSM | {reel.size} cm | {reel.ply} Ply
                         </td>
-                        <td className="py-3.5 px-4 text-slate-200 font-bold">
+                        <td className="py-3.5 px-4 text-slate-700 dark:text-slate-200 font-bold">
                           {reel.joint} Joint
                         </td>
-                        <td className="py-3.5 px-4 text-right font-extrabold text-white">
+                        <td className="py-3.5 px-4 text-right font-extrabold text-slate-900 dark:text-white">
                           {reel.weight.toLocaleString()} kg
                         </td>
-                        <td className="py-3.5 px-4 text-right font-black text-[#ef4444]">
+                        <td className="py-3.5 px-4 text-right font-black text-rose-600 dark:text-[#ef4444]">
                           +{brokeVal} kg
                         </td>
-                        <td className="py-3.5 px-4 text-right font-extrabold text-white">
+                        <td className="py-3.5 px-4 text-right font-extrabold text-slate-900 dark:text-white">
                           {netKg.toLocaleString()} kg
                         </td>
                       </tr>
@@ -748,21 +748,21 @@ export const RewinderView: React.FC = () => {
                 const brokeVal = Number(reel.joint || 0) * 15 + 20;
                 const netKg = Math.max(0, reel.weight - brokeVal);
                 return (
-                  <div key={reel.reelNo} className="p-3.5 rounded-2xl bg-[#12182b] border border-[#232d4b] space-y-2 text-xs">
+                  <div key={reel.reelNo} className="p-3.5 rounded-2xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700 space-y-2 text-xs">
                     <div className="flex items-center justify-between">
-                      <span className="font-mono font-black text-[#3b82f6]">{reel.reelNo}</span>
-                      <span className="font-bold px-2 py-0.5 rounded-lg bg-[#062c21] text-[#10b981] border border-[#064e3b] text-[10px]">
+                      <span className="font-mono font-black text-primary dark:text-[#3b82f6]">{reel.reelNo}</span>
+                      <span className="font-bold px-2 py-0.5 rounded-lg bg-emerald-50 dark:bg-[#062c21] text-emerald-700 dark:text-[#10b981] border border-emerald-200 dark:border-[#064e3b] text-[10px]">
                         Net: {netKg.toLocaleString()} kg
                       </span>
                     </div>
                     <div className="grid grid-cols-2 gap-2 text-[11px] pt-1">
                       <div>
-                        <span className="text-slate-400 block text-[9px] uppercase font-bold">Roll / Specs</span>
-                        <span className="font-bold text-white">{reel.parentRollNo} &bull; {reel.gsm}GSM &bull; {reel.size}cm</span>
+                        <span className="text-slate-500 dark:text-slate-400 block text-[9px] uppercase font-bold">Roll / Specs</span>
+                        <span className="font-bold text-slate-900 dark:text-white">{reel.parentRollNo} &bull; {reel.gsm}GSM &bull; {reel.size}cm</span>
                       </div>
                       <div>
-                        <span className="text-slate-400 block text-[9px] uppercase font-bold">Reel / Broke</span>
-                        <span className="font-extrabold text-white">{reel.weight.toLocaleString()} kg <span className="text-[#ef4444]">(+{brokeVal}kg)</span></span>
+                        <span className="text-slate-500 dark:text-slate-400 block text-[9px] uppercase font-bold">Reel / Broke</span>
+                        <span className="font-extrabold text-slate-900 dark:text-white">{reel.weight.toLocaleString()} kg <span className="text-rose-600 dark:text-[#ef4444]">(+{brokeVal}kg)</span></span>
                       </div>
                     </div>
                   </div>
@@ -775,17 +775,17 @@ export const RewinderView: React.FC = () => {
 
       {/* ADD REEL ENTRY MODAL (Matching Rudra DEMO2 Screenshot + Single Outer GSM Input + 1-17 Cut Reels!) */}
       {isAddModalOpen && (
-        <div className="fixed inset-0 bg-slate-900/70 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-          <div className="bg-[#0f172a] border border-slate-800 rounded-3xl max-w-3xl w-full p-6 space-y-4 shadow-2xl text-white animate-in fade-in zoom-in-95 duration-150 max-h-[90vh] overflow-y-auto custom-scrollbar">
+        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl max-w-3xl w-full p-6 space-y-4 shadow-2xl text-slate-900 dark:text-white animate-in fade-in zoom-in-95 duration-150 max-h-[90vh] overflow-y-auto custom-scrollbar">
             {/* Modal Header */}
-            <div className="flex justify-between items-center border-b border-slate-800 pb-3">
-              <h3 className="text-base font-black text-white flex items-center gap-2">
+            <div className="flex justify-between items-center border-b border-slate-100 dark:border-slate-800 pb-3">
+              <h3 className="text-base font-black text-slate-900 dark:text-white flex items-center gap-2">
                 <span>Log Rewinder Reel &amp; Broke (Rule 6)</span>
               </h3>
               <button
                 type="button"
                 onClick={() => setIsAddModalOpen(false)}
-                className="p-1.5 text-slate-400 hover:text-white rounded-xl hover:bg-slate-800 transition cursor-pointer"
+                className="p-1.5 text-slate-400 hover:text-slate-700 dark:hover:text-white rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800 transition cursor-pointer"
               >
                 <X className="h-5 w-5" />
               </button>
@@ -793,8 +793,8 @@ export const RewinderView: React.FC = () => {
 
             <form onSubmit={handleSaveSingleReel} className="space-y-4">
               {modalError && (
-                <div className="px-3 py-2 bg-red-950/80 border border-red-800 text-red-300 rounded-xl text-xs font-bold flex items-center gap-2">
-                  <AlertCircle className="h-4 w-4 shrink-0 text-red-400" />
+                <div className="px-3 py-2 bg-red-50 dark:bg-red-950/80 border border-red-200 dark:border-red-800 text-red-700 dark:text-red-300 rounded-xl text-xs font-bold flex items-center gap-2">
+                  <AlertCircle className="h-4 w-4 shrink-0 text-red-500" />
                   <span>{modalError}</span>
                 </div>
               )}
@@ -802,7 +802,7 @@ export const RewinderView: React.FC = () => {
               {/* Row 1: Running Roll No (Select from Stock), Reels Cut (1-17 Max), Running Size */}
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                 <div>
-                  <label className="block text-xs font-bold text-slate-300 mb-1">
+                  <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">
                     Running Roll No
                   </label>
                   <input
@@ -829,7 +829,7 @@ export const RewinderView: React.FC = () => {
                         setReelForm(prev => ({ ...prev, runningRollNo: selectedNo }));
                       }
                     }}
-                    className="w-full p-2.5 bg-slate-900/90 border border-slate-700 text-white rounded-xl text-xs font-bold focus:ring-2 focus:ring-blue-500 focus:outline-none"
+                    className="w-full p-2.5 bg-slate-50 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white rounded-xl text-xs font-bold focus:ring-2 focus:ring-primary focus:outline-none"
                     placeholder="e.g. M-001"
                   />
                   <datalist id="running-rolls-list">
@@ -841,7 +841,7 @@ export const RewinderView: React.FC = () => {
                   </datalist>
                 </div>
                 <div>
-                  <label className="block text-xs font-bold text-slate-300 mb-1">
+                  <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">
                     Reels Cut (1 to 17 Max)
                   </label>
                   <select
@@ -866,7 +866,7 @@ export const RewinderView: React.FC = () => {
                       }
                       setCutReels(items);
                     }}
-                    className="w-full p-2.5 bg-slate-900/90 border border-slate-700 text-white rounded-xl text-xs font-bold focus:ring-2 focus:ring-blue-500 focus:outline-none cursor-pointer"
+                    className="w-full p-2.5 bg-slate-50 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white rounded-xl text-xs font-bold focus:ring-2 focus:ring-primary focus:outline-none cursor-pointer"
                   >
                     {Array.from({ length: 17 }, (_, i) => i + 1).map(n => (
                       <option key={n} value={n}>
@@ -876,14 +876,14 @@ export const RewinderView: React.FC = () => {
                   </select>
                 </div>
                 <div>
-                  <label className="block text-xs font-bold text-slate-300 mb-1">
+                  <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">
                     Running Size (cm)
                   </label>
                   <input
                     type="text"
                     value={reelForm.runningSize}
                     onChange={e => setReelForm({ ...reelForm, runningSize: e.target.value })}
-                    className="w-full p-2.5 bg-slate-900/90 border border-slate-700 text-white rounded-xl text-xs font-bold focus:ring-2 focus:ring-blue-500 focus:outline-none"
+                    className="w-full p-2.5 bg-slate-50 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white rounded-xl text-xs font-bold focus:ring-2 focus:ring-primary focus:outline-none"
                     placeholder="e.g. 165 cm"
                   />
                 </div>
@@ -904,7 +904,7 @@ export const RewinderView: React.FC = () => {
                   />
                 </div>
                 <div>
-                  <label className="block text-xs font-bold text-slate-300 mb-1">
+                  <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">
                     Total Weight (kg)
                   </label>
                   <input
@@ -913,17 +913,17 @@ export const RewinderView: React.FC = () => {
                     placeholder="5000"
                     value={reelForm.weightKg}
                     onChange={e => setReelForm({ ...reelForm, weightKg: e.target.value })}
-                    className="w-full p-2.5 bg-slate-900/90 border border-slate-700 text-white rounded-xl text-xs font-bold font-mono focus:ring-2 focus:ring-blue-500 focus:outline-none"
+                    className="w-full p-2.5 bg-slate-50 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white rounded-xl text-xs font-bold font-mono focus:ring-2 focus:ring-primary focus:outline-none"
                   />
                 </div>
                 <div>
-                  <label className="block text-xs font-bold text-slate-300 mb-1">
+                  <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">
                     Ply
                   </label>
                   <select
                     value={reelForm.ply}
                     onChange={e => setReelForm({ ...reelForm, ply: e.target.value })}
-                    className="w-full p-2.5 bg-slate-900/90 border border-slate-700 text-white rounded-xl text-xs font-bold focus:ring-2 focus:ring-blue-500 focus:outline-none cursor-pointer"
+                    className="w-full p-2.5 bg-slate-50 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white rounded-xl text-xs font-bold focus:ring-2 focus:ring-primary focus:outline-none cursor-pointer"
                   >
                     <option value="1">1 Ply</option>
                     <option value="2">2 Ply</option>
@@ -931,7 +931,7 @@ export const RewinderView: React.FC = () => {
                   </select>
                 </div>
                 <div>
-                  <label className="block text-xs font-bold text-slate-300 mb-1">
+                  <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">
                     GSM
                   </label>
                   <input
@@ -939,7 +939,7 @@ export const RewinderView: React.FC = () => {
                     required
                     value={reelForm.gsm}
                     onChange={e => setReelForm({ ...reelForm, gsm: e.target.value })}
-                    className="w-full p-2.5 bg-slate-900/90 border border-slate-700 text-white rounded-xl text-xs font-bold font-mono focus:ring-2 focus:ring-blue-500 focus:outline-none"
+                    className="w-full p-2.5 bg-slate-50 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white rounded-xl text-xs font-bold font-mono focus:ring-2 focus:ring-primary focus:outline-none"
                     placeholder="16"
                   />
                 </div>
@@ -950,16 +950,16 @@ export const RewinderView: React.FC = () => {
                 const sumCutWeight = cutReels.reduce((sum, r) => sum + (parseFloat(r.weightKg) || 0), 0);
                 const totalRollWeight = parseFloat(reelForm.weightKg) || 0;
                 return (
-                  <div className="p-3 rounded-2xl bg-slate-900/80 border border-slate-800 flex items-center justify-between text-xs font-mono font-bold">
-                    <span className="text-slate-400">
+                  <div className="p-3 rounded-2xl bg-slate-100 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 flex items-center justify-between text-xs font-mono font-bold">
+                    <span className="text-slate-600 dark:text-slate-400">
                       Sum of Cut Reels:{' '}
-                      <span className={sumCutWeight > 0 ? 'text-emerald-400 font-black' : 'text-slate-300'}>
+                      <span className={sumCutWeight > 0 ? 'text-emerald-600 dark:text-emerald-400 font-black' : 'text-slate-700 dark:text-slate-300'}>
                         {sumCutWeight.toLocaleString()} kg
                       </span>{' '}
                       / Total Roll: {totalRollWeight.toLocaleString()} kg
                     </span>
                     {totalRollWeight > 0 && (
-                      <span className="text-[11px] text-blue-400 font-sans font-bold">
+                      <span className="text-[11px] text-primary dark:text-blue-400 font-sans font-bold">
                         Broke: {Math.max(0, totalRollWeight - sumCutWeight).toLocaleString()} kg
                       </span>
                     )}
@@ -968,12 +968,12 @@ export const RewinderView: React.FC = () => {
               })()}
 
               {/* CONFIGURE CUT REELS CARD (WITHOUT INDIVIDUAL GSM INPUTS) */}
-              <div className="border border-blue-900/40 rounded-2xl bg-blue-950/20 p-4 space-y-3">
-                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1 border-b border-blue-900/50 pb-2">
-                  <h4 className="text-xs font-black uppercase text-blue-400 tracking-wider">
+              <div className="border border-blue-200/80 dark:border-blue-900/40 rounded-2xl bg-blue-50/40 dark:bg-blue-950/20 p-4 space-y-3">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1 border-b border-blue-200 dark:border-blue-900/50 pb-2">
+                  <h4 className="text-xs font-black uppercase text-primary dark:text-blue-400 tracking-wider">
                     CONFIGURE CUT REELS [{reelsCutCount} REELS CUT]
                   </h4>
-                  <p className="text-[11px] text-slate-400">
+                  <p className="text-[11px] text-slate-500 dark:text-slate-400 font-medium">
                     Set individual Size, Weight &amp; Joints for each reel
                   </p>
                 </div>
@@ -982,11 +982,11 @@ export const RewinderView: React.FC = () => {
                   {cutReels.map((item, idx) => (
                     <div
                       key={item.id || idx}
-                      className="p-3 bg-slate-950/90 border border-slate-800 rounded-xl grid grid-cols-1 sm:grid-cols-4 gap-2.5 items-center"
+                      className="p-3 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl grid grid-cols-1 sm:grid-cols-4 gap-2.5 items-center shadow-2xs"
                     >
                       {/* Reel No Badge */}
                       <div className="flex items-center gap-2">
-                        <span className="text-xs font-black text-blue-400 font-mono">#{idx + 1}</span>
+                        <span className="text-xs font-black text-primary dark:text-blue-400 font-mono">#{idx + 1}</span>
                         <input
                           type="text"
                           required
@@ -995,7 +995,7 @@ export const RewinderView: React.FC = () => {
                             const val = e.target.value;
                             setCutReels(prev => prev.map((r, i) => i === idx ? { ...r, reelNo: val } : r));
                           }}
-                          className="w-full p-2 bg-slate-900 border border-slate-700 text-white rounded-lg text-xs font-bold font-mono focus:ring-1 focus:ring-blue-500 focus:outline-none"
+                          className="w-full p-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white rounded-lg text-xs font-bold font-mono focus:ring-1 focus:ring-primary focus:outline-none"
                         />
                       </div>
 
@@ -1009,7 +1009,7 @@ export const RewinderView: React.FC = () => {
                             const val = e.target.value;
                             setCutReels(prev => prev.map((r, i) => i === idx ? { ...r, size: val } : r));
                           }}
-                          className="w-full p-2 bg-slate-900 border border-slate-700 text-white rounded-lg text-xs font-bold focus:ring-1 focus:ring-blue-500 focus:outline-none"
+                          className="w-full p-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white rounded-lg text-xs font-bold focus:ring-1 focus:ring-primary focus:outline-none"
                         />
                       </div>
 
@@ -1024,7 +1024,7 @@ export const RewinderView: React.FC = () => {
                             const val = e.target.value;
                             setCutReels(prev => prev.map((r, i) => i === idx ? { ...r, weightKg: val } : r));
                           }}
-                          className="w-full p-2 bg-slate-900 border border-slate-700 text-white rounded-lg text-xs font-bold font-mono focus:ring-1 focus:ring-blue-500 focus:outline-none"
+                          className="w-full p-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white rounded-lg text-xs font-bold font-mono focus:ring-1 focus:ring-primary focus:outline-none"
                         />
                       </div>
 
@@ -1038,7 +1038,7 @@ export const RewinderView: React.FC = () => {
                             const val = e.target.value;
                             setCutReels(prev => prev.map((r, i) => i === idx ? { ...r, joint: val } : r));
                           }}
-                          className="w-full p-2 bg-slate-900 border border-slate-700 text-white rounded-lg text-xs font-bold font-mono focus:ring-1 focus:ring-blue-500 focus:outline-none"
+                          className="w-full p-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white rounded-lg text-xs font-bold font-mono focus:ring-1 focus:ring-primary focus:outline-none"
                         />
                       </div>
                     </div>
@@ -1047,11 +1047,11 @@ export const RewinderView: React.FC = () => {
               </div>
 
               {/* Actions */}
-              <div className="pt-2 flex flex-col sm:flex-row justify-end gap-3 border-t border-slate-800">
+              <div className="pt-2 flex flex-col sm:flex-row justify-end gap-3 border-t border-slate-100 dark:border-slate-800">
                 <button
                   type="button"
                   onClick={() => setIsAddModalOpen(false)}
-                  className="px-5 py-2.5 rounded-xl font-bold text-xs transition cursor-pointer bg-slate-800 text-slate-300 hover:bg-slate-700 border border-slate-700"
+                  className="px-5 py-2.5 rounded-xl font-bold text-xs transition cursor-pointer bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700 border border-slate-200 dark:border-slate-700"
                 >
                   Cancel
                 </button>
