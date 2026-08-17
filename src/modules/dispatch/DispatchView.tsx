@@ -513,7 +513,6 @@ export const DispatchView: React.FC<DispatchViewProps> = ({ initialTab = 'orders
     // Add Metadata header rows
     XLSX.utils.sheet_add_aoa(worksheet, [
       [`${COMPANY_CONFIG.name} - DELIVERY CHALLAN RECEIPT`],
-      [`Tagline: ${COMPANY_CONFIG.tagline}`],
       [`Address: ${COMPANY_CONFIG.address}`],
       [`Phone: ${COMPANY_CONFIG.phone}`, `Email: ${COMPANY_CONFIG.email}`, `Website: ${COMPANY_CONFIG.website}`],
       [`Challan No: ${slip.slipNo}`, `Date: ${slip.date}`],
@@ -2292,10 +2291,7 @@ export const DispatchView: React.FC<DispatchViewProps> = ({ initialTab = 'orders
                               <h1 className="text-xl sm:text-2xl font-black tracking-tight text-black uppercase leading-tight font-heading">
                                 {COMPANY_CONFIG.name}
                               </h1>
-                              <p className="text-[10px] sm:text-[11px] font-extrabold text-blue-700 uppercase tracking-wider">
-                                {COMPANY_CONFIG.tagline}
-                              </p>
-                              <p className="text-[9px] font-semibold text-slate-700 tracking-tight mt-0.5">
+                              <p className="text-[9.5px] font-semibold text-slate-700 tracking-tight mt-1">
                                 {COMPANY_CONFIG.address} &bull; Ph: {COMPANY_CONFIG.phone} &bull; {COMPANY_CONFIG.email} &bull; {COMPANY_CONFIG.website}
                               </p>
                             </div>

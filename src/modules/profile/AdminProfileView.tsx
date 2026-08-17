@@ -255,10 +255,6 @@ export const AdminProfileView: React.FC<AdminProfileViewProps> = ({ defaultTab }
                 </div>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
                   <div>
-                    <span className="text-[10px] font-bold uppercase text-slate-400 block">Tagline</span>
-                    <span className="font-extrabold text-primary dark:text-blue-400">{COMPANY_CONFIG.tagline}</span>
-                  </div>
-                  <div>
                     <span className="text-[10px] font-bold uppercase text-slate-400 block">Phone / WhatsApp</span>
                     <span className="font-mono font-bold text-slate-800 dark:text-slate-200">{COMPANY_CONFIG.phone}</span>
                   </div>

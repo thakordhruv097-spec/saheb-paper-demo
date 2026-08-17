@@ -189,8 +189,8 @@ export const LoginView: React.FC = () => {
             <h2 className="text-lg sm:text-xl md:text-2xl font-black text-[#1E293B] tracking-tight">
               {COMPANY_CONFIG.name}
             </h2>
-            <p className="text-[11px] sm:text-xs text-primary font-extrabold tracking-wide mt-0.5">
-              {COMPANY_CONFIG.tagline}
+            <p className="text-[11px] sm:text-xs text-slate-500 font-bold tracking-wide mt-0.5">
+              Paper Mill Management System
             </p>
           </div>
           <img src="/logo.png" alt={`${COMPANY_CONFIG.shortName} Logo`} className="h-8 w-8 sm:h-10 sm:w-10 md:h-11 md:w-11 object-contain rounded-xl shadow-xs border border-slate-200/80 bg-white p-0.5 shrink-0" />

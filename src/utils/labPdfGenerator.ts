@@ -209,10 +209,7 @@ export function printPaperTestReport(report: PaperTestReport): void {
     <!-- Header -->
     <div class="header">
       <h1 class="company-name">${COMPANY_CONFIG.name}</h1>
-      <div style="font-size: 11px; font-weight: 800; color: #1e3a8a; text-transform: uppercase; letter-spacing: 1px; margin-top: 2px;">
-        ${COMPANY_CONFIG.tagline}
-      </div>
-      <div style="font-size: 9.5px; font-weight: 600; color: #475569; margin-top: 2px;">
+      <div style="font-size: 9.5px; font-weight: 600; color: #475569; margin-top: 3px;">
         ${COMPANY_CONFIG.address} | Ph: ${COMPANY_CONFIG.phone} | ${COMPANY_CONFIG.email} | ${COMPANY_CONFIG.website}
       </div>
       <h2 class="report-title">PAPER TEST REPORT (COA)</h2>

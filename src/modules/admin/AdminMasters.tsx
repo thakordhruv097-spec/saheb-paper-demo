@@ -1961,8 +1961,8 @@ export const AdminMasters: React.FC = () => {
                         <h4 className="text-sm font-black text-slate-900 dark:text-white uppercase tracking-wider font-heading">
                           {COMPANY_CONFIG.name}
                         </h4>
-                        <p className="text-xs font-bold text-primary dark:text-blue-400">
-                          {COMPANY_CONFIG.tagline}
+                        <p className="text-xs font-semibold text-slate-500 dark:text-slate-400">
+                          {COMPANY_CONFIG.industrySubtitle}
                         </p>
                       </div>
                     </div>

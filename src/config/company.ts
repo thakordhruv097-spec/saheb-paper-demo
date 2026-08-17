@@ -7,7 +7,7 @@ export const COMPANY_CONFIG = {
   name: 'SAHEB PAPER PVT. LTD.',
   legalName: 'SAHEB PAPER PRIVATE LIMITED',
   shortName: 'Saheb Paper',
-  tagline: 'Your Hygiene, Our Priority',
+  tagline: '',
   industrySubtitle: 'FINISHED STOCK MANAGEMENT • TISSUE PAPER MILL',
   
   // Official physical address

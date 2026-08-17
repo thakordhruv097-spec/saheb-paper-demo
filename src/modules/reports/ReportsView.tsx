@@ -529,8 +529,7 @@ export const ReportsView: React.FC = () => {
       {/* Printable Report Header (Visible only in Print / PDF export) */}
       <div className="hidden print:block border-b-2 border-slate-900 pb-3 mb-4 text-left">
         <h1 className="text-xl font-black text-slate-950 uppercase font-heading">{COMPANY_CONFIG.name}</h1>
-        <p className="text-xs font-bold text-blue-800 uppercase">{COMPANY_CONFIG.tagline}</p>
-        <p className="text-[9px] text-slate-600 font-medium mt-0.5">
+        <p className="text-[9.5px] text-slate-600 font-medium mt-1">
           {COMPANY_CONFIG.address} | Ph: {COMPANY_CONFIG.phone} | {COMPANY_CONFIG.email} | {COMPANY_CONFIG.website}
         </p>
         <div className="mt-2 text-xs font-bold uppercase tracking-wider text-slate-800 border-t border-slate-200 pt-1">

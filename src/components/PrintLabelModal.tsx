@@ -44,7 +44,7 @@ export const PrintLabelModal: React.FC<PrintLabelModalProps> = ({
     if (reel) {
       return {
         title: COMPANY_CONFIG.name,
-        subtitle: COMPANY_CONFIG.tagline,
+        subtitle: 'Plant: Chandisar, Palanpur',
         code: reel.reelNo,
         qrValue: reel.reelNo,
         product: reel.product || 'Tissue Paper Reel',
@@ -69,7 +69,7 @@ export const PrintLabelModal: React.FC<PrintLabelModalProps> = ({
     const targetCode = code || 'RL-1049';
     return {
       title: COMPANY_CONFIG.name,
-      subtitle: COMPANY_CONFIG.tagline,
+      subtitle: 'Plant: Chandisar, Palanpur',
       code: targetCode,
       qrValue: targetCode,
       product: 'Napkin Tissue (Virgin Pulp)',
