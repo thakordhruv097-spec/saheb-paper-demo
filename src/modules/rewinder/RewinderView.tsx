@@ -715,7 +715,7 @@ export const RewinderView: React.FC = () => {
                       <span className="text-blue-600 dark:text-blue-400 font-extrabold">{batch.reels.length} {batch.reels.length === 1 ? 'Reel Cut' : 'Reels Cut'}</span>
                     </span>
                     <span className="text-[11px] text-slate-500 dark:text-slate-400 font-mono">
-                      ({batch.productionDate})
+                      ({batch.productionDate ? batch.productionDate.split(' ')[0].split('T')[0] : ''})
                     </span>
                   </div>
                   <div className="flex items-center gap-3 text-xs font-bold">
