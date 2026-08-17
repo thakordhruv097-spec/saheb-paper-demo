@@ -693,35 +693,33 @@ export const RewinderView: React.FC = () => {
           </div>
         </div>
 
-        {/* Distinct Grouped Cut Batches View (Matching Screenshot 3) */}
+        {/* Distinct Cut Entry Batches (Groups Reels Created Together per Entry Modal with Running Roll Badge) */}
         {groupedBatches.length === 0 ? (
           <div className="p-8 text-center text-slate-400 font-medium bg-slate-50 dark:bg-slate-900/40 rounded-2xl border border-slate-200 dark:border-slate-800">
             No rewinder reels recorded matching filter. Click &quot;+ Add Reel Entry&quot; to log finished reels.
           </div>
         ) : (
-          <div className="space-y-6">
+          <div className="space-y-4">
             {groupedBatches.map(batch => (
-              <div key={batch.batchId} className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl overflow-hidden shadow-xs space-y-0">
-                {/* Batch Header Bar (Matching Screenshot 3) */}
-                <div className="bg-slate-50/90 dark:bg-slate-800/80 p-3.5 sm:p-4 border-b border-slate-200 dark:border-slate-700/80 flex flex-wrap items-center justify-between gap-3">
-                  <div className="flex flex-wrap items-center gap-3">
-                    <div className="px-3 py-1 rounded-full bg-blue-100 dark:bg-blue-900/40 border border-blue-200 dark:border-blue-700/60 text-blue-700 dark:text-blue-300 text-xs font-black font-mono flex items-center gap-1.5">
-                      <span className="w-2 h-2 rounded-full bg-blue-500 animate-pulse" />
+              <div key={batch.batchId} className="bg-[#0d1326] border border-[#1b233e] rounded-2xl overflow-hidden shadow-md">
+                {/* Batch Header Bar (Cut Session Header with Running Roll No) */}
+                <div className="bg-[#131b34] px-5 py-3.5 border-b border-[#1f2947] flex flex-wrap items-center justify-between gap-3 text-xs">
+                  <div className="flex items-center gap-3">
+                    <div className="px-3.5 py-1 rounded-xl bg-[#1e294d] border border-[#2b3a6d] text-[#60a5fa] font-black font-mono flex items-center gap-2 text-xs">
+                      <span className="w-2 h-2 rounded-full bg-[#3b82f6] shadow-sm animate-pulse" />
                       <span>RUNNING ROLL: #{batch.parentRollNo}</span>
                     </div>
-                    <span className="text-xs font-black text-slate-900 dark:text-white flex items-center gap-1.5">
+                    <span className="font-extrabold text-white text-xs flex items-center gap-1.5">
                       <span>{batch.product}</span>
-                      <span className="text-slate-400">&bull;</span>
-                      <span className="text-blue-600 dark:text-blue-400 font-extrabold">{batch.reels.length} {batch.reels.length === 1 ? 'Reel Cut' : 'Reels Cut'}</span>
-                    </span>
-                    <span className="text-[11px] text-slate-500 dark:text-slate-400 font-mono">
-                      ({batch.productionDate})
+                      <span className="text-[#3b82f6] font-black">&bull; {batch.reels.length} {batch.reels.length === 1 ? 'Reel Cut' : 'Reels Cut'}</span>
+                      <span className="text-slate-400 font-medium font-mono text-[11px]">({batch.productionDate})</span>
                     </span>
                   </div>
-                  <div className="flex items-center gap-3 text-xs font-bold">
-                    <span className="text-slate-600 dark:text-slate-300">Total: <strong className="text-slate-900 dark:text-white">{batch.totalWeight.toLocaleString()} kg</strong></span>
-                    <span className="text-red-500">Broke: <strong>+{batch.totalBroke.toLocaleString()} kg</strong></span>
-                    <span className="text-emerald-700 dark:text-emerald-300 bg-emerald-100 dark:bg-emerald-950/60 px-2.5 py-0.5 rounded-lg border border-emerald-300 dark:border-emerald-800/60">
+
+                  <div className="flex items-center gap-4 font-bold text-xs">
+                    <span className="text-slate-200">Total: <strong className="text-white font-black">{batch.totalWeight.toLocaleString()} kg</strong></span>
+                    <span className="text-[#ef4444] font-black">Broke: <strong>+{batch.totalBroke.toLocaleString()} kg</strong></span>
+                    <span className="bg-[#062c21] text-[#10b981] font-black px-3.5 py-1 rounded-xl border border-[#064e3b] shadow-xs">
                       Net Stock: <strong>{batch.netWeight.toLocaleString()} kg</strong>
                     </span>
                   </div>
@@ -731,39 +729,39 @@ export const RewinderView: React.FC = () => {
                 <div className="hidden md:block overflow-x-auto">
                   <table className="w-full text-left text-xs border-collapse">
                     <thead>
-                      <tr className="text-slate-500 dark:text-slate-400 uppercase tracking-wider font-extrabold text-[10px] border-b border-slate-200/60 dark:border-slate-800 bg-white dark:bg-slate-900">
-                        <th className="py-3 px-4">REEL NO</th>
-                        <th className="py-3 px-4">RUNNING ROLL</th>
-                        <th className="py-3 px-4">PRODUCT</th>
-                        <th className="py-3 px-4">GSM / SIZE / PLY</th>
-                        <th className="py-3 px-4">JOINT</th>
-                        <th className="py-3 px-4 text-right">REEL WEIGHT</th>
-                        <th className="py-3 px-4 text-right text-red-500">BROKE (KG)</th>
-                        <th className="py-3 px-4 text-right font-black">NET STOCK WEIGHT</th>
+                      <tr className="bg-[#10172d] text-slate-400 uppercase tracking-wider font-black text-[10px] border-b border-[#1f2947]">
+                        <th className="py-3.5 px-4">REEL NO</th>
+                        <th className="py-3.5 px-4">RUNNING ROLL</th>
+                        <th className="py-3.5 px-4">PRODUCT</th>
+                        <th className="py-3.5 px-4">GSM / SIZE / PLY</th>
+                        <th className="py-3.5 px-4">JOINT</th>
+                        <th className="py-3.5 px-4 text-right">REEL WEIGHT</th>
+                        <th className="py-3.5 px-4 text-right text-[#ef4444]">BROKE (KG)</th>
+                        <th className="py-3.5 px-4 text-right font-black">NET STOCK WEIGHT</th>
                       </tr>
                     </thead>
-                    <tbody className="divide-y divide-slate-100 dark:divide-slate-800 font-semibold text-slate-800 dark:text-slate-200">
+                    <tbody className="divide-y divide-[#182038] font-semibold text-slate-200">
                       {batch.reels.map(reel => {
                         const brokeVal = Number(reel.joint || 0) * 15 + 20;
                         const netKg = Math.max(0, reel.weight - brokeVal);
                         return (
-                          <tr key={reel.reelNo} className="hover:bg-slate-50/80 dark:hover:bg-slate-800/50 transition duration-150">
-                            <td className="py-3.5 px-4 font-black text-primary dark:text-blue-400 font-mono text-xs">{reel.reelNo}</td>
-                            <td className="py-3.5 px-4 text-slate-500 dark:text-slate-400 font-mono text-xs">{reel.parentRollNo}</td>
-                            <td className="py-3.5 px-4 font-extrabold text-slate-900 dark:text-white">{reel.product}</td>
-                            <td className="py-3.5 px-4 text-slate-700 dark:text-slate-200 font-bold">
+                          <tr key={reel.reelNo} className="hover:bg-[#141b33] transition duration-150">
+                            <td className="py-3.5 px-4 font-black text-[#3b82f6] font-mono text-xs">{reel.reelNo}</td>
+                            <td className="py-3.5 px-4 text-slate-400 font-mono text-xs">{reel.parentRollNo}</td>
+                            <td className="py-3.5 px-4 font-extrabold text-white">{reel.product}</td>
+                            <td className="py-3.5 px-4 text-slate-200 font-bold">
                               {reel.gsm} GSM | {reel.size} cm | {reel.ply} Ply
                             </td>
-                            <td className="py-3.5 px-4 text-slate-700 dark:text-slate-200 font-bold">
+                            <td className="py-3.5 px-4 text-slate-200 font-bold">
                               {reel.joint} Joint
                             </td>
-                            <td className="py-3.5 px-4 text-right font-extrabold text-slate-900 dark:text-white">
+                            <td className="py-3.5 px-4 text-right font-extrabold text-white">
                               {reel.weight.toLocaleString()} kg
                             </td>
-                            <td className="py-3.5 px-4 text-right font-black text-red-500">
+                            <td className="py-3.5 px-4 text-right font-black text-[#ef4444]">
                               +{brokeVal} kg
                             </td>
-                            <td className="py-3.5 px-4 text-right font-extrabold text-slate-900 dark:text-white">
+                            <td className="py-3.5 px-4 text-right font-extrabold text-white">
                               {netKg.toLocaleString()} kg
                             </td>
                           </tr>
