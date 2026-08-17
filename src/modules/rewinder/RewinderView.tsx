@@ -693,86 +693,115 @@ export const RewinderView: React.FC = () => {
           </div>
         </div>
 
-        {/* Single Unified Reels List Table */}
-        {filteredReels.length === 0 ? (
+        {/* Distinct Grouped Cut Batches View (Matching Screenshot 3) */}
+        {groupedBatches.length === 0 ? (
           <div className="p-8 text-center text-slate-400 font-medium bg-slate-50 dark:bg-slate-900/40 rounded-2xl border border-slate-200 dark:border-slate-800">
             No rewinder reels recorded matching filter. Click &quot;+ Add Reel Entry&quot; to log finished reels.
           </div>
         ) : (
-          <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl overflow-hidden shadow-sm">
-            {/* Desktop Unified Table View */}
-            <div className="hidden md:block overflow-x-auto">
-              <table className="w-full text-left text-xs border-collapse">
-                <thead>
-                  <tr className="bg-slate-50 dark:bg-slate-800/80 text-slate-700 dark:text-slate-400 uppercase tracking-wider font-black text-[10px] border-b border-slate-200 dark:border-slate-700/80">
-                    <th className="py-3.5 px-4">REEL NO</th>
-                    <th className="py-3.5 px-4">RUNNING ROLL</th>
-                    <th className="py-3.5 px-4">PRODUCT</th>
-                    <th className="py-3.5 px-4">GSM / SIZE / PLY</th>
-                    <th className="py-3.5 px-4">JOINT</th>
-                    <th className="py-3.5 px-4 text-right">REEL WEIGHT</th>
-                    <th className="py-3.5 px-4 text-right text-rose-600 dark:text-[#ef4444]">BROKE (KG)</th>
-                    <th className="py-3.5 px-4 text-right font-black">NET STOCK WEIGHT</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-slate-100 dark:divide-slate-800 font-semibold text-slate-800 dark:text-slate-200">
-                  {filteredReels.map(reel => {
+          <div className="space-y-6">
+            {groupedBatches.map(batch => (
+              <div key={batch.batchId} className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl overflow-hidden shadow-xs space-y-0">
+                {/* Batch Header Bar (Matching Screenshot 3) */}
+                <div className="bg-slate-50/90 dark:bg-slate-800/80 p-3.5 sm:p-4 border-b border-slate-200 dark:border-slate-700/80 flex flex-wrap items-center justify-between gap-3">
+                  <div className="flex flex-wrap items-center gap-3">
+                    <div className="px-3 py-1 rounded-full bg-blue-100 dark:bg-blue-900/40 border border-blue-200 dark:border-blue-700/60 text-blue-700 dark:text-blue-300 text-xs font-black font-mono flex items-center gap-1.5">
+                      <span className="w-2 h-2 rounded-full bg-blue-500 animate-pulse" />
+                      <span>RUNNING ROLL: #{batch.parentRollNo}</span>
+                    </div>
+                    <span className="text-xs font-black text-slate-900 dark:text-white flex items-center gap-1.5">
+                      <span>{batch.product}</span>
+                      <span className="text-slate-400">&bull;</span>
+                      <span className="text-blue-600 dark:text-blue-400 font-extrabold">{batch.reels.length} {batch.reels.length === 1 ? 'Reel Cut' : 'Reels Cut'}</span>
+                    </span>
+                    <span className="text-[11px] text-slate-500 dark:text-slate-400 font-mono">
+                      ({batch.productionDate})
+                    </span>
+                  </div>
+                  <div className="flex items-center gap-3 text-xs font-bold">
+                    <span className="text-slate-600 dark:text-slate-300">Total: <strong className="text-slate-900 dark:text-white">{batch.totalWeight.toLocaleString()} kg</strong></span>
+                    <span className="text-red-500">Broke: <strong>+{batch.totalBroke.toLocaleString()} kg</strong></span>
+                    <span className="text-emerald-700 dark:text-emerald-300 bg-emerald-100 dark:bg-emerald-950/60 px-2.5 py-0.5 rounded-lg border border-emerald-300 dark:border-emerald-800/60">
+                      Net Stock: <strong>{batch.netWeight.toLocaleString()} kg</strong>
+                    </span>
+                  </div>
+                </div>
+
+                {/* Desktop Reels Table for this Batch */}
+                <div className="hidden md:block overflow-x-auto">
+                  <table className="w-full text-left text-xs border-collapse">
+                    <thead>
+                      <tr className="text-slate-500 dark:text-slate-400 uppercase tracking-wider font-extrabold text-[10px] border-b border-slate-200/60 dark:border-slate-800 bg-white dark:bg-slate-900">
+                        <th className="py-3 px-4">REEL NO</th>
+                        <th className="py-3 px-4">RUNNING ROLL</th>
+                        <th className="py-3 px-4">PRODUCT</th>
+                        <th className="py-3 px-4">GSM / SIZE / PLY</th>
+                        <th className="py-3 px-4">JOINT</th>
+                        <th className="py-3 px-4 text-right">REEL WEIGHT</th>
+                        <th className="py-3 px-4 text-right text-red-500">BROKE (KG)</th>
+                        <th className="py-3 px-4 text-right font-black">NET STOCK WEIGHT</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-slate-100 dark:divide-slate-800 font-semibold text-slate-800 dark:text-slate-200">
+                      {batch.reels.map(reel => {
+                        const brokeVal = Number(reel.joint || 0) * 15 + 20;
+                        const netKg = Math.max(0, reel.weight - brokeVal);
+                        return (
+                          <tr key={reel.reelNo} className="hover:bg-slate-50/80 dark:hover:bg-slate-800/50 transition duration-150">
+                            <td className="py-3.5 px-4 font-black text-primary dark:text-blue-400 font-mono text-xs">{reel.reelNo}</td>
+                            <td className="py-3.5 px-4 text-slate-500 dark:text-slate-400 font-mono text-xs">{reel.parentRollNo}</td>
+                            <td className="py-3.5 px-4 font-extrabold text-slate-900 dark:text-white">{reel.product}</td>
+                            <td className="py-3.5 px-4 text-slate-700 dark:text-slate-200 font-bold">
+                              {reel.gsm} GSM | {reel.size} cm | {reel.ply} Ply
+                            </td>
+                            <td className="py-3.5 px-4 text-slate-700 dark:text-slate-200 font-bold">
+                              {reel.joint} Joint
+                            </td>
+                            <td className="py-3.5 px-4 text-right font-extrabold text-slate-900 dark:text-white">
+                              {reel.weight.toLocaleString()} kg
+                            </td>
+                            <td className="py-3.5 px-4 text-right font-black text-red-500">
+                              +{brokeVal} kg
+                            </td>
+                            <td className="py-3.5 px-4 text-right font-extrabold text-slate-900 dark:text-white">
+                              {netKg.toLocaleString()} kg
+                            </td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
+                </div>
+
+                {/* Mobile View Stacked Cards for this Batch */}
+                <div className="block md:hidden p-3 space-y-2.5">
+                  {batch.reels.map(reel => {
                     const brokeVal = Number(reel.joint || 0) * 15 + 20;
                     const netKg = Math.max(0, reel.weight - brokeVal);
                     return (
-                      <tr key={reel.reelNo} className="hover:bg-slate-50/80 dark:hover:bg-slate-800/50 transition duration-150">
-                        <td className="py-3.5 px-4 font-black text-primary dark:text-[#3b82f6] font-mono text-xs">{reel.reelNo}</td>
-                        <td className="py-3.5 px-4 text-slate-500 dark:text-slate-400 font-mono text-xs">{reel.parentRollNo}</td>
-                        <td className="py-3.5 px-4 font-extrabold text-slate-900 dark:text-white">{reel.product}</td>
-                        <td className="py-3.5 px-4 text-slate-700 dark:text-slate-200 font-bold">
-                          {reel.gsm} GSM | {reel.size} cm | {reel.ply} Ply
-                        </td>
-                        <td className="py-3.5 px-4 text-slate-700 dark:text-slate-200 font-bold">
-                          {reel.joint} Joint
-                        </td>
-                        <td className="py-3.5 px-4 text-right font-extrabold text-slate-900 dark:text-white">
-                          {reel.weight.toLocaleString()} kg
-                        </td>
-                        <td className="py-3.5 px-4 text-right font-black text-rose-600 dark:text-[#ef4444]">
-                          +{brokeVal} kg
-                        </td>
-                        <td className="py-3.5 px-4 text-right font-extrabold text-slate-900 dark:text-white">
-                          {netKg.toLocaleString()} kg
-                        </td>
-                      </tr>
+                      <div key={reel.reelNo} className="p-3.5 rounded-2xl bg-white dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700 space-y-2 text-xs">
+                        <div className="flex items-center justify-between">
+                          <span className="font-mono font-black text-primary dark:text-blue-400">{reel.reelNo}</span>
+                          <span className="font-bold px-2 py-0.5 rounded-lg bg-emerald-100 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800/60 text-[10px]">
+                            Net: {netKg.toLocaleString()} kg
+                          </span>
+                        </div>
+                        <div className="grid grid-cols-2 gap-2 text-[11px] pt-1">
+                          <div>
+                            <span className="text-slate-500 dark:text-slate-400 block text-[9px] uppercase font-bold">Roll / Specs</span>
+                            <span className="font-bold text-slate-900 dark:text-white">{reel.parentRollNo} &bull; {reel.gsm}GSM &bull; {reel.size}cm</span>
+                          </div>
+                          <div>
+                            <span className="text-slate-500 dark:text-slate-400 block text-[9px] uppercase font-bold">Reel / Broke</span>
+                            <span className="font-extrabold text-slate-900 dark:text-white">{reel.weight.toLocaleString()} kg <span className="text-red-500">(+{brokeVal}kg)</span></span>
+                          </div>
+                        </div>
+                      </div>
                     );
                   })}
-                </tbody>
-              </table>
-            </div>
-
-            {/* Mobile View Stacked Cards */}
-            <div className="block md:hidden p-3 space-y-2.5">
-              {filteredReels.map(reel => {
-                const brokeVal = Number(reel.joint || 0) * 15 + 20;
-                const netKg = Math.max(0, reel.weight - brokeVal);
-                return (
-                  <div key={reel.reelNo} className="p-3.5 rounded-2xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700 space-y-2 text-xs">
-                    <div className="flex items-center justify-between">
-                      <span className="font-mono font-black text-primary dark:text-[#3b82f6]">{reel.reelNo}</span>
-                      <span className="font-bold px-2 py-0.5 rounded-lg bg-emerald-50 dark:bg-[#062c21] text-emerald-700 dark:text-[#10b981] border border-emerald-200 dark:border-[#064e3b] text-[10px]">
-                        Net: {netKg.toLocaleString()} kg
-                      </span>
-                    </div>
-                    <div className="grid grid-cols-2 gap-2 text-[11px] pt-1">
-                      <div>
-                        <span className="text-slate-500 dark:text-slate-400 block text-[9px] uppercase font-bold">Roll / Specs</span>
-                        <span className="font-bold text-slate-900 dark:text-white">{reel.parentRollNo} &bull; {reel.gsm}GSM &bull; {reel.size}cm</span>
-                      </div>
-                      <div>
-                        <span className="text-slate-500 dark:text-slate-400 block text-[9px] uppercase font-bold">Reel / Broke</span>
-                        <span className="font-extrabold text-slate-900 dark:text-white">{reel.weight.toLocaleString()} kg <span className="text-rose-600 dark:text-[#ef4444]">(+{brokeVal}kg)</span></span>
-                      </div>
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
+                </div>
+              </div>
+            ))}
           </div>
         )}
       </div>
@@ -1222,14 +1251,14 @@ export const RewinderView: React.FC = () => {
 
               {/* STEP 1: PRODUCT */}
               <div>
-                <label className="block text-[11px] font-black text-slate-300 uppercase tracking-wider mb-1.5 flex justify-between">
+                <label className="block text-[11px] font-black text-slate-700 dark:text-slate-300 uppercase tracking-wider mb-1.5 flex justify-between">
                   <span>1. SELECT PRODUCT</span>
-                  <span className="text-[10px] text-blue-400 font-medium">Step 1</span>
+                  <span className="text-[10px] text-blue-500 font-medium">Step 1</span>
                 </label>
                 <select
                   value={filterProduct}
                   onChange={e => handleProductChange(e.target.value)}
-                  className="w-full py-3 px-3.5 bg-[#12162B] border border-[#262D4A] rounded-2xl text-xs font-bold text-white focus:outline-none focus:ring-2 focus:ring-blue-500 cursor-pointer"
+                  className="w-full py-3 px-3.5 bg-slate-50 dark:bg-[#12162B] border border-slate-200 dark:border-[#262D4A] rounded-2xl text-xs font-bold text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500 cursor-pointer"
                 >
                   <option value="ALL">All Products ({availableProducts.length})</option>
                   {availableProducts.map(p => (
@@ -1240,7 +1269,7 @@ export const RewinderView: React.FC = () => {
 
               {/* STEP 2: GSM */}
               <div>
-                <label className="block text-[11px] font-black text-slate-300 uppercase tracking-wider mb-1.5 flex justify-between">
+                <label className="block text-[11px] font-black text-slate-700 dark:text-slate-300 uppercase tracking-wider mb-1.5 flex justify-between">
                   <span>2. SELECT GSM</span>
                   <span className="text-[10px] text-slate-400 font-medium">
                     {filterProduct !== 'ALL' ? `Cascaded for ${filterProduct}` : 'SELECT PRODUCT FIRST'}
@@ -1249,7 +1278,7 @@ export const RewinderView: React.FC = () => {
                 <select
                   value={filterGsm}
                   onChange={e => handleGsmChange(e.target.value)}
-                  className="w-full py-3 px-3.5 bg-[#12162B] border border-[#262D4A] rounded-2xl text-xs font-bold text-white focus:outline-none focus:ring-2 focus:ring-blue-500 cursor-pointer"
+                  className="w-full py-3 px-3.5 bg-slate-50 dark:bg-[#12162B] border border-slate-200 dark:border-[#262D4A] rounded-2xl text-xs font-bold text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500 cursor-pointer"
                 >
                   <option value="ALL">All GSMs ({availableGsms.length} available)</option>
                   {availableGsms.map(g => (
@@ -1260,7 +1289,7 @@ export const RewinderView: React.FC = () => {
 
               {/* STEP 3: SIZE */}
               <div>
-                <label className="block text-[11px] font-black text-slate-300 uppercase tracking-wider mb-1.5 flex justify-between">
+                <label className="block text-[11px] font-black text-slate-700 dark:text-slate-300 uppercase tracking-wider mb-1.5 flex justify-between">
                   <span>3. SELECT SIZE (CM)</span>
                   <span className="text-[10px] text-slate-400 font-medium">
                     {filterGsm !== 'ALL' ? `Cascaded for ${filterGsm} GSM` : 'ALL SIZES'}
@@ -1269,7 +1298,7 @@ export const RewinderView: React.FC = () => {
                 <select
                   value={filterSize}
                   onChange={e => handleSizeChange(e.target.value)}
-                  className="w-full py-3 px-3.5 bg-[#12162B] border border-[#262D4A] rounded-2xl text-xs font-bold text-white focus:outline-none focus:ring-2 focus:ring-blue-500 cursor-pointer"
+                  className="w-full py-3 px-3.5 bg-slate-50 dark:bg-[#12162B] border border-slate-200 dark:border-[#262D4A] rounded-2xl text-xs font-bold text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500 cursor-pointer"
                 >
                   <option value="ALL">All Sizes ({availableSizes.length} available)</option>
                   {availableSizes.map(s => (
@@ -1280,7 +1309,7 @@ export const RewinderView: React.FC = () => {
 
               {/* STEP 4: PLY */}
               <div>
-                <label className="block text-[11px] font-black text-slate-300 uppercase tracking-wider mb-1.5 flex justify-between">
+                <label className="block text-[11px] font-black text-slate-700 dark:text-slate-300 uppercase tracking-wider mb-1.5 flex justify-between">
                   <span>4. SELECT PLY</span>
                   <span className="text-[10px] text-slate-400 font-medium">
                     {filterSize !== 'ALL' ? `Cascaded for Size ${filterSize} cm` : 'ALL PLY'}
@@ -1289,7 +1318,7 @@ export const RewinderView: React.FC = () => {
                 <select
                   value={filterPly}
                   onChange={e => handlePlyChange(e.target.value)}
-                  className="w-full py-3 px-3.5 bg-[#12162B] border border-[#262D4A] rounded-2xl text-xs font-bold text-white focus:outline-none focus:ring-2 focus:ring-blue-500 cursor-pointer"
+                  className="w-full py-3 px-3.5 bg-slate-50 dark:bg-[#12162B] border border-slate-200 dark:border-[#262D4A] rounded-2xl text-xs font-bold text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500 cursor-pointer"
                 >
                   <option value="ALL">All Ply ({availablePlys.length} available)</option>
                   {availablePlys.map(p => (
@@ -1301,11 +1330,11 @@ export const RewinderView: React.FC = () => {
             </div>
 
             {/* Modal Actions */}
-            <div className="flex gap-3 pt-3 border-t border-slate-700/60">
+            <div className="flex gap-3 pt-3 border-t border-slate-200 dark:border-slate-700/60">
               <button
                 type="button"
                 onClick={handleClearFilters}
-                className="px-4 py-3 border border-red-500/40 rounded-2xl text-xs font-bold text-red-400 hover:bg-red-950/40 transition cursor-pointer flex items-center justify-center gap-1.5 shrink-0"
+                className="px-4 py-3 border border-red-300 dark:border-red-500/40 rounded-2xl text-xs font-bold text-red-500 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/40 transition cursor-pointer flex items-center justify-center gap-1.5 shrink-0"
               >
                 <RotateCcw className="h-4 w-4" /> Clear All
               </button>
