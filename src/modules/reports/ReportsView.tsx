@@ -148,7 +148,6 @@ export const ReportsView: React.FC = () => {
         }
         data[slip.date].slipCount += 1;
         data[slip.date].reelsDispatched += slip.reelNos.length;
-
         const slipReels = reels.filter(r => slip.reelNos.includes(r.reelNo));
         const w = slipReels.reduce((sum, r) => sum + r.weight, 0);
         data[slip.date].totalWeight += w;

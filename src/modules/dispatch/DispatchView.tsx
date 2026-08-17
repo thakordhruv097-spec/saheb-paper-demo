@@ -17,6 +17,8 @@ import type { PackingSlip, Reel, PendingOrder } from '../../data/types';
 import * as XLSX from 'xlsx';
 import { CustomDatePickerModal } from '../../components/CustomDatePickerModal';
 import { COMPANY_CONFIG } from '../../config/company';
+import { DataFilterBar } from '../../components/DataFilterBar';
+import { CustomSearchableSelect } from '../../components/CustomSearchableSelect';
 import {
   Truck,
   Plus,
@@ -47,6 +49,8 @@ import {
   Check,
 } from 'lucide-react';
 
+import { WorkflowStepBadge, WORKFLOW_STEPS } from '../../components/WorkflowStepBadge';
+
 interface DispatchViewProps {
   initialTab?: 'orders' | 'create_slip' | 'slips_list';
   hideTabs?: boolean;
@@ -70,7 +74,12 @@ export const DispatchView: React.FC<DispatchViewProps> = ({ initialTab = 'orders
 
   useEffect(() => {
     setActiveTab(initialTab);
+    setReels(getReels());
   }, [initialTab]);
+
+  useEffect(() => {
+    setReels(getReels());
+  }, [activeTab]);
 
   // Tactile Web Audio Beep Sound
   const playBeep = () => {
@@ -209,9 +218,9 @@ export const DispatchView: React.FC<DispatchViewProps> = ({ initialTab = 'orders
     return `CHALLAN-${cleanDate}-${padIndex}`;
   }, [slipDate, slips]);
 
-  // Filter available reels in stock for Packing Slip selection
+  // Filter available reels in stock for Packing Slip selection (all non-dispatched reels)
   const availableReels = useMemo(() => {
-    return reels.filter(r => r.status === 'IN_STOCK' || r.status === 'IN_STOCK_B');
+    return reels.filter(r => r.status !== 'DELIVERED');
   }, [reels]);
 
   // Unique Products present in available reels for quick filter pills
@@ -223,37 +232,64 @@ export const DispatchView: React.FC<DispatchViewProps> = ({ initialTab = 'orders
     return Array.from(set).sort();
   }, [availableReels]);
 
-  // Unique GSMs present in available reels for quick filter pills
+  // Unique GSMs present in available reels (cascaded by selected product)
   const uniqueGsms = useMemo(() => {
     const set = new Set<number>();
     availableReels.forEach(r => {
-      if (r.gsm) set.add(r.gsm);
+      if (reelProductFilter === 'ALL' || r.product === reelProductFilter) {
+        if (r.gsm) set.add(r.gsm);
+      }
     });
     return Array.from(set).sort((a, b) => a - b);
-  }, [availableReels]);
+  }, [availableReels, reelProductFilter]);
 
-  // Unique Sizes present in available reels for quick filter pills
+  // Unique Sizes present in available reels (cascaded by selected product & gsm)
   const uniqueSizes = useMemo(() => {
     const set = new Set<number>();
     availableReels.forEach(r => {
-      if (r.size) set.add(r.size);
+      if (
+        (reelProductFilter === 'ALL' || r.product === reelProductFilter) &&
+        (reelGsmFilter === 'ALL' || r.gsm === reelGsmFilter)
+      ) {
+        if (r.size) set.add(r.size);
+      }
     });
     return Array.from(set).sort((a, b) => a - b);
-  }, [availableReels]);
+  }, [availableReels, reelProductFilter, reelGsmFilter]);
 
-  // Unique Plys present in available reels for quick filter pills
+  // Unique Plys present in available reels (cascaded by selected product, gsm & size)
   const uniquePlys = useMemo(() => {
     const set = new Set<number>();
     availableReels.forEach(r => {
-      if (r.ply) set.add(r.ply);
+      if (
+        (reelProductFilter === 'ALL' || r.product === reelProductFilter) &&
+        (reelGsmFilter === 'ALL' || r.gsm === reelGsmFilter) &&
+        (reelSizeFilter === 'ALL' || r.size === reelSizeFilter)
+      ) {
+        if (r.ply) set.add(r.ply);
+      }
     });
     return Array.from(set).sort((a, b) => a - b);
-  }, [availableReels]);
+  }, [availableReels, reelProductFilter, reelGsmFilter, reelSizeFilter]);
+
+  // Handlers for reel product filter change with auto reset of child options
+  const handleReelProductChange = (prod: string) => {
+    setReelProductFilter(prod);
+    setReelGsmFilter('ALL');
+    setReelSizeFilter('ALL');
+    setReelPlyFilter('ALL');
+  };
 
   // Real-time filtered available reels
   const filteredAvailableReels = useMemo(() => {
     return availableReels.filter(r => {
-      if (reelProductFilter !== 'ALL' && r.product !== reelProductFilter) return false;
+      if (reelProductFilter !== 'ALL') {
+        const target = reelProductFilter.toLowerCase().trim();
+        const currentProd = (r.product || '').toLowerCase().trim();
+        if (currentProd !== target && !currentProd.includes(target) && !target.includes(currentProd)) {
+          return false;
+        }
+      }
       if (reelGsmFilter !== 'ALL' && r.gsm !== reelGsmFilter) return false;
       if (reelSizeFilter !== 'ALL' && r.size !== reelSizeFilter) return false;
       if (reelPlyFilter !== 'ALL' && r.ply !== reelPlyFilter) return false;
@@ -468,7 +504,6 @@ export const DispatchView: React.FC<DispatchViewProps> = ({ initialTab = 'orders
       'Size (cm)': r.size,
       'Ply': r.ply,
       'Weight (kg)': r.weight,
-      'Diameter (mm)': r.dia,
       'Joints': r.joint,
       'QC Grade': r.qcGrade,
     }));
@@ -526,10 +561,7 @@ export const DispatchView: React.FC<DispatchViewProps> = ({ initialTab = 'orders
       
       {/* Title / Hero Banner */}
       {!hideHeader && (
-        <div className="bg-gradient-to-r from-blue-700 via-indigo-600 to-slate-900 rounded-2xl p-4 sm:p-4.5 px-5 sm:px-6 text-white shadow-lg relative overflow-hidden">
-          <div className="absolute -right-10 -top-10 w-64 h-64 bg-blue-500/10 rounded-full blur-3xl pointer-events-none" />
-          <div className="absolute -bottom-20 -left-20 w-80 h-80 rounded-full bg-blue-400/10 blur-2xl pointer-events-none" />
-
+        <div className="bg-gradient-to-r from-blue-700 via-indigo-600 to-slate-900 rounded-2xl p-4 sm:p-4.5 px-5 sm:px-6 text-white shadow-lg relative z-20">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 relative z-10">
             <div className="flex items-center gap-3.5">
               <div className="p-2.5 rounded-xl bg-white/15 backdrop-blur-md border border-white/20 text-white shadow-md shrink-0">
@@ -540,6 +572,13 @@ export const DispatchView: React.FC<DispatchViewProps> = ({ initialTab = 'orders
                   <h2 className="text-xl sm:text-2xl font-black tracking-tight font-heading">
                     {initialTab === 'orders' ? 'Order Bookings' : 'Dispatch Receipt'}
                   </h2>
+                  <WorkflowStepBadge
+                    stepInfo={
+                      initialTab === 'orders'
+                        ? WORKFLOW_STEPS.orderBooking
+                        : WORKFLOW_STEPS.dispatchReceipt
+                    }
+                  />
                 </div>
               </div>
             </div>
@@ -732,31 +771,32 @@ export const DispatchView: React.FC<DispatchViewProps> = ({ initialTab = 'orders
 
             <form onSubmit={handleOrderSubmit} className="space-y-4">
               <div>
-                <label className="block text-[11px] font-black text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-1.5">Select Customer Party</label>
-                <select
+                <CustomSearchableSelect
+                  label="SELECT CUSTOMER PARTY"
+                  placeholder="-- Choose Customer Party --"
                   value={selectedPartyId}
-                  onChange={e => setSelectedPartyId(e.target.value)}
-                  className="block w-full py-2.5 px-3.5 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-2xl text-xs font-bold focus:outline-none focus:ring-2 focus:ring-primary dark:text-white cursor-pointer"
-                >
-                  <option value="">-- Choose Party --</option>
-                  {parties.map(p => (
-                    <option key={p.id} value={p.id}>{p.name}</option>
-                  ))}
-                </select>
+                  onChange={setSelectedPartyId}
+                  options={parties.map(p => ({
+                    value: p.id,
+                    label: p.name,
+                    sublabel: p.contact ? `Contact: ${p.contact}` : p.address,
+                  }))}
+                  required
+                />
               </div>
 
               <div>
-                <label className="block text-[11px] font-black text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-1.5">Select Product Specs</label>
-                <select
+                <CustomSearchableSelect
+                  label="SELECT PRODUCT SPECS"
+                  placeholder="-- Choose Product Specs --"
                   value={selectedProductId}
-                  onChange={e => setSelectedProductId(e.target.value)}
-                  className="block w-full py-2.5 px-3.5 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-2xl text-xs font-bold focus:outline-none focus:ring-2 focus:ring-primary dark:text-white cursor-pointer"
-                >
-                  <option value="">-- Choose Product --</option>
-                  {products.map(p => (
-                    <option key={p.id} value={p.id}>{p.name} ({p.gsm}GSM | {p.size}cm)</option>
-                  ))}
-                </select>
+                  onChange={setSelectedProductId}
+                  options={products.map(p => ({
+                    value: p.id,
+                    label: p.name,
+                  }))}
+                  required
+                />
               </div>
 
               <div>
@@ -788,6 +828,7 @@ export const DispatchView: React.FC<DispatchViewProps> = ({ initialTab = 'orders
                       setOpenOrderDuePicker(false);
                     }}
                     onClose={() => setOpenOrderDuePicker(false)}
+                    allowFuture={true}
                   />
                 )}
               </div>
@@ -1052,6 +1093,7 @@ export const DispatchView: React.FC<DispatchViewProps> = ({ initialTab = 'orders
                       setOpenSlipDatePicker(false);
                     }}
                     onClose={() => setOpenSlipDatePicker(false)}
+                    allowFuture={true}
                   />
                 )}
               </div>
@@ -1295,7 +1337,7 @@ export const DispatchView: React.FC<DispatchViewProps> = ({ initialTab = 'orders
 
                 <button
                   type="button"
-                  onClick={() => setReelProductFilter('ALL')}
+                  onClick={() => handleReelProductChange('ALL')}
                   className={`px-2.5 py-0.5 rounded-full text-xs font-bold cursor-pointer transition ${
                     reelProductFilter === 'ALL'
                       ? 'bg-slate-900 dark:bg-white text-white dark:text-slate-900'
@@ -1311,7 +1353,7 @@ export const DispatchView: React.FC<DispatchViewProps> = ({ initialTab = 'orders
                     <button
                       key={prod}
                       type="button"
-                      onClick={() => setReelProductFilter(prod)}
+                      onClick={() => handleReelProductChange(prod)}
                       className={`px-2.5 py-0.5 rounded-full text-xs font-bold cursor-pointer transition ${
                         reelProductFilter === prod
                           ? 'bg-emerald-600 text-white shadow-xs'
@@ -1381,7 +1423,7 @@ export const DispatchView: React.FC<DispatchViewProps> = ({ initialTab = 'orders
                 </button>
 
                 {uniqueGsms.map(gsm => {
-                  const count = availableReels.filter(r => r.gsm === gsm).length;
+                  const count = availableReels.filter(r => (reelProductFilter === 'ALL' || r.product === reelProductFilter) && r.gsm === gsm).length;
                   return (
                     <button
                       key={gsm}
@@ -1418,7 +1460,11 @@ export const DispatchView: React.FC<DispatchViewProps> = ({ initialTab = 'orders
                 </button>
 
                 {uniqueSizes.map(sz => {
-                  const count = availableReels.filter(r => r.size === sz).length;
+                  const count = availableReels.filter(r =>
+                    (reelProductFilter === 'ALL' || r.product === reelProductFilter) &&
+                    (reelGsmFilter === 'ALL' || r.gsm === reelGsmFilter) &&
+                    r.size === sz
+                  ).length;
                   return (
                     <button
                       key={sz}
@@ -1454,25 +1500,25 @@ export const DispatchView: React.FC<DispatchViewProps> = ({ initialTab = 'orders
                   All Ply
                 </button>
 
-                {uniquePlys.map(ply => {
+                {uniquePlys.map(pVal => {
                   const count = availableReels.filter(r =>
                     (reelProductFilter === 'ALL' || r.product === reelProductFilter) &&
                     (reelGsmFilter === 'ALL' || r.gsm === reelGsmFilter) &&
                     (reelSizeFilter === 'ALL' || r.size === reelSizeFilter) &&
-                    r.ply === ply
+                    r.ply === pVal
                   ).length;
                   return (
                     <button
-                      key={ply}
+                      key={pVal}
                       type="button"
-                      onClick={() => setReelPlyFilter(ply)}
+                      onClick={() => setReelPlyFilter(pVal)}
                       className={`px-2.5 py-0.5 rounded-full text-xs font-bold cursor-pointer transition ${
-                        reelPlyFilter === ply
+                        reelPlyFilter === pVal
                           ? 'bg-amber-600 text-white shadow-xs'
                           : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 hover:bg-slate-200'
                       }`}
                     >
-                      {ply} Ply ({count})
+                      {pVal} Ply ({count})
                     </button>
                   );
                 })}
@@ -1509,7 +1555,7 @@ export const DispatchView: React.FC<DispatchViewProps> = ({ initialTab = 'orders
                       <th className="py-2 px-3">GSM</th>
                       <th className="py-2 px-3">Size</th>
                       <th className="py-2 px-3">Weight</th>
-                      <th className="py-2 px-3">Dia / Joints</th>
+                      <th className="py-2 px-3">Joints</th>
                       <th className="py-2 px-3 text-right">QC Grade</th>
                     </tr>
                   </thead>
@@ -1539,7 +1585,7 @@ export const DispatchView: React.FC<DispatchViewProps> = ({ initialTab = 'orders
                           <td className="py-2.5 px-3">{reel.gsm}</td>
                           <td className="py-2.5 px-3">{reel.size} cm</td>
                           <td className="py-2.5 px-3 font-mono font-bold text-emerald-600 dark:text-emerald-400">{reel.weight} kg</td>
-                          <td className="py-2.5 px-3 text-[11px] text-slate-500">{reel.dia}mm ({reel.joint} J)</td>
+                          <td className="py-2.5 px-3 text-[11px] text-slate-500">{reel.joint} Joints</td>
                           <td className="py-2.5 px-3 text-right">
                             <span className={`px-2 py-0.5 rounded text-[9px] font-black uppercase ${
                               reel.qcGrade === 'A'

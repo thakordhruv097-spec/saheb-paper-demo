@@ -13,6 +13,7 @@ import { UtilitiesEtpView } from './modules/boiler/UtilitiesEtpView';
 import { FinishedStockDispatchView } from './modules/dispatch/FinishedStockDispatchView';
 import { StoreView } from './modules/store/StoreView';
 import { ReportsView } from './modules/reports/ReportsView';
+import { LabelStudioView } from './modules/label-studio/LabelStudioView';
 import { AdminMasters } from './modules/admin/AdminMasters';
 import { UserManagementView } from './modules/admin/UserManagementView';
 import { QRScannerView } from './modules/rewinder/QRScannerView';
@@ -171,7 +172,7 @@ export default function App() {
           />
 
           <Route
-            path="/finished-stock-dispatch"
+            path="/stock-categorization"
             element={
               <ProtectedRoute moduleName="finished_stock_dispatch">
                 <Layout>
@@ -180,6 +181,7 @@ export default function App() {
               </ProtectedRoute>
             }
           />
+          <Route path="/finished-stock-dispatch" element={<Navigate to="/stock-categorization" replace />} />
 
           <Route
             path="/spareparts-management"
@@ -198,6 +200,17 @@ export default function App() {
               <ProtectedRoute moduleName="lab">
                 <Layout>
                   <LabView />
+                </Layout>
+              </ProtectedRoute>
+            }
+          />
+
+          <Route
+            path="/label-studio"
+            element={
+              <ProtectedRoute moduleName="label_studio">
+                <Layout>
+                  <LabelStudioView />
                 </Layout>
               </ProtectedRoute>
             }

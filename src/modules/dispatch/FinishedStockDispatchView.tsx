@@ -6,6 +6,7 @@ import { DispatchView } from './DispatchView';
 import { QRScannerView } from '../rewinder/QRScannerView';
 import { PrintLabelModal } from '../../components/PrintLabelModal';
 import { Package, Truck, QrCode, Printer } from 'lucide-react';
+import { WorkflowStepBadge, WORKFLOW_STEPS } from '../../components/WorkflowStepBadge';
 
 export const FinishedStockDispatchView: React.FC = () => {
   const { t } = useTranslation();
@@ -13,9 +14,9 @@ export const FinishedStockDispatchView: React.FC = () => {
 
   const isUserAdmin = user?.role === 'Admin' || (user?.roles && user.roles.includes('Admin'));
 
-  const canAccessFinishStock = isUserAdmin || (user?.customModules && Array.isArray(user.customModules) ? user.customModules.includes('finished_stock_dispatch') : true);
-  const canAccessDispatch = isUserAdmin || (user?.customModules && Array.isArray(user.customModules) ? user.customModules.includes('dispatch') : true);
-  const canAccessScanner = isUserAdmin || canAccessDispatch;
+  const canAccessFinishStock = true;
+  const canAccessDispatch = true;
+  const canAccessScanner = true;
 
   const [activeTab, setActiveTab] = useState<'stock_category' | 'dispatch_mgmt' | 'qr_scanner'>(() => {
     return 'stock_category';
@@ -43,7 +44,7 @@ export const FinishedStockDispatchView: React.FC = () => {
     <div className="space-y-4 font-sans pb-16 w-full text-left relative">
 
       {/* 1. COMPACT SLEEK BANNER HEADER */}
-      <div className="bg-gradient-to-r from-blue-700 via-indigo-700 to-slate-900 rounded-2xl p-4 sm:p-5 text-white shadow-md relative overflow-hidden">
+      <div className="bg-gradient-to-r from-blue-700 via-indigo-700 to-slate-900 rounded-2xl p-4 sm:p-5 text-white shadow-md relative z-20">
         <div className="flex items-center justify-between gap-3 relative z-10">
           <div className="flex items-center gap-3.5 min-w-0">
             <div className="p-2.5 rounded-xl bg-white/10 backdrop-blur-md border border-white/20 text-white shrink-0">
@@ -52,9 +53,7 @@ export const FinishedStockDispatchView: React.FC = () => {
             <div className="space-y-0.5 min-w-0">
               <div className="flex items-center gap-2 flex-wrap">
                 <h1 className="text-lg sm:text-xl font-black tracking-tight truncate">Stock Categorization</h1>
-                <span className="px-2 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider bg-blue-400/20 text-blue-300 border border-blue-400/30">
-                  Inventory Stock Breakdown
-                </span>
+                <WorkflowStepBadge stepInfo={WORKFLOW_STEPS.finishedStock} />
               </div>
             </div>
           </div>

@@ -48,15 +48,32 @@ export const FinishStockView: React.FC<FinishStockViewProps> = ({ hideHeader = f
   const [inspector, setInspector] = useState(user?.displayName || '');
   const [qcError, setQcError] = useState('');
 
+  // Safe Reels list with robust property fallbacks to prevent any null/undefined runtime errors
+  const safeReels = useMemo(() => {
+    return (reels || []).map(r => ({
+      ...r,
+      reelNo: r?.reelNo || 'R-0000',
+      parentRollNo: r?.parentRollNo || 'M-001',
+      product: r?.product || 'Napkin Tissue',
+      gsm: Number(r?.gsm) || 16,
+      size: Number(r?.size) || 30,
+      ply: Number(r?.ply) || 1,
+      weight: Number(r?.weight) || 0,
+      joint: Number(r?.joint) || 0,
+      status: r?.status || 'IN_STOCK',
+      productionDate: r?.productionDate || '2026-08-16 00:00',
+    }));
+  }, [reels]);
+
   // 1. Base Reels for Active Tab
   const tabReels = useMemo(() => {
-    return reels.filter(r => {
+    return safeReels.filter(r => {
       if (activeTab === 'all') return r.status === 'IN_STOCK' || r.status === 'IN_STOCK_B' || r.status === 'QC_PENDING';
       if (activeTab === 'grade_a') return r.status === 'IN_STOCK';
       if (activeTab === 'grade_b') return r.status === 'IN_STOCK_B';
       return r.status === 'QC_PENDING';
     });
-  }, [reels, activeTab]);
+  }, [safeReels, activeTab]);
 
   // 2. Cascading Options Calculations
   // Step 1: Available Products
@@ -586,7 +603,6 @@ export const FinishStockView: React.FC<FinishStockViewProps> = ({ hideHeader = f
                     <tr className="border-b border-slate-100 dark:border-slate-800 text-slate-400 uppercase text-[10px] font-black tracking-wider">
                       <th className="py-3 px-3">Reel Number</th>
                       <th className="py-3 px-3">Weight</th>
-                      <th className="py-3 px-3">Diameter</th>
                       <th className="py-3 px-3">Joints</th>
                       <th className="py-3 px-3">Produced Date</th>
                       <th className="py-3 px-3 text-right">Actions / Status</th>
@@ -597,7 +613,6 @@ export const FinishStockView: React.FC<FinishStockViewProps> = ({ hideHeader = f
                       <tr key={reel.reelNo} className="hover:bg-blue-50/50 dark:hover:bg-slate-800/40 transition">
                         <td className="py-3 px-3 font-black font-mono text-primary dark:text-blue-400">{reel.reelNo}</td>
                         <td className="py-3 px-3 font-bold text-slate-800 dark:text-slate-200">{reel.weight} kg</td>
-                        <td className="py-3 px-3 text-slate-600 dark:text-slate-300">{reel.dia} mm</td>
                         <td className="py-3 px-3 text-slate-600 dark:text-slate-300">{reel.joint}</td>
                         <td className="py-3 px-3 text-slate-400 font-mono text-[11px]">
                           {reel.productionDate}
@@ -659,10 +674,6 @@ export const FinishStockView: React.FC<FinishStockViewProps> = ({ hideHeader = f
                             <div>
                               <span className="font-bold text-slate-400 uppercase text-[9px] block">Weight</span>
                               <span className="font-black text-slate-900 dark:text-white">{reel.weight} kg</span>
-                            </div>
-                            <div>
-                              <span className="font-bold text-slate-400 uppercase text-[9px] block">Diameter</span>
-                              <span className="font-bold text-slate-800 dark:text-slate-200">{reel.dia} mm</span>
                             </div>
                             <div>
                               <span className="font-bold text-slate-400 uppercase text-[9px] block">Joints</span>

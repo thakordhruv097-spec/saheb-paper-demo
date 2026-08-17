@@ -3,6 +3,7 @@ import { useAuth } from '../auth/AuthContext';
 import { useTranslation } from 'react-i18next';
 import { getStoreItems, saveStoreItem, adjustStoreItemStock } from '../../data/index';
 import type { StoreItem } from '../../data/types';
+import { CustomSearchableSelect } from '../../components/CustomSearchableSelect';
 import { Settings, Plus, Minus, Warehouse, Disc, Search, ListFilter } from 'lucide-react';
 
 export const StoreView: React.FC = () => {
@@ -474,17 +475,19 @@ export const StoreView: React.FC = () => {
               </div>
 
               <div>
-                <label className="block text-[11px] font-black text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-1.5">Belt Group Section</label>
-                <select
+                <CustomSearchableSelect
+                  label="BELT GROUP SECTION"
+                  placeholder="Select Group Section..."
                   value={beltGroup}
-                  onChange={e => setBeltGroup(e.target.value)}
-                  className="block w-full py-2.5 px-3.5 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-2xl text-xs font-bold focus:outline-none focus:ring-2 focus:ring-primary dark:text-white cursor-pointer"
-                >
-                  <option value="A">Group A Section</option>
-                  <option value="B">Group B Section</option>
-                  <option value="C">Group C Section</option>
-                  <option value="D">Group D Section</option>
-                </select>
+                  onChange={setBeltGroup}
+                  options={[
+                    { value: 'A', label: 'Group A Section', badge: 'Section A' },
+                    { value: 'B', label: 'Group B Section', badge: 'Section B' },
+                    { value: 'C', label: 'Group C Section', badge: 'Section C' },
+                    { value: 'D', label: 'Group D Section', badge: 'Section D' },
+                  ]}
+                  required
+                />
               </div>
 
               <div>

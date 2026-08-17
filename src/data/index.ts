@@ -152,14 +152,13 @@ const DEFAULT_USERS: User[] = [
 ];
 
 const DEFAULT_RAW_MATERIALS: RawMaterialItem[] = [
-  // Waste Paper
+  // Waste Paper & Pulp Raw Materials
   { id: 'rm-1', name: 'Indian Tissue Waste', category: 'WASTE_PAPER', stock: 5000, minThreshold: 1000 },
   { id: 'rm-2', name: 'Imported Tissue Waste', category: 'WASTE_PAPER', stock: 5000, minThreshold: 1000 },
-  // Other Raw Material
-  { id: 'rm-3', name: 'SMK', category: 'OTHER_RAW_MATERIAL', stock: 5000, minThreshold: 500 },
-  { id: 'rm-4', name: 'Cupstock', category: 'OTHER_RAW_MATERIAL', stock: 5000, minThreshold: 500 },
-  { id: 'rm-5', name: 'Pulp Sheet', category: 'OTHER_RAW_MATERIAL', stock: 5000, minThreshold: 1000 },
-  { id: 'rm-7', name: 'Broke', category: 'OTHER_RAW_MATERIAL', stock: 5000, minThreshold: 500 },
+  { id: 'rm-3', name: 'SMK', category: 'WASTE_PAPER', stock: 5000, minThreshold: 500 },
+  { id: 'rm-4', name: 'Cupstock', category: 'WASTE_PAPER', stock: 5000, minThreshold: 500 },
+  { id: 'rm-5', name: 'Pulp Sheet', category: 'WASTE_PAPER', stock: 5000, minThreshold: 1000 },
+  { id: 'rm-7', name: 'Broke', category: 'WASTE_PAPER', stock: 5000, minThreshold: 500 },
   // Chemical
   { id: 'rm-8', name: 'DSR', category: 'CHEMICAL', stock: 5000, minThreshold: 200 },
   { id: 'rm-9', name: 'WSR', category: 'CHEMICAL', stock: 5000, minThreshold: 200 },
@@ -766,7 +765,29 @@ export function resetUserPin(username: string, newPin: string, operator: string)
 
 // --- RAW MATERIALS ---
 export function getRawMaterials(): RawMaterialItem[] {
-  return getJSON<RawMaterialItem[]>(KEYS.RAW_MATERIALS, []);
+  const materials = getJSON<RawMaterialItem[]>(KEYS.RAW_MATERIALS, []);
+  if (!materials || materials.length === 0) {
+    setJSON(KEYS.RAW_MATERIALS, DEFAULT_RAW_MATERIALS);
+    return DEFAULT_RAW_MATERIALS;
+  }
+
+  // Ensure all 23 default items exist in storage and have unified WASTE_PAPER category
+  let updated = false;
+  DEFAULT_RAW_MATERIALS.forEach(defItem => {
+    const existing = materials.find(m => m.id === defItem.id || m.name === defItem.name);
+    if (!existing) {
+      materials.push(defItem);
+      updated = true;
+    } else if (defItem.category === 'WASTE_PAPER' && existing.category !== 'WASTE_PAPER') {
+      existing.category = 'WASTE_PAPER';
+      updated = true;
+    }
+  });
+
+  if (updated) {
+    setJSON(KEYS.RAW_MATERIALS, materials);
+  }
+  return materials;
 }
 
 export function saveRawMaterial(material: RawMaterialItem): RawMaterialItem {
@@ -909,13 +930,47 @@ export function getFormulas(): PulpFormula[] {
   return getJSON<PulpFormula[]>(KEYS.FORMULAS, []);
 }
 
-export function getFormulaForDate(dateStr: string): PulpFormula | null {
+export interface FormulaDateResult {
+  formula: PulpFormula;
+  isPreviousDay: boolean;
+  formulaDate: string;
+}
+
+export function getFormulaInfoForDate(dateStr: string): FormulaDateResult {
   const formulas = getFormulas();
-  // Filter formulas on or before target date, then sort by date desc to get the most recent active one.
-  const matched = formulas
-    .filter(f => f.date <= dateStr)
+  // 1. Check for exact date match
+  const exact = formulas.find(f => f.date === dateStr);
+  if (exact) {
+    return { formula: exact, isPreviousDay: false, formulaDate: exact.date };
+  }
+
+  // 2. Check for earlier date formula (previous day's formula)
+  const earlierMatches = formulas
+    .filter(f => f.date < dateStr)
     .sort((a, b) => b.date.localeCompare(a.date));
-  return matched.length > 0 ? matched[0] : null;
+
+  if (earlierMatches.length > 0) {
+    return { formula: earlierMatches[0], isPreviousDay: true, formulaDate: earlierMatches[0].date };
+  }
+
+  // 3. Fallback to any formula if available
+  if (formulas.length > 0) {
+    const sortedAll = [...formulas].sort((a, b) => b.date.localeCompare(a.date));
+    return { formula: sortedAll[0], isPreviousDay: true, formulaDate: sortedAll[0].date };
+  }
+
+  // 4. Default 100% Indian Tissue Waste Formula
+  const defaultFormula: PulpFormula = {
+    id: `formula-default-${dateStr}`,
+    date: dateStr,
+    wasteMix: { 'Indian Tissue Waste': 100 },
+    chemicals: { 'DSR': 2, 'WSR': 2 },
+  };
+  return { formula: defaultFormula, isPreviousDay: false, formulaDate: dateStr };
+}
+
+export function getFormulaForDate(dateStr: string): PulpFormula {
+  return getFormulaInfoForDate(dateStr).formula;
 }
 
 export function saveFormula(formula: PulpFormula, user: string): PulpFormula {
@@ -1013,8 +1068,40 @@ export function saveRoll(roll: MachineRoll, user: string): MachineRoll {
 }
 
 // --- REWINDER ---
+export const DEFAULT_REELS: Reel[] = [
+  // Cut Batch from Running Roll #R-20260812-0001 (15 Reels Cut, Napkin Tissue 18 GSM | 30 cm | 2 Ply)
+  { reelNo: '260500586', parentRollNo: 'R-20260812-0001', product: 'Napkin Tissue', gsm: 18, size: 30, ply: 2, weight: 180, joint: 0, status: 'IN_STOCK', qcGrade: 'A', productionDate: '2026-08-16 04:03', dia: 900 },
+  { reelNo: '260500585', parentRollNo: 'R-20260812-0001', product: 'Napkin Tissue', gsm: 18, size: 30, ply: 2, weight: 240, joint: 1, status: 'IN_STOCK', qcGrade: 'A', productionDate: '2026-08-16 04:03', dia: 900 },
+  { reelNo: '260500584', parentRollNo: 'R-20260812-0001', product: 'Napkin Tissue', gsm: 18, size: 30, ply: 2, weight: 130, joint: 3, status: 'IN_STOCK', qcGrade: 'A', productionDate: '2026-08-16 04:03', dia: 900 },
+  { reelNo: '260500583', parentRollNo: 'R-20260812-0001', product: 'Napkin Tissue', gsm: 18, size: 30, ply: 2, weight: 310, joint: 20, status: 'IN_STOCK', qcGrade: 'A', productionDate: '2026-08-16 04:03', dia: 900 },
+  { reelNo: '260500582', parentRollNo: 'R-20260812-0001', product: 'Napkin Tissue', gsm: 18, size: 30, ply: 2, weight: 420, joint: 0, status: 'IN_STOCK', qcGrade: 'A', productionDate: '2026-08-16 04:03', dia: 900 },
+  { reelNo: '260500581', parentRollNo: 'R-20260812-0001', product: 'Napkin Tissue', gsm: 18, size: 30, ply: 2, weight: 350, joint: 2, status: 'IN_STOCK', qcGrade: 'A', productionDate: '2026-08-16 04:03', dia: 900 },
+  { reelNo: '260500580', parentRollNo: 'R-20260812-0001', product: 'Napkin Tissue', gsm: 18, size: 30, ply: 2, weight: 450, joint: 3, status: 'IN_STOCK', qcGrade: 'A', productionDate: '2026-08-16 04:03', dia: 900 },
+  { reelNo: '260500579', parentRollNo: 'R-20260812-0001', product: 'Napkin Tissue', gsm: 18, size: 30, ply: 2, weight: 280, joint: 3, status: 'IN_STOCK', qcGrade: 'A', productionDate: '2026-08-16 04:03', dia: 900 },
+  { reelNo: '260500578', parentRollNo: 'R-20260812-0001', product: 'Napkin Tissue', gsm: 18, size: 30, ply: 2, weight: 300, joint: 2, status: 'IN_STOCK', qcGrade: 'A', productionDate: '2026-08-16 04:03', dia: 900 },
+  { reelNo: '260500577', parentRollNo: 'R-20260812-0001', product: 'Napkin Tissue', gsm: 18, size: 30, ply: 2, weight: 320, joint: 1, status: 'IN_STOCK', qcGrade: 'A', productionDate: '2026-08-16 04:03', dia: 900 },
+  { reelNo: '260500576', parentRollNo: 'R-20260812-0001', product: 'Napkin Tissue', gsm: 18, size: 30, ply: 2, weight: 400, joint: 0, status: 'IN_STOCK', qcGrade: 'A', productionDate: '2026-08-16 04:03', dia: 900 },
+
+  // Pre-loaded seed reels
+  { reelNo: 'R-20260816-0001', parentRollNo: 'R-20260812-0001', product: 'Napkin Tissue', gsm: 16, size: 30, ply: 1, weight: 120, joint: 0, status: 'IN_STOCK', qcGrade: 'A', productionDate: '2026-08-16 10:00', dia: 100 },
+  { reelNo: 'R-20260816-0002', parentRollNo: 'R-20260812-0001', product: 'Napkin Tissue', gsm: 16, size: 30, ply: 1, weight: 118, joint: 0, status: 'IN_STOCK', qcGrade: 'A', productionDate: '2026-08-16 10:15', dia: 100 },
+  { reelNo: 'R-20260816-0003', parentRollNo: 'R-20260812-0001', product: 'Napkin Tissue', gsm: 16, size: 30, ply: 1, weight: 122, joint: 1, status: 'IN_STOCK', qcGrade: 'A', productionDate: '2026-08-16 10:30', dia: 100 },
+  { reelNo: 'R-20260816-0004', parentRollNo: 'R-20260812-0002', product: 'Toilet Tissue', gsm: 18, size: 30, ply: 2, weight: 140, joint: 0, status: 'IN_STOCK', qcGrade: 'A', productionDate: '2026-08-16 11:00', dia: 100 },
+  { reelNo: 'R-20260816-0005', parentRollNo: 'R-20260812-0002', product: 'Toilet Tissue', gsm: 18, size: 30, ply: 2, weight: 135, joint: 0, status: 'IN_STOCK', qcGrade: 'A', productionDate: '2026-08-16 11:20', dia: 100 },
+  { reelNo: 'R-20260816-0006', parentRollNo: 'R-20260812-0002', product: 'Toilet Tissue', gsm: 18, size: 30, ply: 2, weight: 138, joint: 0, status: 'IN_STOCK', qcGrade: 'A', productionDate: '2026-08-16 11:40', dia: 100 },
+  { reelNo: 'R-20260816-0007', parentRollNo: 'R-20260812-0003', product: 'Towel Tissue', gsm: 22, size: 35, ply: 1, weight: 180, joint: 0, status: 'IN_STOCK', qcGrade: 'A', productionDate: '2026-08-16 12:00', dia: 100 },
+  { reelNo: 'R-20260816-0008', parentRollNo: 'R-20260812-0003', product: 'Towel Tissue', gsm: 22, size: 35, ply: 1, weight: 175, joint: 0, status: 'IN_STOCK', qcGrade: 'A', productionDate: '2026-08-16 12:30', dia: 100 },
+  { reelNo: 'R-20260816-0009', parentRollNo: 'R-20260812-0003', product: 'Towel Tissue', gsm: 22, size: 35, ply: 1, weight: 178, joint: 0, status: 'IN_STOCK', qcGrade: 'A', productionDate: '2026-08-16 13:00', dia: 100 },
+  { reelNo: 'R-20260816-0010', parentRollNo: 'R-20260812-0004', product: 'Facial Tissue', gsm: 14, size: 28, ply: 2, weight: 110, joint: 0, status: 'QC_PENDING', qcGrade: 'PENDING', productionDate: '2026-08-16 14:00', dia: 100 },
+];
+
 export function getReels(): Reel[] {
-  return getJSON<Reel[]>(KEYS.REELS, []);
+  const existing = getJSON<Reel[]>(KEYS.REELS, []);
+  if (!existing || existing.length === 0) {
+    setJSON(KEYS.REELS, DEFAULT_REELS);
+    return DEFAULT_REELS;
+  }
+  return existing;
 }
 
 export function saveReelsFromRoll(
@@ -1413,6 +1500,8 @@ export function deleteVehicle(id: string): void {
 // --- LAB QUALITY REPORTS ---
 export function getLabReports(): PaperTestReport[] {
   const reports = getJSON<PaperTestReport[]>(KEYS.LAB_REPORTS, []);
+  let updated = false;
+
   if (reports.length === 0) {
     // Default seed matching Sahab Paper Limited Paper Test Report (Roll No 11, Napkin)
     const defaultReport: PaperTestReport = {
@@ -1450,8 +1539,94 @@ export function getLabReports(): PaperTestReport[] {
       inspector: 'lab_operator',
       timestamp: '2026-08-03 07:55',
     };
-    setJSON(KEYS.LAB_REPORTS, [defaultReport]);
-    return [defaultReport];
+    reports.push(defaultReport);
+    updated = true;
+  }
+
+  // Ensure certified Grade-A Lab Quality Control Report for roll #R-20260812-0001 exists
+  if (!reports.some(r => r.rollNo === 'R-20260812-0001')) {
+    const rollReport1: PaperTestReport = {
+      id: 'PTR-20260812-R-20260812-0001',
+      product: 'NAPKIN TISSUE',
+      rollNo: 'R-20260812-0001',
+      shift: 'A',
+      date: '2026-08-12',
+      time: '07:30',
+      targetGsm: 16,
+      weight: 4500,
+      speed: 135,
+      crepingPct: 18.00,
+      gsmSamples: [15.9, 16.1, 16.0, 16.2, 15.8, 16.1, 16.0, 16.3, 15.9, 16.0, 16.1, 16.0, 15.9, 16.1],
+      avgGsm: 16.0,
+      maxGsm: 16.3,
+      minGsm: 15.8,
+      rangeGsm: 0.50,
+      breakageCount: 0,
+      labResultGsm: 16.0,
+      moisturePct: 5.40,
+      caliperMm: 82,
+      bulkCcGm: 4.85,
+      breakingLengthMd: 1.880,
+      breakingLengthCd: 0.710,
+      brightnessPct: 82.5,
+      tearMd: 8.20,
+      tearCd: 1.85,
+      tensileDryMd: 305.50,
+      tensileDryCd: 115.20,
+      stretchDryMd: 2.75,
+      stretchDryCd: 1.65,
+      qcStatus: 'GRADE_A',
+      remarks: 'Sample passed all physical strength, moisture & 16 GSM quality benchmarks with Grade-A clearance.',
+      inspector: 'Lab Quality Specialist',
+      timestamp: '2026-08-12 07:45',
+    };
+    reports.unshift(rollReport1);
+    updated = true;
+  }
+
+  // Ensure certified Grade-A Lab Quality Control Report for roll #R-20260812-0002 exists
+  if (!reports.some(r => r.rollNo === 'R-20260812-0002')) {
+    const rollReport: PaperTestReport = {
+      id: 'PTR-20260812-R-20260812-0002',
+      product: 'NAPKIN TISSUE',
+      rollNo: 'R-20260812-0002',
+      shift: 'A',
+      date: '2026-08-12',
+      time: '08:30',
+      targetGsm: 18,
+      weight: 5000,
+      speed: 140,
+      crepingPct: 18.50,
+      gsmSamples: [17.9, 18.1, 18.0, 18.2, 17.8, 18.1, 18.0, 18.3, 17.9, 18.0, 18.1, 18.0, 17.9, 18.1],
+      avgGsm: 18.0,
+      maxGsm: 18.3,
+      minGsm: 17.8,
+      rangeGsm: 0.50,
+      breakageCount: 0,
+      labResultGsm: 18.0,
+      moisturePct: 5.40,
+      caliperMm: 82,
+      bulkCcGm: 4.90,
+      breakingLengthMd: 1.910,
+      breakingLengthCd: 0.725,
+      brightnessPct: 82.5,
+      tearMd: 8.20,
+      tearCd: 1.85,
+      tensileDryMd: 310.50,
+      tensileDryCd: 118.20,
+      stretchDryMd: 2.80,
+      stretchDryCd: 1.65,
+      qcStatus: 'GRADE_A',
+      remarks: 'Sample passed all physical strength, moisture & 18 GSM quality benchmarks with Grade-A clearance.',
+      inspector: 'Lab Quality Specialist',
+      timestamp: '2026-08-12 08:45',
+    };
+    reports.unshift(rollReport);
+    updated = true;
+  }
+
+  if (updated) {
+    setJSON(KEYS.LAB_REPORTS, reports);
   }
   return reports;
 }
