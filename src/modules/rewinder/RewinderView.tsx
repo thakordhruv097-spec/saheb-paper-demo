@@ -693,7 +693,7 @@ export const RewinderView: React.FC = () => {
           </div>
         </div>
 
-        {/* Distinct Grouped Cut Batches View (Matching Screenshot 3) */}
+        {/* Distinct Grouped Cut Batches View (Matching Reference UI) */}
         {groupedBatches.length === 0 ? (
           <div className="p-8 text-center text-slate-400 font-medium bg-slate-50 dark:bg-slate-900/40 rounded-2xl border border-slate-200 dark:border-slate-800">
             No rewinder reels recorded matching filter. Click &quot;+ Add Reel Entry&quot; to log finished reels.
@@ -702,7 +702,7 @@ export const RewinderView: React.FC = () => {
           <div className="space-y-6">
             {groupedBatches.map(batch => (
               <div key={batch.batchId} className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl overflow-hidden shadow-xs space-y-0">
-                {/* Batch Header Bar (Matching Screenshot 3) */}
+                {/* Batch Header Bar */}
                 <div className="bg-slate-50/90 dark:bg-slate-800/80 p-3.5 sm:p-4 border-b border-slate-200 dark:border-slate-700/80 flex flex-wrap items-center justify-between gap-3">
                   <div className="flex flex-wrap items-center gap-3">
                     <div className="px-3 py-1 rounded-full bg-blue-100 dark:bg-blue-900/40 border border-blue-200 dark:border-blue-700/60 text-blue-700 dark:text-blue-300 text-xs font-black font-mono flex items-center gap-1.5">
