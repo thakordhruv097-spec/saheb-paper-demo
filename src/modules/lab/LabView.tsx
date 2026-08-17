@@ -6,6 +6,7 @@ import type { PaperTestReport } from '../../data/types';
 import { printPaperTestReport } from '../../utils/labPdfGenerator';
 import { CustomDatePickerModal } from '../../components/CustomDatePickerModal';
 import { DataFilterBar } from '../../components/DataFilterBar';
+import { COMPANY_CONFIG } from '../../config/company';
 import {
   Beaker,
   Plus,
@@ -228,7 +229,7 @@ export const LabView: React.FC = () => {
           </div>
           <div>
             <h2 className="text-base font-black text-slate-900 dark:text-white uppercase tracking-wider font-heading">
-              Sahab Paper Limited — Quality Control Laboratory
+              {COMPANY_CONFIG.name} — Quality Control Laboratory
             </h2>
             <p className="text-xs text-slate-500 dark:text-slate-400 font-medium tracking-tight">
               Log paper test reports, 14-sample GSM profiles, tensile/tear strength & generate official COA certificates.
@@ -323,7 +324,7 @@ export const LabView: React.FC = () => {
               Paper Test Reports History Ledger
             </h3>
             <p className="text-xs text-slate-500 dark:text-slate-400 font-medium mt-0.5">
-              Sahab Paper Limited physical quality testing records & Certificate of Analysis (COA)
+              {COMPANY_CONFIG.name} physical quality testing records & Certificate of Analysis (COA)
             </p>
           </div>
 
@@ -453,7 +454,7 @@ export const LabView: React.FC = () => {
               <div className="flex items-center gap-2">
                 <Beaker className="h-5 w-5 text-purple-600 dark:text-purple-400" />
                 <h3 className="text-sm font-black text-slate-900 dark:text-white uppercase tracking-wider font-heading">
-                  SAHAB PAPER LIMITED — PAPER TEST REPORT ENTRY
+                  {COMPANY_CONFIG.name} — PAPER TEST REPORT ENTRY
                 </h3>
               </div>
               <button onClick={() => setIsModalOpen(false)} className="text-slate-400 hover:text-slate-600 dark:hover:text-white cursor-pointer p-1 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800">

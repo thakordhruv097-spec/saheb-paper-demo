@@ -1,4 +1,5 @@
 import type { PaperTestReport } from '../data/types';
+import { COMPANY_CONFIG } from '../config/company';
 
 export function printPaperTestReport(report: PaperTestReport): void {
   const printWindow = window.open('', '_blank');
@@ -12,7 +13,7 @@ export function printPaperTestReport(report: PaperTestReport): void {
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>Paper Test Report - ${report.rollNo} - Sahab Paper Limited</title>
+  <title>Paper Test Report - ${report.rollNo} - ${COMPANY_CONFIG.name}</title>
   <style>
     @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap');
 
@@ -207,8 +208,14 @@ export function printPaperTestReport(report: PaperTestReport): void {
   <div class="report-container">
     <!-- Header -->
     <div class="header">
-      <h1 class="company-name">SAHAB PAPER LIMITED</h1>
-      <h2 class="report-title">PAPER TEST REPORT</h2>
+      <h1 class="company-name">${COMPANY_CONFIG.name}</h1>
+      <div style="font-size: 11px; font-weight: 800; color: #1e3a8a; text-transform: uppercase; letter-spacing: 1px; margin-top: 2px;">
+        ${COMPANY_CONFIG.tagline}
+      </div>
+      <div style="font-size: 9.5px; font-weight: 600; color: #475569; margin-top: 2px;">
+        ${COMPANY_CONFIG.address} | Ph: ${COMPANY_CONFIG.phone} | ${COMPANY_CONFIG.email} | ${COMPANY_CONFIG.website}
+      </div>
+      <h2 class="report-title">PAPER TEST REPORT (COA)</h2>
     </div>
 
     <!-- Metadata Top Table -->
@@ -403,6 +410,11 @@ export function printPaperTestReport(report: PaperTestReport): void {
       <div class="sig-line">Lab Chemist / Inspector<br/><span style="font-size: 9.5px; font-weight: 500; color: #64748b;">${report.inspector}</span></div>
       <div class="sig-line">Quality Control Manager</div>
       <div class="sig-line">Plant Head / Manager</div>
+    </div>
+
+    <!-- Company Footer -->
+    <div style="text-align: center; font-size: 9px; font-weight: 600; color: #64748b; margin-top: 14px; border-top: 1px solid #cbd5e1; padding-top: 6px;">
+      ${COMPANY_CONFIG.name} &bull; ${COMPANY_CONFIG.shortAddress} &bull; Ph: ${COMPANY_CONFIG.phone} &bull; ${COMPANY_CONFIG.website}
     </div>
   </div>
 </body>

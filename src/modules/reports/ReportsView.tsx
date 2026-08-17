@@ -12,6 +12,7 @@ import {
 import { CustomDatePickerModal } from '../../components/CustomDatePickerModal';
 import { useDateFilter } from '../../context/DateFilterContext';
 import * as XLSX from 'xlsx';
+import { COMPANY_CONFIG } from '../../config/company';
 import {
   FileSpreadsheet,
   Printer,
@@ -526,6 +527,18 @@ export const ReportsView: React.FC = () => {
 
   return (
     <div className="space-y-6">
+      {/* Printable Report Header (Visible only in Print / PDF export) */}
+      <div className="hidden print:block border-b-2 border-slate-900 pb-3 mb-4 text-left">
+        <h1 className="text-xl font-black text-slate-950 uppercase font-heading">{COMPANY_CONFIG.name}</h1>
+        <p className="text-xs font-bold text-blue-800 uppercase">{COMPANY_CONFIG.tagline}</p>
+        <p className="text-[9px] text-slate-600 font-medium mt-0.5">
+          {COMPANY_CONFIG.address} | Ph: {COMPANY_CONFIG.phone} | {COMPANY_CONFIG.email} | {COMPANY_CONFIG.website}
+        </p>
+        <div className="mt-2 text-xs font-bold uppercase tracking-wider text-slate-800 border-t border-slate-200 pt-1">
+          MILL REPORTS & ANALYTICS SUMMARY &bull; Generated on {new Date().toLocaleDateString('en-GB')}
+        </div>
+      </div>
+
       {/* 1. Compact Executive Gradient Hero Header Banner */}
       <div className="bg-gradient-to-r from-blue-600 via-indigo-600 to-blue-900 text-white rounded-3xl py-4 px-6 md:py-4.5 md:px-7 shadow-xl shadow-blue-600/10 border border-blue-500/20 flex flex-col md:flex-row md:items-center justify-between gap-4 overflow-hidden relative">
         {/* Background Subtle Accent Glow */}
@@ -1254,6 +1267,12 @@ export const ReportsView: React.FC = () => {
           )}
 
         </div>
+      </div>
+
+      {/* Printable Report Footer (Visible only in Print / PDF export) */}
+      <div className="hidden print:flex justify-between items-center text-[9px] text-slate-600 font-semibold border-t border-slate-300 pt-2 mt-6">
+        <span>{COMPANY_CONFIG.name} &bull; {COMPANY_CONFIG.shortAddress} &bull; Ph: {COMPANY_CONFIG.phone} &bull; {COMPANY_CONFIG.website}</span>
+        <span>Generated: {new Date().toLocaleDateString('en-GB')}</span>
       </div>
     </div>
   );

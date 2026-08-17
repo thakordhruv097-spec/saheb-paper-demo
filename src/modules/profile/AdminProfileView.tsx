@@ -15,10 +15,12 @@ import {
   Eye,
   EyeOff,
   Edit3,
-  ShieldAlert
+  ShieldAlert,
+  Building2
 } from 'lucide-react';
 import UserManagementView from '../admin/UserManagementView';
 import RoleManagementView from './RoleManagementView';
+import { COMPANY_CONFIG } from '../../config/company';
 
 interface AdminProfileViewProps {
   defaultTab?: 'profile' | 'roles' | 'users';
@@ -236,6 +238,45 @@ export const AdminProfileView: React.FC<AdminProfileViewProps> = ({ defaultTab }
                   </p>
                 </div>
 
+              </div>
+
+              {/* Official Mill & Enterprise Configuration */}
+              <div className="p-4 rounded-2xl bg-gradient-to-br from-blue-50/60 to-indigo-50/60 dark:from-slate-900/80 dark:to-blue-950/40 border border-blue-200/80 dark:border-blue-900/50 space-y-3">
+                <div className="flex items-center justify-between border-b border-blue-200/60 dark:border-blue-800/60 pb-2">
+                  <div className="flex items-center gap-2">
+                    <Building2 className="h-4 w-4 text-primary dark:text-blue-400" />
+                    <span className="text-xs font-black text-slate-900 dark:text-white uppercase tracking-wider font-heading">
+                      {COMPANY_CONFIG.name}
+                    </span>
+                  </div>
+                  <span className="px-2 py-0.5 rounded-full text-[9px] font-black uppercase tracking-wider bg-blue-100 dark:bg-blue-950 text-primary dark:text-blue-300">
+                    Official Mill Registry
+                  </span>
+                </div>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
+                  <div>
+                    <span className="text-[10px] font-bold uppercase text-slate-400 block">Tagline</span>
+                    <span className="font-extrabold text-primary dark:text-blue-400">{COMPANY_CONFIG.tagline}</span>
+                  </div>
+                  <div>
+                    <span className="text-[10px] font-bold uppercase text-slate-400 block">Phone / WhatsApp</span>
+                    <span className="font-mono font-bold text-slate-800 dark:text-slate-200">{COMPANY_CONFIG.phone}</span>
+                  </div>
+                  <div>
+                    <span className="text-[10px] font-bold uppercase text-slate-400 block">Email Address</span>
+                    <span className="font-semibold text-slate-800 dark:text-slate-200">{COMPANY_CONFIG.email}</span>
+                  </div>
+                  <div>
+                    <span className="text-[10px] font-bold uppercase text-slate-400 block">Official Website</span>
+                    <a href={COMPANY_CONFIG.websiteUrl} target="_blank" rel="noreferrer" className="text-primary hover:underline font-bold">
+                      {COMPANY_CONFIG.website}
+                    </a>
+                  </div>
+                  <div className="sm:col-span-2">
+                    <span className="text-[10px] font-bold uppercase text-slate-400 block">Registered Plant Address</span>
+                    <span className="font-medium text-slate-700 dark:text-slate-300">{COMPANY_CONFIG.address}</span>
+                  </div>
+                </div>
               </div>
 
               <div className="pt-4 border-t border-slate-100 dark:border-slate-800 flex flex-col gap-3">

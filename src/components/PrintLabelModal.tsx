@@ -16,6 +16,7 @@ import {
 } from 'lucide-react';
 import { getReels, getProducts } from '../data/index';
 import type { Reel } from '../data/types';
+import { COMPANY_CONFIG } from '../config/company';
 
 interface PrintLabelModalProps {
   isOpen: boolean;
@@ -41,8 +42,8 @@ export const PrintLabelModal: React.FC<PrintLabelModalProps> = ({
   const buildInitialData = (reel?: Reel | null, code?: string) => {
     if (reel) {
       return {
-        title: 'SAHEB PAPER PVT. LTD.',
-        subtitle: 'Plant: Unit-1, Sachin GIDC, Surat',
+        title: COMPANY_CONFIG.name,
+        subtitle: COMPANY_CONFIG.tagline,
         code: reel.reelNo,
         qrValue: reel.reelNo,
         product: reel.product || 'Tissue Paper Reel',
@@ -66,8 +67,8 @@ export const PrintLabelModal: React.FC<PrintLabelModalProps> = ({
     }
     const targetCode = code || 'RL-1049';
     return {
-      title: 'SAHEB PAPER PVT. LTD.',
-      subtitle: 'Plant: Unit-1, Sachin GIDC, Surat',
+      title: COMPANY_CONFIG.name,
+      subtitle: COMPANY_CONFIG.tagline,
       code: targetCode,
       qrValue: targetCode,
       product: 'Napkin Tissue (Virgin Pulp)',
@@ -496,11 +497,18 @@ export const PrintLabelModal: React.FC<PrintLabelModalProps> = ({
                 </span>
               </div>
 
-              {/* Manufacturing & Plant Footer */}
-              <div className="flex items-center justify-between text-[8px] font-bold text-slate-600 border-t border-slate-300 pt-1.5">
+              {/* Manufacturing & Plant Info */}
+              <div className="flex items-center justify-between text-[8px] font-bold text-slate-600 border-t border-slate-300 pt-1">
                 <span>Date: {formData.date}</span>
                 <span>{formData.shift}</span>
                 <span>{formData.machine}</span>
+              </div>
+
+              {/* Physical Product Label Bottom Structure: Address, Phone, Email, Website */}
+              <div className="border-t border-slate-200 mt-1 pt-1 text-center text-[7.5px] leading-tight text-slate-600">
+                <div className="font-extrabold text-slate-900">{COMPANY_CONFIG.name}</div>
+                <div>{COMPANY_CONFIG.address}</div>
+                <div className="font-semibold text-slate-700">Ph: {COMPANY_CONFIG.phone} &bull; {COMPANY_CONFIG.email} &bull; {COMPANY_CONFIG.website}</div>
               </div>
             </div>
 

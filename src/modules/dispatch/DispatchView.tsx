@@ -16,6 +16,7 @@ import {
 import type { PackingSlip, Reel, PendingOrder } from '../../data/types';
 import * as XLSX from 'xlsx';
 import { CustomDatePickerModal } from '../../components/CustomDatePickerModal';
+import { COMPANY_CONFIG } from '../../config/company';
 import {
   Truck,
   Plus,
@@ -476,7 +477,10 @@ export const DispatchView: React.FC<DispatchViewProps> = ({ initialTab = 'orders
     
     // Add Metadata header rows
     XLSX.utils.sheet_add_aoa(worksheet, [
-      ["SAHEB PAPER PVT. LTD. - DELIVERY CHALLAN RECEIPT"],
+      [`${COMPANY_CONFIG.name} - DELIVERY CHALLAN RECEIPT`],
+      [`Tagline: ${COMPANY_CONFIG.tagline}`],
+      [`Address: ${COMPANY_CONFIG.address}`],
+      [`Phone: ${COMPANY_CONFIG.phone}`, `Email: ${COMPANY_CONFIG.email}`, `Website: ${COMPANY_CONFIG.website}`],
       [`Challan No: ${slip.slipNo}`, `Date: ${slip.date}`],
       [`Customer: ${partyObj?.name || 'N/A'}`, `Vehicle No: ${vehicleObj?.vehicleNo || 'N/A'}`],
       [`Driver: ${slip.driverSignature}`, `Receiver: ${slip.receiverSignature}`],
@@ -2239,14 +2243,17 @@ export const DispatchView: React.FC<DispatchViewProps> = ({ initialTab = 'orders
                         <>
                           <div className="border-b-2 border-black pb-2 mb-3 text-left flex justify-between items-start">
                             <div>
-                              <h1 className="text-xl sm:text-2xl font-black tracking-tight text-black uppercase leading-tight">
-                                SAHEB PAPER PVT. LTD.
+                              <h1 className="text-xl sm:text-2xl font-black tracking-tight text-black uppercase leading-tight font-heading">
+                                {COMPANY_CONFIG.name}
                               </h1>
-                              <p className="text-[10px] sm:text-[11px] font-bold text-slate-700 uppercase tracking-[0.18em]">
-                                FINISHED STOCK MANAGEMENT &bull; TISSUE PAPER MILL
+                              <p className="text-[10px] sm:text-[11px] font-extrabold text-blue-700 uppercase tracking-wider">
+                                {COMPANY_CONFIG.tagline}
+                              </p>
+                              <p className="text-[9px] font-semibold text-slate-700 tracking-tight mt-0.5">
+                                {COMPANY_CONFIG.address} &bull; Ph: {COMPANY_CONFIG.phone} &bull; {COMPANY_CONFIG.email} &bull; {COMPANY_CONFIG.website}
                               </p>
                             </div>
-                            <div className="text-right">
+                            <div className="text-right shrink-0">
                               <span className="text-[10px] font-mono font-black text-slate-600 uppercase border border-slate-300 px-2 py-0.5 rounded bg-slate-50">
                                 Page {pageNumber} of {totalPages}
                               </span>
@@ -2304,8 +2311,8 @@ export const DispatchView: React.FC<DispatchViewProps> = ({ initialTab = 'orders
                         /* Compact Continuation Header for Page 2+ */
                         <div className="border-b-2 border-black pb-2 mb-3.5 text-left flex justify-between items-center">
                           <div className="flex items-center gap-2">
-                            <h1 className="text-base sm:text-lg font-black tracking-tight text-black uppercase leading-tight">
-                              SAHEB PAPER PVT. LTD.
+                            <h1 className="text-base sm:text-lg font-black tracking-tight text-black uppercase leading-tight font-heading">
+                              {COMPANY_CONFIG.name}
                             </h1>
                             <span className="text-[9px] font-black uppercase text-slate-700 bg-slate-100 px-2 py-0.5 rounded border border-slate-300">
                               DISPATCH RECEIPT (CONTD.)
@@ -2446,8 +2453,8 @@ export const DispatchView: React.FC<DispatchViewProps> = ({ initialTab = 'orders
                       )}
 
                       {/* 7. Footer Caption with Page Count */}
-                      <div className="text-center text-[10px] font-semibold text-slate-500 pt-2 border-t border-slate-200 flex justify-between items-center">
-                        <span>Generated on {viewingSlip.date || new Date().toLocaleDateString('en-GB')} &bull; Saheb Paper Pvt. Ltd.</span>
+                      <div className="text-center text-[9px] font-semibold text-slate-600 pt-2 border-t border-slate-200 flex justify-between items-center">
+                        <span>{COMPANY_CONFIG.name} &bull; {COMPANY_CONFIG.shortAddress} &bull; Ph: {COMPANY_CONFIG.phone} &bull; {COMPANY_CONFIG.website}</span>
                         <span className="font-mono font-bold">Page {pageNumber} of {totalPages}</span>
                       </div>
                     </div>

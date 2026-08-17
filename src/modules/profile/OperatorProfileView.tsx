@@ -2,8 +2,9 @@ import React, { useState, useEffect } from 'react';
 import { useLocation } from 'react-router-dom';
 import { useAuth } from '../auth/AuthContext';
 import { useTranslation } from 'react-i18next';
-import { User, Edit3, ShieldCheck, Mail, Phone, Lock, HelpCircle, CheckCircle2, Eye, EyeOff, X, KeyRound, Sparkles, LogOut, ShieldAlert } from 'lucide-react';
+import { User, Edit3, ShieldCheck, Mail, Phone, Lock, HelpCircle, CheckCircle2, Eye, EyeOff, X, KeyRound, Sparkles, LogOut, ShieldAlert, Building2 } from 'lucide-react';
 import RoleManagementView from './RoleManagementView';
+import { COMPANY_CONFIG } from '../../config/company';
 
 interface OperatorProfileViewProps {
   defaultTab?: 'profile' | 'roles';
@@ -233,6 +234,45 @@ export const OperatorProfileView: React.FC<OperatorProfileViewProps> = ({ defaul
               <p className="text-sm font-bold font-mono text-slate-900 dark:text-white">
                 {user.phone || <span className="text-slate-400 italic font-normal">Not configured</span>}
               </p>
+            </div>
+
+            {/* Official Enterprise / Mill Information */}
+            <div className="p-4 rounded-2xl bg-gradient-to-br from-blue-50/60 to-indigo-50/60 dark:from-slate-900/80 dark:to-blue-950/40 border border-blue-200/80 dark:border-blue-900/50 space-y-3">
+              <div className="flex items-center justify-between border-b border-blue-200/60 dark:border-blue-800/60 pb-2">
+                <div className="flex items-center gap-2">
+                  <Building2 className="h-4 w-4 text-primary dark:text-blue-400" />
+                  <span className="text-xs font-black text-slate-900 dark:text-white uppercase tracking-wider font-heading">
+                    {COMPANY_CONFIG.name}
+                  </span>
+                </div>
+                <span className="px-2 py-0.5 rounded-full text-[9px] font-black uppercase tracking-wider bg-blue-100 dark:bg-blue-950 text-primary dark:text-blue-300">
+                  Mill Registry
+                </span>
+              </div>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
+                <div>
+                  <span className="text-[10px] font-bold uppercase text-slate-400 block">Tagline</span>
+                  <span className="font-extrabold text-primary dark:text-blue-400">{COMPANY_CONFIG.tagline}</span>
+                </div>
+                <div>
+                  <span className="text-[10px] font-bold uppercase text-slate-400 block">Contact Desk</span>
+                  <span className="font-mono font-bold text-slate-800 dark:text-slate-200">{COMPANY_CONFIG.phone}</span>
+                </div>
+                <div>
+                  <span className="text-[10px] font-bold uppercase text-slate-400 block">Email Address</span>
+                  <span className="font-semibold text-slate-800 dark:text-slate-200">{COMPANY_CONFIG.email}</span>
+                </div>
+                <div>
+                  <span className="text-[10px] font-bold uppercase text-slate-400 block">Official Portal</span>
+                  <a href={COMPANY_CONFIG.websiteUrl} target="_blank" rel="noreferrer" className="text-primary hover:underline font-bold">
+                    {COMPANY_CONFIG.website}
+                  </a>
+                </div>
+                <div className="sm:col-span-2">
+                  <span className="text-[10px] font-bold uppercase text-slate-400 block">Plant Location</span>
+                  <span className="font-medium text-slate-700 dark:text-slate-300">{COMPANY_CONFIG.address}</span>
+                </div>
+              </div>
             </div>
 
           </div>

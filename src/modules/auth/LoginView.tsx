@@ -4,6 +4,7 @@ import { useAuth } from './AuthContext';
 import { useTranslation } from 'react-i18next';
 import { getUsers, updateRawUserPin } from '../../data/index';
 import { Eye, EyeOff, ShieldAlert } from 'lucide-react';
+import { COMPANY_CONFIG } from '../../config/company';
 
 export const LoginView: React.FC = () => {
   const { login, resetPin } = useAuth();
@@ -185,14 +186,14 @@ export const LoginView: React.FC = () => {
         {/* Title & Subtitle with Official Logo */}
         <div className="flex items-center justify-between mb-3.5 sm:mb-4 md:mb-5 border-b border-slate-100 pb-2.5 sm:pb-3 md:pb-4">
           <div>
-            <h2 className="text-xl sm:text-2xl md:text-3xl font-extrabold text-[#1E293B] tracking-tight">
-              Login
+            <h2 className="text-lg sm:text-xl md:text-2xl font-black text-[#1E293B] tracking-tight">
+              {COMPANY_CONFIG.name}
             </h2>
-            <p className="text-[11px] sm:text-xs text-slate-400 font-medium mt-0.5">
-              Welcome to Saheb Paper ERP
+            <p className="text-[11px] sm:text-xs text-primary font-extrabold tracking-wide mt-0.5">
+              {COMPANY_CONFIG.tagline}
             </p>
           </div>
-          <img src="/logo.png" alt="Saheb Paper Logo" className="h-8 w-8 sm:h-10 sm:w-10 md:h-11 md:w-11 object-contain rounded-xl shadow-xs border border-slate-200/80 bg-white p-0.5" />
+          <img src="/logo.png" alt={`${COMPANY_CONFIG.shortName} Logo`} className="h-8 w-8 sm:h-10 sm:w-10 md:h-11 md:w-11 object-contain rounded-xl shadow-xs border border-slate-200/80 bg-white p-0.5 shrink-0" />
         </div>
 
         {/* 1. Login Mode */}
@@ -583,6 +584,20 @@ export const LoginView: React.FC = () => {
             </div>
           </form>
         )}
+
+        {/* Company Verified Contact & Address Footer */}
+        <div className="mt-4 pt-3 border-t border-slate-100 text-center space-y-1">
+          <p className="text-[10px] text-slate-500 font-medium leading-tight">
+            {COMPANY_CONFIG.shortAddress}
+          </p>
+          <div className="flex items-center justify-center gap-2.5 text-[10px] text-slate-500 font-semibold">
+            <span>Ph: {COMPANY_CONFIG.phone}</span>
+            <span>•</span>
+            <a href={COMPANY_CONFIG.websiteUrl} target="_blank" rel="noreferrer" className="text-primary hover:underline font-bold">
+              {COMPANY_CONFIG.website}
+            </a>
+          </div>
+        </div>
 
       </div>
     </div>

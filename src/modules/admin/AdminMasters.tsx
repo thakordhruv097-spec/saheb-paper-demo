@@ -38,8 +38,9 @@ import type {
   UserRole,
 } from '../../data/types';
 import * as XLSX from 'xlsx';
-import { Settings, Plus, Users, Truck, ShoppingBag, Database, ShieldAlert, FileSpreadsheet, Download, Upload, Search, RotateCw, MoreVertical, Trash2, CheckCircle2, Pencil, Eye, X, ListFilter, Boxes } from 'lucide-react';
+import { Settings, Plus, Users, Truck, ShoppingBag, Database, ShieldAlert, FileSpreadsheet, Download, Upload, Search, RotateCw, MoreVertical, Trash2, CheckCircle2, Pencil, Eye, X, ListFilter, Boxes, Building2 } from 'lucide-react';
 import { RoleManagementView } from '../profile/RoleManagementView';
+import { COMPANY_CONFIG } from '../../config/company';
 
 export const AdminMasters: React.FC = () => {
   const { t } = useTranslation();
@@ -1949,6 +1950,49 @@ export const AdminMasters: React.FC = () => {
             {/* Backup / Restore Controls */}
             {activeTab === 'backup' && (
               <div className="space-y-6">
+                {/* 0. Official Company Identity Card */}
+                <div className="bg-gradient-to-br from-blue-50/70 via-indigo-50/40 to-slate-50 dark:from-slate-900/90 dark:via-blue-950/40 dark:to-slate-900 border border-blue-200/80 dark:border-blue-900/60 rounded-3xl p-6 space-y-4">
+                  <div className="flex items-center justify-between border-b border-blue-200/60 dark:border-blue-800/60 pb-3">
+                    <div className="flex items-center gap-3">
+                      <div className="p-2.5 rounded-2xl bg-blue-600 text-white shadow-md shadow-blue-500/20">
+                        <Building2 className="h-5 w-5" />
+                      </div>
+                      <div>
+                        <h4 className="text-sm font-black text-slate-900 dark:text-white uppercase tracking-wider font-heading">
+                          {COMPANY_CONFIG.name}
+                        </h4>
+                        <p className="text-xs font-bold text-primary dark:text-blue-400">
+                          {COMPANY_CONFIG.tagline}
+                        </p>
+                      </div>
+                    </div>
+                    <span className="px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-wider bg-emerald-100 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300 border border-emerald-300/40">
+                      Verified Enterprise
+                    </span>
+                  </div>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 text-xs">
+                    <div className="p-3 bg-white/80 dark:bg-slate-800/70 rounded-2xl border border-slate-200/60 dark:border-slate-700/60">
+                      <span className="text-[10px] font-bold uppercase text-slate-400 block mb-0.5">Phone / WhatsApp</span>
+                      <span className="font-mono font-bold text-slate-800 dark:text-white">{COMPANY_CONFIG.phone}</span>
+                    </div>
+                    <div className="p-3 bg-white/80 dark:bg-slate-800/70 rounded-2xl border border-slate-200/60 dark:border-slate-700/60">
+                      <span className="text-[10px] font-bold uppercase text-slate-400 block mb-0.5">Email Address</span>
+                      <span className="font-semibold text-slate-800 dark:text-white">{COMPANY_CONFIG.email}</span>
+                    </div>
+                    <div className="p-3 bg-white/80 dark:bg-slate-800/70 rounded-2xl border border-slate-200/60 dark:border-slate-700/60">
+                      <span className="text-[10px] font-bold uppercase text-slate-400 block mb-0.5">Official Website</span>
+                      <a href={COMPANY_CONFIG.websiteUrl} target="_blank" rel="noreferrer" className="text-primary hover:underline font-bold">
+                        {COMPANY_CONFIG.website}
+                      </a>
+                    </div>
+                    <div className="p-3 bg-white/80 dark:bg-slate-800/70 rounded-2xl border border-slate-200/60 dark:border-slate-700/60 sm:col-span-2 md:col-span-3">
+                      <span className="text-[10px] font-bold uppercase text-slate-400 block mb-0.5">Physical Plant & Registered Office Address</span>
+                      <span className="font-medium text-slate-700 dark:text-slate-200">{COMPANY_CONFIG.address}</span>
+                    </div>
+                  </div>
+                </div>
+
                 {/* 1. Export Card */}
                 <div className="bg-slate-50 dark:bg-slate-900/60 border border-slate-200 dark:border-slate-800 rounded-3xl p-6 space-y-3">
                   <div className="flex items-center gap-3">
