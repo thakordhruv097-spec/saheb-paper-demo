@@ -28,8 +28,8 @@ import {
   Gauge,
   X,
 } from 'lucide-react';
-
 import { WorkflowStepBadge, WORKFLOW_STEPS } from '../../components/WorkflowStepBadge';
+import { useBodyScrollLock } from '../../hooks/useBodyScrollLock';
 
 export const LabView: React.FC = () => {
   const { user } = useAuth();
@@ -39,6 +39,8 @@ export const LabView: React.FC = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedReportForView, setSelectedReportForView] = useState<PaperTestReport | null>(null);
+
+  useBodyScrollLock(isModalOpen || !!selectedReportForView);
 
   // Filter states for lab reports history
   const [labDateFrom, setLabDateFrom] = useState('');
@@ -459,8 +461,16 @@ export const LabView: React.FC = () => {
 
       {/* Interactive Paper Test Report Creation Modal */}
       {isModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs animate-in fade-in">
-          <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700/80 rounded-3xl w-full max-w-4xl shadow-2xl flex flex-col max-h-[90vh] overflow-hidden">
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs animate-in fade-in overflow-y-auto overscroll-contain"
+          onClick={(e) => {
+            if (e.target === e.currentTarget) setIsModalOpen(false);
+          }}
+        >
+          <div
+            className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700/80 rounded-3xl w-full max-w-4xl shadow-2xl flex flex-col max-h-[90vh] overflow-hidden"
+            onClick={(e) => e.stopPropagation()}
+          >
             
             {/* Fixed Modal Header */}
             <div className="flex items-center justify-between p-5 border-b border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shrink-0">

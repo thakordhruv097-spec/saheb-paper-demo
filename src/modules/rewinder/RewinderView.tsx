@@ -26,6 +26,7 @@ import {
 } from 'lucide-react';
 
 import { WorkflowStepBadge, WORKFLOW_STEPS } from '../../components/WorkflowStepBadge';
+import { useBodyScrollLock } from '../../hooks/useBodyScrollLock';
 
 export const RewinderView: React.FC = () => {
   const { t } = useTranslation();
@@ -138,6 +139,9 @@ export const RewinderView: React.FC = () => {
   const [filterGsm, setFilterGsm] = useState<string>('ALL');
   const [filterSize, setFilterSize] = useState<string>('ALL');
   const [filterPly, setFilterPly] = useState<string>('ALL');
+
+  // Lock background scroll when any modal is open
+  useBodyScrollLock(isAddModalOpen || showQRModal || showCascadingModal);
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
   const [dateFilter, setDateFilter] = useState('all');
@@ -775,8 +779,16 @@ export const RewinderView: React.FC = () => {
 
       {/* ADD REEL ENTRY MODAL (Matching Rudra DEMO2 Screenshot + Single Outer GSM Input + 1-17 Cut Reels!) */}
       {isAddModalOpen && (
-        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-          <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl max-w-3xl w-full p-6 space-y-4 shadow-2xl text-slate-900 dark:text-white animate-in fade-in zoom-in-95 duration-150 max-h-[90vh] overflow-y-auto custom-scrollbar">
+        <div
+          className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4 overflow-y-auto overscroll-contain"
+          onClick={(e) => {
+            if (e.target === e.currentTarget) setIsAddModalOpen(false);
+          }}
+        >
+          <div
+            className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl max-w-3xl w-full p-6 space-y-4 shadow-2xl text-slate-900 dark:text-white animate-in fade-in zoom-in-95 duration-150 max-h-[90vh] overflow-y-auto custom-scrollbar"
+            onClick={(e) => e.stopPropagation()}
+          >
             {/* Modal Header */}
             <div className="flex justify-between items-center border-b border-slate-100 dark:border-slate-800 pb-3">
               <h3 className="text-base font-black text-slate-900 dark:text-white flex items-center gap-2">
@@ -1069,8 +1081,16 @@ export const RewinderView: React.FC = () => {
 
       {/* QR Code Labels printable Modal */}
       {showQRModal && recentlyGenerated.length > 0 && (
-        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-          <div className="bg-white dark:bg-slate-800 rounded-2xl max-w-2xl w-full p-6 space-y-4 shadow-2xl max-h-[85vh] overflow-y-auto print:p-0 print:shadow-none print:max-h-full">
+        <div
+          className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4 overflow-y-auto overscroll-contain"
+          onClick={(e) => {
+            if (e.target === e.currentTarget) setShowQRModal(false);
+          }}
+        >
+          <div
+            className="bg-white dark:bg-slate-800 rounded-2xl max-w-2xl w-full p-6 space-y-4 shadow-2xl max-h-[85vh] overflow-y-auto print:p-0 print:shadow-none print:max-h-full"
+            onClick={(e) => e.stopPropagation()}
+          >
             <div className="flex justify-between items-center border-b pb-3 dark:border-slate-700 print:hidden">
               <h3 className="text-base font-bold text-slate-900 dark:text-white flex items-center gap-1.5">
                 <CheckCircle className="h-5 w-5 text-emerald-500" />
@@ -1152,8 +1172,16 @@ export const RewinderView: React.FC = () => {
       )}
       {/* INVENTORY CASCADING FILTER MODAL (Matching Screenshot) */}
       {showCascadingModal && (
-        <div className="fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-          <div className="bg-[#181D35] text-white border border-[#262D4A] rounded-3xl max-w-lg w-full p-6 space-y-5 shadow-2xl animate-in fade-in zoom-in-95 duration-150 text-left">
+        <div
+          className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4 overflow-y-auto overscroll-contain"
+          onClick={(e) => {
+            if (e.target === e.currentTarget) setShowCascadingModal(false);
+          }}
+        >
+          <div
+            className="bg-white dark:bg-[#181D35] text-slate-900 dark:text-white border border-slate-200 dark:border-[#262D4A] rounded-3xl max-w-lg w-full p-6 space-y-5 shadow-2xl animate-in fade-in zoom-in-95 duration-150 text-left"
+            onClick={(e) => e.stopPropagation()}
+          >
 
             {/* Modal Header */}
             <div className="flex justify-between items-start border-b border-slate-700/60 pb-3">

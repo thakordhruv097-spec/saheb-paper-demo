@@ -32,6 +32,7 @@ import {
 } from 'lucide-react';
 import { QRCodeSVG } from 'qrcode.react';
 import { WorkflowStepBadge, WORKFLOW_STEPS } from '../../components/WorkflowStepBadge';
+import { useBodyScrollLock } from '../../hooks/useBodyScrollLock';
 
 export const RawMaterialView: React.FC = () => {
   const { user } = useAuth();
@@ -59,6 +60,8 @@ export const RawMaterialView: React.FC = () => {
   const [inwardRemarks, setInwardRemarks] = useState('');
   const [inwardSuccess, setInwardSuccess] = useState('');
   const [inwardError, setInwardError] = useState('');
+
+  useBodyScrollLock(isModalOpen || !!selectedLotForQR);
 
   // Custom Searchable Picker Dropdown States
   const [isMaterialDropdownOpen, setIsMaterialDropdownOpen] = useState(false);
@@ -457,8 +460,16 @@ export const RawMaterialView: React.FC = () => {
 
       {/* Add Inward Entry Modal */}
       {isModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs animate-in fade-in">
-          <div className="bg-white dark:bg-surface-dark border border-slate-200 dark:border-slate-700/80 rounded-3xl w-full max-w-md p-6 shadow-2xl space-y-5 relative">
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs animate-in fade-in overflow-y-auto overscroll-contain"
+          onClick={(e) => {
+            if (e.target === e.currentTarget) setIsModalOpen(false);
+          }}
+        >
+          <div
+            className="bg-white dark:bg-surface-dark border border-slate-200 dark:border-slate-700/80 rounded-3xl w-full max-w-md p-6 shadow-2xl space-y-5 relative"
+            onClick={(e) => e.stopPropagation()}
+          >
             <div className="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-3">
               <h3 className="text-sm font-bold text-slate-900 dark:text-white uppercase tracking-wider flex items-center gap-2">
                 <Plus className="h-4 w-4 text-primary" />
@@ -631,10 +642,18 @@ export const RawMaterialView: React.FC = () => {
         </div>
       )}
 
-      {/* QR Code Batch Modal */}
+      {/* QR Traceability Sticker Modal */}
       {selectedLotForQR && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs animate-in fade-in">
-          <div className="bg-white dark:bg-surface-dark border border-slate-200 dark:border-slate-700/80 rounded-3xl w-full max-w-sm p-6 shadow-2xl text-center space-y-4">
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs animate-in fade-in overflow-y-auto overscroll-contain"
+          onClick={(e) => {
+            if (e.target === e.currentTarget) setSelectedLotForQR(null);
+          }}
+        >
+          <div
+            className="bg-white dark:bg-surface-dark border border-slate-200 dark:border-slate-700/80 rounded-3xl w-full max-w-sm p-6 shadow-2xl space-y-5 relative text-center"
+            onClick={(e) => e.stopPropagation()}
+          >
             <div className="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-3">
               <h3 className="text-xs font-black text-slate-900 dark:text-white uppercase tracking-wider flex items-center gap-1.5">
                 <QrCode className="h-4 w-4 text-primary" />

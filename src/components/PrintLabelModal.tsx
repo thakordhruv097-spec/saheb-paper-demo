@@ -18,6 +18,7 @@ import { getReels, getProducts } from '../data/index';
 import type { Reel } from '../data/types';
 import { COMPANY_CONFIG } from '../config/company';
 import { CustomSearchableSelect } from './CustomSearchableSelect';
+import { useBodyScrollLock } from '../hooks/useBodyScrollLock';
 
 interface PrintLabelModalProps {
   isOpen: boolean;
@@ -34,6 +35,7 @@ export const PrintLabelModal: React.FC<PrintLabelModalProps> = ({
   initialCode,
   initialType = 'REEL',
 }) => {
+  useBodyScrollLock(isOpen);
   const stockReels = getReels();
   const productsList = getProducts();
 
@@ -133,8 +135,16 @@ export const PrintLabelModal: React.FC<PrintLabelModalProps> = ({
   };
 
   return (
-    <div className="fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-sm flex items-center justify-center p-2 sm:p-4 overflow-y-auto font-sans">
-      <div className="bg-white dark:bg-surface-dark border border-slate-200 dark:border-slate-700/80 rounded-3xl max-w-4xl w-full p-4 sm:p-6 shadow-2xl space-y-5 animate-in zoom-in-95 duration-150 my-auto text-left">
+    <div
+      className="fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-sm flex items-center justify-center p-2 sm:p-4 overflow-y-auto overscroll-contain font-sans"
+      onClick={(e) => {
+        if (e.target === e.currentTarget) onClose();
+      }}
+    >
+      <div
+        className="bg-white dark:bg-surface-dark border border-slate-200 dark:border-slate-700/80 rounded-3xl max-w-4xl w-full p-4 sm:p-6 shadow-2xl space-y-5 animate-in zoom-in-95 duration-150 my-auto text-left"
+        onClick={(e) => e.stopPropagation()}
+      >
         
         {/* Header */}
         <div className="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-3">

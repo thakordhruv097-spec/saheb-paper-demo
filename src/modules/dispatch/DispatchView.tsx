@@ -19,6 +19,7 @@ import { CustomDatePickerModal } from '../../components/CustomDatePickerModal';
 import { COMPANY_CONFIG } from '../../config/company';
 import { DataFilterBar } from '../../components/DataFilterBar';
 import { CustomSearchableSelect } from '../../components/CustomSearchableSelect';
+import { useBodyScrollLock } from '../../hooks/useBodyScrollLock';
 import {
   Truck,
   Plus,
@@ -209,6 +210,8 @@ export const DispatchView: React.FC<DispatchViewProps> = ({ initialTab = 'orders
   const [receiptPage, setReceiptPage] = useState(1);
   const [receiptGroupMode, setReceiptGroupMode] = useState<'grouped' | 'sequential'>('grouped');
   const [receiptViewMode, setReceiptViewMode] = useState<'paged' | 'continuous'>('paged');
+
+  useBodyScrollLock(!!viewingSlip);
 
   // Auto-generate slip number
   const autoSlipNo = useMemo(() => {
@@ -2167,9 +2170,15 @@ export const DispatchView: React.FC<DispatchViewProps> = ({ initialTab = 'orders
         return createPortal(
           <div
             id="printable-receipt-modal"
-            className="fixed inset-0 bg-slate-900/70 backdrop-blur-xs z-50 flex items-center justify-center p-2 sm:p-4 overflow-y-auto print:static print:block print:w-full print:h-auto print:overflow-visible print:bg-white print:p-0 print:m-0 print:z-auto"
+            className="fixed inset-0 bg-slate-900/70 backdrop-blur-xs z-50 flex items-center justify-center p-2 sm:p-4 overflow-y-auto overscroll-contain print:static print:block print:w-full print:h-auto print:overflow-visible print:bg-white print:p-0 print:m-0 print:z-auto"
+            onClick={(e) => {
+              if (e.target === e.currentTarget) setViewingSlip(null);
+            }}
           >
-            <div className="bg-white text-slate-900 rounded-3xl max-w-4xl w-full p-4 sm:p-6 space-y-4 shadow-2xl my-auto relative print:shadow-none print:w-full print:max-w-none print:p-0 print:m-0 print:rounded-none print:space-y-0 print:block print:overflow-visible">
+            <div
+              className="bg-white text-slate-900 rounded-3xl max-w-4xl w-full p-4 sm:p-6 space-y-4 shadow-2xl my-auto relative print:shadow-none print:w-full print:max-w-none print:p-0 print:m-0 print:rounded-none print:space-y-0 print:block print:overflow-visible"
+              onClick={(e) => e.stopPropagation()}
+            >
               
               {/* Floating Top-Right Close Button */}
               <button
