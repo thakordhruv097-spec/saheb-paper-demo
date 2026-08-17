@@ -67,9 +67,6 @@ export const UtilitiesEtpView: React.FC = () => {
                 <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-ping" /> Live Telemetry
               </span>
             </div>
-            <p className="hidden sm:block text-xs text-slate-600 dark:text-slate-400 mt-1 font-medium">
-              Real-time telemetry for Boiler steam fuel, ETP water treatment chemicals, pH recycling, and electricity grid power consumption logs.
-            </p>
           </div>
         </div>
       </div>
