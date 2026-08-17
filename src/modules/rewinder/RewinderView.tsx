@@ -667,11 +667,10 @@ export const RewinderView: React.FC = () => {
             </span>
             <button
               onClick={() => setSelectedProductFilter('all')}
-              className={`px-3.5 py-1.5 rounded-xl font-bold text-xs transition cursor-pointer whitespace-nowrap border ${
-                selectedProductFilter === 'all'
+              className={`px-3.5 py-1.5 rounded-xl font-bold text-xs transition cursor-pointer whitespace-nowrap border ${selectedProductFilter === 'all'
                   ? 'bg-blue-600 text-white border-blue-600 shadow-2xs'
                   : 'bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-300 border-slate-200 dark:border-slate-700 hover:bg-slate-100'
-              }`}
+                }`}
             >
               All Paper Types ({reels.length})
             </button>
@@ -679,11 +678,10 @@ export const RewinderView: React.FC = () => {
               <button
                 key={pName}
                 onClick={() => setSelectedProductFilter(pName)}
-                className={`px-3.5 py-1.5 rounded-xl font-bold text-xs transition cursor-pointer whitespace-nowrap border ${
-                  selectedProductFilter === pName
+                className={`px-3.5 py-1.5 rounded-xl font-bold text-xs transition cursor-pointer whitespace-nowrap border ${selectedProductFilter === pName
                     ? 'bg-blue-600 text-white border-blue-600 shadow-2xs'
                     : 'bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-300 border-slate-200 dark:border-slate-700 hover:bg-slate-100'
-                }`}
+                  }`}
               >
                 {pName}
               </button>
@@ -697,67 +695,69 @@ export const RewinderView: React.FC = () => {
             No rewinder reels recorded matching filter. Click &quot;+ Add Reel Entry&quot; to log finished reels.
           </div>
         ) : (
-          <div className="space-y-6">
+          <div className="space-y-4">
             {groupedBatches.map(batch => (
-              <div key={batch.batchId} className="bg-slate-50 dark:bg-slate-900/60 border border-slate-200 dark:border-slate-800 rounded-3xl overflow-hidden shadow-sm space-y-0">
-                {/* Batch Header Bar */}
-                <div className="bg-slate-100 dark:bg-slate-800/80 p-4 border-b border-slate-200 dark:border-slate-700/80 flex flex-wrap items-center justify-between gap-3">
+              <div key={batch.batchId} className="bg-[#0d1326] border border-[#1b233e] rounded-2xl overflow-hidden shadow-md">
+                {/* Batch Header Bar (Exact match to user screenshot) */}
+                <div className="bg-[#131b34] px-5 py-3 border-b border-[#1f2947] flex flex-wrap items-center justify-between gap-3 text-xs">
                   <div className="flex items-center gap-3">
-                    <div className="px-3 py-1 rounded-xl bg-blue-600/15 dark:bg-blue-500/20 border border-blue-500/30 text-blue-700 dark:text-blue-300 text-xs font-black font-mono flex items-center gap-1.5">
-                      <span className="w-2 h-2 rounded-full bg-blue-500 animate-pulse" />
+                    <div className="px-3.5 py-1 rounded-xl bg-[#1e294d] border border-[#2b3a6d] text-[#60a5fa] font-black font-mono flex items-center gap-2 text-xs">
+                      <span className="w-2 h-2 rounded-full bg-[#3b82f6] shadow-sm animate-pulse" />
                       <span>RUNNING ROLL: #{batch.parentRollNo}</span>
                     </div>
-                    <span className="text-xs font-black text-slate-900 dark:text-white">
-                      {batch.product} &bull; <span className="text-blue-600 dark:text-blue-400">{batch.reels.length} {batch.reels.length === 1 ? 'Reel Cut' : 'Reels Cut'}</span>
-                    </span>
-                    <span className="text-[11px] text-slate-500 dark:text-slate-400 font-mono">
-                      ({batch.productionDate})
+                    <span className="font-extrabold text-white text-xs flex items-center gap-1.5">
+                      <span>{batch.product}</span>
+                      <span className="text-[#3b82f6] font-black">&bull; {batch.reels.length} {batch.reels.length === 1 ? 'Reel Cut' : 'Reels Cut'}</span>
+                      <span className="text-slate-400 font-medium font-mono text-[11px]">({batch.productionDate})</span>
                     </span>
                   </div>
-                  <div className="flex items-center gap-3 text-xs font-bold">
-                    <span className="text-slate-600 dark:text-slate-300">Total: <strong className="text-slate-900 dark:text-white">{batch.totalWeight.toLocaleString()} kg</strong></span>
-                    <span className="text-red-500">Broke: <strong>+{batch.totalBroke.toLocaleString()} kg</strong></span>
-                    <span className="text-emerald-700 dark:text-emerald-400 bg-emerald-100 dark:bg-emerald-950/60 px-2.5 py-0.5 rounded-lg border border-emerald-300 dark:border-emerald-800/60">Net Stock: <strong>{batch.netWeight.toLocaleString()} kg</strong></span>
+
+                  <div className="flex items-center gap-4 font-bold text-xs">
+                    <span className="text-slate-200">Total: <strong className="text-white font-black">{batch.totalWeight.toLocaleString()} kg</strong></span>
+                    <span className="text-[#ef4444] font-black">Broke: <strong>+{batch.totalBroke.toLocaleString()} kg</strong></span>
+                    <span className="bg-[#062c21] text-[#10b981] font-black px-3.5 py-1 rounded-xl border border-[#064e3b] shadow-xs">
+                      Net Stock: <strong>{batch.netWeight.toLocaleString()} kg</strong>
+                    </span>
                   </div>
                 </div>
 
                 {/* Desktop Reels Table for this Batch */}
-                <div className="hidden md:block overflow-x-auto p-2">
+                <div className="hidden md:block overflow-x-auto">
                   <table className="w-full text-left text-xs border-collapse">
                     <thead>
-                      <tr className="text-slate-400 uppercase tracking-wider font-extrabold text-[10px] border-b border-slate-200/60 dark:border-slate-800">
-                        <th className="p-3">Reel No</th>
-                        <th className="p-3">Running Roll</th>
-                        <th className="p-3">Product</th>
-                        <th className="p-3">GSM / Size / Ply</th>
-                        <th className="p-3">Joint</th>
-                        <th className="p-3 text-right">Reel Weight</th>
-                        <th className="p-3 text-right text-red-500">Broke (kg)</th>
-                        <th className="p-3 text-right font-black">Net Stock Weight</th>
+                      <tr className="bg-[#10172d] text-slate-400 uppercase tracking-wider font-black text-[10px] border-b border-[#1f2947]">
+                        <th className="py-3 px-4">REEL NO</th>
+                        <th className="py-3 px-4">RUNNING ROLL</th>
+                        <th className="py-3 px-4">PRODUCT</th>
+                        <th className="py-3 px-4">GSM / SIZE / PLY</th>
+                        <th className="py-3 px-4">JOINT</th>
+                        <th className="py-3 px-4 text-right">REEL WEIGHT</th>
+                        <th className="py-3 px-4 text-right text-[#ef4444]">BROKE (KG)</th>
+                        <th className="py-3 px-4 text-right font-black">NET STOCK WEIGHT</th>
                       </tr>
                     </thead>
-                    <tbody className="divide-y divide-slate-200/60 dark:divide-slate-800 font-medium">
+                    <tbody className="divide-y divide-[#182038] font-semibold text-slate-200">
                       {batch.reels.map(reel => {
                         const brokeVal = Number(reel.joint || 0) * 15 + 20;
                         const netKg = Math.max(0, reel.weight - brokeVal);
                         return (
-                          <tr key={reel.reelNo} className="hover:bg-slate-100/60 dark:hover:bg-slate-800/40 transition">
-                            <td className="p-3 font-black text-blue-600 dark:text-blue-400 font-mono">{reel.reelNo}</td>
-                            <td className="p-3 text-slate-500 dark:text-slate-400 font-mono">{reel.parentRollNo}</td>
-                            <td className="p-3 font-bold text-slate-900 dark:text-white">{reel.product}</td>
-                            <td className="p-3 text-slate-600 dark:text-slate-300">
+                          <tr key={reel.reelNo} className="hover:bg-[#141b33] transition duration-150">
+                            <td className="py-3 px-4 font-black text-[#3b82f6] font-mono text-xs">{reel.reelNo}</td>
+                            <td className="py-3 px-4 text-slate-400 font-mono text-xs">{reel.parentRollNo}</td>
+                            <td className="py-3 px-4 font-extrabold text-white">{reel.product}</td>
+                            <td className="py-3 px-4 text-slate-200 font-bold">
                               {reel.gsm} GSM | {reel.size} cm | {reel.ply} Ply
                             </td>
-                            <td className="p-3 text-slate-600 dark:text-slate-300">
+                            <td className="py-3 px-4 text-slate-200 font-bold">
                               {reel.joint} Joint
                             </td>
-                            <td className="p-3 text-right font-black text-slate-900 dark:text-white">
+                            <td className="py-3 px-4 text-right font-extrabold text-white">
                               {reel.weight.toLocaleString()} kg
                             </td>
-                            <td className="p-3 text-right font-black text-red-500">
+                            <td className="py-3 px-4 text-right font-black text-[#ef4444]">
                               +{brokeVal} kg
                             </td>
-                            <td className="p-3 text-right font-black text-slate-900 dark:text-white">
+                            <td className="py-3 px-4 text-right font-extrabold text-white">
                               {netKg.toLocaleString()} kg
                             </td>
                           </tr>
@@ -876,7 +876,7 @@ export const RewinderView: React.FC = () => {
                     onChange={e => {
                       const count = Math.min(17, Math.max(1, Number(e.target.value)));
                       setReelsCutCount(count);
-                      
+
                       // Auto regenerate cut reels list
                       const existing = getReels();
                       let curNo = getInitialReelNo(existing, 0);
@@ -1120,27 +1120,24 @@ export const RewinderView: React.FC = () => {
                 <button
                   type="button"
                   onClick={() => setPrintFormat('tsc_4x3')}
-                  className={`px-3 py-1.5 rounded-lg text-xs font-extrabold transition ${
-                    printFormat === 'tsc_4x3' ? 'bg-primary text-white' : 'bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-300 border'
-                  }`}
+                  className={`px-3 py-1.5 rounded-lg text-xs font-extrabold transition ${printFormat === 'tsc_4x3' ? 'bg-primary text-white' : 'bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-300 border'
+                    }`}
                 >
                   TSC 4x3&quot;
                 </button>
                 <button
                   type="button"
                   onClick={() => setPrintFormat('tsc_3x2')}
-                  className={`px-3 py-1.5 rounded-lg text-xs font-extrabold transition ${
-                    printFormat === 'tsc_3x2' ? 'bg-primary text-white' : 'bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-300 border'
-                  }`}
+                  className={`px-3 py-1.5 rounded-lg text-xs font-extrabold transition ${printFormat === 'tsc_3x2' ? 'bg-primary text-white' : 'bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-300 border'
+                    }`}
                 >
                   TSC 3x2&quot;
                 </button>
                 <button
                   type="button"
                   onClick={() => setPrintFormat('a4_grid')}
-                  className={`px-3 py-1.5 rounded-lg text-xs font-extrabold transition ${
-                    printFormat === 'a4_grid' ? 'bg-primary text-white' : 'bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-300 border'
-                  }`}
+                  className={`px-3 py-1.5 rounded-lg text-xs font-extrabold transition ${printFormat === 'a4_grid' ? 'bg-primary text-white' : 'bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-300 border'
+                    }`}
                 >
                   A4 Grid
                 </button>
@@ -1184,7 +1181,7 @@ export const RewinderView: React.FC = () => {
       {showCascadingModal && (
         <div className="fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
           <div className="bg-[#181D35] text-white border border-[#262D4A] rounded-3xl max-w-lg w-full p-6 space-y-5 shadow-2xl animate-in fade-in zoom-in-95 duration-150 text-left">
-            
+
             {/* Modal Header */}
             <div className="flex justify-between items-start border-b border-slate-700/60 pb-3">
               <div>
@@ -1221,7 +1218,7 @@ export const RewinderView: React.FC = () => {
 
             {/* 4 Step Cascading Dropdowns */}
             <div className="space-y-4 text-xs font-bold">
-              
+
               {/* STEP 1: PRODUCT */}
               <div>
                 <label className="block text-[11px] font-black text-slate-300 uppercase tracking-wider mb-1.5 flex justify-between">
