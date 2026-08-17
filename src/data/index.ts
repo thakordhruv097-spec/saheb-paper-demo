@@ -1069,6 +1069,20 @@ export function saveRoll(roll: MachineRoll, user: string): MachineRoll {
 
 // --- REWINDER ---
 export const DEFAULT_REELS: Reel[] = [
+  // Cut Batch from Running Roll #R-20260812-0001 (15 Reels Cut, Napkin Tissue 18 GSM | 30 cm | 2 Ply)
+  { reelNo: '260500586', parentRollNo: 'R-20260812-0001', product: 'Napkin Tissue', gsm: 18, size: 30, ply: 2, weight: 180, joint: 0, status: 'IN_STOCK', qcGrade: 'A', productionDate: '2026-08-16 04:03', dia: 900 },
+  { reelNo: '260500585', parentRollNo: 'R-20260812-0001', product: 'Napkin Tissue', gsm: 18, size: 30, ply: 2, weight: 240, joint: 1, status: 'IN_STOCK', qcGrade: 'A', productionDate: '2026-08-16 04:03', dia: 900 },
+  { reelNo: '260500584', parentRollNo: 'R-20260812-0001', product: 'Napkin Tissue', gsm: 18, size: 30, ply: 2, weight: 130, joint: 3, status: 'IN_STOCK', qcGrade: 'A', productionDate: '2026-08-16 04:03', dia: 900 },
+  { reelNo: '260500583', parentRollNo: 'R-20260812-0001', product: 'Napkin Tissue', gsm: 18, size: 30, ply: 2, weight: 310, joint: 20, status: 'IN_STOCK', qcGrade: 'A', productionDate: '2026-08-16 04:03', dia: 900 },
+  { reelNo: '260500582', parentRollNo: 'R-20260812-0001', product: 'Napkin Tissue', gsm: 18, size: 30, ply: 2, weight: 420, joint: 0, status: 'IN_STOCK', qcGrade: 'A', productionDate: '2026-08-16 04:03', dia: 900 },
+  { reelNo: '260500581', parentRollNo: 'R-20260812-0001', product: 'Napkin Tissue', gsm: 18, size: 30, ply: 2, weight: 350, joint: 2, status: 'IN_STOCK', qcGrade: 'A', productionDate: '2026-08-16 04:03', dia: 900 },
+  { reelNo: '260500580', parentRollNo: 'R-20260812-0001', product: 'Napkin Tissue', gsm: 18, size: 30, ply: 2, weight: 450, joint: 3, status: 'IN_STOCK', qcGrade: 'A', productionDate: '2026-08-16 04:03', dia: 900 },
+  { reelNo: '260500579', parentRollNo: 'R-20260812-0001', product: 'Napkin Tissue', gsm: 18, size: 30, ply: 2, weight: 280, joint: 3, status: 'IN_STOCK', qcGrade: 'A', productionDate: '2026-08-16 04:03', dia: 900 },
+  { reelNo: '260500578', parentRollNo: 'R-20260812-0001', product: 'Napkin Tissue', gsm: 18, size: 30, ply: 2, weight: 300, joint: 2, status: 'IN_STOCK', qcGrade: 'A', productionDate: '2026-08-16 04:03', dia: 900 },
+  { reelNo: '260500577', parentRollNo: 'R-20260812-0001', product: 'Napkin Tissue', gsm: 18, size: 30, ply: 2, weight: 320, joint: 1, status: 'IN_STOCK', qcGrade: 'A', productionDate: '2026-08-16 04:03', dia: 900 },
+  { reelNo: '260500576', parentRollNo: 'R-20260812-0001', product: 'Napkin Tissue', gsm: 18, size: 30, ply: 2, weight: 400, joint: 0, status: 'IN_STOCK', qcGrade: 'A', productionDate: '2026-08-16 04:03', dia: 900 },
+
+  // Pre-loaded seed reels
   { reelNo: 'R-20260816-0001', parentRollNo: 'R-20260812-0001', product: 'Napkin Tissue', gsm: 16, size: 30, ply: 1, weight: 120, joint: 0, status: 'IN_STOCK', qcGrade: 'A', productionDate: '2026-08-16 10:00', dia: 100 },
   { reelNo: 'R-20260816-0002', parentRollNo: 'R-20260812-0001', product: 'Napkin Tissue', gsm: 16, size: 30, ply: 1, weight: 118, joint: 0, status: 'IN_STOCK', qcGrade: 'A', productionDate: '2026-08-16 10:15', dia: 100 },
   { reelNo: 'R-20260816-0003', parentRollNo: 'R-20260812-0001', product: 'Napkin Tissue', gsm: 16, size: 30, ply: 1, weight: 122, joint: 1, status: 'IN_STOCK', qcGrade: 'A', productionDate: '2026-08-16 10:30', dia: 100 },
