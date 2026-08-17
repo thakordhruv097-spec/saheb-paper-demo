@@ -154,7 +154,7 @@ export interface BoilerLog {
   pressure: number; // psi
   temperature: number; // °C
   operator: string;
-  shift: 'A' | 'B';
+  shift: 'Day' | 'Night' | 'A' | 'B' | string;
 }
 
 export interface EtpLog {

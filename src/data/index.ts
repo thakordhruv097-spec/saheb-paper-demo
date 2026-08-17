@@ -392,7 +392,7 @@ function seedOneMonthData(): void {
     reels.push(reel4);
 
     // 4. Utilities logs (Boiler, ETP, Electricity)
-    const shifts: ('A' | 'B')[] = ['A', 'B'];
+    const shifts: ('Day' | 'Night')[] = ['Day', 'Night'];
     const woodCons = [550, 480];
     const waterCons = [750, 680];
     shifts.forEach((sh, idx) => {
