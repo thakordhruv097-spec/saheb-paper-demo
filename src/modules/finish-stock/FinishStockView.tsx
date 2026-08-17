@@ -30,7 +30,7 @@ export const FinishStockView: React.FC<FinishStockViewProps> = ({ hideHeader = f
   const [reels, setReels] = useState<Reel[]>(() => getReels());
   const [activeTab, setActiveTab] = useState<'all' | 'grade_a' | 'grade_b' | 'pending_qc'>('grade_a');
   const [stockSearchQuery, setStockSearchQuery] = useState('');
-  const [expandedMobileGroups, setExpandedMobileGroups] = useState<Record<string, boolean>>({});
+  const [expandedGroups, setExpandedGroups] = useState<Record<string, boolean>>({});
 
   // Cascading Filter Popup States
   const [showFilterModal, setShowFilterModal] = useState(false);
@@ -597,63 +597,98 @@ export const FinishStockView: React.FC<FinishStockViewProps> = ({ hideHeader = f
               </div>
 
               {/* Group Reels List - Desktop View */}
-              <div className="hidden md:block overflow-x-auto p-4">
-                <table className="w-full text-left text-xs border-collapse">
-                  <thead>
-                    <tr className="border-b border-slate-100 dark:border-slate-800 text-slate-400 uppercase text-[10px] font-black tracking-wider">
-                      <th className="py-3 px-3">Reel Number</th>
-                      <th className="py-3 px-3">Weight</th>
-                      <th className="py-3 px-3">Joints</th>
-                      <th className="py-3 px-3">Produced Date</th>
-                      <th className="py-3 px-3 text-right">Actions / Status</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-slate-100 dark:divide-slate-800 font-semibold">
-                    {group.reels.map(reel => (
-                      <tr key={reel.reelNo} className="hover:bg-blue-50/50 dark:hover:bg-slate-800/40 transition">
-                        <td className="py-3 px-3 font-black font-mono text-primary dark:text-blue-400">{reel.reelNo}</td>
-                        <td className="py-3 px-3 font-bold text-slate-800 dark:text-slate-200">{reel.weight} kg</td>
-                        <td className="py-3 px-3 text-slate-600 dark:text-slate-300">{reel.joint}</td>
-                        <td className="py-3 px-3 text-slate-400 font-mono text-[11px]">
-                          {reel.productionDate}
-                        </td>
-                        <td className="py-3 px-3 text-right">
-                          {reel.status === 'QC_PENDING' ? (
-                            hasQcWriteAccess ? (
-                              <button
-                                onClick={() => {
-                                  setInspectingReel(reel);
-                                  setGsmResult(String(reel.gsm));
-                                  setQcGrade('A');
-                                }}
-                                className="px-3.5 py-1.5 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white rounded-xl text-[10px] font-black uppercase tracking-wider shadow-sm cursor-pointer"
-                              >
-                                QC Test
-                              </button>
-                            ) : (
-                              <span className="text-[10px] text-purple-600 font-black uppercase bg-purple-100 dark:bg-purple-950/40 px-2.5 py-1 rounded-full border border-purple-200 dark:border-purple-800">
-                                Pending QC
-                              </span>
-                            )
+              {(() => {
+                const groupKey = `${group.product}-${group.gsm}-${group.size}-${group.ply}-${index}`;
+                const isExpanded = !!expandedGroups[groupKey];
+                const displayedReels = isExpanded ? group.reels : group.reels.slice(0, 5);
+
+                return (
+                  <div className="hidden md:block p-4 space-y-3">
+                    <div className="overflow-x-auto">
+                      <table className="w-full text-left text-xs border-collapse">
+                        <thead>
+                          <tr className="border-b border-slate-100 dark:border-slate-800 text-slate-400 uppercase text-[10px] font-black tracking-wider">
+                            <th className="py-3 px-3">Reel Number</th>
+                            <th className="py-3 px-3">Weight</th>
+                            <th className="py-3 px-3">Joints</th>
+                            <th className="py-3 px-3">Produced Date</th>
+                            <th className="py-3 px-3 text-right">Actions / Status</th>
+                          </tr>
+                        </thead>
+                        <tbody className="divide-y divide-slate-100 dark:divide-slate-800 font-semibold">
+                          {displayedReels.map(reel => (
+                            <tr key={reel.reelNo} className="hover:bg-blue-50/50 dark:hover:bg-slate-800/40 transition">
+                              <td className="py-3 px-3 font-black font-mono text-primary dark:text-blue-400">{reel.reelNo}</td>
+                              <td className="py-3 px-3 font-bold text-slate-800 dark:text-slate-200">{reel.weight} kg</td>
+                              <td className="py-3 px-3 text-slate-600 dark:text-slate-300">{reel.joint}</td>
+                              <td className="py-3 px-3 text-slate-400 font-mono text-[11px]">
+                                {reel.productionDate}
+                              </td>
+                              <td className="py-3 px-3 text-right">
+                                {reel.status === 'QC_PENDING' ? (
+                                  hasQcWriteAccess ? (
+                                    <button
+                                      onClick={() => {
+                                        setInspectingReel(reel);
+                                        setGsmResult(String(reel.gsm));
+                                        setQcGrade('A');
+                                      }}
+                                      className="px-3.5 py-1.5 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white rounded-xl text-[10px] font-black uppercase tracking-wider shadow-sm cursor-pointer"
+                                    >
+                                      QC Test
+                                    </button>
+                                  ) : (
+                                    <span className="text-[10px] text-purple-600 font-black uppercase bg-purple-100 dark:bg-purple-950/40 px-2.5 py-1 rounded-full border border-purple-200 dark:border-purple-800">
+                                      Pending QC
+                                    </span>
+                                  )
+                                ) : (
+                                  <div className="flex justify-end gap-1.5 text-[10px] font-bold">
+                                    <span className="px-2.5 py-0.5 rounded-full bg-blue-50 dark:bg-blue-950/60 text-primary dark:text-blue-300 border border-blue-200 dark:border-blue-800 font-extrabold">
+                                      GSM: {reel.qcGsmResult || reel.gsm}
+                                    </span>
+                                  </div>
+                                )}
+                              </td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+
+                    {group.reels.length > 5 && (
+                      <div className="pt-2 flex justify-center border-t border-slate-100 dark:border-slate-800">
+                        <button
+                          type="button"
+                          onClick={() => setExpandedGroups(prev => ({
+                            ...prev,
+                            [groupKey]: !isExpanded
+                          }))}
+                          className="py-2 px-5 rounded-xl bg-slate-50 hover:bg-slate-100 dark:bg-slate-800/80 dark:hover:bg-slate-700 text-primary dark:text-blue-400 font-extrabold text-xs transition cursor-pointer flex items-center justify-center gap-1.5 border border-slate-200 dark:border-slate-700 shadow-xs"
+                        >
+                          {isExpanded ? (
+                            <>
+                              <ChevronUp className="h-3.5 w-3.5" />
+                              <span>Show Less</span>
+                            </>
                           ) : (
-                            <div className="flex justify-end gap-1.5 text-[10px] font-bold">
-                              <span className="px-2.5 py-0.5 rounded-full bg-blue-50 dark:bg-blue-950/60 text-primary dark:text-blue-300 border border-blue-200 dark:border-blue-800 font-extrabold">
-                                GSM: {reel.qcGsmResult || reel.gsm}
-                              </span>
-                            </div>
+                            <>
+                              <ChevronDown className="h-3.5 w-3.5" />
+                              <span>View More ({group.reels.length - 5} remaining)</span>
+                            </>
                           )}
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
+                        </button>
+                      </div>
+                    )}
+                  </div>
+                );
+              })()}
 
               {/* Group Reels List - Mobile Stacked Cards View */}
               <div className="block md:hidden p-4 space-y-3">
                 {(() => {
-                  const groupKey = `${group.product}-${index}`;
-                  const isExpanded = !!expandedMobileGroups[groupKey];
+                  const groupKey = `${group.product}-${group.gsm}-${group.size}-${group.ply}-${index}`;
+                  const isExpanded = !!expandedGroups[groupKey];
                   const displayedReels = isExpanded ? group.reels : group.reels.slice(0, 3);
                   return (
                     <>
@@ -717,7 +752,7 @@ export const FinishStockView: React.FC<FinishStockViewProps> = ({ hideHeader = f
                       {group.reels.length > 3 && (
                         <button
                           type="button"
-                          onClick={() => setExpandedMobileGroups(prev => ({
+                          onClick={() => setExpandedGroups(prev => ({
                             ...prev,
                             [groupKey]: !isExpanded
                           }))}
@@ -731,7 +766,7 @@ export const FinishStockView: React.FC<FinishStockViewProps> = ({ hideHeader = f
                           ) : (
                             <>
                               <ChevronDown className="h-3.5 w-3.5" />
-                              <span>View More Reels (Showing 3 of {group.reels.length})</span>
+                              <span>View More ({group.reels.length - 3} remaining)</span>
                             </>
                           )}
                         </button>
