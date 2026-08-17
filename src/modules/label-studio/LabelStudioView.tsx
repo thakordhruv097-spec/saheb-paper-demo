@@ -8,9 +8,9 @@ import {
   Layers,
   Sparkles,
   Printer,
-  X,
   ChevronDown,
 } from 'lucide-react';
+import { COMPANY_CONFIG } from '../../config/company';
 
 export const LabelStudioView: React.FC = () => {
   const reelsList = useMemo(() => getReels(), []);
@@ -72,7 +72,7 @@ export const LabelStudioView: React.FC = () => {
   const computedQrValue = useMemo(() => {
     if (qrEncodingMode === 'full_json') {
       return JSON.stringify({
-        mill: 'SAHEB PAPER PVT. LTD.',
+        mill: COMPANY_CONFIG.name,
         reelNo: barcodeNo || '260500571',
         product: productTitle || 'Napkin Tissue',
         gsm: gsm || '22',
@@ -105,15 +105,15 @@ export const LabelStudioView: React.FC = () => {
   };
 
   return (
-    <div className="space-y-6 p-4 sm:p-6 pb-24 text-slate-100 w-full max-w-7xl mx-auto font-sans">
+    <div className="space-y-6 p-4 sm:p-6 pb-24 text-slate-900 dark:text-slate-100 w-full max-w-7xl mx-auto font-sans">
       {/* 1. Top Category Tabs Bar */}
-      <div className="flex items-center gap-2 overflow-x-auto bg-[#0b1329] p-2 rounded-2xl border border-slate-800/80 shadow-lg custom-scrollbar">
+      <div className="flex items-center gap-2 overflow-x-auto bg-slate-100 dark:bg-slate-900/90 p-2 rounded-2xl border border-slate-200/80 dark:border-slate-800/80 shadow-xs custom-scrollbar">
         <button
           onClick={() => handleTabSwitch('reel')}
-          className={`flex items-center gap-2 px-5 py-2.5 rounded-xl font-bold text-xs transition cursor-pointer shrink-0 ${
+          className={`flex items-center gap-2 px-5 py-2.5 rounded-xl font-black text-xs transition cursor-pointer shrink-0 ${
             activeTab === 'reel'
-              ? 'bg-blue-600 text-white shadow-md shadow-blue-500/20'
-              : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800/50'
+              ? 'bg-gradient-to-r from-blue-600 to-indigo-600 text-white shadow-md shadow-blue-500/25'
+              : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-white/80 dark:hover:bg-slate-800/50'
           }`}
         >
           <QrCode className="h-4 w-4" />
@@ -122,10 +122,10 @@ export const LabelStudioView: React.FC = () => {
 
         <button
           onClick={() => handleTabSwitch('warehouse')}
-          className={`flex items-center gap-2 px-5 py-2.5 rounded-xl font-bold text-xs transition cursor-pointer shrink-0 ${
+          className={`flex items-center gap-2 px-5 py-2.5 rounded-xl font-black text-xs transition cursor-pointer shrink-0 ${
             activeTab === 'warehouse'
-              ? 'bg-blue-600 text-white shadow-md shadow-blue-500/20'
-              : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800/50'
+              ? 'bg-gradient-to-r from-blue-600 to-indigo-600 text-white shadow-md shadow-blue-500/25'
+              : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-white/80 dark:hover:bg-slate-800/50'
           }`}
         >
           <Box className="h-4 w-4" />
@@ -134,10 +134,10 @@ export const LabelStudioView: React.FC = () => {
 
         <button
           onClick={() => handleTabSwitch('raw_material')}
-          className={`flex items-center gap-2 px-5 py-2.5 rounded-xl font-bold text-xs transition cursor-pointer shrink-0 ${
+          className={`flex items-center gap-2 px-5 py-2.5 rounded-xl font-black text-xs transition cursor-pointer shrink-0 ${
             activeTab === 'raw_material'
-              ? 'bg-blue-600 text-white shadow-md shadow-blue-500/20'
-              : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800/50'
+              ? 'bg-gradient-to-r from-blue-600 to-indigo-600 text-white shadow-md shadow-blue-500/25'
+              : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-white/80 dark:hover:bg-slate-800/50'
           }`}
         >
           <Layers className="h-4 w-4" />
@@ -146,10 +146,10 @@ export const LabelStudioView: React.FC = () => {
 
         <button
           onClick={() => handleTabSwitch('custom')}
-          className={`flex items-center gap-2 px-5 py-2.5 rounded-xl font-bold text-xs transition cursor-pointer shrink-0 ${
+          className={`flex items-center gap-2 px-5 py-2.5 rounded-xl font-black text-xs transition cursor-pointer shrink-0 ${
             activeTab === 'custom'
-              ? 'bg-blue-600 text-white shadow-md shadow-blue-500/20'
-              : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800/50'
+              ? 'bg-gradient-to-r from-blue-600 to-indigo-600 text-white shadow-md shadow-blue-500/25'
+              : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-white/80 dark:hover:bg-slate-800/50'
           }`}
         >
           <Sparkles className="h-4 w-4" />
@@ -160,17 +160,17 @@ export const LabelStudioView: React.FC = () => {
       {/* 2. Main Studio 2-Column Grid */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
         {/* Left Column: Form Controls (7 cols) */}
-        <div className="lg:col-span-7 space-y-5">
+        <div className="lg:col-span-7 space-y-5 bg-white dark:bg-slate-900 border border-slate-200/90 dark:border-slate-800 rounded-3xl p-6 shadow-sm">
           {/* LOAD EXISTING REEL FROM STOCK */}
           <div>
-            <label className="block text-[11px] font-black uppercase tracking-wider text-slate-400 mb-1.5">
+            <label className="block text-[11px] font-black uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-1.5">
               LOAD EXISTING REEL FROM STOCK
             </label>
             <div className="relative">
               <select
                 value={selectedReelNo}
                 onChange={e => handleSelectReelFromStock(e.target.value)}
-                className="w-full p-3.5 bg-[#0e172e] border border-slate-700/80 text-white rounded-2xl text-xs font-bold focus:ring-2 focus:ring-blue-500 focus:outline-none cursor-pointer appearance-none pr-10"
+                className="w-full p-3.5 bg-slate-50 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white rounded-2xl text-xs font-bold focus:ring-2 focus:ring-primary focus:outline-none cursor-pointer appearance-none pr-10 focus:bg-white dark:focus:bg-slate-900 transition"
               >
                 {reelsList.map(reel => (
                   <option key={reel.reelNo} value={reel.reelNo}>
@@ -185,107 +185,105 @@ export const LabelStudioView: React.FC = () => {
           {/* Row 2: REEL / BARCODE NO & QR CODE EMBED VALUE */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
-              <label className="block text-[11px] font-black uppercase tracking-wider text-slate-400 mb-1.5">
+              <label className="block text-[11px] font-black uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-1.5">
                 REEL / BARCODE NO
               </label>
               <input
                 type="text"
                 value={barcodeNo}
                 onChange={e => setBarcodeNo(e.target.value)}
-                className="w-full p-3 bg-[#0e172e] border border-slate-700/80 text-white rounded-2xl text-xs font-bold focus:ring-2 focus:ring-blue-500 focus:outline-none"
+                className="w-full p-3 bg-slate-50 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white rounded-2xl text-xs font-bold font-mono focus:ring-2 focus:ring-primary focus:outline-none focus:bg-white dark:focus:bg-slate-900 transition"
               />
             </div>
 
             <div>
-              <label className="block text-[11px] font-black uppercase tracking-wider text-slate-400 mb-1.5">
+              <label className="block text-[11px] font-black uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-1.5">
                 QR CODE EMBED VALUE
               </label>
               <input
                 type="text"
                 value={qrCodeEmbedValue}
                 onChange={e => setQrCodeEmbedValue(e.target.value)}
-                className="w-full p-3 bg-[#0e172e] border border-slate-700/80 text-white rounded-2xl text-xs font-bold focus:ring-2 focus:ring-blue-500 focus:outline-none"
+                className="w-full p-3 bg-slate-50 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white rounded-2xl text-xs font-bold font-mono focus:ring-2 focus:ring-primary focus:outline-none focus:bg-white dark:focus:bg-slate-900 transition"
               />
             </div>
           </div>
 
           {/* Row 3: PRODUCT TITLE / DESCRIPTION */}
           <div>
-            <label className="block text-[11px] font-black uppercase tracking-wider text-slate-400 mb-1.5">
+            <label className="block text-[11px] font-black uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-1.5">
               PRODUCT TITLE / DESCRIPTION
             </label>
             <input
               type="text"
               value={productTitle}
               onChange={e => setProductTitle(e.target.value)}
-              className="w-full p-3 bg-[#0e172e] border border-slate-700/80 text-white rounded-2xl text-xs font-bold focus:ring-2 focus:ring-blue-500 focus:outline-none"
+              className="w-full p-3 bg-slate-50 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white rounded-2xl text-xs font-bold focus:ring-2 focus:ring-primary focus:outline-none focus:bg-white dark:focus:bg-slate-900 transition"
             />
           </div>
 
           {/* Row 4: GSM, SIZE / WIDTH, NET WEIGHT (KG) */}
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
             <div>
-              <label className="block text-[11px] font-black uppercase tracking-wider text-slate-400 mb-1.5">
+              <label className="block text-[11px] font-black uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-1.5">
                 GSM
               </label>
               <input
                 type="text"
                 value={gsm}
                 onChange={e => setGsm(e.target.value)}
-                className="w-full p-3 bg-[#0e172e] border border-slate-700/80 text-white rounded-2xl text-xs font-bold focus:ring-2 focus:ring-blue-500 focus:outline-none"
+                className="w-full p-3 bg-slate-50 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white rounded-2xl text-xs font-bold font-mono focus:ring-2 focus:ring-primary focus:outline-none focus:bg-white dark:focus:bg-slate-900 transition"
               />
             </div>
 
             <div>
-              <label className="block text-[11px] font-black uppercase tracking-wider text-slate-400 mb-1.5">
+              <label className="block text-[11px] font-black uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-1.5">
                 SIZE / WIDTH
               </label>
               <input
                 type="text"
                 value={sizeWidth}
                 onChange={e => setSizeWidth(e.target.value)}
-                className="w-full p-3 bg-[#0e172e] border border-slate-700/80 text-white rounded-2xl text-xs font-bold focus:ring-2 focus:ring-blue-500 focus:outline-none"
+                className="w-full p-3 bg-slate-50 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white rounded-2xl text-xs font-bold font-mono focus:ring-2 focus:ring-primary focus:outline-none focus:bg-white dark:focus:bg-slate-900 transition"
               />
             </div>
 
             <div>
-              <label className="block text-[11px] font-black uppercase tracking-wider text-slate-400 mb-1.5">
+              <label className="block text-[11px] font-black uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-1.5">
                 NET WEIGHT (KG)
               </label>
               <input
                 type="text"
                 value={netWeightKg}
                 onChange={e => setNetWeightKg(e.target.value)}
-                className="w-full p-3 bg-[#0e172e] border border-slate-700/80 text-white rounded-2xl text-xs font-bold focus:ring-2 focus:ring-blue-500 focus:outline-none"
+                className="w-full p-3 bg-slate-50 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white rounded-2xl text-xs font-bold font-mono text-emerald-600 dark:text-emerald-400 focus:ring-2 focus:ring-primary focus:outline-none focus:bg-white dark:focus:bg-slate-900 transition"
               />
             </div>
           </div>
 
-
-
           {/* Row 7: Label Size, Mode Toggle & Copies */}
-          <div className="space-y-3 pt-2 border-t border-slate-800/80">
+          <div className="space-y-4 pt-4 border-t border-slate-200/80 dark:border-slate-800">
             {/* System Mode Switcher (Test ID-Only vs Old System) */}
-            <div className="p-3 bg-[#080d1b] border border-blue-500/30 rounded-2xl flex flex-col sm:flex-row items-center justify-between gap-3">
+            <div className="p-3.5 bg-blue-50/70 dark:bg-blue-950/30 border border-blue-200/80 dark:border-blue-800/60 rounded-2xl flex flex-col sm:flex-row items-center justify-between gap-3">
               <div>
-                <span className="text-xs font-black text-white flex items-center gap-1.5">
-                  <span className="h-2 w-2 rounded-full bg-emerald-400 animate-pulse"></span>
+                <span className="text-xs font-black text-slate-900 dark:text-white flex items-center gap-1.5">
+                  <span className="h-2 w-2 rounded-full bg-emerald-500 animate-pulse"></span>
                   QR Encoding Mode:
                 </span>
-                <p className="text-[10px] text-slate-400 mt-0.5">
+                <p className="text-[10px] text-slate-500 dark:text-slate-400 mt-0.5 font-medium">
                   {qrEncodingMode === 'id_only'
                     ? '⚡ Test System: Encodes only ID (260500571) for instant backend lookup'
                     : '📦 Old System: Encodes full JSON text payload into QR code'}
                 </p>
               </div>
 
-              <div className="flex items-center gap-1.5 shrink-0 bg-slate-900 p-1 rounded-xl border border-slate-700">
+              <div className="flex items-center gap-1.5 shrink-0 bg-white dark:bg-slate-900 p-1 rounded-xl border border-slate-200 dark:border-slate-700 shadow-2xs">
                 <button
                   onClick={() => setQrEncodingMode('id_only')}
                   className={`px-3 py-1.5 rounded-lg text-[11px] font-bold transition cursor-pointer ${
                     qrEncodingMode === 'id_only'
-                      ? 'bg-blue-600 text-white shadow-sm'
-                      : 'text-slate-400 hover:text-white'
+                      ? 'bg-blue-600 text-white shadow-xs'
+                      : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
                   }`}
                 >
                   ⚡ ID-Only (Test System)
@@ -295,8 +293,8 @@ export const LabelStudioView: React.FC = () => {
                   onClick={() => setQrEncodingMode('full_json')}
                   className={`px-3 py-1.5 rounded-lg text-[11px] font-bold transition cursor-pointer ${
                     qrEncodingMode === 'full_json'
-                      ? 'bg-blue-600 text-white shadow-sm'
-                      : 'text-slate-400 hover:text-white'
+                      ? 'bg-blue-600 text-white shadow-xs'
+                      : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
                   }`}
                 >
                   📦 Full Payload (Old System)
@@ -306,13 +304,13 @@ export const LabelStudioView: React.FC = () => {
 
             <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
               <div className="flex items-center gap-3 w-full sm:w-auto">
-                <label className="text-xs font-bold text-slate-400 whitespace-nowrap">
+                <label className="text-xs font-bold text-slate-600 dark:text-slate-400 whitespace-nowrap">
                   Label Size:
                 </label>
                 <select
                   value={labelSize}
                   onChange={e => setLabelSize(e.target.value)}
-                  className="p-2.5 bg-[#0e172e] border border-slate-700/80 text-white rounded-xl text-xs font-bold cursor-pointer focus:outline-none"
+                  className="p-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white rounded-xl text-xs font-bold cursor-pointer focus:outline-none focus:ring-2 focus:ring-primary transition"
                 >
                   <option value='4" x 6" (Thermal Sticker 100x150mm)'>
                     4" x 6" (Thermal Sticker 100x150mm)
@@ -324,15 +322,15 @@ export const LabelStudioView: React.FC = () => {
               </div>
 
               <div className="flex items-center gap-2">
-                <span className="text-xs font-bold text-slate-400">Copies:</span>
+                <span className="text-xs font-bold text-slate-600 dark:text-slate-400">Copies:</span>
                 {[1, 2, 4].map(c => (
                   <button
                     key={c}
                     onClick={() => setCopies(c)}
                     className={`px-3 py-1.5 rounded-xl font-bold text-xs transition cursor-pointer ${
                       copies === c
-                        ? 'bg-blue-600 text-white shadow-md shadow-blue-500/20'
-                        : 'bg-[#0e172e] border border-slate-700/80 text-slate-300 hover:bg-slate-800'
+                        ? 'bg-blue-600 text-white shadow-md shadow-blue-500/25'
+                        : 'bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700'
                     }`}
                   >
                     {c}x
@@ -346,7 +344,7 @@ export const LabelStudioView: React.FC = () => {
         {/* Right Column: Live Thermal Sticker Preview (5 cols) */}
         <div className="lg:col-span-5 space-y-4">
           <div className="flex items-center justify-between">
-            <span className="text-xs font-black uppercase tracking-wider text-blue-400">
+            <span className="text-xs font-black uppercase tracking-wider text-primary dark:text-blue-400">
               LIVE STICKER PREVIEW (4X6 INCH THERMAL)
             </span>
           </div>
@@ -354,12 +352,12 @@ export const LabelStudioView: React.FC = () => {
           {/* Thermal Sticker Printable Card (Large QR Code, Zero Blank Space) */}
           <div
             id="printable-label-card"
-            className="w-full max-w-[280px] bg-white text-slate-950 p-4 rounded-2xl shadow-2xl space-y-3 text-center flex flex-col items-center justify-center border-2 border-slate-950 mx-auto"
+            className="w-full max-w-[280px] bg-white text-slate-950 p-4 rounded-2xl shadow-xl space-y-3 text-center flex flex-col items-center justify-center border-2 border-slate-950 mx-auto"
           >
             {/* 1. Header: SAHEB PAPER PVT. LTD. */}
             <div className="border-b-2 border-slate-950 pb-2 w-full">
-              <h2 className="text-sm sm:text-base font-black tracking-wide uppercase text-slate-950 leading-tight">
-                SAHEB PAPER PVT. LTD.
+              <h2 className="text-sm sm:text-base font-black tracking-wide uppercase text-slate-950 leading-tight font-heading">
+                {COMPANY_CONFIG.name}
               </h2>
             </div>
 
@@ -390,15 +388,15 @@ export const LabelStudioView: React.FC = () => {
           <div className="space-y-3 pt-2">
             <button
               onClick={handlePrintLabel}
-              className="w-full flex items-center justify-center gap-2 py-4 rounded-2xl bg-blue-600 hover:bg-blue-500 text-white font-black text-sm shadow-xl shadow-blue-600/30 transition cursor-pointer active:scale-98"
+              className="w-full flex items-center justify-center gap-2 py-3.5 px-5 rounded-2xl bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white font-black text-xs uppercase tracking-wider shadow-lg shadow-blue-500/25 transition cursor-pointer active:scale-98"
             >
-              <Printer className="h-5 w-4" />
+              <Printer className="h-4 w-4" />
               <span>PRINT {copies}X LABEL NOW</span>
             </button>
 
             <button
               onClick={() => window.history.back()}
-              className="w-full text-center text-xs font-bold text-slate-400 hover:text-white transition py-1 cursor-pointer"
+              className="w-full text-center text-xs font-bold text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-white transition py-2 rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800/50 cursor-pointer"
             >
               CLOSE STUDIO
             </button>
