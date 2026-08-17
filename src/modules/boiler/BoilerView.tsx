@@ -119,10 +119,14 @@ export const BoilerView: React.FC = () => {
     setTempStr('');
   };
 
+  const totalWoodConsumed = useMemo(() => {
+    return logs.reduce((sum, l) => sum + (l.woodUsed || 0), 0);
+  }, [logs]);
+
   return (
     <div className="space-y-6">
-      {/* Title */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 border-b border-slate-200 dark:border-slate-800 pb-3">
+      {/* Title Header Bar with Total Wood Consumption */}
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 border-b border-slate-200 dark:border-slate-800 pb-3.5">
         <div>
           <h2 className="text-2xl font-black text-slate-900 dark:text-white font-heading flex items-center gap-2.5">
             <div className="p-2 rounded-2xl bg-orange-50 dark:bg-orange-950/60 text-orange-500 border border-orange-200 dark:border-orange-900/60">
@@ -133,6 +137,26 @@ export const BoilerView: React.FC = () => {
           <p className="text-xs text-slate-500 dark:text-slate-400 font-medium mt-1">
             Track daily firewood fuel, water consumption, and steam pressure logs.
           </p>
+        </div>
+
+        {/* Total Wood Consumption Widget */}
+        <div className="flex items-center gap-3">
+          <div className="bg-gradient-to-r from-orange-50 to-amber-50 dark:from-orange-950/40 dark:to-amber-950/40 border border-orange-200/80 dark:border-orange-800/60 px-4 py-2 rounded-2xl flex items-center gap-3 shadow-xs">
+            <div className="p-2 rounded-xl bg-orange-500 text-white shadow-sm shadow-orange-500/30">
+              <Flame className="h-4 w-4" />
+            </div>
+            <div>
+              <span className="text-[10px] font-bold text-orange-700 dark:text-orange-300 uppercase tracking-wider block">
+                Total Wood Consumption
+              </span>
+              <div className="flex items-baseline gap-1.5">
+                <span className="text-base font-black font-mono text-slate-900 dark:text-white">
+                  {totalWoodConsumed.toLocaleString()}
+                </span>
+                <span className="text-xs font-bold text-orange-600 dark:text-orange-400">kg</span>
+              </div>
+            </div>
+          </div>
         </div>
       </div>
 
