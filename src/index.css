@@ -306,32 +306,19 @@ html.dark .dashboard-main-scrollbar::-webkit-scrollbar-thumb:hover,
 }
 
 
-/* Print Layout & Thermal Label Styles */
+/* ==========================================================================
+   PRINT LAYOUT & STYLES (Challan Receipts, Reports, QR Labels)
+   ========================================================================== */
 @media print {
   @page {
     margin: 8mm 8mm;
     size: A4 portrait;
   }
 
-  /* Completely hide main React app tree when challan receipt modal is printing to prevent ghost blank pages */
-  body:has(#printable-receipt-modal) #root,
-  body.printing-challan #root {
-    display: none !important;
-  }
-
-  /* Hide UI navigation elements */
-  header,
-  aside,
-  footer,
-  nav,
-  .print-hidden,
-  .print\:hidden {
-    display: none !important;
-  }
-
   /* Reset main layouts */
-  body, html {
+  html, body {
     background: #ffffff !important;
+    background-color: #ffffff !important;
     color: #000000 !important;
     min-height: auto !important;
     height: auto !important;
@@ -343,10 +330,26 @@ html.dark .dashboard-main-scrollbar::-webkit-scrollbar-thumb:hover,
     print-color-adjust: exact !important;
   }
 
-  /* Align receipt without position absolute/fixed so browser can paginate across multiple A4 pages */
+  /* Hide UI navigation, sidebar, headers, and interactive buttons */
+  header,
+  aside,
+  footer,
+  nav,
+  button:not(.print-keep),
+  input,
+  select,
+  .cursor-pointer,
+  .print-hidden,
+  .print\:hidden {
+    display: none !important;
+    visibility: hidden !important;
+  }
+
+  /* 1. Official Dispatch Receipt Modal & Multi-Page A4 Sheet Stack */
   #printable-receipt-modal {
     position: static !important;
     display: block !important;
+    visibility: visible !important;
     left: auto !important;
     top: auto !important;
     width: 100% !important;
@@ -360,6 +363,16 @@ html.dark .dashboard-main-scrollbar::-webkit-scrollbar-thumb:hover,
     z-index: auto !important;
   }
 
+  #printable-receipt-modal * {
+    visibility: visible !important;
+  }
+
+  #printable-receipt-modal .print\:hidden,
+  #printable-receipt-modal button {
+    display: none !important;
+    visibility: hidden !important;
+  }
+
   #printable-receipt-modal > div {
     max-width: 100% !important;
     width: 100% !important;
@@ -367,6 +380,7 @@ html.dark .dashboard-main-scrollbar::-webkit-scrollbar-thumb:hover,
     margin: 0 !important;
     box-shadow: none !important;
     border: none !important;
+    background: transparent !important;
   }
 
   .print-page-break {
@@ -379,6 +393,8 @@ html.dark .dashboard-main-scrollbar::-webkit-scrollbar-thumb:hover,
     padding: 0 !important;
     margin: 0 !important;
     box-sizing: border-box !important;
+    background: #ffffff !important;
+    color: #000000 !important;
   }
 
   .print-page-break:last-child {
@@ -386,16 +402,20 @@ html.dark .dashboard-main-scrollbar::-webkit-scrollbar-thumb:hover,
     break-after: auto !important;
   }
 
-  /* Hide interactive elements */
-  button:not(.print-keep),
-  input,
-  select,
-  .cursor-pointer {
-    display: none !important;
+  /* 2. Sticker & QR Label Printing Elements */
+  #printable-label-card,
+  #printable-label-card *,
+  #printable-rm-lot-card,
+  #printable-rm-lot-card *,
+  #printable-reel-label,
+  #printable-reel-label *,
+  .printable-qr-card,
+  .printable-qr-card * {
+    visibility: visible !important;
   }
 }
 
-/* 1. Thermal / TSC Label Printing (Single Continuous Roll) */
+/* Thermal / TSC Label Printing (Single Continuous Roll) */
 body.print-thermal-labels #printable-qr-labels {
   display: flex !important;
   flex-direction: column !important;
@@ -411,7 +431,7 @@ body.print-thermal-labels .qr-label-card {
   page-break-after: always !important;
   break-after: page !important;
   border: none !important;
-  border-bottom: 1px dashed #ddd !important; /* Visual cutoff helper */
+  border-bottom: 1px dashed #ddd !important;
   background: white !important;
   padding: 12px !important;
   margin: 0 !important;
@@ -422,14 +442,13 @@ body.print-thermal-labels .qr-label-card {
   align-items: center !important;
 }
 
-/* Hide cutoff dash when actually printing */
 @media print {
   body.print-thermal-labels .qr-label-card {
     border-bottom: none !important;
   }
 }
 
-/* 2. Standard A4 Grid Printing */
+/* Standard A4 Grid Printing */
 body.print-a4-labels #printable-qr-labels {
   display: grid !important;
   grid-template-columns: repeat(2, 1fr) !important;
@@ -446,56 +465,4 @@ body.print-a4-labels .qr-label-card {
   border-radius: 4px !important;
 }
 
-
-/* ==========================================================================
-   EXCLUSIVE LABEL PRINTING RULE (Hides all background, inputs & navigation)
-   ========================================================================== */
-@media print {
-  html, body, #root {
-    background: #ffffff !important;
-    background-color: #ffffff !important;
-    color: #000000 !important;
-    margin: 0 !important;
-    padding: 0 !important;
-  }
-
-  /* Hide every element on the page */
-  body * {
-    visibility: hidden !important;
-  }
-
-  /* Show ONLY printable label elements and their children */
-  #printable-label-card,
-  #printable-label-card *,
-  #printable-rm-lot-card,
-  #printable-rm-lot-card *,
-  #printable-reel-label,
-  #printable-reel-label *,
-  .printable-qr-card,
-  .printable-qr-card * {
-    visibility: visible !important;
-  }
-
-  /* Position printable label cleanly at top center */
-  #printable-label-card,
-  #printable-rm-lot-card,
-  #printable-reel-label,
-  .printable-qr-card {
-    position: fixed !important;
-    left: 50% !important;
-    top: 5mm !important;
-    transform: translateX(-50%) !important;
-    width: 280px !important;
-    max-width: 280px !important;
-    margin: 0 auto !important;
-    padding: 16px !important;
-    background: #ffffff !important;
-    color: #000000 !important;
-    box-shadow: none !important;
-    border: 2px solid #000000 !important;
-    border-radius: 16px !important;
-    page-break-inside: avoid !important;
-    break-inside: avoid !important;
-  }
-}
 
