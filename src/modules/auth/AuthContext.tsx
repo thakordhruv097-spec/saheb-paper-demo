@@ -211,7 +211,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     if (moduleName === 'label_studio') return custom.includes('label_studio') || custom.includes('monthly_yearly_reporting') || userRoles.includes('Admin') || userRoles.includes('Management');
     if (moduleName === 'monthly_yearly_reporting') return custom.includes('monthly_yearly_reporting');
     if (moduleName === 'admin_panel_audit') return custom.includes('admin_panel_audit') || userRoles.includes('Admin');
-    if (moduleName === 'dashboard') return custom.includes('dashboard');
+    if (moduleName === 'dashboard' || moduleName === 'ai_advisor' || moduleName === 'experiment') return true;
 
     // STRICT DENIAL: If a module is NOT enabled in Role Management, DENY ACCESS!
     return false;
