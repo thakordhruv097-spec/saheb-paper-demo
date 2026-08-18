@@ -563,7 +563,7 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
               </div>
 
               {/* Date Stepper & Picker Controls (< 2026-07-26 📅 >) */}
-              <div className="hidden xs:flex items-center gap-1">
+              <div className="flex items-center gap-1">
                 <button
                   onClick={handlePrevDate}
                   className="p-1 sm:p-1.5 rounded-lg bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 transition cursor-pointer shadow-2xs"
