@@ -94,17 +94,17 @@ export const ReportsView: React.FC = () => {
 
   // Date range validation helper for active timeframe
   const isDateInRange = (dateStr: string) => {
-    if (!dateStr) return true;
+    if (!dateStr) return false;
     const target = dateStr.substring(0, 10);
 
-    if (timeframe === 'all') return target <= selectedDate;
+    if (timeframe === 'all') return true;
     if (timeframe === 'day') return target === selectedDate;
-    if (timeframe === 'month') return target.substring(0, 7) === selectedDate.substring(0, 7);
+    if (timeframe === 'month') return target.startsWith(selectedDate.substring(0, 7));
     if (timeframe === 'week') {
-      const endD = new Date(selectedDate);
-      const startD = new Date(endD);
-      startD.setDate(endD.getDate() - 6);
-      const startStr = startD.toISOString().substring(0, 10);
+      const parts = selectedDate.split('-').map(Number);
+      const [y, m, d] = parts;
+      const startDt = new Date(y, m - 1, d - 6);
+      const startStr = `${startDt.getFullYear()}-${String(startDt.getMonth() + 1).padStart(2, '0')}-${String(startDt.getDate()).padStart(2, '0')}`;
       return target >= startStr && target <= selectedDate;
     }
     return true;

@@ -23,6 +23,37 @@ export const getSystemTodayStr = (): string => {
   return `${yyyy}-${mm}-${dd}`;
 };
 
+export const getDateRangeForTimeframe = (selectedDate: string, timeframe: TimeframeMode): { startStr: string; endStr: string; label: string } => {
+  if (timeframe === 'all') {
+    return { startStr: '1970-01-01', endStr: '2099-12-31', label: 'All Time' };
+  }
+  if (timeframe === 'day') {
+    return { startStr: selectedDate, endStr: selectedDate, label: `Day (${selectedDate})` };
+  }
+  if (timeframe === 'month') {
+    const monthPrefix = selectedDate.substring(0, 7);
+    const [y, m] = monthPrefix.split('-').map(Number);
+    const lastDay = new Date(y, m, 0).getDate();
+    return {
+      startStr: `${monthPrefix}-01`,
+      endStr: `${monthPrefix}-${String(lastDay).padStart(2, '0')}`,
+      label: `Month (${monthPrefix})`,
+    };
+  }
+  if (timeframe === 'week') {
+    const parts = selectedDate.split('-').map(Number);
+    const [y, m, d] = parts;
+    const startDt = new Date(y, m - 1, d - 6);
+    const startStr = `${startDt.getFullYear()}-${String(startDt.getMonth() + 1).padStart(2, '0')}-${String(startDt.getDate()).padStart(2, '0')}`;
+    return {
+      startStr,
+      endStr: selectedDate,
+      label: `Week (${startStr} ~ ${selectedDate})`,
+    };
+  }
+  return { startStr: selectedDate, endStr: selectedDate, label: selectedDate };
+};
+
 export const DateFilterProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [timeframe, setTimeframeState] = useState<TimeframeMode>(() => {
     const saved = localStorage.getItem('saheb_selected_timeframe');
@@ -36,7 +67,7 @@ export const DateFilterProvider: React.FC<{ children: React.ReactNode }> = ({ ch
   const [selectedDate, setSelectedDateState] = useState<string>(() => {
     const todayStr = getSystemTodayStr();
     const savedDate = localStorage.getItem('saheb_selected_date');
-    if (savedDate && savedDate === todayStr) {
+    if (savedDate) {
       return savedDate;
     }
     localStorage.setItem('saheb_selected_date', todayStr);
@@ -55,8 +86,6 @@ export const DateFilterProvider: React.FC<{ children: React.ReactNode }> = ({ ch
         lastKnownTodayRef.current = currentSystemToday;
         setSystemToday(currentSystemToday);
 
-        // If selectedDate was pointing to the previous "Today" (or user was on 'day' timeframe),
-        // automatically advance selectedDate to the new day!
         setSelectedDateState((prevSelected) => {
           if (prevSelected === lastKnown || timeframe === 'day') {
             localStorage.setItem('saheb_selected_date', currentSystemToday);
@@ -67,7 +96,6 @@ export const DateFilterProvider: React.FC<{ children: React.ReactNode }> = ({ ch
 
         setDateTick((prev) => prev + 1);
 
-        // Broadcast global midnight event for any non-React listeners
         window.dispatchEvent(
           new CustomEvent('saheb_date_changed', {
             detail: { previousDate: lastKnown, newDate: currentSystemToday },
@@ -76,10 +104,8 @@ export const DateFilterProvider: React.FC<{ children: React.ReactNode }> = ({ ch
       }
     };
 
-    // 1. Periodic background interval every 15 seconds
     const intervalId = setInterval(checkDateRollover, 15000);
 
-    // 2. Immediate check when browser tab becomes active or window gains focus
     const handleVisibilityChange = () => {
       if (document.visibilityState === 'visible') {
         checkDateRollover();
@@ -109,15 +135,16 @@ export const DateFilterProvider: React.FC<{ children: React.ReactNode }> = ({ ch
   };
 
   const handlePrevDate = () => {
-    const d = new Date(selectedDate);
-    if (isNaN(d.getTime())) return;
-    if (timeframe === 'day') d.setDate(d.getDate() - 1);
-    else if (timeframe === 'week') d.setDate(d.getDate() - 7);
-    else if (timeframe === 'month') d.setMonth(d.getMonth() - 1);
-    const yyyy = d.getFullYear();
-    const mm = String(d.getMonth() + 1).padStart(2, '0');
-    const dd = String(d.getDate()).padStart(2, '0');
-    const prevStr = `${yyyy}-${mm}-${dd}`;
+    const parts = selectedDate.split('-').map(Number);
+    if (parts.length !== 3 || parts.some(isNaN)) return;
+    const [y, m, d] = parts;
+    const dt = new Date(y, m - 1, d);
+
+    if (timeframe === 'day') dt.setDate(dt.getDate() - 1);
+    else if (timeframe === 'week') dt.setDate(dt.getDate() - 7);
+    else if (timeframe === 'month') dt.setMonth(dt.getMonth() - 1);
+
+    const prevStr = `${dt.getFullYear()}-${String(dt.getMonth() + 1).padStart(2, '0')}-${String(dt.getDate()).padStart(2, '0')}`;
     handleSetSelectedDate(prevStr);
   };
 
@@ -125,17 +152,17 @@ export const DateFilterProvider: React.FC<{ children: React.ReactNode }> = ({ ch
     const todayStr = getSystemTodayStr();
     if (selectedDate >= todayStr) return;
 
-    const d = new Date(selectedDate);
-    if (isNaN(d.getTime())) return;
-    if (timeframe === 'day') d.setDate(d.getDate() + 1);
-    else if (timeframe === 'week') d.setDate(d.getDate() + 7);
-    else if (timeframe === 'month') d.setMonth(d.getMonth() + 1);
-    const yyyy = d.getFullYear();
-    const mm = String(d.getMonth() + 1).padStart(2, '0');
-    const dd = String(d.getDate()).padStart(2, '0');
-    const nextStr = `${yyyy}-${mm}-${dd}`;
-    
-    handleSetSelectedDate(nextStr);
+    const parts = selectedDate.split('-').map(Number);
+    if (parts.length !== 3 || parts.some(isNaN)) return;
+    const [y, m, d] = parts;
+    const dt = new Date(y, m - 1, d);
+
+    if (timeframe === 'day') dt.setDate(dt.getDate() + 1);
+    else if (timeframe === 'week') dt.setDate(dt.getDate() + 7);
+    else if (timeframe === 'month') dt.setMonth(dt.getMonth() + 1);
+
+    const nextStr = `${dt.getFullYear()}-${String(dt.getMonth() + 1).padStart(2, '0')}-${String(dt.getDate()).padStart(2, '0')}`;
+    handleSetSelectedDate(nextStr > todayStr ? todayStr : nextStr);
   };
 
   return (

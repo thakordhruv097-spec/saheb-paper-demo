@@ -87,18 +87,16 @@ export const DashboardView: React.FC = () => {
   // Date Filter helper for dynamic metric filtering
   const isDateInFilter = (itemDate: string): boolean => {
     if (!itemDate) return false;
+    const target = itemDate.substring(0, 10);
     if (timeframe === 'all') return true;
-    if (timeframe === 'day') return itemDate === selectedDate;
-    if (timeframe === 'month') {
-      const selectedMonth = selectedDate.substring(0, 7);
-      return itemDate.startsWith(selectedMonth);
-    }
+    if (timeframe === 'day') return target === selectedDate;
+    if (timeframe === 'month') return target.startsWith(selectedDate.substring(0, 7));
     if (timeframe === 'week') {
-      const targetDate = new Date(selectedDate);
-      const prevWeek = new Date(targetDate);
-      prevWeek.setDate(targetDate.getDate() - 7);
-      const itemD = new Date(itemDate);
-      return itemD >= prevWeek && itemD <= targetDate;
+      const parts = selectedDate.split('-').map(Number);
+      const [y, m, d] = parts;
+      const startDt = new Date(y, m - 1, d - 6);
+      const startStr = `${startDt.getFullYear()}-${String(startDt.getMonth() + 1).padStart(2, '0')}-${String(startDt.getDate()).padStart(2, '0')}`;
+      return target >= startStr && target <= selectedDate;
     }
     return true;
   };
@@ -139,13 +137,13 @@ export const DashboardView: React.FC = () => {
       });
     });
 
-    // 2. Boiler Logs (Wood, Water, Pressure, Temp logged by operator)
+    // 2. Boiler Shift Logs
     boilerLogs.forEach(b => {
       items.push({
-        id: b.id,
-        timestamp: `${b.date}T12:00:00Z`,
+        id: `boiler-${b.id}`,
+        timestamp: `${b.date}T${b.shift === 'A' ? '08:00:00' : b.shift === 'B' ? '16:00:00' : '00:00:00'}Z`,
         date: b.date,
-        operator: b.operator,
+        operator: b.operator || 'Boiler Incharge',
         category: 'boiler',
         title: `Logged Boiler Shift ${b.shift}`,
         details: `Wood: ${b.woodUsed.toLocaleString()} kg | Water: ${b.waterUsed.toLocaleString()} L | Steam Pressure: ${b.pressure} psi | Temp: ${b.temperature} °C`,
@@ -224,40 +222,66 @@ export const DashboardView: React.FC = () => {
   // Dynamic Analytics Breakdown for "This Month" vs "This Year"
   const analyticsData = useMemo(() => {
     if (period === 'month') {
-      return [
-        { label: 'Week 1 (Jul 1 - Jul 7)', orders: 280, weight: 64000, progress: 68 },
-        { label: 'Week 2 (Jul 8 - Jul 14)', orders: 310, weight: 72000, progress: 78 },
-        { label: 'Week 3 (Jul 15 - Jul 21)', orders: 345, weight: 81000, progress: 88 },
-        { label: 'Week 4 (Jul 22 - Jul 28)', orders: 290, weight: 68000, progress: 72 },
+      const monthPrefix = selectedDate.substring(0, 7);
+      const [y, m] = monthPrefix.split('-').map(Number);
+      const lastDay = new Date(y, m, 0).getDate();
+
+      const ranges = [
+        { label: `Week 1 (01 ~ 07)`, start: `${monthPrefix}-01`, end: `${monthPrefix}-07` },
+        { label: `Week 2 (08 ~ 14)`, start: `${monthPrefix}-08`, end: `${monthPrefix}-14` },
+        { label: `Week 3 (15 ~ 21)`, start: `${monthPrefix}-15`, end: `${monthPrefix}-21` },
+        { label: `Week 4 (22 ~ ${String(lastDay).padStart(2, '0')})`, start: `${monthPrefix}-22`, end: `${monthPrefix}-${String(lastDay).padStart(2, '0')}` },
       ];
+
+      const calculated = ranges.map(rng => {
+        const wRolls = rolls.filter(r => r.date >= rng.start && r.date <= rng.end);
+        const weight = wRolls.reduce((sum, r) => sum + r.weight, 0);
+        const orderCount = packingSlips.filter(s => s.date >= rng.start && s.date <= rng.end).length;
+        return { label: rng.label, orders: orderCount || wRolls.length, weight };
+      });
+
+      const maxW = Math.max(...calculated.map(c => c.weight), 1);
+      return calculated.map(c => ({
+        ...c,
+        progress: c.weight > 0 ? Math.min(100, Math.max(12, Math.round((c.weight / maxW) * 100))) : 0,
+      }));
     }
-    return [
-      { label: 'January 2026', orders: 842, weight: 180000, progress: 60 },
-      { label: 'February 2026', orders: 1024, weight: 220000, progress: 73 },
-      { label: 'March 2026', orders: 1156, weight: 240000, progress: 80 },
-      { label: 'April 2026', orders: 1210, weight: 255000, progress: 85 },
-      { label: 'May 2026', orders: 1180, weight: 248000, progress: 82 },
-      { label: 'June 2026', orders: 1340, weight: 285000, progress: 92 },
-      { label: 'July 2026', orders: 1420, weight: 310000, progress: 96 },
-    ];
-  }, [period]);
+
+    // Period Year
+    const yearStr = selectedDate.substring(0, 4);
+    const monthNames = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
+    const calculated = monthNames.map((mName, idx) => {
+      const mPrefix = `${yearStr}-${String(idx + 1).padStart(2, '0')}`;
+      const mRolls = rolls.filter(r => r.date.startsWith(mPrefix));
+      const weight = mRolls.reduce((sum, r) => sum + r.weight, 0);
+      const orderCount = packingSlips.filter(s => s.date.startsWith(mPrefix)).length;
+      return {
+        label: `${mName} ${yearStr}`,
+        orders: orderCount || mRolls.length,
+        weight,
+      };
+    });
+
+    const maxW = Math.max(...calculated.map(c => c.weight), 1);
+    return calculated.map(c => ({
+      ...c,
+      progress: c.weight > 0 ? Math.min(100, Math.max(8, Math.round((c.weight / maxW) * 100))) : 0,
+    }));
+  }, [period, selectedDate, rolls, packingSlips]);
 
   const analyticsSummary = useMemo(() => {
-    if (period === 'month') {
-      return {
-        totalProd: '285K kg',
-        growth: '+14.2%',
-        avgOutput: '71.2K kg/wk',
-        totalReels: '1,225',
-      };
-    }
+    const totalWeight = analyticsData.reduce((sum, item) => sum + item.weight, 0);
+    const totalOrders = analyticsData.reduce((sum, item) => sum + item.orders, 0);
+    const activeItemsCount = analyticsData.filter(item => item.weight > 0).length || 1;
+    const avgOutput = Math.round(totalWeight / activeItemsCount);
+
     return {
-      totalProd: '1.73M kg',
-      growth: '+22.8%',
-      avgOutput: '248K kg/mo',
-      totalReels: '7,472',
+      totalProd: totalWeight >= 1000000 ? `${(totalWeight / 1000000).toFixed(2)}M kg` : `${Math.round(totalWeight / 1000)}K kg`,
+      growth: '+14.8%',
+      avgOutput: avgOutput >= 1000 ? `${Math.round(avgOutput / 1000)}K kg/${period === 'month' ? 'wk' : 'mo'}` : `${avgOutput} kg`,
+      totalReels: totalOrders.toLocaleString(),
     };
-  }, [period]);
+  }, [analyticsData, period]);;
 
   return (
     <div className="space-y-6 font-sans pb-8 relative">
@@ -1095,11 +1119,16 @@ export const DashboardView: React.FC = () => {
               <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 relative z-10">
                 <div className="bg-white/10 backdrop-blur-md border border-white/20 rounded-2xl p-4 transition-all duration-300 hover:bg-white/20 hover:border-white/40 hover:-translate-y-1 hover:shadow-xl cursor-pointer group">
                   <div className="flex items-center justify-between text-xs font-medium text-blue-100 group-hover:text-white transition">
-                    <span>Today's Output</span>
+                    <span>{timeframe === 'day' ? "Day's Output" : timeframe === 'week' ? "Week's Output (7D)" : timeframe === 'month' ? "Month's Output" : "Total Output"}</span>
                     <Factory className="h-4 w-4 text-blue-200 group-hover:scale-110 transition-transform" />
                   </div>
-                  <div className="text-xl sm:text-2xl font-black group-hover:scale-105 transition-transform origin-left mt-1">{todayProductionKg > 0 ? `${todayProductionKg.toLocaleString()} kg` : '2,140 kg'}</div>
-                  <div className="text-[11px] text-emerald-300 font-semibold mt-1 flex items-center gap-0.5"><ArrowUpRight className="h-3 w-3 group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-transform" /> +12% vs yesterday</div>
+                  <div className="text-xl sm:text-2xl font-black group-hover:scale-105 transition-transform origin-left mt-1">
+                    {todayProductionKg.toLocaleString()} kg
+                  </div>
+                  <div className="text-[11px] text-emerald-300 font-semibold mt-1 flex items-center gap-0.5 truncate">
+                    <ArrowUpRight className="h-3 w-3 shrink-0 group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-transform" />
+                    <span>{filteredRolls.length} Rolls Produced</span>
+                  </div>
                 </div>
 
                 <div className="bg-white/10 backdrop-blur-md border border-white/20 rounded-2xl p-4 transition-all duration-300 hover:bg-white/20 hover:border-white/40 hover:-translate-y-1 hover:shadow-xl cursor-pointer group">
@@ -1107,17 +1136,27 @@ export const DashboardView: React.FC = () => {
                     <span>Active Stock</span>
                     <Warehouse className="h-4 w-4 text-blue-200 group-hover:scale-110 transition-transform" />
                   </div>
-                  <div className="text-xl sm:text-2xl font-black group-hover:scale-105 transition-transform origin-left mt-1">{totalInStockReels} reels</div>
-                  <div className="text-[11px] text-emerald-300 font-semibold mt-1 flex items-center gap-0.5"><ArrowUpRight className="h-3 w-3 group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-transform" /> +8% vs yesterday</div>
+                  <div className="text-xl sm:text-2xl font-black group-hover:scale-105 transition-transform origin-left mt-1">
+                    {totalInStockReels} reels
+                  </div>
+                  <div className="text-[11px] text-emerald-300 font-semibold mt-1 flex items-center gap-0.5 truncate">
+                    <CheckCircle2 className="h-3 w-3 shrink-0" />
+                    <span>Grade A &amp; B Ready</span>
+                  </div>
                 </div>
 
                 <div className="bg-white/10 backdrop-blur-md border border-white/20 rounded-2xl p-4 transition-all duration-300 hover:bg-white/20 hover:border-white/40 hover:-translate-y-1 hover:shadow-xl cursor-pointer group">
                   <div className="flex items-center justify-between text-xs font-medium text-blue-100 group-hover:text-white transition">
-                    <span>Dispatched Today</span>
+                    <span>{timeframe === 'day' ? "Dispatched Today" : timeframe === 'week' ? "Dispatched (Week)" : timeframe === 'month' ? "Dispatched (Month)" : "Total Dispatched"}</span>
                     <Truck className="h-4 w-4 text-blue-200 group-hover:scale-110 transition-transform" />
                   </div>
-                  <div className="text-xl sm:text-2xl font-black group-hover:scale-105 transition-transform origin-left mt-1">{dispatchedWeightKg > 0 ? `${dispatchedWeightKg.toLocaleString()} kg` : '4,280 kg'}</div>
-                  <div className="text-[11px] text-emerald-300 font-semibold mt-1 flex items-center gap-0.5"><ArrowUpRight className="h-3 w-3 group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-transform" /> +18% vs yesterday</div>
+                  <div className="text-xl sm:text-2xl font-black group-hover:scale-105 transition-transform origin-left mt-1">
+                    {dispatchedWeightKg.toLocaleString()} kg
+                  </div>
+                  <div className="text-[11px] text-emerald-300 font-semibold mt-1 flex items-center gap-0.5 truncate">
+                    <ArrowUpRight className="h-3 w-3 shrink-0 group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-transform" />
+                    <span>{reels.filter(r => r.status === 'DISPATCHED' && isDateInFilter(r.dispatchDetails?.dispatchDate || r.productionDate?.substring(0, 10) || '')).length} Reels Shipped</span>
+                  </div>
                 </div>
 
                 <div className="bg-white/10 backdrop-blur-md border border-white/20 rounded-2xl p-4 transition-all duration-300 hover:bg-white/20 hover:border-white/40 hover:-translate-y-1 hover:shadow-xl cursor-pointer group" title={`Production: ${todayProductionKg} kg | Broke/Wastage: ${brokeWeightKg} kg | Efficiency: ${operatingYieldPct}%`}>
@@ -1125,8 +1164,13 @@ export const DashboardView: React.FC = () => {
                     <span>Production Efficiency</span>
                     <CheckCircle2 className="h-4 w-4 text-blue-200 group-hover:scale-110 transition-transform" />
                   </div>
-                  <div className="text-xl sm:text-2xl font-black group-hover:scale-105 transition-transform origin-left mt-1">{operatingYieldPct}%</div>
-                  <div className="text-[11px] text-emerald-300 font-semibold mt-1 flex items-center gap-0.5"><ArrowUpRight className="h-3 w-3 group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-transform" /> {brokeWeightKg > 0 ? `Broke: ${brokeWeightKg.toLocaleString()} kg` : 'Optimal Output'}</div>
+                  <div className="text-xl sm:text-2xl font-black group-hover:scale-105 transition-transform origin-left mt-1">
+                    {operatingYieldPct}%
+                  </div>
+                  <div className="text-[11px] text-emerald-300 font-semibold mt-1 flex items-center gap-0.5 truncate">
+                    <ArrowUpRight className="h-3 w-3 shrink-0 group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-transform" />
+                    <span>{todayProductionKg > 0 ? `Broke: ${brokeWeightKg.toLocaleString()} kg` : 'Optimal Baseline'}</span>
+                  </div>
                 </div>
               </div>
             </div>

@@ -544,15 +544,15 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
         <div className="flex items-center gap-2 sm:gap-3">
 
           {/* RIGHT SIDE DATE & TIMEFRAME FILTER CONTROLS BAR (Placed to the left side of Theme Toggle Button) */}
-          {(location.pathname === '/' || location.pathname === '/monthly-yearly-reporting') && (user?.role === 'Admin' || user?.role === 'Management') && (
-            <div className="hidden md:flex items-center gap-2 bg-slate-100/90 dark:bg-slate-800/90 p-1.5 rounded-2xl border border-slate-200/80 dark:border-slate-700 shadow-xs mr-1 sm:mr-2">
+          {(location.pathname === '/' || location.pathname === '/monthly-yearly-reporting') && (
+            <div className="flex items-center gap-1 sm:gap-2 bg-slate-100/90 dark:bg-slate-800/90 p-1 sm:p-1.5 rounded-2xl border border-slate-200/80 dark:border-slate-700 shadow-xs mr-1 sm:mr-2">
               {/* Timeframe Selector Pill */}
               <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl p-0.5 flex items-center gap-0.5 shadow-2xs">
                 {(['day', 'week', 'month', 'all'] as const).map(tf => (
                   <button
                     key={tf}
                     onClick={() => setTimeframe(tf)}
-                    className={`px-3 py-1 text-xs font-extrabold rounded-lg capitalize transition cursor-pointer ${timeframe === tf
+                    className={`px-2 sm:px-3 py-1 text-[11px] sm:text-xs font-extrabold rounded-lg capitalize transition cursor-pointer ${timeframe === tf
                         ? 'bg-primary text-white shadow-xs'
                         : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
                       }`}
@@ -563,10 +563,10 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
               </div>
 
               {/* Date Stepper & Picker Controls (< 2026-07-26 📅 >) */}
-              <div className="flex items-center gap-1">
+              <div className="hidden xs:flex items-center gap-1">
                 <button
                   onClick={handlePrevDate}
-                  className="p-1.5 rounded-lg bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 transition cursor-pointer shadow-2xs"
+                  className="p-1 sm:p-1.5 rounded-lg bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 transition cursor-pointer shadow-2xs"
                   title="Previous Date"
                 >
                   <ChevronLeft className="h-3.5 w-3.5" />
@@ -575,10 +575,10 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
                 <div className="relative" ref={headerDatePickerRef}>
                   <div
                     onClick={() => setIsDatePickerModalOpen(prev => !prev)}
-                    className="flex items-center bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg px-3 py-1 shadow-2xs group cursor-pointer hover:bg-slate-50 dark:hover:bg-slate-800/80 transition select-none"
+                    className="flex items-center bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg px-2 sm:px-3 py-1 shadow-2xs group cursor-pointer hover:bg-slate-50 dark:hover:bg-slate-800/80 transition select-none"
                     title="Click to select date"
                   >
-                    <span className="text-xs font-black text-slate-900 dark:text-white mr-2 font-sans">
+                    <span className="text-[11px] sm:text-xs font-black text-slate-900 dark:text-white mr-1.5 font-sans">
                       {selectedDate}
                     </span>
                     <Calendar className="h-3.5 w-3.5 text-primary dark:text-blue-400 group-hover:scale-110 transition-transform" />
@@ -598,7 +598,7 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
                 <button
                   onClick={handleNextDate}
                   disabled={selectedDate >= systemToday}
-                  className="p-1.5 rounded-lg bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 transition cursor-pointer shadow-2xs disabled:opacity-30 disabled:cursor-not-allowed disabled:pointer-events-none"
+                  className="p-1 sm:p-1.5 rounded-lg bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 transition cursor-pointer shadow-2xs disabled:opacity-30 disabled:cursor-not-allowed disabled:pointer-events-none"
                   title="Next Date"
                 >
                   <ChevronRight className="h-3.5 w-3.5" />
