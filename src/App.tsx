@@ -21,6 +21,7 @@ import { QRTraceabilityView } from './modules/rewinder/QRTraceabilityView';
 import { OrdersView } from './modules/orders/OrdersView';
 import { LabView } from './modules/lab/LabView';
 import { ExperimentView } from './modules/experiment/ExperimentView';
+import { GradientStudioView } from './modules/theme-studio/GradientStudioView';
 
 
 import { DateFilterProvider } from './context/DateFilterContext';
@@ -244,6 +245,17 @@ export default function App() {
               <ProtectedRoute moduleName="admin_panel_audit">
                 <Layout>
                   <ExperimentView />
+                </Layout>
+              </ProtectedRoute>
+            }
+          />
+
+          <Route
+            path="/gradient-studio"
+            element={
+              <ProtectedRoute moduleName="dashboard">
+                <Layout>
+                  <GradientStudioView />
                 </Layout>
               </ProtectedRoute>
             }

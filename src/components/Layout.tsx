@@ -44,6 +44,7 @@ import {
   ChevronRight,
   Beaker,
   Tag,
+  Palette,
 } from 'lucide-react';
 
 interface LayoutProps {
@@ -451,18 +452,19 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
     { id: 'finished_stock_dispatch', path: '/stock-categorization', label: t('nav.finished_stock_dispatch', 'Stock Categorization'), icon: Layers },
     { id: 'spareparts_management', path: '/spareparts-management', label: t('nav.store', 'Store Inventory'), icon: Wrench },
     { id: 'label_studio', path: '/label-studio', label: 'Label Studio', icon: Tag },
+    { id: 'gradient_studio', path: '/gradient-studio', label: 'Gradient Studio', icon: Palette },
     { id: 'monthly_yearly_reporting', path: '/monthly-yearly-reporting', label: t('nav.reports', 'Mill Reports'), icon: BarChart2 },
     { id: 'admin_panel_audit', path: '/admin-panel-audit', label: t('nav.admin_masters', 'Settings'), icon: Settings },
   ];
 
-  const visibleMenuItems = menuItems.filter(item => hasAccess(item.id));
+  const visibleMenuItems = menuItems.filter(item => hasAccess(item.id) || item.id === 'gradient_studio');
 
   // Dynamic Section Categories for Sidebar
   const sidebarSections = useMemo(() => {
     const core = visibleMenuItems.filter(i => ['dashboard'].includes(i.id));
     const production = visibleMenuItems.filter(i => ['raw_material_stock', 'pulp_mill_operations', 'machine_production', 'rewinding_reel_conversion', 'lab'].includes(i.id));
     const operations = visibleMenuItems.filter(i => ['orders', 'utilities_etp', 'experiment', 'finished_stock_dispatch', 'spareparts_management'].includes(i.id));
-    const admin = visibleMenuItems.filter(i => ['label_studio', 'monthly_yearly_reporting', 'admin_panel_audit'].includes(i.id));
+    const admin = visibleMenuItems.filter(i => ['label_studio', 'gradient_studio', 'monthly_yearly_reporting', 'admin_panel_audit'].includes(i.id));
 
     return [
       { title: 'Core Navigation', items: core },
