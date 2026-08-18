@@ -10,6 +10,7 @@ import {
   getVehicles,
 } from '../../data/index';
 import { CustomDatePickerModal } from '../../components/CustomDatePickerModal';
+import { DataFilterBar, type FilterField } from '../../components/DataFilterBar';
 import { useDateFilter } from '../../context/DateFilterContext';
 import * as XLSX from 'xlsx';
 import { COMPANY_CONFIG } from '../../config/company';
@@ -68,6 +69,14 @@ export const ReportsView: React.FC = () => {
 
   const [selectedReport, setSelectedReport] = useState<ReportType>('daily_prod');
   const [reportsSearchQuery, setReportsSearchQuery] = useState('');
+  const [reportDateFrom, setReportDateFrom] = useState('');
+  const [reportDateTo, setReportDateTo] = useState('');
+  const [reportProductFilter, setReportProductFilter] = useState('all');
+  const [reportGradeFilter, setReportGradeFilter] = useState('all');
+  const [reportGsmFilter, setReportGsmFilter] = useState('all');
+  const [reportPartyFilter, setReportPartyFilter] = useState('all');
+  const [reportVehicleFilter, setReportVehicleFilter] = useState('all');
+  const [reportModuleFilter, setReportModuleFilter] = useState('all');
 
   // Consume Global Date & Timeframe Filter Context (from Top Navbar Control)
   const { timeframe, selectedDate } = useDateFilter();
@@ -385,62 +394,158 @@ export const ReportsView: React.FC = () => {
     ];
   }, [reels]);
 
-  // --- SEARCH FILTERED REPORT VIEWS ---
+  // Custom Date Range validation helper
+  const isDateInCustomRange = (dateStr?: string) => {
+    if (!dateStr) return true;
+    const target = dateStr.substring(0, 10);
+    if (reportDateFrom && target < reportDateFrom) return false;
+    if (reportDateTo && target > reportDateTo) return false;
+    return true;
+  };
+
+  // Unique options for dynamic filter dropdowns
+  const uniqueProducts = useMemo(() => [...new Set(reels.map(r => r.product).filter(Boolean))], [reels]);
+  const uniqueGsms = useMemo(() => [...new Set(reels.map(r => String(r.gsm)).filter(Boolean))].sort((a, b) => Number(a) - Number(b)), [reels]);
+  const uniqueParties = useMemo(() => parties.map(p => ({ label: p.name, value: p.name })), [parties]);
+  const uniqueVehicles = useMemo(() => vehicles.map(v => ({ label: v.vehicleNo, value: v.vehicleNo })), [vehicles]);
+
+  const activeFilterFields: FilterField[] = useMemo(() => {
+    if (selectedReport === 'avail_reels') {
+      return [
+        { id: 'product', label: 'Product Name', options: uniqueProducts.map(p => ({ label: p, value: p })) },
+        { id: 'grade', label: 'QC Grade', options: [{ label: 'Grade A', value: 'A' }, { label: 'Grade B', value: 'B' }] },
+        { id: 'gsm', label: 'GSM', options: uniqueGsms.map(g => ({ label: `${g} GSM`, value: g })) },
+      ];
+    }
+    if (selectedReport === 'sold_reels') {
+      return [
+        { id: 'product', label: 'Product Name', options: uniqueProducts.map(p => ({ label: p, value: p })) },
+        { id: 'party', label: 'Customer / Party', options: uniqueParties },
+        { id: 'vehicle', label: 'Vehicle Number', options: uniqueVehicles },
+      ];
+    }
+    if (selectedReport === 'vehicle_wise') {
+      return [
+        { id: 'vehicle', label: 'Vehicle Number', options: uniqueVehicles },
+      ];
+    }
+    if (selectedReport === 'party_wise') {
+      return [
+        { id: 'party', label: 'Customer / Party', options: uniqueParties },
+      ];
+    }
+    if (selectedReport === 'raw_material') {
+      return [
+        {
+          id: 'module',
+          label: 'Module Area',
+          options: [
+            { label: 'Raw Material', value: 'Raw Material' },
+            { label: 'Pulp Mill', value: 'Pulp Mill' },
+            { label: 'Machine', value: 'Machine' },
+          ],
+        },
+      ];
+    }
+    return [];
+  }, [selectedReport, uniqueProducts, uniqueGsms, uniqueParties, uniqueVehicles]);
+
+  const clearAllReportFilters = () => {
+    setReportsSearchQuery('');
+    setReportDateFrom('');
+    setReportDateTo('');
+    setReportProductFilter('all');
+    setReportGradeFilter('all');
+    setReportGsmFilter('all');
+    setReportPartyFilter('all');
+    setReportVehicleFilter('all');
+    setReportModuleFilter('all');
+  };
+
+  // --- SEARCH & FILTERED REPORT VIEWS ---
   const filteredDailyProd = useMemo(() => {
+    let list = dailyProdData.filter(d => isDateInCustomRange(d.date));
     const q = reportsSearchQuery.toLowerCase().trim();
-    if (!q) return dailyProdData;
-    return dailyProdData.filter(d => d.date.includes(q));
-  }, [dailyProdData, reportsSearchQuery]);
+    if (q) list = list.filter(d => d.date.includes(q));
+    return list;
+  }, [dailyProdData, reportsSearchQuery, reportDateFrom, reportDateTo]);
 
   const filteredDailyDisp = useMemo(() => {
+    let list = dailyDispData.filter(d => isDateInCustomRange(d.date));
     const q = reportsSearchQuery.toLowerCase().trim();
-    if (!q) return dailyDispData;
-    return dailyDispData.filter(d => d.date.includes(q));
-  }, [dailyDispData, reportsSearchQuery]);
+    if (q) list = list.filter(d => d.date.includes(q));
+    return list;
+  }, [dailyDispData, reportsSearchQuery, reportDateFrom, reportDateTo]);
 
   const filteredAvailReels = useMemo(() => {
+    let list = availReelsData.filter(r => isDateInCustomRange(r.productionDate));
+    if (reportProductFilter !== 'all') list = list.filter(r => r.product === reportProductFilter);
+    if (reportGradeFilter !== 'all') list = list.filter(r => r.qcGrade === reportGradeFilter);
+    if (reportGsmFilter !== 'all') list = list.filter(r => String(r.gsm) === reportGsmFilter);
     const q = reportsSearchQuery.toLowerCase().trim();
-    if (!q) return availReelsData;
-    return availReelsData.filter(
-      r =>
-        r.reelNo.toLowerCase().includes(q) ||
-        r.product.toLowerCase().includes(q) ||
-        r.gsm.toString().includes(q)
-    );
-  }, [availReelsData, reportsSearchQuery]);
+    if (q) {
+      list = list.filter(
+        r =>
+          r.reelNo.toLowerCase().includes(q) ||
+          r.product.toLowerCase().includes(q) ||
+          String(r.gsm).includes(q) ||
+          String(r.size).includes(q) ||
+          r.qcGrade.toLowerCase().includes(q)
+      );
+    }
+    return list;
+  }, [availReelsData, reportsSearchQuery, reportDateFrom, reportDateTo, reportProductFilter, reportGradeFilter, reportGsmFilter]);
 
   const filteredSoldReels = useMemo(() => {
+    let list = soldReelsData.filter(r => isDateInCustomRange(r.dispatchDetails?.dispatchDate || r.productionDate));
+    if (reportProductFilter !== 'all') list = list.filter(r => r.product === reportProductFilter);
+    if (reportPartyFilter !== 'all') list = list.filter(r => (r.dispatchDetails?.partyName || '').toLowerCase() === reportPartyFilter.toLowerCase());
+    if (reportVehicleFilter !== 'all') list = list.filter(r => (r.dispatchDetails?.vehicleNo || '').toLowerCase() === reportVehicleFilter.toLowerCase());
     const q = reportsSearchQuery.toLowerCase().trim();
-    if (!q) return soldReelsData;
-    return soldReelsData.filter(
-      r =>
-        r.reelNo.toLowerCase().includes(q) ||
-        (r.dispatchDetails?.partyName && r.dispatchDetails.partyName.toLowerCase().includes(q)) ||
-        (r.dispatchDetails?.packingSlipNo && r.dispatchDetails.packingSlipNo.toLowerCase().includes(q))
-    );
-  }, [soldReelsData, reportsSearchQuery]);
+    if (q) {
+      list = list.filter(
+        r =>
+          r.reelNo.toLowerCase().includes(q) ||
+          r.product.toLowerCase().includes(q) ||
+          (r.dispatchDetails?.partyName && r.dispatchDetails.partyName.toLowerCase().includes(q)) ||
+          (r.dispatchDetails?.packingSlipNo && r.dispatchDetails.packingSlipNo.toLowerCase().includes(q)) ||
+          (r.dispatchDetails?.vehicleNo && r.dispatchDetails.vehicleNo.toLowerCase().includes(q))
+      );
+    }
+    return list;
+  }, [soldReelsData, reportsSearchQuery, reportDateFrom, reportDateTo, reportProductFilter, reportPartyFilter, reportVehicleFilter]);
 
   const filteredVehicleWise = useMemo(() => {
+    let list = vehicleWiseData;
+    if (reportVehicleFilter !== 'all') list = list.filter(v => v.vehicleNo === reportVehicleFilter);
     const q = reportsSearchQuery.toLowerCase().trim();
-    if (!q) return vehicleWiseData;
-    return vehicleWiseData.filter(
-      v => v.vehicleNo.toLowerCase().includes(q) || v.driverName.toLowerCase().includes(q)
-    );
-  }, [vehicleWiseData, reportsSearchQuery]);
+    if (q) {
+      list = list.filter(
+        v => v.vehicleNo.toLowerCase().includes(q) || v.driverName.toLowerCase().includes(q)
+      );
+    }
+    return list;
+  }, [vehicleWiseData, reportsSearchQuery, reportVehicleFilter]);
 
   const filteredPartyWise = useMemo(() => {
+    let list = partyWiseData;
+    if (reportPartyFilter !== 'all') list = list.filter(p => p.partyName === reportPartyFilter);
     const q = reportsSearchQuery.toLowerCase().trim();
-    if (!q) return partyWiseData;
-    return partyWiseData.filter(p => p.partyName.toLowerCase().includes(q));
-  }, [partyWiseData, reportsSearchQuery]);
+    if (q) list = list.filter(p => p.partyName.toLowerCase().includes(q));
+    return list;
+  }, [partyWiseData, reportsSearchQuery, reportPartyFilter]);
 
   const filteredRawMovement = useMemo(() => {
+    let list = rawMaterialMovement.filter(l => isDateInCustomRange(l.timestamp));
+    if (reportModuleFilter !== 'all') list = list.filter(l => l.module === reportModuleFilter);
     const q = reportsSearchQuery.toLowerCase().trim();
-    if (!q) return rawMaterialMovement;
-    return rawMaterialMovement.filter(
-      l => l.action.toLowerCase().includes(q) || l.details.toLowerCase().includes(q) || l.user.toLowerCase().includes(q)
-    );
-  }, [rawMaterialMovement, reportsSearchQuery]);
+    if (q) {
+      list = list.filter(
+        l => l.action.toLowerCase().includes(q) || l.details.toLowerCase().includes(q) || l.user.toLowerCase().includes(q)
+      );
+    }
+    return list;
+  }, [rawMaterialMovement, reportsSearchQuery, reportDateFrom, reportDateTo, reportModuleFilter]);
 
   // --- EXCEL (.XLSX) EXPORT FUNCTION ---
   const handleExportExcel = () => {
@@ -964,6 +1069,83 @@ export const ReportsView: React.FC = () => {
               </button>
             );
           })}
+        </div>
+
+        {/* Search & Dynamic Filter Toolbar */}
+        <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 pt-1">
+          {/* Left: Search Box */}
+          <div className="relative flex-1">
+            <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
+            <input
+              type="text"
+              value={reportsSearchQuery}
+              onChange={e => setReportsSearchQuery(e.target.value)}
+              placeholder={`Search in ${reportsList.find(r => r.id === selectedReport)?.name || 'report'}...`}
+              className="w-full pl-10 pr-9 py-2.5 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-2xl text-xs font-bold text-slate-900 dark:text-white placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-primary shadow-2xs"
+            />
+            {reportsSearchQuery && (
+              <button
+                type="button"
+                onClick={() => setReportsSearchQuery('')}
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 dark:hover:text-white p-0.5 cursor-pointer"
+              >
+                <X className="h-3.5 w-3.5" />
+              </button>
+            )}
+          </div>
+
+          {/* Right: DataFilterBar & Reset Button & Count Badge */}
+          <div className="flex items-center gap-2.5 flex-wrap self-end sm:self-auto">
+            <DataFilterBar
+              dateFrom={reportDateFrom}
+              dateTo={reportDateTo}
+              onDateFromChange={setReportDateFrom}
+              onDateToChange={setReportDateTo}
+              filterFields={activeFilterFields}
+              activeFilters={{
+                product: reportProductFilter,
+                grade: reportGradeFilter,
+                gsm: reportGsmFilter,
+                party: reportPartyFilter,
+                vehicle: reportVehicleFilter,
+                module: reportModuleFilter,
+              }}
+              onFilterChange={(fieldId, value) => {
+                if (fieldId === 'product') setReportProductFilter(value);
+                if (fieldId === 'grade') setReportGradeFilter(value);
+                if (fieldId === 'gsm') setReportGsmFilter(value);
+                if (fieldId === 'party') setReportPartyFilter(value);
+                if (fieldId === 'vehicle') setReportVehicleFilter(value);
+                if (fieldId === 'module') setReportModuleFilter(value);
+              }}
+              onClearAll={clearAllReportFilters}
+            />
+
+            {(reportDateFrom || reportDateTo || reportProductFilter !== 'all' || reportGradeFilter !== 'all' || reportGsmFilter !== 'all' || reportPartyFilter !== 'all' || reportVehicleFilter !== 'all' || reportModuleFilter !== 'all' || reportsSearchQuery) && (
+              <button
+                type="button"
+                onClick={clearAllReportFilters}
+                className="px-3 py-2 bg-red-50 dark:bg-red-950/30 text-red-600 dark:text-red-400 border border-red-200 dark:border-red-800 rounded-2xl text-xs font-black uppercase tracking-wider transition hover:bg-red-100 dark:hover:bg-red-900/40 cursor-pointer flex items-center gap-1.5 active:scale-95"
+              >
+                <RefreshCw className="h-3 w-3" />
+                <span>Reset</span>
+              </button>
+            )}
+
+            <div className="px-3 py-2 bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 rounded-2xl text-xs font-black font-mono border border-slate-200 dark:border-slate-700 shrink-0">
+              {(() => {
+                let count = 0;
+                if (selectedReport === 'daily_prod') count = filteredDailyProd.length;
+                else if (selectedReport === 'daily_disp') count = filteredDailyDisp.length;
+                else if (selectedReport === 'avail_reels') count = filteredAvailReels.length;
+                else if (selectedReport === 'sold_reels') count = filteredSoldReels.length;
+                else if (selectedReport === 'vehicle_wise') count = filteredVehicleWise.length;
+                else if (selectedReport === 'party_wise') count = filteredPartyWise.length;
+                else if (selectedReport === 'raw_material') count = filteredRawMovement.length;
+                return `${count} ${count === 1 ? 'Record' : 'Records'}`;
+              })()}
+            </div>
+          </div>
         </div>
 
         {/* 6. Active Report Data Tables */}
