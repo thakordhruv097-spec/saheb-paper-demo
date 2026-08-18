@@ -69,6 +69,7 @@ export const MachineView: React.FC = () => {
   const [weightStr, setWeightStr] = useState(() => localStorage.getItem('draft_roll_weight') || '');
   const [gsmStr, setGsmStr] = useState(() => localStorage.getItem('draft_roll_gsm') || '');
   const [widthStr, setWidthStr] = useState(() => localStorage.getItem('draft_roll_width') || '30');
+  const [jointStr, setJointStr] = useState(() => localStorage.getItem('draft_roll_joint') || '0');
   const [shift, setShift] = useState<'A' | 'B'>(() => (localStorage.getItem('draft_roll_shift') as 'A' | 'B') || 'A');
   const [startTime, setStartTime] = useState(() => localStorage.getItem('draft_roll_start_time') || '08:00');
   const [offTime, setOffTime] = useState(() => localStorage.getItem('draft_roll_off_time') || '16:00');
@@ -82,11 +83,12 @@ export const MachineView: React.FC = () => {
     localStorage.setItem('draft_roll_weight', weightStr);
     localStorage.setItem('draft_roll_gsm', gsmStr);
     localStorage.setItem('draft_roll_width', widthStr);
+    localStorage.setItem('draft_roll_joint', jointStr);
     localStorage.setItem('draft_roll_shift', shift);
     localStorage.setItem('draft_roll_start_time', startTime);
     localStorage.setItem('draft_roll_off_time', offTime);
     localStorage.setItem('draft_roll_downtime', downtimeReason);
-  }, [dateStr, rollNo, selectedProductId, weightStr, gsmStr, widthStr, shift, startTime, offTime, downtimeReason]);
+  }, [dateStr, rollNo, selectedProductId, weightStr, gsmStr, widthStr, jointStr, shift, startTime, offTime, downtimeReason]);
 
   const clearDraft = () => {
     localStorage.removeItem('draft_roll_date');
@@ -95,6 +97,7 @@ export const MachineView: React.FC = () => {
     localStorage.removeItem('draft_roll_weight');
     localStorage.removeItem('draft_roll_gsm');
     localStorage.removeItem('draft_roll_width');
+    localStorage.removeItem('draft_roll_joint');
     localStorage.removeItem('draft_roll_shift');
     localStorage.removeItem('draft_roll_start_time');
     localStorage.removeItem('draft_roll_off_time');
@@ -161,6 +164,7 @@ export const MachineView: React.FC = () => {
       weight,
       gsm,
       width,
+      joint: parseInt(jointStr) || 0,
       shift,
       startTime,
       offTime,
@@ -178,6 +182,7 @@ export const MachineView: React.FC = () => {
       setWeightStr('');
       setGsmStr('');
       setWidthStr('30');
+      setJointStr('0');
       setDowntimeReason('');
       clearDraft();
     } catch (err: any) {
@@ -342,7 +347,7 @@ export const MachineView: React.FC = () => {
                     placeholder="Weight in kg"
                   />
                 </div>
-                <div className="grid grid-cols-2 gap-2">
+                <div className="grid grid-cols-3 gap-2">
                   <div>
                     <label className="block text-[11px] font-black text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-1.5">
                       GSM
@@ -364,7 +369,20 @@ export const MachineView: React.FC = () => {
                       value={widthStr}
                       onChange={e => setWidthStr(e.target.value)}
                       className="block w-full py-2.5 px-3.5 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-2xl text-xs font-bold focus:outline-none focus:ring-2 focus:ring-primary dark:text-white"
-                      placeholder="270"
+                      placeholder="30"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-[11px] font-black text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-1.5">
+                      Joint
+                    </label>
+                    <input
+                      type="number"
+                      min="0"
+                      value={jointStr}
+                      onChange={e => setJointStr(e.target.value)}
+                      className="block w-full py-2.5 px-3.5 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-2xl text-xs font-bold focus:outline-none focus:ring-2 focus:ring-primary dark:text-white font-mono"
+                      placeholder="0"
                     />
                   </div>
                 </div>
@@ -489,6 +507,10 @@ export const MachineView: React.FC = () => {
                     <div>
                       <span className="text-slate-400 uppercase text-[9px] block">Roll Size</span>
                       <span className="font-bold text-slate-800 dark:text-slate-200 block">{r.width} cm</span>
+                    </div>
+                    <div>
+                      <span className="text-slate-400 uppercase text-[9px] block">Joints</span>
+                      <span className="font-bold text-slate-800 dark:text-slate-200 block font-mono">{r.joint ?? 0}</span>
                     </div>
                   </div>
                   {r.downtimeReason && (

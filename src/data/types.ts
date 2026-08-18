@@ -88,7 +88,8 @@ export interface MachineRoll {
   product: string;
   weight: number; // in kg
   gsm: number;
-  width: number; // in mm
+  width: number; // in mm or cm
+  joint?: number; // number of joints
   shift: 'A' | 'B';
   startTime: string;
   offTime: string;
