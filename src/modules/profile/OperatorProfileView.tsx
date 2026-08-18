@@ -89,7 +89,7 @@ export const OperatorProfileView: React.FC<OperatorProfileViewProps> = () => {
     <div className="w-full space-y-6 font-sans pb-12">
       
       {/* 1. HERO HEADER PROFILE BANNER */}
-      <div className="bg-gradient-to-r from-blue-600 via-indigo-600 to-primary rounded-3xl p-6 sm:p-8 text-white shadow-xl relative overflow-hidden">
+      <div className="bg-gradient-to-r from-slate-900 via-blue-950 to-slate-900 border border-slate-800 rounded-3xl p-6 sm:p-8 text-white shadow-xl relative overflow-hidden">
         <div className="absolute -top-12 -right-12 w-48 h-48 rounded-full bg-white/10 blur-xl pointer-events-none" />
         
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-6 relative z-10">

@@ -127,28 +127,28 @@ export const RoleManagementView: React.FC = () => {
       )}
 
       {/* TOP HEADER BANNER */}
-      <div className="bg-gradient-to-r from-blue-700 via-indigo-700 to-slate-900 border border-slate-800/60 rounded-3xl p-5 sm:p-6 shadow-md flex flex-col sm:flex-row sm:items-center justify-between gap-4 text-white">
+      <div className="bg-gradient-to-r from-slate-900 via-blue-950 to-slate-900 border border-slate-800 rounded-3xl p-5 sm:p-6 shadow-md flex flex-col sm:flex-row sm:items-center justify-between gap-4 text-white">
         <div className="space-y-1">
           <div className="flex items-center gap-2.5">
-            <div className="p-2 rounded-xl bg-white/20 text-white border border-white/30">
+            <div className="p-2 rounded-xl bg-white/10 text-white border border-white/20">
               <ShieldCheck className="h-5 w-5" />
             </div>
             <h2 className="text-xl font-black tracking-tight">Role Management & Module Permission Matrix</h2>
           </div>
-          <p className="text-xs text-blue-200/90 font-medium">
+          <p className="text-xs text-slate-300 font-medium">
             Granularly assign ERP modules to specific worker profiles and simulate active worker sessions to test permissions
           </p>
         </div>
 
         {/* SEARCH BAR */}
         <div className="relative w-full sm:w-72">
-          <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-blue-200" />
+          <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
           <input
             type="text"
             value={searchTerm}
             onChange={e => setSearchTerm(e.target.value)}
             placeholder="Search worker profile or ID..."
-            className="w-full pl-10 pr-4 py-2.5 bg-white/10 dark:bg-slate-900/90 border border-white/20 dark:border-slate-700 rounded-xl text-xs font-semibold text-white placeholder-blue-200/60 focus:outline-none focus:ring-2 focus:ring-blue-400/50"
+            className="w-full pl-10 pr-4 py-2.5 bg-white/10 dark:bg-slate-900/90 border border-white/20 dark:border-slate-700 rounded-xl text-xs font-semibold text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-sky-500/50"
           />
         </div>
       </div>
@@ -203,7 +203,7 @@ export const RoleManagementView: React.FC = () => {
                     className={`px-4 py-2 rounded-2xl text-xs font-black transition cursor-pointer flex items-center gap-1.5 shadow-sm active:scale-95 ${
                       isCurrent
                         ? 'bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400 border border-slate-200 dark:border-slate-700 cursor-default'
-                        : 'bg-primary hover:bg-blue-700 text-white uppercase tracking-wider shadow-md transition cursor-pointer'
+                        : 'bg-gradient-to-br from-cyan-600 to-sky-700 hover:from-cyan-700 hover:to-sky-800 text-white uppercase tracking-wider shadow-md shadow-sky-700/25 transition cursor-pointer'
                     }`}
                   >
                     {isCurrent ? (
@@ -235,10 +235,10 @@ export const RoleManagementView: React.FC = () => {
                     <button
                       key={mod.key}
                       onClick={() => handleToggleModule(u, mod.key)}
-                      className={`px-3.5 py-2.5 rounded-full border text-xs font-extrabold transition-all cursor-pointer flex items-center gap-2 select-none active:scale-95 truncate ${
+                      className={`px-3.5 py-2.5 rounded-full border text-xs font-bold transition-all cursor-pointer flex items-center gap-2 select-none active:scale-95 truncate ${
                         isActive
-                          ? 'bg-gradient-to-r from-blue-600 via-indigo-600 to-blue-700 hover:from-blue-500 hover:to-indigo-500 text-white border-blue-400/50 shadow-md shadow-blue-600/25 ring-1 ring-blue-400/30'
-                          : 'bg-slate-100 hover:bg-slate-200/80 dark:bg-slate-800/60 dark:hover:bg-slate-800 text-slate-500 dark:text-slate-400 border-slate-200/80 dark:border-slate-700/60 opacity-80 hover:opacity-100'
+                          ? 'bg-gradient-to-br from-blue-700 to-blue-900 hover:from-blue-800 hover:to-blue-950 text-white border-blue-600 shadow-sm'
+                          : 'bg-slate-100 hover:bg-slate-200/80 dark:bg-slate-800/70 dark:hover:bg-slate-800 text-slate-600 dark:text-slate-400 border-slate-200 dark:border-slate-700/80'
                       }`}
                     >
                       {isActive ? (

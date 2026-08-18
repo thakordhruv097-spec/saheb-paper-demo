@@ -91,7 +91,7 @@ export const AdminProfileView: React.FC<AdminProfileViewProps> = ({ defaultTab }
     <div className="space-y-4 font-sans pb-12 w-full">
       
       {/* 1. COMPACT SLEEK ADMIN HEADER BANNER */}
-      <div className="bg-gradient-to-r from-blue-700 via-indigo-700 to-slate-900 rounded-2xl p-4 sm:p-5 text-white shadow-md relative overflow-hidden">
+      <div className="bg-gradient-to-r from-slate-900 via-blue-950 to-slate-900 border border-slate-800 rounded-2xl p-4 sm:p-5 text-white shadow-md relative overflow-hidden">
         <div className="flex items-center gap-3.5 relative z-10">
           <div className="space-y-0.5 min-w-0 flex-1">
             <div className="flex items-center gap-2 flex-wrap">
@@ -100,7 +100,7 @@ export const AdminProfileView: React.FC<AdminProfileViewProps> = ({ defaultTab }
                 Master Admin
               </span>
             </div>
-            <p className="text-xs text-blue-200/90 font-mono">@{user.username} • Superuser Account</p>
+            <p className="text-xs text-slate-300 font-mono">@{user.username} • Superuser Account</p>
           </div>
         </div>
       </div>
