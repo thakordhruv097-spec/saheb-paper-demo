@@ -34,7 +34,7 @@ function ProfileRouteWrapper({ defaultTab }: { defaultTab?: 'profile' | 'roles' 
   if (user?.role === 'Admin') {
     return <AdminProfileView defaultTab={defaultTab} />;
   }
-  return <OperatorProfileView defaultTab={defaultTab === 'users' ? 'profile' : defaultTab} />;
+  return <OperatorProfileView />;
 }
 
 // Initialize i18n
@@ -75,7 +75,7 @@ export default function App() {
           <Route
             path="/role-management"
             element={
-              <ProtectedRoute moduleName="dashboard">
+              <ProtectedRoute moduleName="admin_panel_audit">
                 <Layout>
                   <ProfileRouteWrapper defaultTab="roles" />
                 </Layout>

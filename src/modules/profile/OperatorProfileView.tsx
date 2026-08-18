@@ -2,34 +2,17 @@ import React, { useState, useEffect } from 'react';
 import { useLocation } from 'react-router-dom';
 import { useAuth } from '../auth/AuthContext';
 import { useTranslation } from 'react-i18next';
-import { User, Edit3, ShieldCheck, Mail, Phone, Lock, HelpCircle, CheckCircle2, Eye, EyeOff, X, KeyRound, Sparkles, LogOut, ShieldAlert, Building2 } from 'lucide-react';
-import RoleManagementView from './RoleManagementView';
+import { User, Edit3, ShieldCheck, Mail, Phone, Lock, HelpCircle, CheckCircle2, Eye, EyeOff, X, KeyRound, Sparkles, LogOut, Building2 } from 'lucide-react';
 import { COMPANY_CONFIG } from '../../config/company';
 
 interface OperatorProfileViewProps {
-  defaultTab?: 'profile' | 'roles';
+  defaultTab?: 'profile';
 }
 
-export const OperatorProfileView: React.FC<OperatorProfileViewProps> = ({ defaultTab }) => {
+export const OperatorProfileView: React.FC<OperatorProfileViewProps> = () => {
   const { user, updateUserProfile, logout } = useAuth();
   const { t } = useTranslation();
   const location = useLocation();
-
-  const [activeTab, setActiveTab] = useState<'profile' | 'roles'>(() => {
-    if (defaultTab) return defaultTab;
-    const searchParams = new URLSearchParams(location.search);
-    if (searchParams.get('tab') === 'role-management' || location.pathname.includes('role-management')) {
-      return 'roles';
-    }
-    return 'profile';
-  });
-
-  useEffect(() => {
-    const searchParams = new URLSearchParams(location.search);
-    if (searchParams.get('tab') === 'role-management' || location.pathname.includes('role-management')) {
-      setActiveTab('roles');
-    }
-  }, [location]);
 
   const [isEditing, setIsEditing] = useState(false);
   const [showPin, setShowPin] = useState(false);
@@ -129,33 +112,6 @@ export const OperatorProfileView: React.FC<OperatorProfileViewProps> = ({ defaul
         </div>
       </div>
 
-      {/* 2. PROFILE NAVIGATION TAB CONTROLS (ALWAYS VISIBLE) */}
-      <div className="flex items-center gap-2 bg-white dark:bg-surface-dark p-1.5 rounded-2xl border border-slate-200 dark:border-slate-700/80 shadow-xs">
-        <button
-          onClick={() => setActiveTab('profile')}
-          className={`flex-1 px-4 py-2.5 rounded-xl font-extrabold text-xs transition cursor-pointer flex items-center justify-center gap-2 ${
-            activeTab === 'profile'
-              ? 'bg-primary text-white shadow-xs'
-              : 'text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800'
-          }`}
-        >
-          <User className="h-4 w-4" />
-          <span>My Profile Details</span>
-        </button>
-
-        <button
-          onClick={() => setActiveTab('roles')}
-          className={`flex-1 px-4 py-2.5 rounded-xl font-extrabold text-xs transition cursor-pointer flex items-center justify-center gap-2 ${
-            activeTab === 'roles'
-              ? 'bg-amber-600 text-white shadow-xs'
-              : 'text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800'
-          }`}
-        >
-          <ShieldAlert className="h-4 w-4 text-amber-300" />
-          <span>Role Management</span>
-        </button>
-      </div>
-
       {/* SUCCESS NOTIFICATION ALERT */}
       {saveSuccess && (
         <div className="p-4 bg-emerald-50 dark:bg-emerald-950/40 text-emerald-800 dark:text-emerald-300 text-xs rounded-2xl border border-emerald-200 dark:border-emerald-800 flex items-center gap-3 font-bold animate-fadeIn shadow-xs">
@@ -163,16 +119,6 @@ export const OperatorProfileView: React.FC<OperatorProfileViewProps> = ({ defaul
           <span>Your operator profile details have been updated successfully!</span>
         </div>
       )}
-
-      {/* ROLE MANAGEMENT VIEW */}
-      {activeTab === 'roles' && (
-        <div className="animate-fadeIn">
-          <RoleManagementView />
-        </div>
-      )}
-
-      {activeTab === 'profile' && (
-        <>
 
       {/* 2. READ-ONLY PROFILE DETAILS PAGE (WHEN NOT EDITING) */}
       {!isEditing ? (
@@ -473,8 +419,6 @@ export const OperatorProfileView: React.FC<OperatorProfileViewProps> = ({ defaul
           </form>
 
         </div>
-      )}
-      </>
       )}
 
     </div>

@@ -4,6 +4,7 @@ import { getUsers, updateUserModules } from '../../data/index';
 import type { User } from '../../data/types';
 import {
   ShieldCheck,
+  ShieldAlert,
   Search,
   CheckCircle2,
   Plus,
@@ -35,6 +36,21 @@ export const MODULES_13: ModuleDefinition[] = [
 
 export const RoleManagementView: React.FC = () => {
   const { user: currentUser, simulateWorkerLogin, updateUserProfile } = useAuth();
+
+  if (currentUser?.role !== 'Admin') {
+    return (
+      <div className="p-8 text-center bg-white dark:bg-slate-900 rounded-3xl border border-red-200 dark:border-red-800 space-y-3">
+        <div className="w-12 h-12 rounded-2xl bg-red-100 dark:bg-red-950/50 text-red-600 dark:text-red-400 mx-auto flex items-center justify-center">
+          <ShieldAlert className="h-6 w-6" />
+        </div>
+        <h3 className="text-base font-black text-slate-900 dark:text-white">Access Restricted</h3>
+        <p className="text-xs text-slate-500 dark:text-slate-400 font-medium max-w-md mx-auto">
+          Role & Module Permission management is restricted to Super Admin only.
+        </p>
+      </div>
+    );
+  }
+
   const [users, setUsers] = useState<User[]>(() => getUsers());
   const [searchTerm, setSearchTerm] = useState('');
   const [toastMsg, setToastMsg] = useState('');
