@@ -47,7 +47,7 @@ export const DashboardView: React.FC = () => {
   const { user } = useAuth();
   const { t } = useTranslation();
   const navigate = useNavigate();
-  const { timeframe, selectedDate, dateTick } = useDateFilter();
+  const { timeframe, selectedDate, dateTick, systemToday } = useDateFilter();
 
   const [period, setPeriod] = useState<'month' | 'year'>('month');
   const [refreshKey, setRefreshKey] = useState(0);
@@ -1119,7 +1119,15 @@ export const DashboardView: React.FC = () => {
               <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 relative z-10">
                 <div className="bg-white/10 backdrop-blur-md border border-white/20 rounded-2xl p-4 transition-all duration-300 hover:bg-white/20 hover:border-white/40 hover:-translate-y-1 hover:shadow-xl cursor-pointer group">
                   <div className="flex items-center justify-between text-xs font-medium text-blue-100 group-hover:text-white transition">
-                    <span>{timeframe === 'day' ? "Day's Output" : timeframe === 'week' ? "Week's Output (7D)" : timeframe === 'month' ? "Month's Output" : "Total Output"}</span>
+                    <span>
+                      {timeframe === 'day'
+                        ? (selectedDate === systemToday ? "Today's Output" : `Day's Output (${selectedDate.split('-').reverse().join('/')})`)
+                        : timeframe === 'week'
+                        ? "Week's Output (7D)"
+                        : timeframe === 'month'
+                        ? "Month's Output"
+                        : "Total Output"}
+                    </span>
                     <Factory className="h-4 w-4 text-blue-200 group-hover:scale-110 transition-transform" />
                   </div>
                   <div className="text-xl sm:text-2xl font-black group-hover:scale-105 transition-transform origin-left mt-1">
@@ -1147,7 +1155,15 @@ export const DashboardView: React.FC = () => {
 
                 <div className="bg-white/10 backdrop-blur-md border border-white/20 rounded-2xl p-4 transition-all duration-300 hover:bg-white/20 hover:border-white/40 hover:-translate-y-1 hover:shadow-xl cursor-pointer group">
                   <div className="flex items-center justify-between text-xs font-medium text-blue-100 group-hover:text-white transition">
-                    <span>{timeframe === 'day' ? "Dispatched Today" : timeframe === 'week' ? "Dispatched (Week)" : timeframe === 'month' ? "Dispatched (Month)" : "Total Dispatched"}</span>
+                    <span>
+                      {timeframe === 'day'
+                        ? (selectedDate === systemToday ? "Dispatched Today" : `Dispatched (${selectedDate.split('-').reverse().join('/')})`)
+                        : timeframe === 'week'
+                        ? "Dispatched (Week)"
+                        : timeframe === 'month'
+                        ? "Dispatched (Month)"
+                        : "Total Dispatched"}
+                    </span>
                     <Truck className="h-4 w-4 text-blue-200 group-hover:scale-110 transition-transform" />
                   </div>
                   <div className="text-xl sm:text-2xl font-black group-hover:scale-105 transition-transform origin-left mt-1">

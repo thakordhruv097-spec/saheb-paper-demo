@@ -223,9 +223,17 @@ const DEFAULT_PENDING_ORDERS: PendingOrder[] = [
   { id: 'or-3', partyId: 'pt-3', productId: 'p-2', gsm: 18, size: 30, ply: 2, qty: 30, dueDate: '2026-08-15', status: 'PENDING', dispatchedQty: 0 },
 ];
 
+function formatYMD(d: Date): string {
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, '0');
+  const day = String(d.getDate()).padStart(2, '0');
+  return `${y}-${m}-${day}`;
+}
+
 function seedOneMonthData(): void {
-  const todayStr = new Date().toISOString().substring(0, 10);
-  const seededKey = `saheb_one_month_seeded_${todayStr}`;
+  const today = new Date();
+  const todayStr = formatYMD(today);
+  const seededKey = `saheb_one_month_seeded_v4_${todayStr}`;
   if (localStorage.getItem(seededKey)) return;
   localStorage.setItem(seededKey, 'true');
 
@@ -239,14 +247,13 @@ function seedOneMonthData(): void {
   const orders = getPendingOrders();
 
   // Generate 30 days of historical logs ending on TODAY's system clock date
-  const today = new Date();
   const startDate = new Date(today);
   startDate.setDate(today.getDate() - 29);
 
   for (let i = 0; i < 30; i++) {
     const currentDate = new Date(startDate);
     currentDate.setDate(startDate.getDate() + i);
-    const dateStr = currentDate.toISOString().substring(0, 10);
+    const dateStr = formatYMD(currentDate);
 
     // 1. Pulp Formula Daily Mix
     const formulaId = `formula-${dateStr}`;
