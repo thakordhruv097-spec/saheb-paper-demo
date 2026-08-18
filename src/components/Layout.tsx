@@ -44,7 +44,6 @@ import {
   ChevronRight,
   Beaker,
   Tag,
-  Sparkles,
 } from 'lucide-react';
 
 interface LayoutProps {
@@ -441,7 +440,6 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
 
   const menuItems = [
     { id: 'dashboard', path: '/', label: t('nav.dashboard', 'Dashboard'), icon: LayoutDashboard },
-    { id: 'ai_advisor', path: '/ai-advisor', label: 'AI Decision Studio', icon: Sparkles },
     { id: 'orders', path: '/orders', label: t('nav.orders', 'Order Bookings'), icon: FileText },
     { id: 'raw_material_stock', path: '/raw-material-stock', label: t('nav.raw_material', 'Raw Material Stock'), icon: Warehouse },
     { id: 'pulp_mill_operations', path: '/pulp-mill-operations', label: t('nav.pulp_mill', 'Pulp Mill Operations'), icon: Factory },
@@ -449,6 +447,7 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
     { id: 'rewinding_reel_conversion', path: '/rewinding-reel-conversion', label: t('nav.rewinder', 'Rewinder Section'), icon: RotateCw },
     { id: 'lab', path: '/lab', label: 'Lab Quality Control', icon: Beaker },
     { id: 'utilities_etp', path: '/utilities-etp', label: t('nav.utilities_etp', 'Utilities and ETP'), icon: Flame },
+    { id: 'experiment', path: '/experiment', label: t('nav.experiment', 'Dispatch Receipt'), icon: Truck },
     { id: 'finished_stock_dispatch', path: '/stock-categorization', label: t('nav.finished_stock_dispatch', 'Stock Categorization'), icon: Layers },
     { id: 'spareparts_management', path: '/spareparts-management', label: t('nav.store', 'Store Inventory'), icon: Wrench },
     { id: 'label_studio', path: '/label-studio', label: 'Label Studio', icon: Tag },
@@ -460,13 +459,13 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
 
   // Dynamic Section Categories for Sidebar
   const sidebarSections = useMemo(() => {
-    const core = visibleMenuItems.filter(i => ['dashboard', 'ai_advisor'].includes(i.id));
+    const core = visibleMenuItems.filter(i => ['dashboard'].includes(i.id));
     const production = visibleMenuItems.filter(i => ['raw_material_stock', 'pulp_mill_operations', 'machine_production', 'rewinding_reel_conversion', 'lab'].includes(i.id));
-    const operations = visibleMenuItems.filter(i => ['orders', 'utilities_etp', 'finished_stock_dispatch', 'spareparts_management'].includes(i.id));
+    const operations = visibleMenuItems.filter(i => ['orders', 'utilities_etp', 'experiment', 'finished_stock_dispatch', 'spareparts_management'].includes(i.id));
     const admin = visibleMenuItems.filter(i => ['label_studio', 'monthly_yearly_reporting', 'admin_panel_audit'].includes(i.id));
 
     return [
-      { title: 'Core & AI Intelligence', items: core },
+      { title: 'Core Navigation', items: core },
       { title: 'Production & Mill', items: production },
       { title: 'Operations & Logistics', items: operations },
       { title: 'Analytics & Governance', items: admin },

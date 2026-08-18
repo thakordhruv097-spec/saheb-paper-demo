@@ -1,8 +1,8 @@
 import React from 'react';
-import { AiDecisionAgentView } from '../ai-advisor/AiDecisionAgentView';
+import { DispatchView } from '../dispatch/DispatchView';
 
 export const ExperimentView: React.FC = () => {
-  return <AiDecisionAgentView />;
+  return <DispatchView initialTab="create_slip" hideTabs={false} hideHeader={false} />;
 };
 
 export default ExperimentView;

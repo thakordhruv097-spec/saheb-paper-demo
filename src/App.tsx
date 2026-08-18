@@ -21,7 +21,6 @@ import { QRTraceabilityView } from './modules/rewinder/QRTraceabilityView';
 import { OrdersView } from './modules/orders/OrdersView';
 import { LabView } from './modules/lab/LabView';
 import { ExperimentView } from './modules/experiment/ExperimentView';
-import { AiDecisionAgentView } from './modules/ai-advisor/AiDecisionAgentView';
 
 
 import { DateFilterProvider } from './context/DateFilterContext';
@@ -240,22 +239,11 @@ export default function App() {
           />
 
           <Route
-            path="/ai-advisor"
-            element={
-              <ProtectedRoute moduleName="dashboard">
-                <Layout>
-                  <AiDecisionAgentView />
-                </Layout>
-              </ProtectedRoute>
-            }
-          />
-
-          <Route
             path="/experiment"
             element={
-              <ProtectedRoute moduleName="dashboard">
+              <ProtectedRoute moduleName="admin_panel_audit">
                 <Layout>
-                  <AiDecisionAgentView />
+                  <ExperimentView />
                 </Layout>
               </ProtectedRoute>
             }
