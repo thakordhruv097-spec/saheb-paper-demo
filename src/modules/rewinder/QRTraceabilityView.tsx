@@ -87,7 +87,7 @@ export const QRTraceabilityView: React.FC = () => {
     <div className="space-y-6 font-sans">
 
       {/* Hero Banner Header */}
-      <div className="bg-gradient-to-r from-blue-700 via-indigo-600 to-slate-900 rounded-3xl p-6 sm:p-8 text-white shadow-xl relative overflow-hidden">
+      <div className="bg-gradient-to-r from-slate-900 via-blue-950 to-slate-900 border border-slate-800 rounded-3xl p-6 sm:p-8 text-white shadow-xl relative overflow-hidden">
         <div className="absolute -right-10 -top-10 w-64 h-64 bg-blue-500/10 rounded-full blur-3xl pointer-events-none" />
         <div className="absolute -bottom-20 -left-20 w-80 h-80 rounded-full bg-blue-400/10 blur-2xl pointer-events-none" />
 
@@ -98,9 +98,9 @@ export const QRTraceabilityView: React.FC = () => {
             </div>
             <div>
               <div className="flex flex-wrap items-center gap-3">
-                <h2 className="text-2xl sm:text-3xl font-black tracking-tight font-heading">QR Traceability & Audit Ledger</h2>
+                <h2 className="text-2xl sm:text-3xl font-black tracking-tight font-heading">QR Traceability &amp; Audit Ledger</h2>
               </div>
-              <p className="text-xs sm:text-sm text-blue-100/90 font-medium mt-1">
+              <p className="text-xs sm:text-sm text-slate-300 font-medium mt-1">
                 Lookup physical reel codes, raw material lot origins, and full machine production logs.
               </p>
             </div>
@@ -111,7 +111,7 @@ export const QRTraceabilityView: React.FC = () => {
       {/* KPI Metric Scorecards */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
         <div className="bg-white dark:bg-surface-dark border border-slate-200 dark:border-slate-700/80 rounded-3xl p-5 shadow-sm flex items-center gap-4">
-          <div className="p-3 rounded-2xl bg-indigo-50 dark:bg-indigo-950/40 text-indigo-600 dark:text-indigo-400 border border-indigo-200/60 dark:border-indigo-800/60">
+          <div className="p-3 rounded-2xl bg-blue-50 dark:bg-blue-950/40 text-primary dark:text-blue-400 border border-blue-200/60 dark:border-blue-800/60">
             <QrCode className="h-6 w-6" />
           </div>
           <div>
@@ -131,7 +131,7 @@ export const QRTraceabilityView: React.FC = () => {
         </div>
 
         <div className="bg-white dark:bg-surface-dark border border-slate-200 dark:border-slate-700/80 rounded-3xl p-5 shadow-sm flex items-center gap-4">
-          <div className="p-3 rounded-2xl bg-purple-50 dark:bg-purple-950/40 text-purple-600 dark:text-purple-400 border border-purple-200/60 dark:border-purple-800/60">
+          <div className="p-3 rounded-2xl bg-amber-50 dark:bg-amber-950/40 text-amber-600 dark:text-amber-400 border border-amber-200/60 dark:border-amber-800/60">
             <CheckCircle className="h-6 w-6" />
           </div>
           <div>
@@ -162,7 +162,7 @@ export const QRTraceabilityView: React.FC = () => {
               />
               <button
                 type="submit"
-                className="bg-gradient-to-r from-blue-600 via-indigo-600 to-blue-700 hover:from-blue-700 hover:to-indigo-700 text-white px-4 py-3 rounded-2xl transition shadow-md flex items-center justify-center cursor-pointer"
+                className="bg-gradient-to-br from-cyan-600 to-sky-700 hover:from-cyan-700 hover:to-sky-800 text-white px-4 py-3 rounded-2xl transition shadow-md shadow-sky-700/25 flex items-center justify-center cursor-pointer"
               >
                 <Search className="h-4 w-4" />
               </button>

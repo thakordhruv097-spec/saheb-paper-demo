@@ -563,7 +563,7 @@ export const DispatchView: React.FC<DispatchViewProps> = ({ initialTab = 'orders
       
       {/* Title / Hero Banner */}
       {!hideHeader && (
-        <div className="bg-gradient-to-r from-blue-700 via-indigo-600 to-slate-900 rounded-2xl p-4 sm:p-4.5 px-5 sm:px-6 text-white shadow-lg relative z-20">
+        <div className="bg-gradient-to-r from-slate-900 via-blue-950 to-slate-900 border border-slate-800 rounded-2xl p-4 sm:p-4.5 px-5 sm:px-6 text-white shadow-lg relative z-20">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 relative z-10">
             <div className="flex items-center gap-3.5">
               <div className="p-2.5 rounded-xl bg-white/15 backdrop-blur-md border border-white/20 text-white shadow-md shrink-0">
@@ -596,7 +596,7 @@ export const DispatchView: React.FC<DispatchViewProps> = ({ initialTab = 'orders
               <button
                 type="button"
                 onClick={() => { setActiveTab('orders'); setSuccessMsg(''); setErrorMsg(''); }}
-                className="col-span-2 w-full flex items-center justify-center gap-2.5 py-3 px-4 rounded-xl text-xs sm:text-sm font-black transition-all cursor-pointer bg-gradient-to-r from-blue-600 via-indigo-600 to-blue-700 text-white shadow-md"
+                className="col-span-2 w-full flex items-center justify-center gap-2.5 py-3 px-4 rounded-xl text-xs sm:text-sm font-black transition-all cursor-pointer bg-gradient-to-br from-blue-700 to-blue-900 text-white shadow-sm"
               >
                 <FileText className="h-4.5 w-4.5" />
                 <span>Customer Order Bookings</span>
@@ -608,7 +608,7 @@ export const DispatchView: React.FC<DispatchViewProps> = ({ initialTab = 'orders
                   onClick={() => { setActiveTab('create_slip'); setSuccessMsg(''); setErrorMsg(''); }}
                   className={`w-full flex items-center justify-center gap-2 py-2.5 sm:py-3 px-3 sm:px-4 rounded-xl text-xs sm:text-sm font-black transition-all duration-200 cursor-pointer ${
                     activeTab === 'create_slip'
-                      ? 'bg-gradient-to-r from-blue-600 via-indigo-600 to-blue-700 text-white shadow-md shadow-blue-600/25 scale-[1.01]'
+                      ? 'bg-gradient-to-br from-blue-700 to-blue-900 text-white shadow-sm scale-[1.01]'
                       : 'text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800/80 hover:text-slate-900 dark:hover:text-white'
                   }`}
                 >
@@ -621,7 +621,7 @@ export const DispatchView: React.FC<DispatchViewProps> = ({ initialTab = 'orders
                   onClick={() => { setActiveTab('slips_list'); setSuccessMsg(''); setErrorMsg(''); }}
                   className={`w-full flex items-center justify-center gap-2 py-2.5 sm:py-3 px-3 sm:px-4 rounded-xl text-xs sm:text-sm font-black transition-all duration-200 cursor-pointer ${
                     activeTab === 'slips_list'
-                      ? 'bg-gradient-to-r from-blue-600 via-indigo-600 to-blue-700 text-white shadow-md shadow-blue-600/25 scale-[1.01]'
+                      ? 'bg-gradient-to-br from-blue-700 to-blue-900 text-white shadow-sm scale-[1.01]'
                       : 'text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800/80 hover:text-slate-900 dark:hover:text-white'
                   }`}
                 >
@@ -837,7 +837,7 @@ export const DispatchView: React.FC<DispatchViewProps> = ({ initialTab = 'orders
 
               <button
                 type="submit"
-                className="w-full bg-gradient-to-r from-blue-600 via-indigo-600 to-blue-700 hover:from-blue-700 hover:to-indigo-700 text-white font-black py-3 rounded-2xl text-xs uppercase tracking-wider shadow-lg shadow-blue-500/25 transition-all hover:scale-[1.01] active:scale-[0.99] cursor-pointer"
+                className="w-full bg-gradient-to-br from-cyan-600 to-sky-700 hover:from-cyan-700 hover:to-sky-800 text-white font-black py-3 rounded-2xl text-xs uppercase tracking-wider shadow-md shadow-sky-700/25 transition-all hover:scale-[1.01] active:scale-[0.99] cursor-pointer"
               >
                 Log Order Record
               </button>
@@ -1137,7 +1137,7 @@ export const DispatchView: React.FC<DispatchViewProps> = ({ initialTab = 'orders
 
                 <button
                   type="submit"
-                  className="bg-gradient-to-r from-blue-600 via-indigo-600 to-blue-700 hover:from-blue-700 hover:to-indigo-700 text-white font-extrabold py-3 px-6 rounded-2xl text-xs uppercase tracking-wider shadow-lg shadow-blue-500/25 transition cursor-pointer flex items-center justify-center gap-2"
+                  className="bg-gradient-to-br from-cyan-600 to-sky-700 hover:from-cyan-700 hover:to-sky-800 text-white font-extrabold py-3 px-6 rounded-2xl text-xs uppercase tracking-wider shadow-md shadow-sky-700/25 transition cursor-pointer flex items-center justify-center gap-2"
                 >
                   <Truck className="h-4 w-4" />
                   <span>Print Gate Pass &amp; Dispatch</span>

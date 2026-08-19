@@ -226,7 +226,7 @@ export const WorkflowStepBadge: React.FC<WorkflowStepBadgeProps> = ({ stepInfo }
           </div>
 
           {/* ⭐ VIBRANT HIGHLIGHTED "WHAT THIS PAGE DOES" BOX */}
-          <div className="p-2.5 bg-gradient-to-br from-blue-50/90 via-indigo-50/70 to-purple-50/50 dark:from-blue-600/25 dark:via-indigo-600/25 dark:to-purple-600/20 rounded-xl border border-blue-200/80 dark:border-blue-400/60 shadow-2xs space-y-1">
+          <div className="p-2.5 bg-gradient-to-br from-blue-50 to-slate-100 dark:from-blue-950/40 dark:to-slate-900 rounded-xl border border-blue-200/80 dark:border-blue-800/60 shadow-2xs space-y-1">
             <p className="text-[9px] font-black uppercase tracking-wider text-blue-700 dark:text-blue-300 flex items-center gap-1">
               <BookOpen className="h-3 w-3 text-blue-600 dark:text-blue-400 shrink-0" />
               <span>WHAT THIS PAGE DOES:</span>
