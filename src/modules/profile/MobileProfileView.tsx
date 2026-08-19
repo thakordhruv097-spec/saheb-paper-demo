@@ -205,13 +205,6 @@ export const MobileProfileView: React.FC = () => {
                 <span>Help &amp; FAQs</span>
               </button>
               <button
-                onClick={() => navigate('/gradient-studio')}
-                className="w-full px-4 py-2 text-left hover:bg-slate-100 dark:hover:bg-slate-800 flex items-center gap-2"
-              >
-                <Palette className="h-4 w-4 text-primary" />
-                <span>Theme Studio</span>
-              </button>
-              <button
                 onClick={() => setLogoutConfirmOpen(true)}
                 className="w-full px-4 py-2 text-left hover:bg-rose-50 dark:hover:bg-rose-950/40 text-red-600 dark:text-red-400 flex items-center gap-2 border-t border-slate-100 dark:border-slate-800 mt-1"
               >
@@ -722,19 +715,6 @@ export const MobileProfileView: React.FC = () => {
                 <Moon className="h-6 w-6 text-blue-400" />
                 <span className="text-xs font-black">Dark Mode</span>
               </div>
-            </div>
-
-            <div className="pt-2">
-              <button
-                onClick={() => {
-                  setActiveModal(null);
-                  navigate('/gradient-studio');
-                }}
-                className="w-full py-2.5 bg-slate-100 dark:bg-slate-800 text-slate-800 dark:text-slate-200 font-bold rounded-xl text-xs border border-slate-200 dark:border-slate-700 flex items-center justify-center gap-2"
-              >
-                <Palette className="h-4 w-4 text-primary" />
-                <span>Open Gradient Studio</span>
-              </button>
             </div>
           </div>
         </div>
