@@ -643,7 +643,7 @@ export const ReportsView: React.FC = () => {
       </div>
 
       {/* 1. Compact Executive Gradient Hero Header Banner */}
-      <div className="bg-gradient-to-r from-slate-900 via-blue-950 to-slate-900 border border-slate-800 text-white rounded-3xl py-4 px-6 md:py-4.5 md:px-7 shadow-xl flex flex-col md:flex-row md:items-center justify-between gap-4 overflow-hidden relative">
+      <div className="bg-gradient-to-r from-blue-600 via-indigo-600 to-blue-900 text-white rounded-3xl py-4 px-6 md:py-4.5 md:px-7 shadow-xl shadow-blue-600/10 border border-blue-500/20 flex flex-col md:flex-row md:items-center justify-between gap-4 overflow-hidden relative">
         {/* Background Subtle Accent Glow */}
         <div className="absolute -right-10 -bottom-10 w-48 h-48 bg-white/5 rounded-full blur-2xl pointer-events-none" />
 

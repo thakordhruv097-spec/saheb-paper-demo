@@ -461,7 +461,7 @@ export const DashboardView: React.FC = () => {
         return (
           <div className="space-y-6">
             {/* HERO BANNER */}
-            <div className="bg-gradient-to-r from-slate-900 via-blue-950 to-slate-900 border border-slate-800 rounded-[28px] p-6 sm:p-8 text-white shadow-xl relative overflow-hidden">
+            <div className="bg-gradient-to-r from-blue-700 via-indigo-600 to-indigo-500 rounded-[28px] p-6 sm:p-8 text-white shadow-xl relative overflow-hidden">
               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 relative z-10">
                 <div>
                   <div className="flex flex-wrap items-center gap-3">
@@ -471,7 +471,7 @@ export const DashboardView: React.FC = () => {
                       {new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'short', day: 'numeric', year: 'numeric' })}
                     </span>
                   </div>
-                  <p className="text-xs sm:text-sm text-slate-300 mt-1">Raw Material Batching, Chemical Dosing &amp; Hydrapulper Telemetry</p>
+                  <p className="text-xs sm:text-sm text-blue-100 mt-1">Raw Material Batching, Chemical Dosing &amp; Hydrapulper Telemetry</p>
                 </div>
                 <div className="flex items-center gap-2 self-start sm:self-auto">
                   <button onClick={handleRefresh} className={`p-2.5 bg-white/20 hover:bg-white/30 text-white backdrop-blur-md rounded-xl transition cursor-pointer ${isRefreshing ? 'animate-spin' : ''}`}>

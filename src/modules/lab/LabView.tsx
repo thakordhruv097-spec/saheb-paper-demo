@@ -228,7 +228,7 @@ export const LabView: React.FC = () => {
       {/* Top Banner Header with Saheb Paper Branding */}
       <div className="bg-white dark:bg-surface-dark border border-slate-200 dark:border-slate-700/80 rounded-3xl p-6 shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div className="flex items-center gap-3">
-          <div className="p-2.5 rounded-2xl bg-gradient-to-br from-cyan-600 to-sky-700 text-white shadow-md shadow-sky-700/20">
+          <div className="p-2.5 rounded-2xl bg-gradient-to-tr from-purple-600 to-indigo-600 text-white shadow-md shadow-purple-500/20">
             <Beaker className="w-5 h-5" />
           </div>
           <div>
@@ -239,7 +239,7 @@ export const LabView: React.FC = () => {
               <WorkflowStepBadge stepInfo={WORKFLOW_STEPS.lab} />
             </div>
             <p className="text-xs text-slate-500 dark:text-slate-400 font-medium tracking-tight">
-              Log paper test reports, 14-sample GSM profiles, tensile/tear strength &amp; generate official COA certificates.
+              Log paper test reports, 14-sample GSM profiles, tensile/tear strength & generate official COA certificates.
             </p>
           </div>
         </div>
@@ -251,7 +251,7 @@ export const LabView: React.FC = () => {
               setErrorMsg('');
               setIsModalOpen(true);
             }}
-            className="px-6 py-3 bg-gradient-to-br from-cyan-600 to-sky-700 hover:from-cyan-700 hover:to-sky-800 text-white font-black rounded-2xl text-xs uppercase tracking-wider shadow-md shadow-sky-700/25 transition-all hover:scale-[1.01] active:scale-[0.99] cursor-pointer flex items-center justify-center gap-2"
+            className="px-6 py-3 bg-gradient-to-r from-purple-600 via-indigo-600 to-blue-600 hover:from-purple-700 hover:to-indigo-700 text-white font-black rounded-2xl text-xs uppercase tracking-wider shadow-lg shadow-purple-500/25 transition-all hover:scale-[1.01] active:scale-[0.99] cursor-pointer flex items-center justify-center gap-2"
           >
             <Plus className="h-4 w-4" />
             <span>Create New Paper Test Report</span>
@@ -841,7 +841,7 @@ export const LabView: React.FC = () => {
                 </button>
                 <button
                   type="submit"
-                  className="px-6 py-3 bg-gradient-to-br from-cyan-600 to-sky-700 hover:from-cyan-700 hover:to-sky-800 text-white font-black rounded-2xl text-xs uppercase tracking-wider shadow-md shadow-sky-700/25 cursor-pointer hover:scale-[1.01] active:scale-[0.99] transition"
+                  className="px-6 py-3 bg-gradient-to-r from-purple-600 via-indigo-600 to-blue-600 text-white font-black rounded-2xl text-xs uppercase tracking-wider shadow-lg shadow-purple-500/25 cursor-pointer hover:scale-[1.01] active:scale-[0.99] transition"
                 >
                   Save & Issue Paper Test Report
                 </button>

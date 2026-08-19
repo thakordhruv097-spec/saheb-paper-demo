@@ -740,7 +740,7 @@ export const AdminMasters: React.FC = () => {
     <div className="space-y-6 font-sans pb-12">
 
       {/* 1. HERO GRADIENT HEADER BANNER */}
-      <div className="bg-gradient-to-r from-slate-900 via-blue-950 to-slate-900 border border-slate-800 rounded-3xl p-6 sm:p-8 text-white shadow-xl relative overflow-hidden">
+      <div className="bg-gradient-to-r from-blue-700 via-indigo-600 to-slate-900 rounded-3xl p-6 sm:p-8 text-white shadow-xl relative overflow-hidden">
         <div className="absolute -top-16 -right-16 w-64 h-64 rounded-full bg-white/10 blur-xl pointer-events-none" />
         <div className="absolute -bottom-20 -left-20 w-80 h-80 rounded-full bg-blue-400/10 blur-2xl pointer-events-none" />
 
@@ -1951,7 +1951,7 @@ export const AdminMasters: React.FC = () => {
             {activeTab === 'backup' && (
               <div className="space-y-6">
                 {/* 0. Official Company Identity Card */}
-                <div className="bg-gradient-to-br from-slate-50 via-blue-50/50 to-slate-100 dark:from-slate-900/90 dark:via-blue-950/40 dark:to-slate-900 border border-blue-200/80 dark:border-blue-900/60 rounded-3xl p-6 space-y-4">
+                <div className="bg-gradient-to-br from-blue-50/70 via-indigo-50/40 to-slate-50 dark:from-slate-900/90 dark:via-blue-950/40 dark:to-slate-900 border border-blue-200/80 dark:border-blue-900/60 rounded-3xl p-6 space-y-4">
                   <div className="flex items-center justify-between border-b border-blue-200/60 dark:border-blue-800/60 pb-3">
                     <div className="flex items-center gap-3">
                       <div className="p-2.5 rounded-2xl bg-blue-600 text-white shadow-md shadow-blue-500/20">
@@ -1987,7 +1987,7 @@ export const AdminMasters: React.FC = () => {
                       </a>
                     </div>
                     <div className="p-3 bg-white/80 dark:bg-slate-800/70 rounded-2xl border border-slate-200/60 dark:border-slate-700/60 sm:col-span-2 md:col-span-3">
-                      <span className="text-[10px] font-bold uppercase text-slate-400 block mb-0.5">Physical Plant &amp; Registered Office Address</span>
+                      <span className="text-[10px] font-bold uppercase text-slate-400 block mb-0.5">Physical Plant & Registered Office Address</span>
                       <span className="font-medium text-slate-700 dark:text-slate-200">{COMPANY_CONFIG.address}</span>
                     </div>
                   </div>
@@ -2008,7 +2008,7 @@ export const AdminMasters: React.FC = () => {
                   </div>
                   <button
                     onClick={handleExportBackup}
-                    className="px-5 py-3 bg-gradient-to-br from-cyan-600 to-sky-700 hover:from-cyan-700 hover:to-sky-800 text-white rounded-2xl text-xs font-black uppercase tracking-wider shadow-md shadow-sky-700/25 transition-all hover:scale-[1.01] active:scale-[0.99] flex items-center gap-2 cursor-pointer"
+                    className="px-5 py-3 bg-gradient-to-r from-blue-600 via-indigo-600 to-blue-700 hover:from-blue-700 hover:to-indigo-700 text-white rounded-2xl text-xs font-black uppercase tracking-wider shadow-lg shadow-blue-500/25 transition-all hover:scale-[1.01] active:scale-[0.99] flex items-center gap-2 cursor-pointer"
                   >
                     <Download className="h-4 w-4" />
                     <span>Download Database Backup (JSON)</span>
@@ -2226,7 +2226,7 @@ export const AdminMasters: React.FC = () => {
 
                 <button
                   type="submit"
-                  className="w-full bg-gradient-to-br from-cyan-600 to-sky-700 hover:from-cyan-700 hover:to-sky-800 text-white font-black py-3 rounded-2xl text-xs uppercase tracking-wider shadow-md shadow-sky-700/25 transition-all hover:scale-[1.01] active:scale-[0.99] cursor-pointer"
+                  className="w-full bg-gradient-to-r from-blue-600 via-indigo-600 to-blue-700 hover:from-blue-700 hover:to-indigo-700 text-white font-black py-3 rounded-2xl text-xs uppercase tracking-wider shadow-lg shadow-blue-500/25 transition-all hover:scale-[1.01] active:scale-[0.99] cursor-pointer"
                 >
                   Create User Account
                 </button>
@@ -2299,7 +2299,7 @@ export const AdminMasters: React.FC = () => {
 
                 <button
                   type="submit"
-                  className="w-full bg-gradient-to-br from-cyan-600 to-sky-700 hover:from-cyan-700 hover:to-sky-800 text-white font-black py-3 rounded-2xl text-xs uppercase tracking-wider shadow-md shadow-sky-700/25 transition-all hover:scale-[1.01] active:scale-[0.99] cursor-pointer"
+                  className="w-full bg-gradient-to-r from-blue-600 via-indigo-600 to-blue-700 hover:from-blue-700 hover:to-indigo-700 text-white font-black py-3 rounded-2xl text-xs uppercase tracking-wider shadow-lg shadow-blue-500/25 transition-all hover:scale-[1.01] active:scale-[0.99] cursor-pointer"
                 >
                   Add Master Product
                 </button>
@@ -2363,7 +2363,7 @@ export const AdminMasters: React.FC = () => {
 
                 <button
                   type="submit"
-                  className="w-full bg-gradient-to-br from-cyan-600 to-sky-700 hover:from-cyan-700 hover:to-sky-800 text-white font-black py-3 rounded-2xl text-xs uppercase tracking-wider shadow-md shadow-sky-700/25 transition-all hover:scale-[1.01] active:scale-[0.99] cursor-pointer"
+                  className="w-full bg-gradient-to-r from-blue-600 via-indigo-600 to-blue-700 hover:from-blue-700 hover:to-indigo-700 text-white font-black py-3 rounded-2xl text-xs uppercase tracking-wider shadow-lg shadow-blue-500/25 transition-all hover:scale-[1.01] active:scale-[0.99] cursor-pointer"
                 >
                   Add Raw Material Master
                 </button>
@@ -2414,7 +2414,7 @@ export const AdminMasters: React.FC = () => {
 
                 <button
                   type="submit"
-                  className="w-full bg-gradient-to-br from-cyan-600 to-sky-700 hover:from-cyan-700 hover:to-sky-800 text-white font-black py-3 rounded-2xl text-xs uppercase tracking-wider shadow-md shadow-sky-700/25 transition-all hover:scale-[1.01] active:scale-[0.99] cursor-pointer"
+                  className="w-full bg-gradient-to-r from-blue-600 via-indigo-600 to-blue-700 hover:from-blue-700 hover:to-indigo-700 text-white font-black py-3 rounded-2xl text-xs uppercase tracking-wider shadow-lg shadow-blue-500/25 transition-all hover:scale-[1.01] active:scale-[0.99] cursor-pointer"
                 >
                   Add Customer Party
                 </button>
@@ -2465,7 +2465,7 @@ export const AdminMasters: React.FC = () => {
 
                 <button
                   type="submit"
-                  className="w-full bg-gradient-to-br from-cyan-600 to-sky-700 hover:from-cyan-700 hover:to-sky-800 text-white font-black py-3 rounded-2xl text-xs uppercase tracking-wider shadow-md shadow-sky-700/25 transition-all hover:scale-[1.01] active:scale-[0.99] cursor-pointer"
+                  className="w-full bg-gradient-to-r from-blue-600 via-indigo-600 to-blue-700 hover:from-blue-700 hover:to-indigo-700 text-white font-black py-3 rounded-2xl text-xs uppercase tracking-wider shadow-lg shadow-blue-500/25 transition-all hover:scale-[1.01] active:scale-[0.99] cursor-pointer"
                 >
                   Add Supplier Vendor
                 </button>
@@ -2516,7 +2516,7 @@ export const AdminMasters: React.FC = () => {
 
                 <button
                   type="submit"
-                  className="w-full bg-gradient-to-br from-cyan-600 to-sky-700 hover:from-cyan-700 hover:to-sky-800 text-white font-black py-3 rounded-2xl text-xs uppercase tracking-wider shadow-md shadow-sky-700/25 transition-all hover:scale-[1.01] active:scale-[0.99] cursor-pointer"
+                  className="w-full bg-gradient-to-r from-blue-600 via-indigo-600 to-blue-700 hover:from-blue-700 hover:to-indigo-700 text-white font-black py-3 rounded-2xl text-xs uppercase tracking-wider shadow-lg shadow-blue-500/25 transition-all hover:scale-[1.01] active:scale-[0.99] cursor-pointer"
                 >
                   Add Vehicle Record
                 </button>

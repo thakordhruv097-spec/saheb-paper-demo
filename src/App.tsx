@@ -28,14 +28,32 @@ import { DateFilterProvider } from './context/DateFilterContext';
 
 import { OperatorProfileView } from './modules/profile/OperatorProfileView';
 import { AdminProfileView } from './modules/profile/AdminProfileView';
+import { MobileProfileView } from './modules/profile/MobileProfileView';
 import { useAuth } from './modules/auth/AuthContext';
 
 function ProfileRouteWrapper({ defaultTab }: { defaultTab?: 'profile' | 'roles' | 'users' }) {
   const { user } = useAuth();
-  if (user?.role === 'Admin') {
-    return <AdminProfileView defaultTab={defaultTab} />;
+
+  if (defaultTab === 'roles') {
+    return user?.role === 'Admin' ? <AdminProfileView defaultTab="roles" /> : <OperatorProfileView />;
   }
-  return <OperatorProfileView />;
+  if (defaultTab === 'users') {
+    return user?.role === 'Admin' ? <AdminProfileView defaultTab="users" /> : <OperatorProfileView />;
+  }
+
+  return (
+    <>
+      {/* Mobile Version: Exact pattern matching the reference screenshot */}
+      <div className="block md:hidden w-full">
+        <MobileProfileView />
+      </div>
+
+      {/* Desktop Version: Full multi-tab dashboard layout */}
+      <div className="hidden md:block w-full">
+        {user?.role === 'Admin' ? <AdminProfileView defaultTab={defaultTab} /> : <OperatorProfileView />}
+      </div>
+    </>
+  );
 }
 
 // Initialize i18n

@@ -198,7 +198,7 @@ export const MachineView: React.FC = () => {
     <div className="space-y-6 font-sans pb-12">
       
       {/* 1. HERO GRADIENT HEADER BANNER */}
-      <div className="bg-gradient-to-r from-slate-900 via-blue-950 to-slate-900 border border-slate-800 rounded-3xl p-6 sm:p-8 text-white shadow-xl relative z-20">
+      <div className="bg-gradient-to-r from-blue-700 via-indigo-600 to-slate-900 rounded-3xl p-6 sm:p-8 text-white shadow-xl relative z-20">
         <div className="absolute -top-16 -right-16 w-64 h-64 rounded-full bg-white/10 blur-xl pointer-events-none" />
         <div className="absolute -bottom-20 -left-20 w-80 h-80 rounded-full bg-blue-400/10 blur-2xl pointer-events-none" />
 
@@ -436,7 +436,7 @@ export const MachineView: React.FC = () => {
 
             <button
               type="submit"
-              className="w-full bg-gradient-to-br from-cyan-600 to-sky-700 hover:from-cyan-700 hover:to-sky-800 text-white font-black py-3.5 rounded-2xl text-xs uppercase tracking-wider shadow-md shadow-sky-700/25 transition-all hover:scale-[1.01] active:scale-[0.99] cursor-pointer"
+              className="w-full bg-gradient-to-r from-blue-600 via-indigo-600 to-blue-700 hover:from-blue-700 hover:to-indigo-700 text-white font-black py-3.5 rounded-2xl text-xs uppercase tracking-wider shadow-lg shadow-blue-500/25 transition-all hover:scale-[1.01] active:scale-[0.99] cursor-pointer"
             >
               Submit Machine Production Log
             </button>

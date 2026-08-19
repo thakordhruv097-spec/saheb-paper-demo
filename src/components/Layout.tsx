@@ -810,7 +810,7 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
                           key={item.id}
                           onClick={() => navigate(item.path)}
                           className={`w-full flex items-center justify-between px-3 py-2 rounded-xl transition-all duration-200 text-left cursor-pointer group ${isActive
-                              ? 'bg-gradient-to-br from-blue-700 to-blue-900 text-white font-black shadow-sm'
+                              ? 'bg-gradient-to-r from-blue-600 via-indigo-600 to-blue-700 text-white font-black shadow-md shadow-blue-600/25'
                               : 'text-slate-600 dark:text-slate-300 hover:bg-slate-100/90 dark:hover:bg-slate-800/90 hover:text-slate-900 dark:hover:text-white font-bold'
                             }`}
                         >

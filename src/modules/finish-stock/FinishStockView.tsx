@@ -272,7 +272,7 @@ export const FinishStockView: React.FC<FinishStockViewProps> = ({ hideHeader = f
       
       {/* 1. HERO GRADIENT HEADER BANNER */}
       {!hideHeader && (
-        <div className="bg-gradient-to-r from-slate-900 via-blue-950 to-slate-900 border border-slate-800 rounded-3xl p-6 sm:p-8 text-white shadow-xl relative overflow-hidden">
+        <div className="bg-gradient-to-r from-blue-700 via-indigo-600 to-slate-900 rounded-3xl p-6 sm:p-8 text-white shadow-xl relative overflow-hidden">
           <div className="absolute -top-16 -right-16 w-64 h-64 rounded-full bg-white/10 blur-xl pointer-events-none" />
           <div className="absolute -bottom-20 -left-20 w-80 h-80 rounded-full bg-blue-400/10 blur-2xl pointer-events-none" />
 
@@ -290,7 +290,7 @@ export const FinishStockView: React.FC<FinishStockViewProps> = ({ hideHeader = f
                     </span>
                   )}
                 </div>
-                <p className="text-xs sm:text-sm text-slate-300 font-medium mt-1">
+                <p className="text-xs sm:text-sm text-blue-100/90 font-medium mt-1">
                   Browse finished reels inventory using step-by-step cascading filters (Product → GSM → Size → Ply).
                 </p>
               </div>
@@ -1028,7 +1028,7 @@ export const FinishStockView: React.FC<FinishStockViewProps> = ({ hideHeader = f
 
               <button
                 type="submit"
-                className="w-full bg-gradient-to-br from-cyan-600 to-sky-700 hover:from-cyan-700 hover:to-sky-800 text-white font-black py-3 rounded-2xl text-xs uppercase tracking-wider shadow-md shadow-sky-700/25 transition-all hover:scale-[1.01] active:scale-[0.99] cursor-pointer"
+                className="w-full bg-gradient-to-r from-blue-600 via-indigo-600 to-blue-700 hover:from-blue-700 hover:to-indigo-700 text-white font-black py-3 rounded-2xl text-xs uppercase tracking-wider shadow-lg shadow-blue-500/25 transition-all hover:scale-[1.01] active:scale-[0.99] cursor-pointer"
               >
                 Submit Quality Inspection Log
               </button>

@@ -146,7 +146,7 @@ export const StoreView: React.FC = () => {
     <div className="space-y-6 font-sans pb-12">
       
       {/* 1. HERO GRADIENT HEADER BANNER */}
-      <div className="bg-gradient-to-r from-slate-900 via-blue-950 to-slate-900 border border-slate-800 rounded-3xl p-6 sm:p-8 text-white shadow-xl relative overflow-hidden">
+      <div className="bg-gradient-to-r from-blue-700 via-indigo-600 to-slate-900 rounded-3xl p-6 sm:p-8 text-white shadow-xl relative overflow-hidden">
         <div className="absolute -top-16 -right-16 w-64 h-64 rounded-full bg-white/10 blur-xl pointer-events-none" />
         <div className="absolute -bottom-20 -left-20 w-80 h-80 rounded-full bg-blue-400/10 blur-2xl pointer-events-none" />
 
@@ -157,9 +157,9 @@ export const StoreView: React.FC = () => {
             </div>
             <div>
               <div className="flex flex-wrap items-center gap-3">
-                <h2 className="text-2xl sm:text-3xl font-black tracking-tight">Store Spares &amp; Inventory Control</h2>
+                <h2 className="text-2xl sm:text-3xl font-black tracking-tight">Store Spares & Inventory Control</h2>
               </div>
-              <p className="text-xs sm:text-sm text-slate-300 font-medium mt-1">
+              <p className="text-xs sm:text-sm text-blue-100/90 font-medium mt-1">
                 Maintain stock ledger levels for engineering spares (Bearings and V-Belts).
               </p>
             </div>
@@ -170,7 +170,7 @@ export const StoreView: React.FC = () => {
       {/* 2. TOP METRIC SCORECARDS */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
         <div className="bg-white dark:bg-surface-dark border border-slate-200 dark:border-slate-700/80 rounded-3xl p-5 shadow-sm flex items-center gap-4">
-          <div className="p-3 rounded-2xl bg-blue-50 dark:bg-blue-950/40 text-primary dark:text-blue-400 border border-blue-200/60 dark:border-blue-800/60">
+          <div className="p-3 rounded-2xl bg-indigo-50 dark:bg-indigo-950/40 text-indigo-600 dark:text-indigo-400 border border-indigo-200/60 dark:border-indigo-800/60">
             <Warehouse className="h-6 w-6" />
           </div>
           <div>
@@ -206,7 +206,7 @@ export const StoreView: React.FC = () => {
           onClick={() => { setActiveTab('bearings'); setSuccessMsg(''); setErrorMsg(''); }}
           className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-black transition-all cursor-pointer ${
             activeTab === 'bearings'
-              ? 'bg-gradient-to-br from-blue-700 to-blue-900 text-white shadow-sm'
+              ? 'bg-gradient-to-r from-blue-600 to-indigo-600 text-white shadow-md'
               : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
           }`}
         >
@@ -217,7 +217,7 @@ export const StoreView: React.FC = () => {
           onClick={() => { setActiveTab('vbelts'); setSuccessMsg(''); setErrorMsg(''); }}
           className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-black transition-all cursor-pointer ${
             activeTab === 'vbelts'
-              ? 'bg-gradient-to-br from-blue-700 to-blue-900 text-white shadow-sm'
+              ? 'bg-gradient-to-r from-blue-600 to-indigo-600 text-white shadow-md'
               : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
           }`}
         >
@@ -280,7 +280,7 @@ export const StoreView: React.FC = () => {
                         <td className="py-3 px-3 text-right">
                           <button
                             onClick={() => setAdjustingItem(item)}
-                            className="px-3.5 py-1.5 bg-gradient-to-br from-cyan-600 to-sky-700 hover:from-cyan-700 hover:to-sky-800 text-white rounded-xl text-[10px] font-black uppercase tracking-wider shadow-sm transition hover:scale-105 active:scale-95 cursor-pointer"
+                            className="px-3.5 py-1.5 bg-gradient-to-r from-blue-600 via-indigo-600 to-blue-700 hover:from-blue-700 hover:to-indigo-700 text-white rounded-xl text-[10px] font-black uppercase tracking-wider shadow-sm transition hover:scale-105 active:scale-95 cursor-pointer"
                           >
                             Adjust
                           </button>
@@ -318,7 +318,7 @@ export const StoreView: React.FC = () => {
                     <div className="pt-2 border-t dark:border-slate-800 flex justify-end">
                       <button
                         onClick={() => setAdjustingItem(item)}
-                        className="px-3.5 py-1.5 bg-gradient-to-br from-cyan-600 to-sky-700 hover:from-cyan-700 hover:to-sky-800 text-white rounded-xl text-[10px] font-black uppercase tracking-wider shadow-sm"
+                        className="px-3.5 py-1.5 bg-gradient-to-r from-blue-600 via-indigo-600 to-blue-700 hover:from-blue-700 hover:to-indigo-700 text-white rounded-xl text-[10px] font-black uppercase tracking-wider shadow-sm"
                       >
                         Adjust Stock
                       </button>
@@ -355,7 +355,7 @@ export const StoreView: React.FC = () => {
                         <td className="py-3 px-3 text-right">
                           <button
                             onClick={() => setAdjustingItem(item)}
-                            className="px-3.5 py-1.5 bg-gradient-to-br from-cyan-600 to-sky-700 hover:from-cyan-700 hover:to-sky-800 text-white rounded-xl text-[10px] font-black uppercase tracking-wider shadow-sm transition hover:scale-105 active:scale-95 cursor-pointer"
+                            className="px-3.5 py-1.5 bg-gradient-to-r from-blue-600 via-indigo-600 to-blue-700 hover:from-blue-700 hover:to-indigo-700 text-white rounded-xl text-[10px] font-black uppercase tracking-wider shadow-sm transition hover:scale-105 active:scale-95 cursor-pointer"
                           >
                             Adjust
                           </button>
@@ -389,7 +389,7 @@ export const StoreView: React.FC = () => {
                     <div className="pt-2 border-t dark:border-slate-800 flex justify-end">
                       <button
                         onClick={() => setAdjustingItem(item)}
-                        className="px-3.5 py-1.5 bg-gradient-to-br from-cyan-600 to-sky-700 hover:from-cyan-700 hover:to-sky-800 text-white rounded-xl text-[10px] font-black uppercase tracking-wider shadow-sm"
+                        className="px-3.5 py-1.5 bg-gradient-to-r from-blue-600 via-indigo-600 to-blue-700 hover:from-blue-700 hover:to-indigo-700 text-white rounded-xl text-[10px] font-black uppercase tracking-wider shadow-sm"
                       >
                         Adjust Stock
                       </button>
@@ -448,7 +448,7 @@ export const StoreView: React.FC = () => {
 
               <button
                 type="submit"
-                className="w-full bg-gradient-to-br from-cyan-600 to-sky-700 hover:from-cyan-700 hover:to-sky-800 text-white font-black py-3 rounded-2xl text-xs uppercase tracking-wider shadow-md shadow-sky-700/25 transition-all hover:scale-[1.01] active:scale-[0.99] cursor-pointer"
+                className="w-full bg-gradient-to-r from-blue-600 via-indigo-600 to-blue-700 hover:from-blue-700 hover:to-indigo-700 text-white font-black py-3 rounded-2xl text-xs uppercase tracking-wider shadow-lg shadow-blue-500/25 transition-all hover:scale-[1.01] active:scale-[0.99] cursor-pointer"
               >
                 Save Bearing Spares
               </button>
@@ -503,7 +503,7 @@ export const StoreView: React.FC = () => {
 
               <button
                 type="submit"
-                className="w-full bg-gradient-to-br from-cyan-600 to-sky-700 hover:from-cyan-700 hover:to-sky-800 text-white font-black py-3 rounded-2xl text-xs uppercase tracking-wider shadow-md shadow-sky-700/25 transition-all hover:scale-[1.01] active:scale-[0.99] cursor-pointer"
+                className="w-full bg-gradient-to-r from-blue-600 via-indigo-600 to-blue-700 hover:from-blue-700 hover:to-indigo-700 text-white font-black py-3 rounded-2xl text-xs uppercase tracking-wider shadow-lg shadow-blue-500/25 transition-all hover:scale-[1.01] active:scale-[0.99] cursor-pointer"
               >
                 Save V-Belt Spares
               </button>

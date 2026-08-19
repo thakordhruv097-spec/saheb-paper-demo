@@ -307,14 +307,14 @@ export const LoginView: React.FC = () => {
                     const success = await login('lab_operator', '1234');
                     if (success) navigate('/');
                   }}
-                  className="flex items-center gap-1.5 sm:gap-2 p-1.5 sm:p-2 bg-gradient-to-br from-cyan-50 to-sky-100/50 hover:from-cyan-100 hover:to-sky-200/50 border border-sky-200/80 rounded-xl transition-all duration-200 cursor-pointer group"
+                  className="flex items-center gap-1.5 sm:gap-2 p-1.5 sm:p-2 bg-gradient-to-br from-purple-50 to-purple-100/50 hover:from-purple-100 hover:to-purple-200/50 border border-purple-200/80 rounded-xl transition-all duration-200 cursor-pointer group"
                 >
-                  <div className="flex-shrink-0 w-6.5 h-6.5 sm:w-7 sm:h-7 bg-sky-600 rounded-lg flex items-center justify-center text-white text-xs group-hover:scale-105 transition-transform">
+                  <div className="flex-shrink-0 w-6.5 h-6.5 sm:w-7 sm:h-7 bg-purple-500 rounded-lg flex items-center justify-center text-white text-xs group-hover:scale-105 transition-transform">
                     🔬
                   </div>
                   <div className="text-left flex-1 min-w-0">
-                    <p className="text-[10px] sm:text-[11px] font-bold text-sky-800 truncate">Pulper</p>
-                    <p className="text-[9px] text-sky-700/70 font-medium">PIN: 1234</p>
+                    <p className="text-[10px] sm:text-[11px] font-bold text-purple-700 truncate">Pulper</p>
+                    <p className="text-[9px] text-purple-600/70 font-medium">PIN: 1234</p>
                   </div>
                 </button>
 

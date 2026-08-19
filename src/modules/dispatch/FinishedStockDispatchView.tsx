@@ -44,7 +44,7 @@ export const FinishedStockDispatchView: React.FC = () => {
     <div className="space-y-4 font-sans pb-16 w-full text-left relative">
 
       {/* 1. COMPACT SLEEK BANNER HEADER */}
-      <div className="bg-gradient-to-r from-slate-900 via-blue-950 to-slate-900 border border-slate-800 rounded-2xl p-4 sm:p-5 text-white shadow-md relative z-20">
+      <div className="bg-gradient-to-r from-blue-700 via-indigo-700 to-slate-900 rounded-2xl p-4 sm:p-5 text-white shadow-md relative z-20">
         <div className="flex items-center justify-between gap-3 relative z-10">
           <div className="flex items-center gap-3.5 min-w-0">
             <div className="p-2.5 rounded-xl bg-white/10 backdrop-blur-md border border-white/20 text-white shrink-0">
@@ -99,7 +99,7 @@ export const FinishedStockDispatchView: React.FC = () => {
       {canAccessScanner && activeTab !== 'qr_scanner' && (
         <button
           onClick={() => setActiveTab('qr_scanner')}
-          className="fixed bottom-20 right-4 z-40 bg-gradient-to-br from-cyan-600 to-sky-700 hover:from-cyan-700 hover:to-sky-800 text-white font-extrabold px-5 py-3 rounded-full shadow-2xl shadow-sky-700/40 flex md:hidden items-center gap-2.5 text-xs uppercase tracking-wider transition-all hover:scale-105 active:scale-95 cursor-pointer border border-sky-400/30 backdrop-blur-sm"
+          className="fixed bottom-20 right-4 z-40 bg-gradient-to-r from-blue-600 via-indigo-600 to-blue-700 hover:from-blue-700 hover:to-indigo-700 text-white font-extrabold px-5 py-3 rounded-full shadow-2xl shadow-blue-600/50 flex md:hidden items-center gap-2.5 text-xs uppercase tracking-wider transition-all hover:scale-105 active:scale-95 cursor-pointer border border-blue-400/30 backdrop-blur-sm"
           title="Quick QR Reel Scanner"
         >
           <QrCode className="h-4.5 w-4.5 text-sky-200" />

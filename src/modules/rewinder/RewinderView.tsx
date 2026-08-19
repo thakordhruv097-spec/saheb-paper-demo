@@ -1233,7 +1233,7 @@ export const RewinderView: React.FC = () => {
             </div>
 
             {/* Hero Live Filter Results Card */}
-            <div className="bg-gradient-to-br from-blue-700 to-blue-900 rounded-2xl p-4 border border-blue-600/40 shadow-sm text-white space-y-1">
+            <div className="bg-gradient-to-r from-blue-700 via-indigo-700 to-purple-800 rounded-2xl p-4 border border-blue-400/30 shadow-lg text-white space-y-1">
               <span className="text-[10px] font-black tracking-widest text-blue-200 uppercase flex items-center gap-1.5">
                 <Layers className="h-3.5 w-3.5" /> LIVE FILTER RESULTS
               </span>
