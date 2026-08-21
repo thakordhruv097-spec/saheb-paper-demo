@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Color Comparison</title>
+    <style>
+        body {
+            font-family: system-ui, -apple-system, sans-serif;
+            padding: 40px;
+            background: #1a1a1a;
+            color: white;
+        }
+        .container {
+            display: flex;
+            gap: 40px;
+            align-items: center;
+        }
+        .color-box {
+            width: 300px;
+            height: 400px;
+            border-radius: 16px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.3);
+        }
+        .current {
+            background: #e8f5f2;
+        }
+        .proposed {
+            background: #b8d4cc;
+        }
+        .label {
+            margin-top: 20px;
+            font-size: 14px;
+            color: #666;
+            font-weight: 500;
+        }
+        .hex {
+            margin-top: 8px;
+            font-size: 18px;
+            font-weight: 700;
+        }
+        .current .label, .current .hex {
+            color: #0d7c7c;
+        }
+        .proposed .label, .proposed .hex {
+            color: #0a6666;
+        }
+        h1 {
+            margin-bottom: 30px;
+        }
+        .description {
+            margin-top: 30px;
+            color: #999;
+            font-size: 14px;
+            max-width: 640px;
+        }
+    </style>
+</head>
+<body>
+    <h1>Color Comparison</h1>
+    <div class="container">
+        <div>
+            <div class="color-box current">
+                <div class="label">CURRENT</div>
+                <div class="hex">#e8f5f2</div>
+            </div>
+        </div>
+        <div>
+            <div class="color-box proposed">
+                <div class="label">PROPOSED</div>
+                <div class="hex">#b8d4cc</div>
+            </div>
+        </div>
+    </div>
+    <div class="description">
+        The proposed color is slightly darker while maintaining the same teal/mint hue.
+        This will give a bit more contrast and depth to backgrounds, gradients, and borders.
+    </div>
+</body>
+</html>
