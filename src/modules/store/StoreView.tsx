@@ -448,7 +448,7 @@ export const StoreView: React.FC = () => {
 
               <button
                 type="submit"
-                className="w-full bg-gradient-to-r from-blue-600 via-indigo-600 to-blue-700 hover:from-blue-700 hover:to-indigo-700 text-white font-black py-3 rounded-2xl text-xs uppercase tracking-wider shadow-lg shadow-blue-500/25 transition-all hover:scale-[1.01] active:scale-[0.99] cursor-pointer"
+                className="w-full bg-[#008163] hover:bg-[#006e54] text-white font-black py-3 rounded-2xl text-xs uppercase tracking-wider shadow-lg shadow-[#008163]/25 transition-all hover:scale-[1.01] active:scale-[0.99] cursor-pointer"
               >
                 Save Bearing Spares
               </button>
@@ -503,7 +503,7 @@ export const StoreView: React.FC = () => {
 
               <button
                 type="submit"
-                className="w-full bg-gradient-to-r from-blue-600 via-indigo-600 to-blue-700 hover:from-blue-700 hover:to-indigo-700 text-white font-black py-3 rounded-2xl text-xs uppercase tracking-wider shadow-lg shadow-blue-500/25 transition-all hover:scale-[1.01] active:scale-[0.99] cursor-pointer"
+                className="w-full bg-[#008163] hover:bg-[#006e54] text-white font-black py-3 rounded-2xl text-xs uppercase tracking-wider shadow-lg shadow-[#008163]/25 transition-all hover:scale-[1.01] active:scale-[0.99] cursor-pointer"
               >
                 Save V-Belt Spares
               </button>

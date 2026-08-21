@@ -283,7 +283,7 @@ export const UserManagementView: React.FC = () => {
 
         <button
           onClick={handleOpenAddModal}
-          className="px-5 py-3 rounded-2xl bg-primary hover:bg-blue-700 text-white font-black text-xs uppercase tracking-wider shadow-md transition cursor-pointer flex items-center justify-center gap-2 shrink-0 active:scale-95"
+          className="px-5 py-3 rounded-2xl bg-[#008163] hover:bg-[#006e54] text-white font-black text-xs uppercase tracking-wider shadow-md transition cursor-pointer flex items-center justify-center gap-2 shrink-0 active:scale-95"
         >
           <Plus className="h-4 w-4" />
           <span>Add New User</span>
@@ -603,7 +603,7 @@ export const UserManagementView: React.FC = () => {
               <div className="flex gap-3 pt-2">
                 <button
                   type="submit"
-                  className="flex-1 py-3 bg-primary hover:bg-blue-700 text-white rounded-xl text-xs font-black uppercase tracking-wider shadow-md cursor-pointer transition"
+                  className="flex-1 py-3 bg-[#008163] hover:bg-[#006e54] text-white rounded-xl text-xs font-black uppercase tracking-wider shadow-md cursor-pointer transition"
                 >
                   Create User Account
                 </button>
@@ -716,7 +716,7 @@ export const UserManagementView: React.FC = () => {
               <div className="flex gap-3 pt-2">
                 <button
                   type="submit"
-                  className="flex-1 py-3 bg-primary hover:bg-blue-700 text-white rounded-xl text-xs font-black uppercase tracking-wider shadow-md cursor-pointer transition flex items-center justify-center gap-2"
+                  className="flex-1 py-3 bg-[#008163] hover:bg-[#006e54] text-white rounded-xl text-xs font-black uppercase tracking-wider shadow-md cursor-pointer transition flex items-center justify-center gap-2"
                 >
                   <Save className="h-4 w-4" /> Save Changes
                 </button>

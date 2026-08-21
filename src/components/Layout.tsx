@@ -237,8 +237,8 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
       { id: 'home', path: '/', label: 'Home', icon: LayoutDashboard, aliases: [] },
       { id: 'production', path: prodPath, label: 'Production', icon: Factory, aliases: ['/machine-production', '/pulp-mill-operations', '/rewinding-reel-conversion', '/utilities-etp'] },
       { id: 'scan', path: '/qr-scanner', label: 'Scan', icon: QrCode, aliases: ['/traceability'] },
-      { id: 'dispatch', path: '/finished-stock-dispatch', label: 'Dispatch', icon: Truck, aliases: ['/store-inventory', '/lab-testing'] },
-      { id: 'more', path: '/profile', label: 'More', icon: User, aliases: ['/admin-profile', '/role-management', '/user-management', '/monthly-yearly-reporting', '/raw-material-stock', '/experiments'] },
+      { id: 'dispatch', path: '/dispatch-receipt/draft-packing-slip', label: 'Dispatch', icon: Truck, aliases: ['/dispatch-receipt/draft-packing-slip', '/dispatch-receipt/packing-slips-&-challans', '/dispatch-receipt', '/finished-stock-dispatch', '/stock-categorization'] },
+      { id: 'more', path: '/profile', label: 'More', icon: User, aliases: ['/admin-profile', '/role-management', '/user-management', '/monthly-yearly-reporting', '/raw-material-stock'] },
     ];
   }, [user]);
 
@@ -448,7 +448,7 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
     { id: 'rewinding_reel_conversion', path: '/rewinding-reel-conversion', label: t('nav.rewinder', 'Rewinder Section'), icon: RotateCw },
     { id: 'lab', path: '/lab', label: 'Lab Quality Control', icon: Beaker },
     { id: 'utilities_etp', path: '/utilities-etp', label: t('nav.utilities_etp', 'Utilities and ETP'), icon: Flame },
-    { id: 'experiment', path: '/experiment', label: t('nav.experiment', 'Dispatch Receipt'), icon: Truck },
+    { id: 'dispatch_receipt', path: '/dispatch-receipt/draft-packing-slip', label: t('nav.dispatch_receipt', 'Dispatch Receipt'), icon: Truck },
     { id: 'finished_stock_dispatch', path: '/stock-categorization', label: t('nav.finished_stock_dispatch', 'Stock Categorization'), icon: Layers },
     { id: 'spareparts_management', path: '/spareparts-management', label: t('nav.store', 'Store Inventory'), icon: Wrench },
     { id: 'label_studio', path: '/label-studio', label: 'Label Studio', icon: Tag },
@@ -462,7 +462,7 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
   const sidebarSections = useMemo(() => {
     const core = visibleMenuItems.filter(i => ['dashboard'].includes(i.id));
     const production = visibleMenuItems.filter(i => ['raw_material_stock', 'pulp_mill_operations', 'machine_production', 'rewinding_reel_conversion', 'lab'].includes(i.id));
-    const operations = visibleMenuItems.filter(i => ['orders', 'utilities_etp', 'experiment', 'finished_stock_dispatch', 'spareparts_management'].includes(i.id));
+    const operations = visibleMenuItems.filter(i => ['orders', 'utilities_etp', 'dispatch_receipt', 'finished_stock_dispatch', 'spareparts_management'].includes(i.id));
     const admin = visibleMenuItems.filter(i => ['label_studio', 'monthly_yearly_reporting', 'admin_panel_audit'].includes(i.id));
 
     return [
@@ -485,8 +485,8 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
   return (
     <div className="min-h-screen bg-bg-light dark:bg-bg-dark text-text-light-primary dark:text-slate-100 flex flex-col transition-colors duration-200">
 
-      {/* 1. Header (Common across all sizes) - Wow Glassmorphic Design */}
-      <header className={`sticky top-0 z-30 bg-white/90 dark:bg-slate-900/90 backdrop-blur-xl border-b border-slate-200/80 dark:border-slate-800 shadow-2xs h-16 flex items-center justify-between px-4 lg:px-6 transition-all duration-300 ${user ? 'md:ml-64' : ''
+      {/* 1. Header (Common across all sizes) - Light Mode: Clean White / Dark Mode: #1a3535 */}
+      <header className={`sticky top-0 z-30 bg-white/95 dark:bg-[#1a3535]/95 text-slate-900 dark:text-white backdrop-blur-xl border-b border-slate-200/80 dark:border-[#284848] shadow-2xs h-16 flex items-center justify-between px-4 lg:px-6 transition-all duration-300 ${user ? 'md:ml-64' : ''
         } ${showHeader ? 'translate-y-0 opacity-100' : '-translate-y-full opacity-0 pointer-events-none'
         }`}>
 
@@ -495,7 +495,7 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
           {location.pathname !== '/' ? (
             <button
               onClick={() => navigate(-1)}
-              className="p-2 rounded-xl bg-slate-100/80 dark:bg-slate-800/80 hover:bg-primary/10 dark:hover:bg-blue-950/40 text-slate-700 dark:text-slate-200 hover:text-primary transition flex items-center gap-1.5 cursor-pointer border border-slate-200/60 dark:border-slate-700/60"
+              className="p-2 rounded-xl bg-slate-100/80 dark:bg-[#254545] hover:bg-slate-200 dark:hover:bg-[#2c5252] text-slate-700 dark:text-white transition flex items-center gap-1.5 cursor-pointer border border-slate-200/60 dark:border-[#2c4a4a]"
               title="Navigate Back"
             >
               <ArrowLeft className="h-4.5 w-4.5" />
@@ -506,12 +506,12 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
               {(user?.role === 'Admin' || user?.role === 'Management') && (
                 <button
                   onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-                  className="p-2 rounded-xl bg-slate-100/80 dark:bg-slate-800/80 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 md:hidden transition border border-slate-200/60 dark:border-slate-700/60"
+                  className="p-2 rounded-xl bg-slate-100/80 dark:bg-[#254545] hover:bg-slate-200 dark:hover:bg-[#2c5252] text-slate-700 dark:text-white md:hidden transition border border-slate-200/60 dark:border-[#2c4a4a]"
                 >
                   {mobileMenuOpen ? (
                     <X className="h-5 w-5" />
                   ) : (
-                    <svg className="h-5 w-5 text-primary dark:text-blue-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                    <svg className="h-5 w-5 text-primary dark:text-teal-300" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
                       <line x1="3" y1="6" x2="21" y2="6" />
                       <line x1="3" y1="12" x2="15" y2="12" />
                       <line x1="3" y1="18" x2="9" y2="18" />
@@ -520,19 +520,19 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
                 </button>
               )}
 
-              {/* Mobile Only Header Logo (Hidden on Desktop because it is in the Left Sidebar) */}
+              {/* Mobile Only Header Logo */}
               <div className="flex md:hidden items-center gap-3 cursor-pointer group select-none" onClick={() => navigate('/')}>
-                <img src="/logo.png" alt="Saheb Paper Logo" className="h-9 w-9 object-contain rounded-xl shadow-md shadow-blue-600/10 group-hover:scale-105 transition-transform duration-200 border border-slate-200 dark:border-slate-700 bg-white p-0.5" />
+                <img src="/logo.png" alt="Saheb Paper Logo" className="h-9 w-9 object-contain rounded-xl shadow-md shadow-blue-600/10 group-hover:scale-105 transition-transform duration-200 border border-slate-200 dark:border-[#2c4a4a] bg-white p-0.5" />
                 <div className="block">
                   <div className="flex items-center gap-1.5">
                     <h1 className="text-sm font-black text-slate-900 dark:text-white leading-none tracking-tight">
                       {t('login.title')}
                     </h1>
-                    <span className="px-1.5 py-0.2 rounded-full bg-blue-50 dark:bg-blue-950/60 text-primary dark:text-blue-400 text-[9px] font-extrabold uppercase border border-blue-200/60 dark:border-blue-800/60">
+                    <span className="px-1.5 py-0.2 rounded-full bg-blue-50 dark:bg-teal-900/60 text-primary dark:text-teal-300 text-[9px] font-extrabold uppercase border border-blue-200/60 dark:border-teal-700/60">
                       ERP
                     </span>
                   </div>
-                  <p className="text-[10px] text-slate-500 dark:text-slate-400 font-medium tracking-tight mt-0.5 truncate">
+                  <p className="text-[10px] text-slate-500 dark:text-teal-200/70 font-medium tracking-tight mt-0.5 truncate">
                     {t('login.subtitle')}
                   </p>
                 </div>
@@ -541,21 +541,21 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
           )}
         </div>
 
-        {/* Right Side Combined Controls & Profile Container */}
+        {/* Right Side Header Controls */}
         <div className="flex items-center gap-2 sm:gap-3">
 
-          {/* RIGHT SIDE DATE & TIMEFRAME FILTER CONTROLS BAR (Placed to the left side of Theme Toggle Button) */}
-          {(location.pathname === '/' || location.pathname === '/monthly-yearly-reporting') && (
-            <div className="flex items-center gap-1 sm:gap-2 bg-slate-100/90 dark:bg-slate-800/90 p-1 sm:p-1.5 rounded-2xl border border-slate-200/80 dark:border-slate-700 shadow-xs mr-1 sm:mr-2">
+          {/* Date & Timeframe Filter controls (Admin/Management Only) */}
+          {(user?.role === 'Admin' || user?.role === 'Management') && (
+            <div className="flex items-center gap-2">
               {/* Timeframe Selector Pill */}
-              <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl p-0.5 flex items-center gap-0.5 shadow-2xs">
+              <div className="bg-white dark:bg-[#122828] border border-slate-200 dark:border-[#284848] rounded-xl p-0.5 flex items-center gap-0.5 shadow-2xs">
                 {(['day', 'week', 'month', 'all'] as const).map(tf => (
                   <button
                     key={tf}
                     onClick={() => setTimeframe(tf)}
                     className={`px-2 sm:px-3 py-1 text-[11px] sm:text-xs font-extrabold rounded-lg capitalize transition cursor-pointer ${timeframe === tf
-                        ? 'bg-primary text-white shadow-xs'
-                        : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
+                      ? 'bg-primary text-white shadow-xs'
+                      : 'text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white'
                       }`}
                   >
                     {tf === 'day' ? 'Day' : tf === 'week' ? 'Week' : tf === 'month' ? 'Month' : 'All'}
@@ -567,7 +567,7 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
               <div className="flex items-center gap-1">
                 <button
                   onClick={handlePrevDate}
-                  className="p-1 sm:p-1.5 rounded-lg bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 transition cursor-pointer shadow-2xs"
+                  className="p-1 sm:p-1.5 rounded-lg bg-white dark:bg-[#122828] border border-slate-200 dark:border-[#284848] text-slate-600 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-[#1a3838] transition cursor-pointer shadow-2xs"
                   title="Previous Date"
                 >
                   <ChevronLeft className="h-3.5 w-3.5" />
@@ -576,13 +576,13 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
                 <div className="relative" ref={headerDatePickerRef}>
                   <div
                     onClick={() => setIsDatePickerModalOpen(prev => !prev)}
-                    className="flex items-center bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg px-2 sm:px-3 py-1 shadow-2xs group cursor-pointer hover:bg-slate-50 dark:hover:bg-slate-800/80 transition select-none"
+                    className="flex items-center bg-white dark:bg-[#122828] border border-slate-200 dark:border-[#284848] rounded-lg px-2 sm:px-3 py-1 shadow-2xs group cursor-pointer hover:bg-slate-50 dark:hover:bg-[#1a3838] transition select-none"
                     title="Click to select date"
                   >
                     <span className="text-[11px] sm:text-xs font-black text-slate-900 dark:text-white mr-1.5 font-sans">
                       {selectedDate}
                     </span>
-                    <Calendar className="h-3.5 w-3.5 text-primary dark:text-blue-400 group-hover:scale-110 transition-transform" />
+                    <Calendar className="h-3.5 w-3.5 text-primary dark:text-teal-300 group-hover:scale-110 transition-transform" />
                   </div>
 
                   {isDatePickerModalOpen && (
@@ -599,7 +599,7 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
                 <button
                   onClick={handleNextDate}
                   disabled={selectedDate >= systemToday}
-                  className="p-1 sm:p-1.5 rounded-lg bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 transition cursor-pointer shadow-2xs disabled:opacity-30 disabled:cursor-not-allowed disabled:pointer-events-none"
+                  className="p-1 sm:p-1.5 rounded-lg bg-white dark:bg-[#122828] border border-slate-200 dark:border-[#284848] text-slate-600 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-[#1a3838] transition cursor-pointer shadow-2xs disabled:opacity-30 disabled:cursor-not-allowed disabled:pointer-events-none"
                   title="Next Date"
                 >
                   <ChevronRight className="h-3.5 w-3.5" />
@@ -608,12 +608,10 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
             </div>
           )}
 
-
-
           {/* Theme Toggle Button */}
           <button
             onClick={() => setDarkMode(!darkMode)}
-            className="p-2 rounded-xl bg-slate-100/90 dark:bg-slate-800/90 border border-slate-200/80 dark:border-slate-700/80 hover:bg-slate-200/80 dark:hover:bg-slate-700 transition cursor-pointer text-slate-600 dark:text-amber-400 shadow-2xs"
+            className="p-2 rounded-xl bg-slate-100/90 dark:bg-[#254545] border border-slate-200/80 dark:border-[#2c4a4a] hover:bg-slate-200/80 dark:hover:bg-[#2c5252] transition cursor-pointer text-slate-600 dark:text-amber-300 shadow-2xs"
             title="Toggle Light/Dark Theme"
           >
             {darkMode ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
@@ -623,58 +621,58 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
           <div className="relative">
             <button
               onClick={toggleBell}
-              className="p-2 rounded-xl bg-slate-100/90 dark:bg-slate-800/90 border border-slate-200/80 dark:border-slate-700/80 hover:bg-slate-200/80 dark:hover:bg-slate-700 transition cursor-pointer text-slate-600 dark:text-slate-300 relative shadow-2xs"
+              className="p-2 rounded-xl bg-slate-100/90 dark:bg-[#254545] border border-slate-200/80 dark:border-[#2c4a4a] hover:bg-slate-200/80 dark:hover:bg-[#2c5252] transition cursor-pointer text-slate-600 dark:text-slate-200 relative shadow-2xs"
               title="Notifications & Alerts"
             >
               <Bell className="h-4 w-4" />
               {activeNotifications.length > 0 && (
-                <span className="absolute top-1 right-1 h-2.5 w-2.5 rounded-full bg-red-500 ring-2 ring-white dark:ring-slate-900 animate-pulse"></span>
+                <span className="absolute top-1 right-1 h-2.5 w-2.5 rounded-full bg-red-500 ring-2 ring-white dark:ring-[#1a3535] animate-pulse"></span>
               )}
             </button>
 
             {bellOpen && (
               <div
                 onClick={(e) => e.stopPropagation()}
-                className="absolute right-0 top-full mt-2 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl shadow-2xl py-3 w-80 sm:w-88 z-50 max-h-96 overflow-y-auto font-sans"
+                className="absolute right-0 top-full mt-2 bg-white dark:bg-[#1a3535] border border-slate-200 dark:border-[#284848] text-slate-900 dark:text-white rounded-2xl shadow-2xl py-3 w-80 sm:w-88 z-50 max-h-96 overflow-y-auto font-sans"
               >
-                <div className="px-4 pb-2.5 border-b border-slate-100 dark:border-slate-700 flex justify-between items-center">
+                <div className="px-4 pb-2.5 border-b border-slate-100 dark:border-[#284848] flex justify-between items-center">
                   <span className="text-xs font-black text-slate-900 dark:text-white uppercase tracking-wider">Alerts & Notifications</span>
                   {activeNotifications.length > 0 ? (
                     <button
                       onClick={clearAllNotifications}
-                      className="text-xs font-extrabold text-primary dark:text-blue-400 hover:underline cursor-pointer"
+                      className="text-xs font-extrabold text-primary dark:text-teal-300 hover:underline cursor-pointer"
                     >
                       Clear All
                     </button>
                   ) : (
-                    <span className="text-xs px-2.5 py-0.5 rounded-full bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300 font-extrabold border border-emerald-200 dark:border-emerald-800">Healthy</span>
+                    <span className="text-xs px-2.5 py-0.5 rounded-full bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300 font-extrabold border border-emerald-200 dark:border-emerald-800">Healthy</span>
                   )}
                 </div>
 
-                <div className="divide-y divide-slate-100 dark:divide-slate-700">
+                <div className="divide-y divide-slate-100 dark:divide-[#284848]">
                   {activeNotifications.length === 0 ? (
-                    <div className="p-6 text-center text-xs text-slate-500 dark:text-slate-400 font-medium">
+                    <div className="p-6 text-center text-xs text-slate-500 dark:text-slate-300 font-medium">
                       System healthy. No active alerts.
                     </div>
                   ) : (
                     activeNotifications.map(n => (
-                      <div key={n.id} className="p-3.5 hover:bg-slate-50 dark:hover:bg-slate-700/60 transition text-left space-y-1.5 relative group">
+                      <div key={n.id} className="p-3.5 hover:bg-slate-50 dark:hover:bg-[#254545] transition text-left space-y-1.5 relative group">
                         <div className="flex items-start justify-between gap-2">
                           <div className="flex items-center gap-2 min-w-0">
                             <span className={`h-2 w-2 rounded-full shrink-0 ${n.type === 'stock' ? 'bg-amber-500' :
-                                n.type === 'qc' ? 'bg-purple-500' : 'bg-red-500'
+                              n.type === 'qc' ? 'bg-purple-500' : 'bg-red-500'
                               }`}></span>
-                            <span className="text-sm font-bold text-slate-900 dark:text-slate-100 truncate">{n.title}</span>
+                            <span className="text-sm font-bold text-slate-900 dark:text-white truncate">{n.title}</span>
                           </div>
                           <button
                             onClick={(e) => dismissNotification(n.id, e)}
-                            className="p-1 rounded text-slate-400 hover:text-red-600 dark:text-slate-300 dark:hover:text-red-400 hover:bg-slate-200 dark:hover:bg-slate-600 cursor-pointer shrink-0 transition"
+                            className="p-1 rounded text-slate-400 dark:text-slate-300 hover:text-red-600 dark:hover:text-red-400 hover:bg-slate-100 dark:hover:bg-[#2c5252] cursor-pointer shrink-0 transition"
                             title="Dismiss alert"
                           >
                             <X className="h-3.5 w-3.5" />
                           </button>
                         </div>
-                        <p className="text-xs text-slate-600 dark:text-slate-300 pl-4 leading-relaxed pr-2 font-normal">{n.desc}</p>
+                        <p className="text-xs text-slate-600 dark:text-slate-200 pl-4 leading-relaxed pr-2 font-normal">{n.desc}</p>
                       </div>
                     ))
                   )}
@@ -685,15 +683,15 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
 
           {/* Top Right Header Profile & User Badges */}
           {user && (
-            <div className="flex items-center gap-2 border-l pl-3 border-slate-200 dark:border-slate-700">
+            <div className="flex items-center gap-2 border-l pl-3 border-slate-200 dark:border-[#284848]">
               <div className="hidden lg:block text-right">
                 <p className="text-xs font-black text-slate-900 dark:text-white leading-tight">{user.displayName}</p>
-                <span className="inline-block text-[10px] font-extrabold uppercase tracking-wider text-primary dark:text-blue-400 bg-primary/10 dark:bg-blue-950/60 px-2 py-0.5 rounded-full border border-primary/20 mt-0.5">
+                <span className="inline-block text-[10px] font-extrabold uppercase tracking-wider text-primary dark:text-teal-300 bg-primary/10 dark:bg-teal-900/60 px-2 py-0.5 rounded-full border border-primary/20 dark:border-teal-700/60 mt-0.5">
                   {user.role}
                 </span>
               </div>
 
-              {/* Profile Avatar Button (Hidden on Mobile, accessed via Bottom Nav / Drawer) */}
+              {/* Profile Avatar Button */}
               <div className="relative hidden md:block">
                 <button
                   onClick={toggleProfile}
@@ -705,10 +703,10 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
 
                 {profileDropdownOpen && (
                   <div className="absolute right-0 top-full mt-2 z-50 animate-in fade-in zoom-in-95 duration-150">
-                    <div className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl shadow-2xl overflow-hidden py-1.5 w-56 font-sans">
-                      <div className="px-4 py-3 border-b border-slate-100 dark:border-slate-700 bg-slate-50/50 dark:bg-slate-900/50">
+                    <div className="bg-white dark:bg-[#1a3535] border border-slate-200 dark:border-[#284848] text-slate-900 dark:text-white rounded-2xl shadow-2xl overflow-hidden py-1.5 w-56 font-sans">
+                      <div className="px-4 py-3 border-b border-slate-100 dark:border-[#284848] bg-slate-50/50 dark:bg-[#122828]">
                         <p className="text-sm font-black text-slate-900 dark:text-white leading-tight">{user.displayName}</p>
-                        <p className="text-xs text-slate-500 dark:text-slate-400 font-mono mt-0.5">@{user.username} ({user.role})</p>
+                        <p className="text-xs text-slate-500 dark:text-teal-200/70 font-mono mt-0.5">@{user.username} ({user.role})</p>
                       </div>
 
                       <button
@@ -716,9 +714,9 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
                           navigate('/profile');
                           setProfileDropdownOpen(false);
                         }}
-                        className="w-full flex items-center gap-2.5 px-4 py-2.5 text-xs font-bold text-slate-700 dark:text-slate-200 hover:bg-blue-50 dark:hover:bg-slate-700/50 text-left transition border-b border-slate-100 dark:border-slate-700 cursor-pointer"
+                        className="w-full flex items-center gap-2.5 px-4 py-2.5 text-xs font-bold text-slate-700 dark:text-slate-200 hover:bg-blue-50 dark:hover:bg-[#254545] text-left transition border-b border-slate-100 dark:border-[#284848] cursor-pointer"
                       >
-                        <User className="h-4 w-4 text-primary dark:text-blue-400" />
+                        <User className="h-4 w-4 text-primary dark:text-teal-300" />
                         <span>My Profile & Details</span>
                       </button>
 
@@ -728,9 +726,9 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
                             navigate('/role-management');
                             setProfileDropdownOpen(false);
                           }}
-                          className="w-full flex items-center gap-2.5 px-4 py-2.5 text-xs font-bold text-slate-700 dark:text-slate-200 hover:bg-amber-50 dark:hover:bg-slate-700/50 text-left transition border-b border-slate-100 dark:border-slate-700 cursor-pointer"
+                          className="w-full flex items-center gap-2.5 px-4 py-2.5 text-xs font-bold text-slate-700 dark:text-slate-200 hover:bg-amber-50 dark:hover:bg-[#254545] text-left transition border-b border-slate-100 dark:border-[#284848] cursor-pointer"
                         >
-                          <Shield className="h-4 w-4 text-amber-500" />
+                          <Shield className="h-4 w-4 text-amber-500 dark:text-amber-400" />
                           <span>Role Management</span>
                         </button>
                       )}
@@ -741,7 +739,7 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
                             navigate('/user-management');
                             setProfileDropdownOpen(false);
                           }}
-                          className="w-full flex items-center gap-2.5 px-4 py-2.5 text-xs font-semibold text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-700/50 text-left transition border-b border-slate-100 dark:border-slate-700 cursor-pointer"
+                          className="w-full flex items-center gap-2.5 px-4 py-2.5 text-xs font-semibold text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-[#254545] text-left transition border-b border-slate-100 dark:border-[#284848] cursor-pointer"
                         >
                           <Settings className="h-4 w-4 text-purple-600 dark:text-purple-400" />
                           <span>User Management</span>
@@ -753,9 +751,9 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
                           setProfileDropdownOpen(false);
                           logout();
                         }}
-                        className="w-full flex items-center gap-2.5 px-4 py-2.5 text-xs font-bold text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/20 text-left transition cursor-pointer"
+                        className="w-full flex items-center gap-2.5 px-4 py-2.5 text-xs font-bold text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/30 text-left transition cursor-pointer"
                       >
-                        <LogOut className="h-4 w-4 text-red-500" />
+                        <LogOut className="h-4 w-4 text-red-500 dark:text-red-400" />
                         <span>Logout</span>
                       </button>
                     </div>
@@ -769,52 +767,52 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
       </header>
 
       <div className="flex flex-1 relative overflow-hidden">
-        {/* 2. Left Sidebar (Tablet/Desktop: md:flex) - Completely Locked Stationary Left Sidebar */}
+        {/* 2. Left Sidebar (Tablet/Desktop: md:flex) - Light Mode: Clean White / Dark Mode: #1a3535 */}
         {user && (
-          <aside className="hidden md:flex flex-col fixed top-0 left-0 bottom-0 w-64 bg-white dark:bg-slate-900 border-r border-slate-200/80 dark:border-slate-800 z-40 select-none shadow-xs overflow-hidden h-screen">
-            {/* Sidebar Top Header with Logo (Flush at top-0 with 0 extra space) */}
-            <div className="h-16 px-4 flex items-center gap-3 border-b border-slate-200/80 dark:border-slate-800 shrink-0 cursor-pointer group select-none" onClick={() => navigate('/')}>
-              <img src="/logo.png" alt="Saheb Paper Logo" className="h-9 w-9 object-contain rounded-xl shadow-md shadow-blue-600/10 group-hover:scale-105 transition-transform duration-200 border border-slate-200 dark:border-slate-700 bg-white p-0.5 shrink-0" />
+          <aside className="hidden md:flex flex-col fixed top-0 left-0 bottom-0 w-64 bg-white dark:bg-[#1a3535] text-slate-800 dark:text-white border-r border-slate-200/80 dark:border-[#284848] z-40 select-none shadow-xs overflow-hidden h-screen">
+            {/* Sidebar Top Header with Logo */}
+            <div className="h-16 px-4 flex items-center gap-3 border-b border-slate-200/80 dark:border-[#284848] shrink-0 cursor-pointer group select-none" onClick={() => navigate('/')}>
+              <img src="/logo.png" alt="Saheb Paper Logo" className="h-9 w-9 object-contain rounded-xl shadow-md shadow-blue-600/10 dark:shadow-teal-950/40 group-hover:scale-105 transition-transform duration-200 border border-slate-200 dark:border-[#2c4a4a] bg-white p-0.5 shrink-0" />
               <div className="min-w-0 flex-1">
                 <div className="flex items-center gap-1.5">
                   <h1 className="text-xs font-black text-slate-900 dark:text-white leading-none tracking-tight truncate font-heading">
                     {t('login.title')}
                   </h1>
-                  <span className="px-1.5 py-0.2 rounded-full bg-blue-50 dark:bg-blue-950/60 text-primary dark:text-blue-400 text-[9px] font-extrabold uppercase border border-blue-200/60 dark:border-blue-800/60 shrink-0">
+                  <span className="px-1.5 py-0.2 rounded-full bg-blue-50 dark:bg-teal-900/60 text-primary dark:text-teal-300 text-[9px] font-extrabold uppercase border border-blue-200/60 dark:border-teal-700/60 shrink-0">
                     ERP
                   </span>
                 </div>
-                <p className="text-[10px] text-slate-500 dark:text-slate-400 font-medium tracking-tight truncate mt-0.5">
+                <p className="text-[10px] text-slate-500 dark:text-teal-200/70 font-medium tracking-tight truncate mt-0.5">
                   {t('login.subtitle')}
                 </p>
               </div>
             </div>
 
-            {/* Locked Sidebar Navigation Sections (No Inner Scroll - Locked In Position) */}
+            {/* Locked Sidebar Navigation Sections */}
             <div className="flex flex-col gap-2 flex-1 px-3 py-2.5 overflow-hidden select-none">
-              
+
               {/* Render Categorized Dynamic Sections */}
               {sidebarSections.map((section) => (
                 <div key={section.title} className="space-y-0.5">
-                  <div className="px-3 pt-1 pb-0.5 text-[10px] font-black uppercase tracking-wider text-slate-400 dark:text-slate-500 font-sans">
+                  <div className="px-3 pt-1 pb-0.5 text-[10px] font-black uppercase tracking-wider text-slate-400 dark:text-teal-200/60 font-sans">
                     {section.title}
                   </div>
 
                   <div className="space-y-0.5">
                     {section.items.map(item => {
                       const Icon = item.icon;
-                      const isActive = location.pathname === item.path;
+                      const isActive = location.pathname === item.path || (item.id === 'dispatch_receipt' && location.pathname.startsWith('/dispatch-receipt'));
                       return (
                         <button
                           key={item.id}
                           onClick={() => navigate(item.path)}
                           className={`w-full flex items-center justify-between px-3 py-2 rounded-xl transition-all duration-200 text-left cursor-pointer group ${isActive
-                              ? 'bg-gradient-to-r from-blue-600 via-indigo-600 to-blue-700 text-white font-black shadow-md shadow-blue-600/25'
-                              : 'text-slate-600 dark:text-slate-300 hover:bg-slate-100/90 dark:hover:bg-slate-800/90 hover:text-slate-900 dark:hover:text-white font-bold'
+                            ? 'bg-gradient-to-r from-blue-600 via-indigo-600 to-blue-700 dark:from-teal-600 dark:via-emerald-600 dark:to-teal-700 text-white font-black shadow-md shadow-blue-600/25 dark:shadow-teal-900/40'
+                            : 'text-slate-600 dark:text-slate-200 hover:bg-slate-100/90 dark:hover:bg-[#254545] hover:text-slate-900 dark:hover:text-white font-bold'
                             }`}
                         >
                           <div className="flex items-center gap-2.5 min-w-0">
-                            <Icon className={`h-4 w-4 flex-shrink-0 transition-transform duration-200 ${isActive ? 'text-white' : 'text-slate-400 group-hover:text-primary dark:group-hover:text-blue-400'
+                            <Icon className={`h-4 w-4 flex-shrink-0 transition-transform duration-200 ${isActive ? 'text-white' : 'text-slate-400 dark:text-teal-300/80 group-hover:text-primary dark:group-hover:text-white'
                               }`} />
                             <span className="text-xs font-sans tracking-wide leading-tight truncate">
                               {item.label}
@@ -847,27 +845,27 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
         </main>
       </div>
 
-      {/* 4. Mobile Slide-out Menu */}
+      {/* 4. Mobile Slide-out Menu - Light Mode: Clean White / Dark Mode: #1a3535 */}
       {mobileMenuOpen && user && (
         <div className="fixed inset-0 z-50 flex md:hidden bg-slate-900/60 backdrop-blur-sm" onClick={() => setMobileMenuOpen(false)}>
           <div
-            className="w-80 bg-white dark:bg-slate-900 h-full p-5 flex flex-col shadow-2xl transition"
+            className="w-80 bg-white dark:bg-[#1a3535] text-slate-900 dark:text-white border-r border-slate-200 dark:border-[#284848] h-full p-5 flex flex-col shadow-2xl transition"
             onClick={e => e.stopPropagation()}
           >
             {/* Drawer Header & Profile Card */}
-            <div className="flex items-center justify-between border-b pb-4 mb-4 dark:border-slate-800">
+            <div className="flex items-center justify-between border-b border-slate-100 dark:border-[#284848] pb-4 mb-4">
               <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-2xl bg-gradient-to-tr from-primary to-indigo-600 text-white flex items-center justify-center font-bold text-sm shadow-md">
+                <div className="w-10 h-10 rounded-2xl bg-gradient-to-tr from-primary to-indigo-600 dark:from-teal-600 dark:to-emerald-600 text-white flex items-center justify-center font-bold text-sm shadow-md">
                   <User className="h-5 w-5" />
                 </div>
                 <div>
                   <h3 className="font-extrabold text-sm text-slate-900 dark:text-white leading-tight">{user.displayName}</h3>
-                  <span className="text-[10px] font-black uppercase text-primary dark:text-blue-400 tracking-wider">
+                  <span className="text-[10px] font-black uppercase text-primary dark:text-teal-300 tracking-wider">
                     {user.role === 'Admin' ? 'Master Admin' : user.role}
                   </span>
                 </div>
               </div>
-              <button onClick={() => setMobileMenuOpen(false)} className="p-1 rounded-lg text-slate-400 hover:text-slate-600">
+              <button onClick={() => setMobileMenuOpen(false)} className="p-1 rounded-lg text-slate-400 dark:text-slate-300 hover:text-slate-600 dark:hover:text-white">
                 <X className="h-5 w-5" />
               </button>
             </div>
@@ -877,7 +875,7 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
 
               {visibleMenuItems.map(item => {
                 const Icon = item.icon;
-                const isActive = location.pathname === item.path;
+                const isActive = location.pathname === item.path || (item.id === 'dispatch_receipt' && location.pathname.startsWith('/dispatch-receipt'));
                 return (
                   <button
                     key={item.id}
@@ -886,8 +884,8 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
                       setMobileMenuOpen(false);
                     }}
                     className={`flex items-center gap-3 px-4 py-3 rounded-xl text-left text-xs font-bold transition cursor-pointer ${isActive
-                        ? 'bg-slate-900 text-white dark:bg-white dark:text-slate-900 font-extrabold shadow-sm'
-                        : 'text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800'
+                      ? 'bg-slate-900 text-white dark:bg-gradient-to-r dark:from-teal-600 dark:to-emerald-600 dark:text-white font-extrabold shadow-sm'
+                      : 'text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-[#254545]'
                       }`}
                   >
                     <Icon className="h-4.5 w-4.5" />
@@ -898,13 +896,13 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
             </div>
 
             {/* Logout Button inside Mobile Drawer */}
-            <div className="pt-4 border-t border-slate-100 dark:border-slate-800">
+            <div className="pt-4 border-t border-slate-100 dark:border-[#284848]">
               <button
                 onClick={() => {
                   setMobileMenuOpen(false);
                   logout();
                 }}
-                className="w-full flex items-center justify-center gap-2 px-4 py-3 rounded-2xl bg-red-50 hover:bg-red-100 dark:bg-red-950/40 text-red-600 dark:text-red-400 font-extrabold text-xs uppercase tracking-wider border border-red-200 dark:border-red-800 transition cursor-pointer shadow-2xs"
+                className="w-full flex items-center justify-center gap-2 px-4 py-3 rounded-2xl bg-red-50 hover:bg-red-100 dark:bg-red-950/40 text-red-600 dark:text-red-400 font-extrabold text-xs uppercase tracking-wider border border-red-200 dark:border-red-800 transition cursor-pointer shadow-2xs hover:dark:bg-red-900/60"
               >
                 <LogOut className="h-4 w-4" />
                 <span>Logout of Account</span>
@@ -919,10 +917,10 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
       {user && (
         <>
           {/* Subtle Background Backdrop Mask to prevent page content bleed */}
-          <div className={`fixed bottom-0 left-0 right-0 h-20 bg-gradient-to-t from-slate-100 via-slate-100/90 to-transparent dark:from-slate-950 dark:via-slate-950/90 pointer-events-none z-30 md:hidden transition-all duration-300 ${showBottomNav ? 'opacity-100' : 'opacity-0'
+          <div className={`fixed bottom-0 left-0 right-0 h-20 bg-gradient-to-t from-slate-100 via-slate-100/90 to-transparent dark:from-[#0f2828] dark:to-transparent pointer-events-none z-30 md:hidden transition-all duration-300 ${showBottomNav ? 'opacity-100' : 'opacity-0'
             }`} />
-          {/* 5-TAB SYNCHRONIZED MOBILE BOTTOM NAVIGATION (Home -> Production -> Scan -> Dispatch -> More) */}
-          <nav className={`fixed bottom-3 left-3 right-3 h-16 bg-white/95 dark:bg-slate-900/95 backdrop-blur-xl border border-slate-200/80 dark:border-slate-800/80 rounded-3xl shadow-2xl flex md:hidden items-center justify-around px-1.5 z-40 select-none transition-all duration-300 ease-in-out ${showBottomNav ? 'translate-y-0 opacity-100' : 'translate-y-[calc(100%+2rem)] opacity-0 pointer-events-none'
+          {/* 5-TAB SYNCHRONIZED MOBILE BOTTOM NAVIGATION */}
+          <nav className={`fixed bottom-3 left-3 right-3 h-16 bg-white/95 dark:bg-[#1a3535]/95 backdrop-blur-xl border border-slate-200/80 dark:border-[#284848] rounded-3xl shadow-2xl flex md:hidden items-center justify-around px-1.5 z-40 select-none transition-all duration-300 ease-in-out ${showBottomNav ? 'translate-y-0 opacity-100' : 'translate-y-[calc(100%+2rem)] opacity-0 pointer-events-none'
             }`}>
             {mobileTabs.map((tab, idx) => {
               const isActive = activeTabIndex === idx;
@@ -941,8 +939,8 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
                     title={tab.label}
                   >
                     <div className={`w-11 h-11 rounded-full text-white flex items-center justify-center -mt-5 shadow-xl active:scale-90 transition-all ${isActive
-                        ? 'bg-gradient-to-tr from-blue-600 to-indigo-600 shadow-blue-500/50 ring-4 ring-white dark:ring-slate-900 scale-105'
-                        : 'bg-gradient-to-tr from-blue-600 to-indigo-600 shadow-blue-500/40 ring-4 ring-white dark:ring-slate-900 group-hover:scale-105'
+                      ? 'bg-gradient-to-tr from-blue-600 to-indigo-600 shadow-blue-500/50 ring-4 ring-white dark:ring-slate-900 scale-105'
+                      : 'bg-gradient-to-tr from-blue-600 to-indigo-600 shadow-blue-500/40 ring-4 ring-white dark:ring-slate-900 group-hover:scale-105'
                       }`}>
                       <Icon className="h-5 w-5" />
                     </div>
@@ -962,8 +960,8 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
                     navigate(tab.path);
                   }}
                   className={`flex flex-col items-center justify-center flex-1 py-1 transition-all cursor-pointer ${isActive
-                      ? 'text-primary dark:text-blue-400 font-extrabold scale-105'
-                      : 'text-slate-400 dark:text-slate-500 hover:text-slate-600 dark:hover:text-slate-300'
+                    ? 'text-primary dark:text-blue-400 font-extrabold scale-105'
+                    : 'text-slate-400 dark:text-slate-500 hover:text-slate-600 dark:hover:text-slate-300'
                     }`}
                   title={tab.label}
                 >

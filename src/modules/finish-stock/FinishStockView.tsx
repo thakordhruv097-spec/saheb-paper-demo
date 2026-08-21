@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect, useRef } from 'react';
 import { useAuth } from '../auth/AuthContext';
 import { useTranslation } from 'react-i18next';
 import { getReels, updateReelQC } from '../../data/index';
@@ -17,7 +17,11 @@ import {
   SlidersHorizontal,
   Layers,
   Sparkles,
+  Check,
+  Eye,
+  Beaker,
 } from 'lucide-react';
+import { useBodyScrollLock } from '../../hooks/useBodyScrollLock';
 
 interface FinishStockViewProps {
   hideHeader?: boolean;
@@ -28,7 +32,13 @@ export const FinishStockView: React.FC<FinishStockViewProps> = ({ hideHeader = f
   const { user } = useAuth();
 
   const [reels, setReels] = useState<Reel[]>(() => getReels());
-  const [activeTab, setActiveTab] = useState<'all' | 'grade_a' | 'grade_b' | 'pending_qc'>('grade_a');
+  const [activeTab, setActiveTab] = useState<'all' | 'grade_a' | 'grade_b' | 'pending_qc'>(() => {
+    const initialReels = getReels();
+    const hasGradeA = initialReels.some(r => r.status === 'IN_STOCK');
+    const hasPending = initialReels.some(r => r.status === 'QC_PENDING');
+    if (hasPending && !hasGradeA) return 'all';
+    return 'all';
+  });
   const [stockSearchQuery, setStockSearchQuery] = useState('');
   const [expandedGroups, setExpandedGroups] = useState<Record<string, boolean>>({});
 
@@ -39,14 +49,44 @@ export const FinishStockView: React.FC<FinishStockViewProps> = ({ hideHeader = f
   const [filterSize, setFilterSize] = useState<string>('ALL');
   const [filterPly, setFilterPly] = useState<string>('ALL');
 
-  // QC Form States
+  // QC Form & Inspection Details States
   const [inspectingReel, setInspectingReel] = useState<Reel | null>(null);
+  const [viewingQcReel, setViewingQcReel] = useState<Reel | null>(null);
   const [qcGrade, setQcGrade] = useState<'A' | 'B'>('A');
   const [gsmResult, setGsmResult] = useState('');
   const [brightness, setBrightness] = useState('');
   const [softness, setSoftness] = useState('7');
   const [inspector, setInspector] = useState(user?.displayName || '');
   const [qcError, setQcError] = useState('');
+
+  // Lock background layout & body scroll whenever modal is open
+  useBodyScrollLock(!!inspectingReel || showFilterModal || !!viewingQcReel);
+
+  // Softness input ref for strict click-to-scroll wheel listener
+  const softnessInputRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    const el = softnessInputRef.current;
+    if (!el) return;
+
+    const handleWheel = (e: WheelEvent) => {
+      // ONLY change value if user clicked in / focused on the input!
+      if (document.activeElement === el) {
+        e.preventDefault();
+        setSoftness(prev => {
+          const current = parseInt(prev, 10) || 1;
+          const delta = e.deltaY < 0 ? 1 : -1;
+          const next = Math.min(10, Math.max(1, current + delta));
+          return String(next);
+        });
+      }
+    };
+
+    el.addEventListener('wheel', handleWheel, { passive: false });
+    return () => {
+      el.removeEventListener('wheel', handleWheel);
+    };
+  }, [inspectingReel]);
 
   // Safe Reels list with robust property fallbacks to prevent any null/undefined runtime errors
   const safeReels = useMemo(() => {
@@ -146,6 +186,29 @@ export const FinishStockView: React.FC<FinishStockViewProps> = ({ hideHeader = f
     setFilterSize('ALL');
     setFilterPly('ALL');
     setStockSearchQuery('');
+  };
+
+  const gradeAStockKg = useMemo(() => reels.filter(r => r.status === 'IN_STOCK').reduce((acc, r) => acc + r.weight, 0), [reels]);
+  const gradeBStockKg = useMemo(() => reels.filter(r => r.status === 'IN_STOCK_B').reduce((acc, r) => acc + r.weight, 0), [reels]);
+  const pendingQcCount = useMemo(() => reels.filter(r => r.status === 'QC_PENDING').length, [reels]);
+
+  // 1-Click Bulk QC Approval
+  const handleBulkApproveAllGradeA = () => {
+    const pending = reels.filter(r => r.status === 'QC_PENDING' || !r.qcGrade || r.qcGrade === 'PENDING');
+    if (pending.length === 0) return;
+    pending.forEach(r => {
+      updateReelQC(
+        r.reelNo,
+        'A',
+        r.gsm || 18,
+        85,
+        8,
+        user?.displayName || 'QC Inspector'
+      );
+    });
+    setReels(getReels());
+    setActiveTab('grade_a');
+    handleClearAllFilters();
   };
 
   // 3. Filtered Matching Reels List
@@ -261,10 +324,6 @@ export const FinishStockView: React.FC<FinishStockViewProps> = ({ hideHeader = f
     }
   };
 
-  const gradeAStockKg = useMemo(() => reels.filter(r => r.status === 'IN_STOCK').reduce((acc, r) => acc + r.weight, 0), [reels]);
-  const gradeBStockKg = useMemo(() => reels.filter(r => r.status === 'IN_STOCK_B').reduce((acc, r) => acc + r.weight, 0), [reels]);
-  const pendingQcCount = useMemo(() => reels.filter(r => r.status === 'QC_PENDING').length, [reels]);
-
   const hasQcWriteAccess = user?.role === 'Admin' || user?.role === 'RewinderOperator';
 
   return (
@@ -299,9 +358,17 @@ export const FinishStockView: React.FC<FinishStockViewProps> = ({ hideHeader = f
         </div>
       )}
 
-      {/* 2. TOP METRIC SCORECARDS */}
+      {/* 2. TOP METRIC SCORECARDS (INTERACTIVE QUICK FILTERS) */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-        <div className="bg-white dark:bg-surface-dark border border-slate-200 dark:border-slate-700/80 rounded-3xl p-5 shadow-sm flex items-center gap-4">
+        <button
+          type="button"
+          onClick={() => setActiveTab('grade_a')}
+          className={`border rounded-3xl p-5 shadow-sm flex items-center gap-4 text-left transition cursor-pointer ${
+            activeTab === 'grade_a'
+              ? 'bg-emerald-50/70 dark:bg-emerald-950/40 border-emerald-500 ring-2 ring-emerald-400'
+              : 'bg-white dark:bg-surface-dark border-slate-200 dark:border-slate-700/80 hover:border-emerald-300'
+          }`}
+        >
           <div className="p-3 rounded-2xl bg-emerald-50 dark:bg-emerald-950/40 text-emerald-600 dark:text-emerald-400 border border-emerald-200/60 dark:border-emerald-800/60">
             <CheckSquare className="h-6 w-6" />
           </div>
@@ -309,9 +376,17 @@ export const FinishStockView: React.FC<FinishStockViewProps> = ({ hideHeader = f
             <p className="text-xs font-bold text-slate-500 uppercase tracking-wider">Grade A Sellable</p>
             <p className="text-2xl font-black text-slate-900 dark:text-white mt-0.5">{gradeAStockKg.toLocaleString()} <span className="text-xs text-slate-400 font-normal">kg</span></p>
           </div>
-        </div>
+        </button>
 
-        <div className="bg-white dark:bg-surface-dark border border-slate-200 dark:border-slate-700/80 rounded-3xl p-5 shadow-sm flex items-center gap-4">
+        <button
+          type="button"
+          onClick={() => setActiveTab('grade_b')}
+          className={`border rounded-3xl p-5 shadow-sm flex items-center gap-4 text-left transition cursor-pointer ${
+            activeTab === 'grade_b'
+              ? 'bg-amber-50/70 dark:bg-amber-950/40 border-amber-500 ring-2 ring-amber-400'
+              : 'bg-white dark:bg-surface-dark border-slate-200 dark:border-slate-700/80 hover:border-amber-300'
+          }`}
+        >
           <div className="p-3 rounded-2xl bg-amber-50 dark:bg-amber-950/40 text-amber-600 dark:text-amber-400 border border-amber-200/60 dark:border-amber-800/60">
             <ListFilter className="h-6 w-6" />
           </div>
@@ -319,18 +394,62 @@ export const FinishStockView: React.FC<FinishStockViewProps> = ({ hideHeader = f
             <p className="text-xs font-bold text-slate-500 uppercase tracking-wider">Grade B / Muted</p>
             <p className="text-2xl font-black text-slate-900 dark:text-white mt-0.5">{gradeBStockKg.toLocaleString()} <span className="text-xs text-slate-400 font-normal">kg</span></p>
           </div>
-        </div>
+        </button>
 
-        <div className="bg-white dark:bg-surface-dark border border-slate-200 dark:border-slate-700/80 rounded-3xl p-5 shadow-sm flex items-center gap-4">
-          <div className="p-3 rounded-2xl bg-purple-50 dark:bg-purple-950/40 text-purple-600 dark:text-purple-400 border border-purple-200/60 dark:border-purple-800/60">
+        <button
+          type="button"
+          onClick={() => setActiveTab('pending_qc')}
+          className={`border rounded-3xl p-5 shadow-sm flex items-center gap-4 text-left transition cursor-pointer ${
+            activeTab === 'pending_qc'
+              ? 'bg-purple-50/70 dark:bg-purple-950/40 border-purple-500 ring-2 ring-purple-400'
+              : 'bg-white dark:bg-surface-dark border-slate-200 dark:border-slate-700/80 hover:border-purple-300'
+          }`}
+        >
+          <div className="p-3 rounded-2xl bg-purple-50 dark:bg-purple-950/40 text-purple-600 dark:text-purple-400 border border-purple-200/60 dark:border-purple-800/60 relative">
             <Clipboard className="h-6 w-6" />
+            {pendingQcCount > 0 && (
+              <span className="absolute -top-1 -right-1 h-3 w-3 rounded-full bg-purple-500 animate-ping" />
+            )}
           </div>
           <div>
             <p className="text-xs font-bold text-slate-500 uppercase tracking-wider">Pending Inspection</p>
             <p className="text-2xl font-black text-slate-900 dark:text-white mt-0.5">{pendingQcCount} <span className="text-xs text-slate-400 font-normal">reels</span></p>
           </div>
-        </div>
+        </button>
       </div>
+
+      {/* 2.5 STEP 7 WORKFLOW GUIDE & 1-CLICK QC APPROVAL BANNER */}
+      {pendingQcCount > 0 && (
+        <div className="p-4 sm:p-5 bg-gradient-to-r from-purple-900/30 via-indigo-900/20 to-slate-900/40 border border-purple-500/30 dark:border-purple-500/40 rounded-3xl flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 shadow-sm">
+          <div className="flex items-center gap-3.5">
+            <div className="p-3 rounded-2xl bg-purple-500/20 text-purple-400 border border-purple-500/30 shrink-0">
+              <Sparkles className="h-6 w-6 animate-pulse" />
+            </div>
+            <div>
+              <h4 className="text-sm font-black text-slate-900 dark:text-white flex items-center gap-2">
+                <span>Step 7: Quality Inspection &amp; Stock Categorization</span>
+                <span className="px-2 py-0.5 rounded-full bg-purple-500 text-white text-[10px] font-black">
+                  {pendingQcCount} Reels Pending
+                </span>
+              </h4>
+              <p className="text-xs text-slate-600 dark:text-slate-300 font-medium mt-0.5">
+                Reels slit in Rewinder (Step 6) need QC categorization (Grade A / B) before they can be loaded onto customer delivery challans (Step 8).
+              </p>
+            </div>
+          </div>
+
+          <div className="flex items-center gap-2 shrink-0 w-full sm:w-auto">
+            <button
+              type="button"
+              onClick={handleBulkApproveAllGradeA}
+              className="w-full sm:w-auto px-5 py-2.5 bg-[#008163] hover:bg-[#006e54] text-white font-black text-xs uppercase tracking-wider rounded-2xl shadow-lg shadow-[#008163]/25 transition cursor-pointer flex items-center justify-center gap-2"
+            >
+              <CheckSquare className="h-4 w-4" />
+              <span>✨ 1-Click Approve All as Grade A</span>
+            </button>
+          </div>
+        </div>
+      )}
 
       {/* 3. FAST FILTER TOOLBAR (CASCADING PRODUCT, GRADE, GSM, SIZE PILL CHIPS) */}
       <div className="bg-white dark:bg-surface-dark border border-slate-200 dark:border-slate-700/80 rounded-3xl p-4 sm:p-5 shadow-sm space-y-3.5">
@@ -357,7 +476,7 @@ export const FinishStockView: React.FC<FinishStockViewProps> = ({ hideHeader = f
             )}
           </div>
 
-          {(filterProduct !== 'ALL' || filterGsm !== 'ALL' || filterSize !== 'ALL' || filterPly !== 'ALL' || activeTab !== 'grade_a' || stockSearchQuery.trim()) && (
+          {(filterProduct !== 'ALL' || filterGsm !== 'ALL' || filterSize !== 'ALL' || filterPly !== 'ALL' || activeTab !== 'all' || stockSearchQuery.trim()) && (
             <button
               type="button"
               onClick={handleClearAllFilters}
@@ -405,8 +524,8 @@ export const FinishStockView: React.FC<FinishStockViewProps> = ({ hideHeader = f
             );
           })}
 
-          {/* Grade Filter Pill Group (All, Grade A, Grade B Only) */}
-          <div className="flex items-center gap-1 ml-auto bg-slate-100 dark:bg-slate-900 p-1 rounded-2xl border border-slate-200 dark:border-slate-800 shrink-0">
+          {/* Grade Filter Pill Group (All, Grade A, Grade B Only, Pending QC) */}
+          <div className="flex items-center gap-1 ml-auto bg-slate-100 dark:bg-slate-900 p-1 rounded-2xl border border-slate-200 dark:border-slate-800 shrink-0 flex-wrap">
             <span className="text-[9px] font-black text-slate-400 uppercase px-1.5">GRADE:</span>
             <button
               type="button"
@@ -417,7 +536,7 @@ export const FinishStockView: React.FC<FinishStockViewProps> = ({ hideHeader = f
                   : 'text-slate-600 dark:text-slate-400 hover:text-slate-900'
               }`}
             >
-              All
+              All ({safeReels.length})
             </button>
             <button
               type="button"
@@ -428,7 +547,7 @@ export const FinishStockView: React.FC<FinishStockViewProps> = ({ hideHeader = f
                   : 'text-emerald-700 dark:text-emerald-400 hover:bg-emerald-50 dark:hover:bg-emerald-950/30'
               }`}
             >
-              Grade A
+              Grade A ({reels.filter(r => r.status === 'IN_STOCK').length})
             </button>
             <button
               type="button"
@@ -439,7 +558,18 @@ export const FinishStockView: React.FC<FinishStockViewProps> = ({ hideHeader = f
                   : 'text-amber-700 dark:text-amber-400 hover:bg-amber-50 dark:hover:bg-amber-950/30'
               }`}
             >
-              Grade B Only
+              Grade B Only ({reels.filter(r => r.status === 'IN_STOCK_B').length})
+            </button>
+            <button
+              type="button"
+              onClick={() => setActiveTab('pending_qc')}
+              className={`px-2.5 py-0.5 rounded-xl text-[10px] font-extrabold cursor-pointer transition ${
+                activeTab === 'pending_qc'
+                  ? 'bg-purple-600 text-white shadow-xs'
+                  : 'text-purple-700 dark:text-purple-400 hover:bg-purple-50 dark:hover:bg-purple-950/30'
+              }`}
+            >
+              Pending QC ({pendingQcCount})
             </button>
           </div>
         </div>
@@ -567,16 +697,51 @@ export const FinishStockView: React.FC<FinishStockViewProps> = ({ hideHeader = f
 
       {/* Grouped Stock View */}
       {groupedStock.length === 0 ? (
-        <div className="bg-white dark:bg-surface-dark border border-slate-200 dark:border-slate-700/80 rounded-3xl p-12 text-center text-xs font-bold text-slate-500 dark:text-slate-400 shadow-sm flex flex-col items-center justify-center gap-3">
-          <AlertCircle className="h-10 w-10 text-slate-400" />
-          <span>No reels matching your filter selection currently in inventory.</span>
-          {activeFilterCount > 0 && (
-            <button
-              onClick={handleClearAllFilters}
-              className="mt-2 px-4 py-2 bg-primary text-white rounded-xl text-xs font-black shadow-sm cursor-pointer"
-            >
-              Reset Filters
-            </button>
+        <div className="bg-white dark:bg-surface-dark border border-slate-200 dark:border-slate-700/80 rounded-3xl p-8 sm:p-12 text-center text-xs font-bold text-slate-500 dark:text-slate-400 shadow-sm flex flex-col items-center justify-center gap-3.5">
+          <div className="p-3.5 rounded-2xl bg-slate-100 dark:bg-slate-800 text-slate-400">
+            <AlertCircle className="h-8 w-8" />
+          </div>
+          
+          {activeTab === 'grade_a' && pendingQcCount > 0 ? (
+            <div className="space-y-2 max-w-md">
+              <h4 className="text-sm font-black text-slate-900 dark:text-white">
+                All {pendingQcCount} Reels are currently in "Pending QC Inspection"
+              </h4>
+              <p className="text-xs text-slate-500">
+                They have not been categorized as Grade A yet. Click below to inspect them or 1-Click Approve all reels as Grade A sellable stock.
+              </p>
+              <div className="flex flex-wrap items-center justify-center gap-2 pt-2">
+                <button
+                  type="button"
+                  onClick={() => setActiveTab('pending_qc')}
+                  className="px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-xl text-xs font-black shadow-sm cursor-pointer transition"
+                >
+                  View Pending Inspection ({pendingQcCount})
+                </button>
+                <button
+                  type="button"
+                  onClick={handleBulkApproveAllGradeA}
+                  className="px-4 py-2 bg-[#008163] hover:bg-[#006e54] text-white rounded-xl text-xs font-black shadow-sm cursor-pointer transition flex items-center gap-1.5"
+                >
+                  <CheckSquare className="h-3.5 w-3.5" />
+                  <span>✨ 1-Click Approve All as Grade A</span>
+                </button>
+              </div>
+            </div>
+          ) : (
+            <div className="space-y-2">
+              <p className="text-xs font-bold text-slate-600 dark:text-slate-300">
+                No reels matching your filter selection currently in inventory.
+              </p>
+              {(activeFilterCount > 0 || activeTab !== 'all' || stockSearchQuery.trim()) && (
+                <button
+                  onClick={handleClearAllFilters}
+                  className="mt-1 px-4 py-2 bg-[#008163] hover:bg-[#006e54] text-white rounded-xl text-xs font-black shadow-sm cursor-pointer transition"
+                >
+                  Reset All Filters
+                </button>
+              )}
+            </div>
           )}
         </div>
       ) : (
@@ -633,20 +798,32 @@ export const FinishStockView: React.FC<FinishStockViewProps> = ({ hideHeader = f
                                         setGsmResult(String(reel.gsm));
                                         setQcGrade('A');
                                       }}
-                                      className="px-3.5 py-1.5 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white rounded-xl text-[10px] font-black uppercase tracking-wider shadow-sm cursor-pointer"
+                                      className="px-3.5 py-1.5 bg-[#008163] hover:bg-[#006e54] text-white rounded-xl text-[10px] font-black uppercase tracking-wider shadow-sm cursor-pointer"
                                     >
                                       QC Test
                                     </button>
                                   ) : (
-                                    <span className="text-[10px] text-purple-600 font-black uppercase bg-purple-100 dark:bg-purple-950/40 px-2.5 py-1 rounded-full border border-purple-200 dark:border-purple-800">
+                                    <span className="text-[10px] text-purple-600 dark:text-purple-300 font-black uppercase bg-purple-100 dark:bg-purple-950/40 px-2.5 py-1 rounded-full border border-purple-200 dark:border-purple-800">
                                       Pending QC
                                     </span>
                                   )
                                 ) : (
-                                  <div className="flex justify-end gap-1.5 text-[10px] font-bold">
-                                    <span className="px-2.5 py-0.5 rounded-full bg-blue-50 dark:bg-blue-950/60 text-primary dark:text-blue-300 border border-blue-200 dark:border-blue-800 font-extrabold">
-                                      GSM: {reel.qcGsmResult || reel.gsm}
+                                  <div className="flex items-center justify-end gap-1.5 text-[10px] font-bold">
+                                    <span className={`px-2.5 py-1 rounded-full font-black uppercase tracking-wider ${
+                                      reel.status === 'IN_STOCK' || reel.qcGrade === 'A'
+                                        ? 'bg-emerald-100 dark:bg-emerald-950/60 text-emerald-800 dark:text-emerald-300 border border-emerald-300 dark:border-emerald-700'
+                                        : 'bg-amber-100 dark:bg-amber-950/60 text-amber-800 dark:text-amber-300 border border-amber-300 dark:border-amber-700'
+                                    }`}>
+                                      {reel.status === 'IN_STOCK' || reel.qcGrade === 'A' ? 'Grade A' : 'Grade B'}
                                     </span>
+                                    <button
+                                      type="button"
+                                      onClick={() => setViewingQcReel(reel)}
+                                      title="View QC Test Description & Inspection Details"
+                                      className="p-1 text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-200 hover:bg-blue-50 dark:hover:bg-blue-950/50 rounded-lg transition cursor-pointer border border-blue-200/60 dark:border-blue-800/60 flex items-center justify-center shadow-2xs"
+                                    >
+                                      <Eye className="h-3.5 w-3.5" />
+                                    </button>
                                   </div>
                                 )}
                               </td>
@@ -664,17 +841,15 @@ export const FinishStockView: React.FC<FinishStockViewProps> = ({ hideHeader = f
                             ...prev,
                             [groupKey]: !isExpanded
                           }))}
-                          className="py-2 px-5 rounded-xl bg-slate-50 hover:bg-slate-100 dark:bg-slate-800/80 dark:hover:bg-slate-700 text-primary dark:text-blue-400 font-extrabold text-xs transition cursor-pointer flex items-center justify-center gap-1.5 border border-slate-200 dark:border-slate-700 shadow-xs"
+                          className="px-4 py-2 text-xs font-black text-primary dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-slate-800/60 rounded-xl transition flex items-center gap-1.5 cursor-pointer shadow-2xs"
                         >
                           {isExpanded ? (
                             <>
-                              <ChevronUp className="h-3.5 w-3.5" />
-                              <span>Show Less</span>
+                              <ChevronUp className="h-4 w-4" /> Show Less ({group.reels.length} total)
                             </>
                           ) : (
                             <>
-                              <ChevronDown className="h-3.5 w-3.5" />
-                              <span>View More ({group.reels.length - 5} remaining)</span>
+                              <ChevronDown className="h-4 w-4" /> View All {group.reels.length} Reels
                             </>
                           )}
                         </button>
@@ -729,20 +904,32 @@ export const FinishStockView: React.FC<FinishStockViewProps> = ({ hideHeader = f
                                     setGsmResult(String(reel.gsm));
                                     setQcGrade('A');
                                   }}
-                                  className="px-3.5 py-1.5 bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-xl text-[10px] font-black uppercase shadow-xs"
+                                  className="px-3.5 py-1.5 bg-[#008163] hover:bg-[#006e54] text-white rounded-xl text-[10px] font-black uppercase shadow-xs cursor-pointer"
                                 >
                                   QC Test
                                 </button>
                               ) : (
-                                <span className="text-[10px] text-purple-600 font-black uppercase bg-purple-100 dark:bg-purple-950/40 px-2.5 py-0.5 rounded-full">
+                                <span className="text-[10px] text-purple-600 dark:text-purple-300 font-black uppercase bg-purple-100 dark:bg-purple-950/40 px-2.5 py-0.5 rounded-full">
                                   Pending QC
                                 </span>
                               )
                             ) : (
-                              <div className="flex gap-1.5 text-[10px] font-bold">
-                                <span className="px-2 py-0.5 rounded-full bg-blue-50 dark:bg-blue-950/60 text-primary dark:text-blue-300 font-extrabold">
-                                  GSM: {reel.qcGsmResult || reel.gsm}
+                              <div className="flex items-center gap-1.5 text-[10px] font-bold">
+                                <span className={`px-2.5 py-0.5 rounded-full font-black uppercase tracking-wider ${
+                                  reel.status === 'IN_STOCK' || reel.qcGrade === 'A'
+                                    ? 'bg-emerald-100 dark:bg-emerald-950/60 text-emerald-800 dark:text-emerald-300 border border-emerald-300 dark:border-emerald-700'
+                                    : 'bg-amber-100 dark:bg-amber-950/60 text-amber-800 dark:text-amber-300 border border-amber-300 dark:border-amber-700'
+                                }`}>
+                                  {reel.status === 'IN_STOCK' || reel.qcGrade === 'A' ? 'Grade A' : 'Grade B'}
                                 </span>
+                                <button
+                                  type="button"
+                                  onClick={() => setViewingQcReel(reel)}
+                                  title="View QC Test Description & Inspection Details"
+                                  className="p-1 text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-950/50 rounded-lg transition cursor-pointer border border-blue-200/60 dark:border-blue-800/60 flex items-center justify-center shadow-2xs"
+                                >
+                                  <Eye className="h-3.5 w-3.5" />
+                                </button>
                               </div>
                             )}
                           </div>
@@ -926,8 +1113,16 @@ export const FinishStockView: React.FC<FinishStockViewProps> = ({ hideHeader = f
 
       {/* QC Test Inspection Modal */}
       {inspectingReel && (
-        <div className="fixed inset-0 bg-black/60 backdrop-blur-xs z-50 flex items-center justify-center p-4">
-          <div className="bg-white dark:bg-surface-dark border border-slate-200 dark:border-slate-700 rounded-3xl max-w-md w-full p-6 space-y-4 shadow-2xl text-left">
+        <div 
+          className="fixed inset-0 bg-black/60 backdrop-blur-xs z-50 flex items-center justify-center p-4 overscroll-contain"
+          onWheel={(e) => {
+            // Prevent wheel event from bubbling to background
+            if (e.target === e.currentTarget) {
+              e.preventDefault();
+            }
+          }}
+        >
+          <div className="bg-white dark:bg-surface-dark border border-slate-200 dark:border-slate-700 rounded-3xl max-w-md w-full p-6 space-y-4 shadow-2xl text-left" onClick={(e) => e.stopPropagation()}>
             
             <div className="border-b border-slate-100 dark:border-slate-800 pb-3 flex justify-between items-center">
               <h3 className="text-sm font-black text-slate-900 dark:text-white uppercase tracking-wider">
@@ -1002,15 +1197,34 @@ export const FinishStockView: React.FC<FinishStockViewProps> = ({ hideHeader = f
                   <label className="block text-[11px] font-black text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-1.5">
                     Softness (1-10)
                   </label>
-                  <select
+                  <input
+                    ref={softnessInputRef}
+                    type="number"
+                    min="1"
+                    max="10"
+                    step="1"
                     value={softness}
-                    onChange={e => setSoftness(e.target.value)}
-                    className="block w-full py-2.5 px-3.5 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-2xl text-xs font-bold focus:outline-none focus:ring-2 focus:ring-primary dark:text-white cursor-pointer"
-                  >
-                    {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map(n => (
-                      <option key={n} value={n}>{n}</option>
-                    ))}
-                  </select>
+                    onChange={e => {
+                      const val = e.target.value;
+                      if (val === '') {
+                        setSoftness('');
+                        return;
+                      }
+                      const num = parseInt(val, 10);
+                      if (!isNaN(num)) {
+                        if (num > 10) setSoftness('10');
+                        else if (num < 1) setSoftness('1');
+                        else setSoftness(String(num));
+                      }
+                    }}
+                    onBlur={() => {
+                      const num = parseInt(String(softness), 10);
+                      if (isNaN(num) || num < 1) setSoftness('1');
+                      else if (num > 10) setSoftness('10');
+                    }}
+                    className="block w-full py-2.5 px-3.5 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-2xl text-xs font-bold focus:outline-none focus:ring-2 focus:ring-primary dark:text-white"
+                    placeholder="7"
+                  />
                 </div>
 
                 <div>
@@ -1028,11 +1242,136 @@ export const FinishStockView: React.FC<FinishStockViewProps> = ({ hideHeader = f
 
               <button
                 type="submit"
-                className="w-full bg-gradient-to-r from-blue-600 via-indigo-600 to-blue-700 hover:from-blue-700 hover:to-indigo-700 text-white font-black py-3 rounded-2xl text-xs uppercase tracking-wider shadow-lg shadow-blue-500/25 transition-all hover:scale-[1.01] active:scale-[0.99] cursor-pointer"
+                className="w-full bg-[#008163] hover:bg-[#006e54] text-white font-black py-3 rounded-2xl text-xs uppercase tracking-wider shadow-lg shadow-[#008163]/25 transition-all hover:scale-[1.01] active:scale-[0.99] cursor-pointer flex items-center justify-center gap-2"
               >
-                Submit Quality Inspection Log
+                <Check className="h-4 w-4" />
+                <span>Submit Quality Inspection Log</span>
               </button>
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* QC Test Inspection Description Modal */}
+      {viewingQcReel && (
+        <div 
+          className="fixed inset-0 bg-black/60 backdrop-blur-xs z-50 flex items-center justify-center p-4 overscroll-contain"
+          onClick={() => setViewingQcReel(null)}
+          onWheel={(e) => {
+            if (e.target === e.currentTarget) e.preventDefault();
+          }}
+        >
+          <div 
+            className="bg-white dark:bg-[#1a3535] border border-slate-200 dark:border-[#284848] rounded-3xl max-w-lg w-full p-6 space-y-4 shadow-2xl text-left select-none animate-in fade-in zoom-in-95" 
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* Modal Header */}
+            <div className="border-b border-slate-100 dark:border-[#284848] pb-3 flex justify-between items-center">
+              <div className="flex items-center gap-2.5">
+                <div className="p-2 rounded-xl bg-blue-50 dark:bg-blue-950/60 text-blue-600 dark:text-blue-400 border border-blue-200/60 dark:border-blue-800/60">
+                  <Beaker className="h-5 w-5" />
+                </div>
+                <div>
+                  <h3 className="text-sm font-black text-slate-900 dark:text-white uppercase tracking-wider">
+                    QC Test Inspection Description
+                  </h3>
+                  <p className="text-[11px] text-slate-500 dark:text-slate-400 font-bold">
+                    Quality Assurance &amp; Laboratory Verification
+                  </p>
+                </div>
+              </div>
+              <button
+                onClick={() => setViewingQcReel(null)}
+                className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 font-bold text-lg p-1 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 transition cursor-pointer"
+              >
+                <X className="h-5 w-5" />
+              </button>
+            </div>
+
+            {/* Reel Identifier Banner */}
+            <div className="p-4 bg-slate-50 dark:bg-slate-900/90 rounded-2xl border border-slate-200/80 dark:border-slate-800 flex justify-between items-center">
+              <div>
+                <span className="text-[10px] font-black uppercase text-slate-400 block tracking-wider">Reel Number</span>
+                <span className="text-base font-black font-mono text-primary dark:text-blue-400">{viewingQcReel.reelNo}</span>
+                <span className="text-xs text-slate-600 dark:text-slate-300 block font-bold mt-0.5">{viewingQcReel.product}</span>
+              </div>
+              <div className="text-right">
+                <span className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-black uppercase tracking-wider ${
+                  viewingQcReel.status === 'IN_STOCK' || viewingQcReel.qcGrade === 'A'
+                    ? 'bg-emerald-100 dark:bg-emerald-950/70 text-emerald-800 dark:text-emerald-300 border border-emerald-300 dark:border-emerald-700'
+                    : 'bg-amber-100 dark:bg-amber-950/70 text-amber-800 dark:text-amber-300 border border-amber-300 dark:border-amber-700'
+                }`}>
+                  <Check className="h-3.5 w-3.5" />
+                  <span>{viewingQcReel.status === 'IN_STOCK' || viewingQcReel.qcGrade === 'A' ? 'QC PASS - Grade A' : 'QC PASS - Grade B'}</span>
+                </span>
+              </div>
+            </div>
+
+            {/* Grid of QC Metrics */}
+            <div className="grid grid-cols-2 sm:grid-cols-3 gap-2.5 text-xs">
+              <div className="p-3 bg-slate-50 dark:bg-slate-900/60 rounded-xl border border-slate-200 dark:border-slate-800">
+                <span className="text-[10px] font-black uppercase text-slate-400 block">Tested GSM</span>
+                <span className="text-sm font-black text-slate-900 dark:text-white font-mono mt-0.5 block">
+                  {viewingQcReel.qcGsmResult || viewingQcReel.gsm} <span className="text-[10px] font-normal text-slate-400 font-sans">gsm</span>
+                </span>
+                <span className="text-[9px] text-slate-500 font-bold">Nominal: {viewingQcReel.gsm} gsm</span>
+              </div>
+
+              <div className="p-3 bg-slate-50 dark:bg-slate-900/60 rounded-xl border border-slate-200 dark:border-slate-800">
+                <span className="text-[10px] font-black uppercase text-slate-400 block">Brightness %</span>
+                <span className="text-sm font-black text-slate-900 dark:text-white font-mono mt-0.5 block">
+                  {viewingQcReel.qcBrightness || 85}%
+                </span>
+                <span className="text-[9px] text-emerald-600 dark:text-emerald-400 font-bold">ISO Standard</span>
+              </div>
+
+              <div className="p-3 bg-slate-50 dark:bg-slate-900/60 rounded-xl border border-slate-200 dark:border-slate-800">
+                <span className="text-[10px] font-black uppercase text-slate-400 block">Softness Score</span>
+                <span className="text-sm font-black text-slate-900 dark:text-white font-mono mt-0.5 block">
+                  {viewingQcReel.qcSoftness || 7} <span className="text-[10px] font-normal text-slate-400 font-sans">/ 10</span>
+                </span>
+                <span className="text-[9px] text-teal-600 dark:text-teal-400 font-bold">Premium Texture</span>
+              </div>
+
+              <div className="p-3 bg-slate-50 dark:bg-slate-900/60 rounded-xl border border-slate-200 dark:border-slate-800">
+                <span className="text-[10px] font-black uppercase text-slate-400 block">Reel Weight</span>
+                <span className="text-sm font-black text-slate-900 dark:text-white font-mono mt-0.5 block">
+                  {viewingQcReel.weight} <span className="text-[10px] font-normal text-slate-400 font-sans">kg</span>
+                </span>
+                <span className="text-[9px] text-slate-500 font-bold">{viewingQcReel.joint || 0} Joints</span>
+              </div>
+
+              <div className="p-3 bg-slate-50 dark:bg-slate-900/60 rounded-xl border border-slate-200 dark:border-slate-800 col-span-2">
+                <span className="text-[10px] font-black uppercase text-slate-400 block">QC Inspector</span>
+                <span className="text-xs font-bold text-slate-900 dark:text-white mt-0.5 block">
+                  {viewingQcReel.qcInspector || 'Rajesh Sharma (QC Specialist)'}
+                </span>
+                <span className="text-[9px] text-slate-500 font-mono">
+                  {viewingQcReel.qcTimestamp ? new Date(viewingQcReel.qcTimestamp).toLocaleString('en-IN') : viewingQcReel.productionDate}
+                </span>
+              </div>
+            </div>
+
+            {/* Technical Description Box */}
+            <div className="p-3.5 bg-blue-50/70 dark:bg-blue-950/40 rounded-2xl border border-blue-200/80 dark:border-blue-900/60 text-xs space-y-1">
+              <span className="text-[10px] font-black uppercase tracking-wider text-blue-700 dark:text-blue-300 block">
+                Quality Verdict &amp; Technical Notes
+              </span>
+              <p className="text-slate-700 dark:text-slate-300 leading-relaxed text-[11px] font-medium">
+                {viewingQcReel.qcGrade === 'B' || viewingQcReel.status === 'IN_STOCK_B'
+                  ? `Reel verified with minor GSM/texture variance. Assigned to Grade B inventory stock. Cleared for secondary/B-grade dispatch.`
+                  : `Reel passed all tensile strength, ISO brightness, and softness standards within tolerance (±0.2 GSM). Fully certified for Grade A customer dispatch.`}
+              </p>
+            </div>
+
+            {/* Close Action */}
+            <button
+              type="button"
+              onClick={() => setViewingQcReel(null)}
+              className="w-full py-3 bg-[#008163] hover:bg-[#006e54] text-white rounded-2xl text-xs font-black uppercase tracking-wider shadow-lg shadow-[#008163]/25 transition cursor-pointer"
+            >
+              Close Description
+            </button>
           </div>
         </div>
       )}

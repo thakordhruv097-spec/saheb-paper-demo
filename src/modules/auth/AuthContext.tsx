@@ -38,7 +38,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       try {
         const session: SessionData = JSON.parse(rawSession);
         const now = Date.now();
-        
+
         // Validate Token Expiry (8-hour window)
         if (!session.expiresAt || now > session.expiresAt) {
           console.warn('[Security] Session token expired. Redirecting to login.');

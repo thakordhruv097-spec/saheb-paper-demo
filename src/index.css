@@ -59,6 +59,11 @@ html, body, #root {
   margin: 0;
   padding: 0;
   min-height: 100vh;
+  background-color: #f8fafc;
+}
+
+html.dark, html.dark body, .dark #root {
+  background-color: #0f2828;
 }
 
 /* Remove native number input up/down count spinner arrows globally across the full demo */

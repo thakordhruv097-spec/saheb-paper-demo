@@ -7,7 +7,7 @@ import type { MachineRoll } from '../../data/types';
 import { CustomDatePickerModal } from '../../components/CustomDatePickerModal';
 import { DataFilterBar } from '../../components/DataFilterBar';
 import { CustomSearchableSelect } from '../../components/CustomSearchableSelect';
-import { Cog, Plus, Info, Search, Calendar } from 'lucide-react';
+import { Cog, Plus, Info, Search, Calendar, Clock } from 'lucide-react';
 
 import { WorkflowStepBadge, WORKFLOW_STEPS } from '../../components/WorkflowStepBadge';
 
@@ -109,12 +109,36 @@ export const MachineView: React.FC = () => {
     return products.filter(p => p.grade === 'A');
   }, [products]);
 
-  // Auto-generate roll number based on count
+  // Auto-generate roll number based on date and count (e.g. R-YYYYMMDD-0001, R-YYYYMMDD-0002)
   const autoRollNo = useMemo(() => {
-    const cleanDate = dateStr.replace(/-/g, '');
-    const dateRolls = rolls.filter(r => r.date === dateStr);
-    const index = dateRolls.length + 1;
-    const padIndex = String(index).padStart(4, '0');
+    const cleanDate = (dateStr || '').replace(/-/g, '');
+    const prefix = `R-${cleanDate}-`;
+    let maxSeq = 0;
+
+    rolls.forEach(r => {
+      if (r && r.rollNo) {
+        const rUpper = r.rollNo.toUpperCase();
+        const pUpper = prefix.toUpperCase();
+        if (rUpper.startsWith(pUpper)) {
+          const suffix = rUpper.slice(pUpper.length);
+          const num = parseInt(suffix, 10);
+          if (!isNaN(num) && num > maxSeq) {
+            maxSeq = num;
+          }
+        } else if (r.date === dateStr) {
+          const match = r.rollNo.match(/(\d+)$/);
+          if (match) {
+            const num = parseInt(match[1], 10);
+            if (!isNaN(num) && num > maxSeq) {
+              maxSeq = num;
+            }
+          }
+        }
+      }
+    });
+
+    const nextIndex = maxSeq + 1;
+    const padIndex = String(nextIndex).padStart(4, '0');
     return `R-${cleanDate}-${padIndex}`;
   }, [dateStr, rolls]);
 
@@ -230,9 +254,9 @@ export const MachineView: React.FC = () => {
 
           <form onSubmit={handleSubmit} className="space-y-6">
             {formulaInfo.isPreviousDay && (
-              <div className="p-3.5 bg-gradient-to-r from-amber-500/15 via-orange-500/10 to-amber-500/15 text-amber-900 dark:text-amber-300 text-xs rounded-2xl border border-amber-300/80 dark:border-amber-700/80 font-bold flex flex-col sm:flex-row sm:items-center justify-between gap-3 animate-in fade-in shadow-xs">
+              <div className="p-3.5 bg-blue-50/80 dark:bg-blue-950/30 text-blue-950 dark:text-blue-200 text-xs rounded-2xl border border-blue-200 dark:border-blue-800/60 font-bold flex flex-col sm:flex-row sm:items-center justify-between gap-3 animate-in fade-in shadow-2xs">
                 <div className="flex items-center gap-2.5">
-                  <div className="p-1.5 rounded-xl bg-amber-500/20 text-amber-600 dark:text-amber-400 shrink-0">
+                  <div className="p-1.5 rounded-xl bg-blue-100 dark:bg-blue-900/60 text-blue-600 dark:text-blue-400 shrink-0">
                     <Info className="h-4 w-4" />
                   </div>
                   <span>Notice: No Pulp Mill formula saved for {dateStr}. Using previous day's formula ({formulaInfo.formulaDate}) for raw material auto-deduction.</span>
@@ -240,7 +264,7 @@ export const MachineView: React.FC = () => {
                 <button
                   type="button"
                   onClick={() => navigate('/pulp-mill-operations')}
-                  className="px-3.5 py-1.5 bg-gradient-to-r from-amber-600 to-orange-600 hover:from-amber-700 hover:to-orange-700 text-white rounded-xl text-[10px] font-black uppercase tracking-wider transition shrink-0 cursor-pointer shadow-sm active:scale-95 flex items-center gap-1"
+                  className="px-3.5 py-1.5 bg-blue-600 hover:bg-blue-700 dark:bg-blue-600 dark:hover:bg-blue-500 text-white rounded-xl text-[10px] font-black uppercase tracking-wider transition shrink-0 cursor-pointer shadow-xs active:scale-95 flex items-center gap-1.5"
                 >
                   <span>Set Today's Formula</span>
                   <span>→</span>
@@ -279,6 +303,7 @@ export const MachineView: React.FC = () => {
                     onSelectDate={(newDate) => {
                       setDateStr(newDate);
                       setOpenDatePicker(false);
+                      setRollNo('');
                     }}
                     onClose={() => setOpenDatePicker(false)}
                   />
@@ -288,14 +313,38 @@ export const MachineView: React.FC = () => {
                 <label className="block text-[11px] font-black text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-1.5">
                   Shift
                 </label>
-                <select
-                  value={shift}
-                  onChange={e => setShift(e.target.value as 'A' | 'B')}
-                  className="block w-full py-2.5 px-3.5 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl text-xs font-bold focus:outline-none focus:ring-2 focus:ring-primary dark:text-white cursor-pointer"
-                >
-                  <option value="A">Shift A (Day Shift)</option>
-                  <option value="B">Shift B (Night Shift)</option>
-                </select>
+                <div className="grid grid-cols-2 gap-1 p-1 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl h-[42px] items-center">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setShift('A');
+                      setStartTime('08:00');
+                      setOffTime('16:00');
+                    }}
+                    className={`h-full rounded-xl text-xs transition-all duration-150 flex items-center justify-center cursor-pointer ${
+                      shift === 'A'
+                        ? 'bg-primary dark:bg-blue-600 text-white shadow-xs font-black'
+                        : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white font-bold'
+                    }`}
+                  >
+                    Day Shift
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setShift('B');
+                      setStartTime('20:00');
+                      setOffTime('04:00');
+                    }}
+                    className={`h-full rounded-xl text-xs transition-all duration-150 flex items-center justify-center cursor-pointer ${
+                      shift === 'B'
+                        ? 'bg-primary dark:bg-blue-600 text-white shadow-xs font-black'
+                        : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white font-bold'
+                    }`}
+                  >
+                    Night Shift
+                  </button>
+                </div>
               </div>
             </div>
 
@@ -436,7 +485,7 @@ export const MachineView: React.FC = () => {
 
             <button
               type="submit"
-              className="w-full bg-gradient-to-r from-blue-600 via-indigo-600 to-blue-700 hover:from-blue-700 hover:to-indigo-700 text-white font-black py-3.5 rounded-2xl text-xs uppercase tracking-wider shadow-lg shadow-blue-500/25 transition-all hover:scale-[1.01] active:scale-[0.99] cursor-pointer"
+              className="w-full bg-[#008163] hover:bg-[#006e54] text-white font-black py-3.5 rounded-2xl text-xs uppercase tracking-wider shadow-lg shadow-[#008163]/25 transition-all hover:scale-[1.01] active:scale-[0.99] cursor-pointer"
             >
               Submit Machine Production Log
             </button>

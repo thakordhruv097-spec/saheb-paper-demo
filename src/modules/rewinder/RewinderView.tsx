@@ -59,17 +59,21 @@ export const RewinderView: React.FC = () => {
   };
 
   const getInitialReelNo = (existingReels: Reel[], offset = 0): string => {
-    if (existingReels.length > 0) {
-      const lastReel = existingReels[existingReels.length - 1];
-      if (lastReel && lastReel.reelNo) {
-        let current = lastReel.reelNo;
-        for (let i = 0; i <= offset; i++) {
-          current = parseAndIncrementReelNo(current);
+    let maxNum = 260500586;
+    if (existingReels && existingReels.length > 0) {
+      existingReels.forEach(r => {
+        if (r && r.reelNo) {
+          const match = r.reelNo.match(/^(?:.*?)?(\d+)$/);
+          if (match) {
+            const val = parseInt(match[1], 10);
+            if (!isNaN(val) && val > maxNum) {
+              maxNum = val;
+            }
+          }
         }
-        return current;
-      }
+      });
     }
-    return String(260500571 + offset);
+    return String(maxNum + 1 + offset);
   };
 
   // Add Reel Modal Form State (Rudra DEMO2 style)
@@ -89,29 +93,7 @@ export const RewinderView: React.FC = () => {
   });
 
   const [reelsCutCount, setReelsCutCount] = useState<number>(3);
-  const [cutReels, setCutReels] = useState<Array<{ id: string; reelNo: string; size: string; weightKg: string; joint: string }>>([
-    { id: 'cut-0', reelNo: '260500571', size: '30 cm', weightKg: '', joint: '' },
-    { id: 'cut-1', reelNo: '260500572', size: '30 cm', weightKg: '', joint: '' },
-    { id: 'cut-2', reelNo: '260500573', size: '30 cm', weightKg: '', joint: '' },
-  ]);
-
-  useEffect(() => {
-    if (isAddModalOpen && cutReels.length === 0) {
-      const existing = getReels();
-      let curNo = getInitialReelNo(existing, 0);
-      const items = [];
-      for (let i = 0; i < reelsCutCount; i++) {
-        items.push({
-          id: `cut-${i}`,
-          reelNo: i === 0 ? curNo : (curNo = parseAndIncrementReelNo(curNo)),
-          size: '30 cm',
-          weightKg: '',
-          joint: '',
-        });
-      }
-      setCutReels(items);
-    }
-  }, [isAddModalOpen]);
+  const [cutReels, setCutReels] = useState<Array<{ id: string; reelNo: string; size: string; weightKg: string; joint: string }>>([]);
 
   const [modalError, setModalError] = useState('');
   const [toastMsg, setToastMsg] = useState('');
@@ -336,6 +318,21 @@ export const RewinderView: React.FC = () => {
     const latestReels = getReels();
     const availableRolls = getRolls();
     const nextNo = getInitialReelNo(latestReels, 0);
+
+    // Dynamically generate unique sequential cut reels
+    let curNo = nextNo;
+    const initialItems = [];
+    for (let i = 0; i < reelsCutCount; i++) {
+      initialItems.push({
+        id: `cut-${i}-${Date.now()}`,
+        reelNo: curNo,
+        size: '30 cm',
+        weightKg: '',
+        joint: '',
+      });
+      curNo = parseAndIncrementReelNo(curNo);
+    }
+    setCutReels(initialItems);
 
     if (availableRolls.length > 0) {
       const firstRoll = availableRolls[0];
@@ -577,7 +574,7 @@ export const RewinderView: React.FC = () => {
 
             <button
               onClick={handleOpenAddModal}
-              className="flex items-center justify-center gap-2 px-5 py-2.5 rounded-2xl bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white font-black text-xs shadow-md shadow-blue-500/20 transition cursor-pointer active:scale-95 shrink-0"
+              className="flex items-center justify-center gap-2 px-5 py-2.5 rounded-2xl bg-[#008163] hover:bg-[#006e54] text-white font-black text-xs shadow-md shadow-[#008163]/25 transition cursor-pointer active:scale-95 shrink-0"
             >
               <Plus className="h-4 w-4 text-white" />
               <span>+ Add Reel Entry</span>
@@ -891,19 +888,20 @@ export const RewinderView: React.FC = () => {
                       const count = Math.min(17, Math.max(1, Number(e.target.value)));
                       setReelsCutCount(count);
 
-                      // Auto regenerate cut reels list
+                      // Auto regenerate cut reels list with guaranteed unique sequential numbers
                       const existing = getReels();
                       let curNo = getInitialReelNo(existing, 0);
                       const items = [];
                       for (let i = 0; i < count; i++) {
                         const prev = cutReels[i];
                         items.push({
-                          id: `cut-${i}`,
-                          reelNo: prev?.reelNo || (i === 0 ? curNo : (curNo = parseAndIncrementReelNo(curNo))),
-                          size: prev?.size || reelForm.size || '30',
+                          id: prev?.id || `cut-${i}-${Date.now()}`,
+                          reelNo: prev?.reelNo && prev.reelNo.trim() ? prev.reelNo : curNo,
+                          size: prev?.size || reelForm.size || '30 cm',
                           weightKg: prev?.weightKg || '',
                           joint: prev?.joint || '',
                         });
+                        curNo = parseAndIncrementReelNo(curNo);
                       }
                       setCutReels(items);
                     }}
@@ -1098,7 +1096,7 @@ export const RewinderView: React.FC = () => {
                 </button>
                 <button
                   type="submit"
-                  className="px-6 py-2.5 rounded-xl font-black text-xs text-white transition cursor-pointer bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 shadow-md shadow-blue-500/25 active:scale-95"
+                  className="px-6 py-2.5 rounded-xl font-black text-xs text-white transition cursor-pointer bg-[#008163] hover:bg-[#006e54] shadow-md shadow-[#008163]/25 active:scale-95"
                 >
                   Save Reel Entry
                 </button>

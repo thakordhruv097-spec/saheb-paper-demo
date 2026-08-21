@@ -1,11 +1,13 @@
 import React, { useState, useMemo, useEffect, useRef } from 'react';
 import { createPortal } from 'react-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../auth/AuthContext';
 import { useTranslation } from 'react-i18next';
 import {
   getPackingSlips,
   savePackingSlip,
   confirmDispatch,
+  deletePackingSlip,
   getReels,
   getParties,
   getVehicles,
@@ -48,6 +50,8 @@ import {
   Eye,
   Building2,
   Check,
+  Pencil,
+  MoreVertical,
 } from 'lucide-react';
 
 import { WorkflowStepBadge, WORKFLOW_STEPS } from '../../components/WorkflowStepBadge';
@@ -62,6 +66,8 @@ interface DispatchViewProps {
 export const DispatchView: React.FC<DispatchViewProps> = ({ initialTab = 'orders', hideTabs = false, hideHeader = false, onOpenScanner }) => {
   const { t } = useTranslation();
   const { user } = useAuth();
+  const navigate = useNavigate();
+  const location = useLocation();
 
   const [slips, setSlips] = useState<PackingSlip[]>(() => getPackingSlips());
   const [reels, setReels] = useState<Reel[]>(() => getReels());
@@ -70,13 +76,67 @@ export const DispatchView: React.FC<DispatchViewProps> = ({ initialTab = 'orders
   const vehicles = getVehicles();
   const products = getProducts();
 
-  // Tab View Toggle
-  const [activeTab, setActiveTab] = useState<'orders' | 'create_slip' | 'slips_list'>(initialTab);
+  // Tab View Toggle - Determine from URL pathname or initialTab prop
+  const [activeTab, setActiveTab] = useState<'orders' | 'create_slip' | 'slips_list'>(() => {
+    if (location.pathname.includes('packing-slips')) return 'slips_list';
+    if (location.pathname.includes('draft-packing-slip')) return 'create_slip';
+    return initialTab;
+  });
 
+  // Sync tab with URL location changes
   useEffect(() => {
-    setActiveTab(initialTab);
+    if (location.pathname.includes('packing-slips')) {
+      setActiveTab('slips_list');
+    } else if (location.pathname.includes('draft-packing-slip')) {
+      setActiveTab('create_slip');
+    } else if (initialTab) {
+      setActiveTab(initialTab);
+    }
     setReels(getReels());
-  }, [initialTab]);
+    setSlips(getPackingSlips());
+    setOrders(getPendingOrders());
+  }, [location.pathname, initialTab]);
+
+  const handleTabChange = (tab: 'orders' | 'create_slip' | 'slips_list') => {
+    setActiveTab(tab);
+    setReels(getReels());
+    setSlips(getPackingSlips());
+    setOrders(getPendingOrders());
+    setSuccessMsg('');
+    setErrorMsg('');
+    if (!hideTabs) {
+      if (tab === 'create_slip') {
+        navigate('/dispatch-receipt/draft-packing-slip');
+      } else if (tab === 'slips_list') {
+        navigate('/dispatch-receipt/packing-slips-&-challans');
+      }
+    }
+  };
+
+  // 4. Edit Delivery Challan Modal State
+  const [editingSlip, setEditingSlip] = useState<PackingSlip | null>(null);
+  const [editDate, setEditDate] = useState('');
+  const [editPartyId, setEditPartyId] = useState('');
+  const [editVehicleId, setEditVehicleId] = useState('');
+  const [editReelNos, setEditReelNos] = useState<string[]>([]);
+  const [editReelInput, setEditReelInput] = useState('');
+  const [editModalError, setEditModalError] = useState('');
+
+  // 5. In-Stock Reels Selection Modal (within Edit Challan)
+  const [isEditStockPickerOpen, setIsEditStockPickerOpen] = useState(false);
+  const [editPickerSearch, setEditPickerSearch] = useState('');
+  const [editPickerProductFilter, setEditPickerProductFilter] = useState<'ALL' | string>('ALL');
+  const [editPickerGsmFilter, setEditPickerGsmFilter] = useState<'ALL' | number>('ALL');
+  const [editPickerSizeFilter, setEditPickerSizeFilter] = useState<'ALL' | number>('ALL');
+  const [editPickerPlyFilter, setEditPickerPlyFilter] = useState<'ALL' | number>('ALL');
+  const [editPickerGradeFilter, setEditPickerGradeFilter] = useState<'ALL' | 'A' | 'B'>('ALL');
+  const [editPickerViewMode, setEditPickerViewMode] = useState<'grid' | 'table'>('grid');
+  const [editPickerBarcodeInput, setEditPickerBarcodeInput] = useState('');
+  const [editPickerSelectedNos, setEditPickerSelectedNos] = useState<string[]>([]);
+
+  // 6. Three-dots Action Menu Dropdown State
+  const [openMenuSlipId, setOpenMenuSlipId] = useState<string | null>(null);
+  const [menuPos, setMenuPos] = useState<{ top: number; right: number } | null>(null);
 
   useEffect(() => {
     setReels(getReels());
@@ -211,7 +271,7 @@ export const DispatchView: React.FC<DispatchViewProps> = ({ initialTab = 'orders
   const [receiptGroupMode, setReceiptGroupMode] = useState<'grouped' | 'sequential'>('grouped');
   const [receiptViewMode, setReceiptViewMode] = useState<'paged' | 'continuous'>('paged');
 
-  useBodyScrollLock(!!viewingSlip);
+  useBodyScrollLock(!!viewingSlip || !!editingSlip || isEditStockPickerOpen);
 
   // Auto-generate slip number
   const autoSlipNo = useMemo(() => {
@@ -221,9 +281,9 @@ export const DispatchView: React.FC<DispatchViewProps> = ({ initialTab = 'orders
     return `CHALLAN-${cleanDate}-${padIndex}`;
   }, [slipDate, slips]);
 
-  // Filter available reels in stock for Packing Slip selection (all non-dispatched reels)
+  // Filter available reels in stock for Packing Slip selection (strictly in-stock warehouse reels)
   const availableReels = useMemo(() => {
-    return reels.filter(r => r.status !== 'DELIVERED');
+    return reels.filter(r => r.status === 'IN_STOCK' || r.status === 'IN_STOCK_B');
   }, [reels]);
 
   // Unique Products present in available reels for quick filter pills
@@ -474,8 +534,210 @@ export const DispatchView: React.FC<DispatchViewProps> = ({ initialTab = 'orders
     setDriverName('');
     setDriverMobile('');
     setReceiverSig('');
-    setActiveTab('slips_list');
+    handleTabChange('slips_list');
   };
+
+  // Handle Open Edit Challan
+  const handleOpenEditSlip = (slip: PackingSlip) => {
+    setEditingSlip(slip);
+    setEditDate(slip.date);
+    setEditPartyId(slip.partyId);
+    setEditVehicleId(slip.vehicleId);
+    setEditReelNos([...slip.reelNos]);
+    setEditReelInput('');
+    setEditModalError('');
+  };
+
+  // Handle Remove Reel from Edit
+  const handleRemoveReelFromEdit = (rNo: string) => {
+    setEditReelNos(prev => prev.filter(no => no !== rNo));
+  };
+
+  // Handle Add Reel to Edit
+  const handleAddReelToEdit = (rNo: string) => {
+    const cleanNo = rNo.trim();
+    if (!cleanNo) return;
+    if (!editReelNos.includes(cleanNo)) {
+      setEditReelNos(prev => [...prev, cleanNo]);
+      setEditReelInput('');
+    }
+  };
+
+  // Handle Save Edit Slip
+  const handleSaveEditSlip = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!editingSlip) return;
+    setEditModalError('');
+
+    if (!editPartyId) {
+      setEditModalError('Please select a Customer / Party.');
+      return;
+    }
+    if (!editVehicleId.trim()) {
+      setEditModalError('Please specify a Vehicle Number.');
+      return;
+    }
+    if (editReelNos.length === 0) {
+      setEditModalError('Delivery Challan must have at least 1 linked reel.');
+      return;
+    }
+
+    const updatedSlip: PackingSlip = {
+      ...editingSlip,
+      date: editDate,
+      partyId: editPartyId,
+      vehicleId: editVehicleId,
+      reelNos: editReelNos,
+    };
+
+    savePackingSlip(updatedSlip, user?.displayName || 'System');
+    setSlips(getPackingSlips());
+    setReels(getReels());
+    setOrders(getPendingOrders());
+    setEditingSlip(null);
+    setSuccessMsg(`Delivery Challan #${updatedSlip.slipNo} updated successfully!`);
+    setTimeout(() => setSuccessMsg(''), 4000);
+  };
+
+  // Stock Reels Picker Handlers for Edit Modal
+  const handleOpenEditStockPicker = () => {
+    setEditPickerSearch(editReelInput.trim());
+    setEditPickerBarcodeInput('');
+    setEditPickerSelectedNos([]);
+    setEditPickerProductFilter('ALL');
+    setEditPickerGsmFilter('ALL');
+    setEditPickerSizeFilter('ALL');
+    setEditPickerPlyFilter('ALL');
+    setEditPickerGradeFilter('ALL');
+    setIsEditStockPickerOpen(true);
+  };
+
+  const handleTogglePickerReel = (rNo: string) => {
+    setEditPickerSelectedNos(prev => {
+      const exists = prev.includes(rNo);
+      playBeep();
+      return exists ? prev.filter(n => n !== rNo) : [...prev, rNo];
+    });
+  };
+
+  const handleSelectAllPickerReels = (reelsList: Reel[]) => {
+    const allNos = reelsList.map(r => r.reelNo);
+    setEditPickerSelectedNos(prev => Array.from(new Set([...prev, ...allNos])));
+    playBeep();
+  };
+
+  const handleSelectPickerTopN = (n: number, reelsList: Reel[]) => {
+    const topNos = reelsList.slice(0, n).map(r => r.reelNo);
+    setEditPickerSelectedNos(prev => Array.from(new Set([...prev, ...topNos])));
+    playBeep();
+  };
+
+  const handleDeselectAllPickerReels = () => {
+    setEditPickerSelectedNos([]);
+    playBeep();
+  };
+
+  const handlePickerBarcodeSubmit = (e?: React.FormEvent, directReelNo?: string) => {
+    if (e) e.preventDefault();
+    const query = (directReelNo || editPickerBarcodeInput).trim().toLowerCase();
+    if (!query) return;
+
+    const matched = availableReelsForEdit.find(r => r.reelNo.toLowerCase() === query);
+    if (matched) {
+      if (!editPickerSelectedNos.includes(matched.reelNo)) {
+        setEditPickerSelectedNos(prev => [...prev, matched.reelNo]);
+        playBeep();
+      }
+      setEditPickerBarcodeInput('');
+    }
+  };
+
+  const handleConfirmAddFromStockPicker = () => {
+    if (editPickerSelectedNos.length > 0) {
+      setEditReelNos(prev => Array.from(new Set([...prev, ...editPickerSelectedNos])));
+      setEditReelInput('');
+    }
+    setIsEditStockPickerOpen(false);
+  };
+
+  // Filter available reels in stock for Edit Challan picker
+  const availableReelsForEdit = useMemo(() => {
+    return reels.filter(r => {
+      const isNotDispatched = r.status !== 'DISPATCHED' && r.status !== 'DELIVERED';
+      const isNotAlreadyInChallan = !editReelNos.includes(r.reelNo);
+      return isNotDispatched && isNotAlreadyInChallan;
+    });
+  }, [reels, editReelNos]);
+
+  // Unique products for edit picker
+  const editPickerUniqueProducts = useMemo(() => {
+    const set = new Set<string>();
+    availableReelsForEdit.forEach(r => {
+      if (r.product) set.add(r.product);
+    });
+    return Array.from(set).sort();
+  }, [availableReelsForEdit]);
+
+  // Unique GSMs for edit picker
+  const editPickerUniqueGsms = useMemo(() => {
+    const set = new Set<number>();
+    availableReelsForEdit.forEach(r => {
+      if (editPickerProductFilter === 'ALL' || r.product === editPickerProductFilter) {
+        if (r.gsm) set.add(r.gsm);
+      }
+    });
+    return Array.from(set).sort((a, b) => a - b);
+  }, [availableReelsForEdit, editPickerProductFilter]);
+
+  // Unique Sizes for edit picker
+  const editPickerUniqueSizes = useMemo(() => {
+    const set = new Set<number>();
+    availableReelsForEdit.forEach(r => {
+      const matchProd = editPickerProductFilter === 'ALL' || r.product === editPickerProductFilter;
+      const matchGsm = editPickerGsmFilter === 'ALL' || r.gsm === editPickerGsmFilter;
+      if (matchProd && matchGsm && r.size) {
+        set.add(r.size);
+      }
+    });
+    return Array.from(set).sort((a, b) => a - b);
+  }, [availableReelsForEdit, editPickerProductFilter, editPickerGsmFilter]);
+
+  // Unique Plys for edit picker
+  const editPickerUniquePlys = useMemo(() => {
+    const set = new Set<number>();
+    availableReelsForEdit.forEach(r => {
+      const matchProd = editPickerProductFilter === 'ALL' || r.product === editPickerProductFilter;
+      const matchGsm = editPickerGsmFilter === 'ALL' || r.gsm === editPickerGsmFilter;
+      const matchSize = editPickerSizeFilter === 'ALL' || r.size === editPickerSizeFilter;
+      if (matchProd && matchGsm && matchSize && r.ply) {
+        set.add(r.ply);
+      }
+    });
+    return Array.from(set).sort((a, b) => a - b);
+  }, [availableReelsForEdit, editPickerProductFilter, editPickerGsmFilter, editPickerSizeFilter]);
+
+  const filteredAvailableReelsForEdit = useMemo(() => {
+    const q = editPickerSearch.toLowerCase().trim();
+    return availableReelsForEdit.filter(r => {
+      if (editPickerProductFilter !== 'ALL' && r.product !== editPickerProductFilter) return false;
+      if (editPickerGsmFilter !== 'ALL' && r.gsm !== editPickerGsmFilter) return false;
+      if (editPickerSizeFilter !== 'ALL' && r.size !== editPickerSizeFilter) return false;
+      if (editPickerPlyFilter !== 'ALL' && r.ply !== editPickerPlyFilter) return false;
+      if (editPickerGradeFilter !== 'ALL') {
+        const grade = (r.qcGrade || 'A').toUpperCase();
+        if (grade !== editPickerGradeFilter) return false;
+      }
+      if (q) {
+        const matchNo = r.reelNo.toLowerCase().includes(q);
+        const matchProd = r.product.toLowerCase().includes(q);
+        const matchGsm = String(r.gsm).includes(q);
+        const matchSize = String(r.size).includes(q);
+        const matchWeight = String(r.weight).includes(q);
+        if (!matchNo && !matchProd && !matchGsm && !matchSize && !matchWeight) return false;
+      }
+      return true;
+    });
+  }, [availableReelsForEdit, editPickerSearch, editPickerProductFilter, editPickerGsmFilter, editPickerSizeFilter, editPickerPlyFilter, editPickerGradeFilter]);
 
   // Handle Confirm Dispatch trigger (atomic decrement & status updates)
   const handleConfirmDispatch = (slipId: string) => {
@@ -491,6 +753,18 @@ export const DispatchView: React.FC<DispatchViewProps> = ({ initialTab = 'orders
       setSuccessMsg('Dispatch finalized successfully! Finished stock counts decremented and transaction audit log written.');
     } catch (err: any) {
       setErrorMsg(err.message || 'Error finalizing dispatch');
+    }
+  };
+
+  // Handle Delete Challan
+  const handleDeleteSlip = (slip: PackingSlip) => {
+    if (window.confirm(`Are you sure you want to delete Delivery Challan #${slip.slipNo}? Any reels linked to this challan will be restored to warehouse finished stock.`)) {
+      deletePackingSlip(slip.id, user?.displayName || 'Admin');
+      setSlips(getPackingSlips());
+      setReels(getReels());
+      setOrders(getPendingOrders());
+      playBeep();
+      setSuccessMsg(`Delivery Challan #${slip.slipNo} deleted successfully. Linked reels restored to finished stock.`);
     }
   };
 
@@ -605,7 +879,7 @@ export const DispatchView: React.FC<DispatchViewProps> = ({ initialTab = 'orders
               <>
                 <button
                   type="button"
-                  onClick={() => { setActiveTab('create_slip'); setSuccessMsg(''); setErrorMsg(''); }}
+                  onClick={() => handleTabChange('create_slip')}
                   className={`w-full flex items-center justify-center gap-2 py-2.5 sm:py-3 px-3 sm:px-4 rounded-xl text-xs sm:text-sm font-black transition-all duration-200 cursor-pointer ${
                     activeTab === 'create_slip'
                       ? 'bg-gradient-to-r from-blue-600 via-indigo-600 to-blue-700 text-white shadow-md shadow-blue-600/25 scale-[1.01]'
@@ -618,7 +892,7 @@ export const DispatchView: React.FC<DispatchViewProps> = ({ initialTab = 'orders
 
                 <button
                   type="button"
-                  onClick={() => { setActiveTab('slips_list'); setSuccessMsg(''); setErrorMsg(''); }}
+                  onClick={() => handleTabChange('slips_list')}
                   className={`w-full flex items-center justify-center gap-2 py-2.5 sm:py-3 px-3 sm:px-4 rounded-xl text-xs sm:text-sm font-black transition-all duration-200 cursor-pointer ${
                     activeTab === 'slips_list'
                       ? 'bg-gradient-to-r from-blue-600 via-indigo-600 to-blue-700 text-white shadow-md shadow-blue-600/25 scale-[1.01]'
@@ -837,7 +1111,7 @@ export const DispatchView: React.FC<DispatchViewProps> = ({ initialTab = 'orders
 
               <button
                 type="submit"
-                className="w-full bg-gradient-to-r from-blue-600 via-indigo-600 to-blue-700 hover:from-blue-700 hover:to-indigo-700 text-white font-black py-3 rounded-2xl text-xs uppercase tracking-wider shadow-lg shadow-blue-500/25 transition-all hover:scale-[1.01] active:scale-[0.99] cursor-pointer"
+                className="w-full bg-[#008163] hover:bg-[#006e54] text-white font-black py-3 rounded-2xl text-xs uppercase tracking-wider shadow-lg shadow-[#008163]/25 transition-all hover:scale-[1.01] active:scale-[0.99] cursor-pointer"
               >
                 Log Order Record
               </button>
@@ -1113,7 +1387,7 @@ export const DispatchView: React.FC<DispatchViewProps> = ({ initialTab = 'orders
                   </span>
                   <span className="text-slate-300 dark:text-slate-700">|</span>
                   <span className="text-base font-black font-mono text-emerald-600 dark:text-emerald-400">
-                    {reels.filter(r => selectedReelNos.includes(r.reelNo)).reduce((sum, r) => sum + (r.weight || 0), 0).toLocaleString()} <span className="text-xs text-slate-400 font-normal">KG</span>
+                    {availableReels.filter(r => selectedReelNos.includes(r.reelNo)).reduce((sum, r) => sum + (r.weight || 0), 0).toLocaleString()} <span className="text-xs text-slate-400 font-normal">KG</span>
                   </span>
                 </div>
 
@@ -1137,7 +1411,7 @@ export const DispatchView: React.FC<DispatchViewProps> = ({ initialTab = 'orders
 
                 <button
                   type="submit"
-                  className="bg-gradient-to-r from-blue-600 via-indigo-600 to-blue-700 hover:from-blue-700 hover:to-indigo-700 text-white font-extrabold py-3 px-6 rounded-2xl text-xs uppercase tracking-wider shadow-lg shadow-blue-500/25 transition cursor-pointer flex items-center justify-center gap-2"
+                  className="bg-[#008163] hover:bg-[#006e54] text-white font-extrabold py-3 px-6 rounded-2xl text-xs uppercase tracking-wider shadow-lg shadow-[#008163]/25 transition cursor-pointer flex items-center justify-center gap-2"
                 >
                   <Truck className="h-4 w-4" />
                   <span>Print Gate Pass &amp; Dispatch</span>
@@ -1157,7 +1431,7 @@ export const DispatchView: React.FC<DispatchViewProps> = ({ initialTab = 'orders
                     Warehouse Stock Reels
                   </h3>
                   <span className="px-2 py-0.5 rounded-full bg-blue-50 text-blue-600 dark:bg-blue-950/60 dark:text-blue-300 text-[10px] font-black font-mono">
-                    {selectedReelNos.length} Selected ({reels.filter(r => selectedReelNos.includes(r.reelNo)).reduce((s, r) => s + (r.weight || 0), 0).toLocaleString()} kg)
+                    {selectedReelNos.length} Selected ({availableReels.filter(r => selectedReelNos.includes(r.reelNo)).reduce((s, r) => s + (r.weight || 0), 0).toLocaleString()} kg)
                   </span>
                 </div>
                 <p className="text-[11px] text-slate-500 font-semibold">
@@ -1245,7 +1519,7 @@ export const DispatchView: React.FC<DispatchViewProps> = ({ initialTab = 'orders
                 <button
                   type="button"
                   onClick={() => handleBarcodeGunSubmit()}
-                  className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-xs font-black uppercase tracking-wider shrink-0 cursor-pointer shadow-sm flex items-center gap-1"
+                  className="px-4 py-2 bg-[#008163] hover:bg-[#006e54] text-white rounded-xl text-xs font-black uppercase tracking-wider shrink-0 cursor-pointer shadow-sm flex items-center gap-1"
                 >
                   <Plus className="h-3.5 w-3.5" />
                   <span>Add Reel</span>
@@ -1936,45 +2210,80 @@ export const DispatchView: React.FC<DispatchViewProps> = ({ initialTab = 'orders
                                 </span>
                               </td>
                               <td className="py-3 px-3 text-right">
-                                <div className="flex items-center justify-end gap-1.5">
-                                  <button
-                                    onClick={() => setViewingSlip(slip)}
-                                    className="px-2.5 py-1 bg-blue-50 hover:bg-blue-100 text-blue-700 dark:bg-blue-950/50 dark:hover:bg-blue-900/60 dark:text-blue-300 rounded-lg text-[10px] font-black transition cursor-pointer flex items-center gap-1"
-                                  >
-                                    <Eye className="h-3 w-3" />
-                                    <span>Receipt</span>
-                                  </button>
-                                  
-                                  {slip.status === 'DRAFT' ? (
+                                  <div className="flex items-center justify-end gap-1.5 relative">
+                                    {/* 1. Preview Receipt Icon Only */}
                                     <button
-                                      onClick={() => handleConfirmDispatch(slip.id)}
-                                      className="px-2.5 py-1 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white rounded-lg text-[10px] font-black shadow-xs transition cursor-pointer"
+                                      type="button"
+                                      onClick={() => setViewingSlip(slip)}
+                                      title="Preview Receipt & Gate Pass"
+                                      className="p-1.5 bg-blue-50 hover:bg-blue-100 text-blue-700 dark:bg-blue-950/50 dark:hover:bg-blue-900/60 dark:text-blue-300 rounded-lg transition cursor-pointer border border-blue-200/60 dark:border-blue-800/60 flex items-center justify-center shadow-2xs"
                                     >
-                                      Confirm
+                                      <Eye className="h-3.5 w-3.5" />
                                     </button>
-                                  ) : (
-                                    <>
+
+                                    {slip.status === 'DRAFT' ? (
                                       <button
-                                        onClick={() => handleExportExcel(slip)}
-                                        title="Export Excel (.xlsx)"
-                                        className="p-1.5 text-emerald-600 hover:bg-emerald-50 dark:hover:bg-emerald-950/30 rounded-lg border border-emerald-200 dark:border-emerald-900/80 cursor-pointer transition"
+                                        type="button"
+                                        onClick={() => handleConfirmDispatch(slip.id)}
+                                        className="px-3 py-1.5 bg-[#008163] hover:bg-[#006e54] text-white rounded-lg text-[10px] font-black uppercase tracking-wider shadow-xs shadow-[#008163]/25 transition cursor-pointer flex items-center gap-1"
                                       >
-                                        <FileSpreadsheet className="h-3.5 w-3.5" />
+                                        <Check className="h-3 w-3" />
+                                        <span>Confirm</span>
                                       </button>
-                                      <button
-                                        onClick={() => {
-                                          setViewingSlip(slip);
-                                          setTimeout(() => window.print(), 100);
-                                        }}
-                                        title="Print Receipt (1-Page)"
-                                        className="p-1.5 text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-950/30 rounded-lg border border-blue-200 dark:border-blue-900/80 cursor-pointer transition"
-                                      >
-                                        <Printer className="h-3.5 w-3.5" />
-                                      </button>
-                                    </>
-                                  )}
-                                </div>
-                              </td>
+                                    ) : (
+                                      <>
+                                        <button
+                                          type="button"
+                                          onClick={() => handleExportExcel(slip)}
+                                          title="Export Excel (.xlsx)"
+                                          className="p-1.5 text-emerald-600 hover:bg-emerald-50 dark:hover:bg-emerald-950/30 rounded-lg border border-emerald-200 dark:border-emerald-900/80 cursor-pointer transition flex items-center justify-center"
+                                        >
+                                          <FileSpreadsheet className="h-3.5 w-3.5" />
+                                        </button>
+                                        <button
+                                          type="button"
+                                          onClick={() => {
+                                            setViewingSlip(slip);
+                                            setTimeout(() => window.print(), 100);
+                                          }}
+                                          title="Print Receipt (1-Page)"
+                                          className="p-1.5 text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-950/30 rounded-lg border border-blue-200 dark:border-blue-900/80 cursor-pointer transition flex items-center justify-center"
+                                        >
+                                          <Printer className="h-3.5 w-3.5" />
+                                        </button>
+                                      </>
+                                    )}
+
+                                    {/* 2. Three-Dots Menu Button */}
+                                    <button
+                                      type="button"
+                                      onClick={(e) => {
+                                        e.stopPropagation();
+                                        if (openMenuSlipId === slip.id) {
+                                          setOpenMenuSlipId(null);
+                                          setMenuPos(null);
+                                        } else {
+                                          const rect = e.currentTarget.getBoundingClientRect();
+                                          const spaceBelow = window.innerHeight - rect.bottom;
+                                          const openUp = spaceBelow < 120;
+                                          setMenuPos({
+                                            top: openUp ? rect.top - 82 : rect.bottom + 6,
+                                            right: Math.max(12, window.innerWidth - rect.right),
+                                          });
+                                          setOpenMenuSlipId(slip.id);
+                                        }
+                                      }}
+                                      title="Challan Actions"
+                                      className={`p-1.5 rounded-lg border transition cursor-pointer flex items-center justify-center ${
+                                        openMenuSlipId === slip.id
+                                          ? 'bg-slate-200 dark:bg-slate-700 text-slate-900 dark:text-white border-slate-300 dark:border-slate-600 shadow-xs'
+                                          : 'text-slate-500 hover:text-slate-800 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 border-slate-200 dark:border-slate-700'
+                                      }`}
+                                    >
+                                      <MoreVertical className="h-3.5 w-3.5" />
+                                    </button>
+                                  </div>
+                                </td>
                             </tr>
                           );
                         })}
@@ -2013,18 +2322,18 @@ export const DispatchView: React.FC<DispatchViewProps> = ({ initialTab = 'orders
                             </span>
                           </div>
 
-                          <div className="grid grid-cols-2 gap-y-2 text-[11px]">
+                          <div className="grid grid-cols-2 gap-2 text-[11px]">
                             <div>
-                              <span className="font-bold text-slate-400 block uppercase text-[8px]">Date</span>
-                              <span className="font-semibold text-slate-800 dark:text-slate-200">{slip.date}</span>
-                            </div>
-                            <div>
-                              <span className="font-bold text-slate-400 block uppercase text-[8px]">Customer Party</span>
+                              <span className="font-bold text-slate-400 block uppercase text-[8px]">Party</span>
                               <span className="font-bold text-slate-900 dark:text-white truncate block">{partyObj?.name || 'Walk-in'}</span>
                             </div>
                             <div>
-                              <span className="font-bold text-slate-400 block uppercase text-[8px]">Vehicle No</span>
-                              <span className="font-bold text-primary dark:text-blue-400 font-mono">{vehicleDisplay}</span>
+                              <span className="font-bold text-slate-400 block uppercase text-[8px]">Vehicle</span>
+                              <span className="font-mono font-bold text-slate-700 dark:text-slate-300">{vehicleDisplay}</span>
+                            </div>
+                            <div>
+                              <span className="font-bold text-slate-400 block uppercase text-[8px]">Date</span>
+                              <span className="font-semibold text-slate-600 dark:text-slate-400">{slip.date}</span>
                             </div>
                             <div>
                               <span className="font-bold text-slate-400 block uppercase text-[8px]">Reels &amp; Weight</span>
@@ -2032,29 +2341,37 @@ export const DispatchView: React.FC<DispatchViewProps> = ({ initialTab = 'orders
                             </div>
                           </div>
 
-                          <div className="pt-2 border-t dark:border-slate-800 flex items-center justify-end gap-1.5">
+                          <div className="pt-2 border-t dark:border-slate-800 flex items-center justify-end gap-1.5 relative">
+                            {/* Preview Receipt Icon */}
                             <button
+                              type="button"
                               onClick={() => setViewingSlip(slip)}
-                              className="px-3 py-1.5 bg-blue-50 dark:bg-blue-950/50 text-blue-600 dark:text-blue-300 rounded-xl text-[10px] font-black"
+                              title="Preview Receipt & Gate Pass"
+                              className="p-1.5 bg-blue-50 dark:bg-blue-950/50 text-blue-600 dark:text-blue-300 rounded-xl border border-blue-200/60 dark:border-blue-800/60 flex items-center justify-center shadow-2xs"
                             >
-                              View Receipt
+                              <Eye className="h-3.5 w-3.5" />
                             </button>
+
                             {slip.status === 'DRAFT' ? (
                               <button
+                                type="button"
                                 onClick={() => handleConfirmDispatch(slip.id)}
-                                className="px-3 py-1.5 bg-primary text-white rounded-xl text-[10px] font-black"
+                                className="px-3 py-1.5 bg-[#008163] hover:bg-[#006e54] text-white rounded-xl text-[10px] font-black uppercase tracking-wider shadow-xs shadow-[#008163]/25 flex items-center gap-1"
                               >
-                                Confirm
+                                <Check className="h-3 w-3" />
+                                <span>Confirm</span>
                               </button>
                             ) : (
                               <>
                                 <button
+                                  type="button"
                                   onClick={() => handleExportExcel(slip)}
                                   className="p-1.5 text-emerald-600 rounded-lg border border-emerald-200 dark:border-emerald-800"
                                 >
                                   <FileSpreadsheet className="h-3.5 w-3.5" />
                                 </button>
                                 <button
+                                  type="button"
                                   onClick={() => {
                                     setViewingSlip(slip);
                                     setTimeout(() => window.print(), 100);
@@ -2065,16 +2382,817 @@ export const DispatchView: React.FC<DispatchViewProps> = ({ initialTab = 'orders
                                 </button>
                               </>
                             )}
+
+                            {/* Three-Dots Menu Button */}
+                            <button
+                              type="button"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                if (openMenuSlipId === slip.id) {
+                                  setOpenMenuSlipId(null);
+                                  setMenuPos(null);
+                                } else {
+                                  const rect = e.currentTarget.getBoundingClientRect();
+                                  const spaceBelow = window.innerHeight - rect.bottom;
+                                  const openUp = spaceBelow < 120;
+                                  setMenuPos({
+                                    top: openUp ? rect.top - 82 : rect.bottom + 6,
+                                    right: Math.max(12, window.innerWidth - rect.right),
+                                  });
+                                  setOpenMenuSlipId(slip.id);
+                                }
+                              }}
+                              title="Challan Actions"
+                              className="p-1.5 rounded-xl border border-slate-200 dark:border-slate-700 text-slate-500 hover:text-slate-800 dark:hover:text-slate-200 flex items-center justify-center"
+                            >
+                              <MoreVertical className="h-3.5 w-3.5" />
+                            </button>
                           </div>
                         </div>
                       );
                     })}
                 </div>
+
+                {/* Universal Portal Floating Dropdown Menu */}
+                {openMenuSlipId && menuPos && (() => {
+                  const currentSlip = slips.find(s => s.id === openMenuSlipId);
+                  if (!currentSlip) return null;
+
+                  return createPortal(
+                    <>
+                      {/* Click Outside Overlay */}
+                      <div
+                        className="fixed inset-0 z-[9998]"
+                        onClick={() => {
+                          setOpenMenuSlipId(null);
+                          setMenuPos(null);
+                        }}
+                      />
+                      {/* Floating Dropdown - Exactly 2 Actions: Edit Challan & Delete Challan */}
+                      <div
+                        style={{
+                          position: 'fixed',
+                          top: `${menuPos.top}px`,
+                          right: `${menuPos.right}px`,
+                        }}
+                        className="w-38 bg-white dark:bg-[#1a3535] border border-slate-200 dark:border-[#284848] rounded-2xl shadow-2xl z-[9999] p-1.5 space-y-1 animate-in fade-in zoom-in-95 text-left select-none font-sans"
+                        onClick={(e) => e.stopPropagation()}
+                      >
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setOpenMenuSlipId(null);
+                            setMenuPos(null);
+                            handleOpenEditSlip(currentSlip);
+                          }}
+                          className="w-full px-3 py-2 text-left text-xs font-bold text-slate-700 dark:text-slate-200 hover:bg-amber-50 dark:hover:bg-amber-950/40 hover:text-amber-700 dark:hover:text-amber-300 rounded-xl transition cursor-pointer flex items-center gap-2"
+                        >
+                          <Pencil className="h-3.5 w-3.5 text-amber-500" />
+                          <span>Edit Challan</span>
+                        </button>
+
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setOpenMenuSlipId(null);
+                            setMenuPos(null);
+                            handleDeleteSlip(currentSlip);
+                          }}
+                          className="w-full px-3 py-2 text-left text-xs font-bold text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/40 rounded-xl transition cursor-pointer flex items-center gap-2"
+                        >
+                          <Trash2 className="h-3.5 w-3.5 text-red-500" />
+                          <span>Delete Challan</span>
+                        </button>
+                      </div>
+                    </>,
+                    document.body
+                  );
+                })()}
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
+
+      {/* 5. EDIT DELIVERY CHALLAN MODAL */}
+      {editingSlip && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs animate-in fade-in">
+          <div className="bg-white dark:bg-surface-dark border border-slate-200 dark:border-slate-800 rounded-3xl max-w-2xl w-full p-6 shadow-2xl space-y-5 text-left max-h-[90vh] overflow-y-auto animate-in zoom-in-95">
+            {/* Modal Header */}
+            <div className="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-3">
+              <div className="flex items-center gap-2.5">
+                <div className="p-2 rounded-2xl bg-amber-50 dark:bg-amber-950/40 text-amber-600 dark:text-amber-400">
+                  <Pencil className="h-5 w-5" />
+                </div>
+                <div>
+                  <h3 className="text-base font-black text-slate-900 dark:text-white uppercase tracking-wider">
+                    Edit Delivery Challan
+                  </h3>
+                  <div className="flex items-center gap-2 mt-0.5">
+                    <span className="font-mono font-bold text-xs text-blue-600 dark:text-blue-400">
+                      {editingSlip.slipNo}
+                    </span>
+                    <span className={`px-2 py-0.5 rounded-full text-[9px] font-black uppercase ${
+                      editingSlip.status === 'DRAFT'
+                        ? 'bg-amber-100 text-amber-800 dark:bg-amber-950/50 dark:text-amber-300'
+                        : 'bg-emerald-100 text-emerald-800 dark:bg-emerald-950/50 dark:text-emerald-300'
+                    }`}>
+                      {editingSlip.status === 'DRAFT' ? 'Draft Gate Pass' : 'Dispatched'}
+                    </span>
+                  </div>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => setEditingSlip(null)}
+                className="p-1.5 rounded-xl text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 cursor-pointer"
+              >
+                <X className="h-5 w-5" />
+              </button>
+            </div>
+
+            {editModalError && (
+              <div className="p-3 bg-red-50 dark:bg-red-950/30 text-red-600 dark:text-red-400 text-xs rounded-xl border border-red-200 dark:border-red-800 font-bold flex items-center gap-2">
+                <AlertTriangle className="h-4 w-4 shrink-0" />
+                <span>{editModalError}</span>
               </div>
             )}
 
-          </div>
+            <form onSubmit={handleSaveEditSlip} className="space-y-4">
+              {/* Form Fields: Date, Customer, Vehicle */}
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                <div>
+                  <label className="block text-[10px] font-black text-slate-500 uppercase tracking-wider mb-1">
+                    Challan Date
+                  </label>
+                  <input
+                    type="date"
+                    required
+                    value={editDate}
+                    onChange={e => setEditDate(e.target.value)}
+                    className="w-full p-2.5 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-xs font-mono font-bold dark:text-white focus:outline-none focus:ring-2 focus:ring-primary"
+                  />
+                </div>
 
+                <div>
+                  <label className="block text-[10px] font-black text-slate-500 uppercase tracking-wider mb-1">
+                    Party / Customer
+                  </label>
+                  <select
+                    required
+                    value={editPartyId}
+                    onChange={e => setEditPartyId(e.target.value)}
+                    className="w-full p-2.5 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-xs font-bold dark:text-white focus:outline-none focus:ring-2 focus:ring-primary cursor-pointer"
+                  >
+                    <option value="">Select Customer...</option>
+                    {parties.map(p => (
+                      <option key={p.id} value={p.id}>
+                        {p.name}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block text-[10px] font-black text-slate-500 uppercase tracking-wider mb-1">
+                    Vehicle Number
+                  </label>
+                  <input
+                    type="text"
+                    required
+                    value={editVehicleId}
+                    onChange={e => setEditVehicleId(e.target.value.toUpperCase())}
+                    placeholder="e.g. MH-04-ZZ-9012"
+                    className="w-full p-2.5 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-xs font-mono font-bold dark:text-white focus:outline-none focus:ring-2 focus:ring-primary uppercase"
+                  />
+                </div>
+              </div>
+
+              {/* Linked Reels Section */}
+              <div className="space-y-2.5 border-t border-slate-100 dark:border-slate-800 pt-3">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <h4 className="text-xs font-black text-slate-900 dark:text-white uppercase tracking-wider">
+                      Linked Reels in Challan
+                    </h4>
+                    <p className="text-[11px] text-slate-500">
+                      Total: <strong className="text-slate-900 dark:text-white">{editReelNos.length} reels</strong> ({reels.filter(r => editReelNos.includes(r.reelNo)).reduce((sum, r) => sum + (r.weight || 0), 0).toLocaleString()} kg)
+                    </p>
+                  </div>
+                </div>
+
+                {/* Add Reel Input & Stock Picker trigger inside Modal */}
+                <div className="flex flex-col sm:flex-row gap-2">
+                  <div className="relative flex-1">
+                    <input
+                      type="text"
+                      value={editReelInput}
+                      onChange={e => setEditReelInput(e.target.value)}
+                      onKeyDown={e => {
+                        if (e.key === 'Enter') {
+                          e.preventDefault();
+                          const val = editReelInput.trim();
+                          if (!val) {
+                            handleOpenEditStockPicker();
+                            return;
+                          }
+                          const found = reels.find(r => r.reelNo.toLowerCase() === val.toLowerCase());
+                          if (found) {
+                            handleAddReelToEdit(found.reelNo);
+                          } else {
+                            handleOpenEditStockPicker();
+                          }
+                        }
+                      }}
+                      placeholder="Type or scan reel number (e.g. 260500586)..."
+                      className="w-full py-2.5 px-3.5 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-xs font-mono font-bold dark:text-white focus:outline-none focus:ring-2 focus:ring-[#008163]"
+                    />
+                  </div>
+
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const val = editReelInput.trim();
+                      if (val) {
+                        const found = reels.find(r => r.reelNo.toLowerCase() === val.toLowerCase());
+                        if (found) {
+                          handleAddReelToEdit(found.reelNo);
+                          return;
+                        }
+                      }
+                      handleOpenEditStockPicker();
+                    }}
+                    className="px-4 py-2.5 bg-[#008163] hover:bg-[#006e54] text-white rounded-xl text-xs font-black uppercase tracking-wider shrink-0 cursor-pointer shadow-md shadow-[#008163]/25 flex items-center justify-center gap-1.5 transition"
+                  >
+                    <PackageCheck className="h-4 w-4" />
+                    <span>+ Add Reel (From Stock)</span>
+                  </button>
+                </div>
+
+                {/* List of currently linked reels */}
+                <div className="border border-slate-200 dark:border-slate-800 rounded-2xl max-h-56 overflow-y-auto divide-y divide-slate-100 dark:divide-slate-800">
+                  {editReelNos.length === 0 ? (
+                    <div className="py-6 text-center text-xs text-slate-400 font-medium space-y-2">
+                      <p>No reels currently linked to this challan.</p>
+                      <button
+                        type="button"
+                        onClick={handleOpenEditStockPicker}
+                        className="px-3 py-1.5 bg-[#008163]/10 hover:bg-[#008163]/20 text-[#008163] dark:text-emerald-400 rounded-lg text-xs font-bold cursor-pointer transition inline-flex items-center gap-1"
+                      >
+                        <PackageCheck className="h-3.5 w-3.5" />
+                        <span>Open In-Stock Reels Picker</span>
+                      </button>
+                    </div>
+                  ) : (
+                    editReelNos.map(rNo => {
+                      const reelObj = reels.find(r => r.reelNo === rNo);
+                      return (
+                        <div key={rNo} className="p-2.5 flex items-center justify-between hover:bg-slate-50 dark:hover:bg-slate-900/50 transition text-xs">
+                          <div className="flex items-center gap-3">
+                            <span className="font-mono font-black text-slate-900 dark:text-white">{rNo}</span>
+                            {reelObj && (
+                              <span className="text-[11px] text-slate-500 font-semibold">
+                                {reelObj.product} &bull; {reelObj.gsm} GSM &bull; {reelObj.size} cm &bull; <strong className="text-emerald-600 dark:text-emerald-400 font-mono">{reelObj.weight} kg</strong>
+                              </span>
+                            )}
+                          </div>
+                          <button
+                            type="button"
+                            onClick={() => handleRemoveReelFromEdit(rNo)}
+                            className="p-1.5 rounded-lg text-red-500 hover:text-red-700 hover:bg-red-50 dark:hover:bg-red-950/30 transition cursor-pointer"
+                            title="Remove reel from challan"
+                          >
+                            <Trash2 className="h-3.5 w-3.5" />
+                          </button>
+                        </div>
+                      );
+                    })
+                  )}
+                </div>
+              </div>
+
+              {/* Action Buttons */}
+              <div className="flex items-center justify-end gap-2.5 pt-3 border-t border-slate-100 dark:border-slate-800">
+                <button
+                  type="button"
+                  onClick={() => setEditingSlip(null)}
+                  className="px-5 py-2.5 border border-slate-200 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-300 font-bold rounded-xl text-xs transition cursor-pointer"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  className="px-6 py-2.5 bg-[#008163] hover:bg-[#006e54] text-white font-black rounded-xl text-xs uppercase tracking-wider shadow-md shadow-[#008163]/25 transition cursor-pointer flex items-center gap-1.5"
+                >
+                  <Check className="h-4 w-4" />
+                  <span>Save Challan Changes</span>
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* 6. IN-STOCK REELS SELECTION MODAL (POPUP WINDOW - EXACT IMAGE 2 RICH CHIP / PILL FILTERS) */}
+      {isEditStockPickerOpen && (
+        <div className="fixed inset-0 z-60 flex items-center justify-center p-3 sm:p-5 bg-slate-950/80 backdrop-blur-md animate-in fade-in">
+          <div className="bg-white dark:bg-surface-dark border border-slate-200 dark:border-slate-800 rounded-3xl max-w-5xl w-full p-5 sm:p-6 shadow-2xl space-y-4 text-left max-h-[94vh] flex flex-col animate-in zoom-in-95">
+            {/* Header: Title, Tally, Search & View Switcher */}
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 border-b border-slate-100 dark:border-slate-800 pb-3">
+              <div className="space-y-0.5">
+                <div className="flex items-center gap-2">
+                  <h3 className="text-xs sm:text-sm font-black text-slate-900 dark:text-white uppercase tracking-wider">
+                    Warehouse Stock Reels
+                  </h3>
+                  <span className="px-2.5 py-0.5 rounded-full bg-blue-50 text-blue-600 dark:bg-blue-950/60 dark:text-blue-300 text-[11px] font-black font-mono">
+                    {editPickerSelectedNos.length} Selected ({reels.filter(r => editPickerSelectedNos.includes(r.reelNo)).reduce((s, r) => s + (r.weight || 0), 0).toLocaleString()} kg)
+                  </span>
+                </div>
+                <p className="text-[11px] text-slate-500 font-semibold">
+                  Showing {filteredAvailableReelsForEdit.length} of {availableReelsForEdit.length} available reels
+                </p>
+              </div>
+
+              {/* Right Side Search Bar & Layout Switcher & Close */}
+              <div className="flex items-center gap-2">
+                <div className="relative w-full sm:w-56">
+                  <Search className="h-3.5 w-3.5 text-slate-400 absolute left-2.5 top-1/2 -translate-y-1/2" />
+                  <input
+                    type="text"
+                    value={editPickerSearch}
+                    onChange={e => setEditPickerSearch(e.target.value)}
+                    placeholder="Search No, GSM, Size..."
+                    className="w-full py-1.5 pl-8 pr-7 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-xs font-bold focus:outline-none dark:text-white"
+                  />
+                  {editPickerSearch && (
+                    <button
+                      type="button"
+                      onClick={() => setEditPickerSearch('')}
+                      className="absolute right-2 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 cursor-pointer"
+                    >
+                      <X className="h-3 w-3" />
+                    </button>
+                  )}
+                </div>
+
+                {/* View Switcher: Grid vs Table */}
+                <div className="flex items-center gap-1 bg-slate-100 dark:bg-slate-900 p-1 rounded-xl shrink-0">
+                  <button
+                    type="button"
+                    onClick={() => setEditPickerViewMode('grid')}
+                    className={`p-1.5 rounded-lg transition cursor-pointer ${
+                      editPickerViewMode === 'grid'
+                        ? 'bg-white dark:bg-slate-800 text-blue-600 shadow-xs'
+                        : 'text-slate-500 hover:text-slate-800 dark:hover:text-white'
+                    }`}
+                    title="Card Grid View"
+                  >
+                    <LayoutGrid className="h-3.5 w-3.5" />
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setEditPickerViewMode('table')}
+                    className={`p-1.5 rounded-lg transition cursor-pointer ${
+                      editPickerViewMode === 'table'
+                        ? 'bg-white dark:bg-slate-800 text-blue-600 shadow-xs'
+                        : 'text-slate-500 hover:text-slate-800 dark:hover:text-white'
+                    }`}
+                    title="Compact Table View"
+                  >
+                    <List className="h-3.5 w-3.5" />
+                  </button>
+                </div>
+
+                <button
+                  type="button"
+                  onClick={() => setIsEditStockPickerOpen(false)}
+                  className="p-1.5 rounded-xl text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 cursor-pointer ml-1"
+                >
+                  <X className="h-5 w-5" />
+                </button>
+              </div>
+            </div>
+
+            {/* Rapid Barcode Gun / Keyboard Input Bar */}
+            <div className="flex gap-1.5 relative">
+              <div className="relative w-full">
+                <ScanBarcode className="h-4 w-4 text-slate-400 absolute left-2.5 top-1/2 -translate-y-1/2" />
+                <input
+                  type="text"
+                  value={editPickerBarcodeInput}
+                  onChange={e => setEditPickerBarcodeInput(e.target.value)}
+                  onKeyDown={e => {
+                    if (e.key === 'Enter') {
+                      handlePickerBarcodeSubmit(e);
+                    }
+                  }}
+                  placeholder="Scan / Type Reel Number (e.g. 1048)..."
+                  className="w-full py-2 pl-8 pr-3 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-xs font-bold focus:outline-none dark:text-white font-mono placeholder:font-sans placeholder:font-normal"
+                />
+              </div>
+              <button
+                type="button"
+                onClick={() => handlePickerBarcodeSubmit()}
+                className="px-4 py-2 bg-[#008163] hover:bg-[#006e54] text-white rounded-xl text-xs font-black uppercase tracking-wider shrink-0 cursor-pointer shadow-sm flex items-center gap-1"
+              >
+                <Plus className="h-3.5 w-3.5" />
+                <span>+ Add Reel</span>
+              </button>
+            </div>
+
+            {/* Rich Pill Filters (BATCH SELECT, PRODUCT, GRADE, GSM, SIZE, PLY) */}
+            <div className="space-y-2 pt-1 border-t border-slate-100 dark:border-slate-800">
+              
+              {/* Row A: Quick 1-Click Batch Actions */}
+              <div className="flex flex-wrap items-center gap-1.5">
+                <span className="text-[10px] font-black text-slate-400 uppercase tracking-wider mr-1">
+                  Batch Select:
+                </span>
+                
+                <button
+                  type="button"
+                  onClick={() => handleSelectAllPickerReels(filteredAvailableReelsForEdit)}
+                  className="px-2.5 py-1 rounded-lg bg-blue-50 dark:bg-blue-950/50 hover:bg-blue-100 text-blue-700 dark:text-blue-300 text-xs font-extrabold border border-blue-200 dark:border-blue-800 cursor-pointer transition flex items-center gap-1"
+                >
+                  <CheckSquare className="h-3 w-3" />
+                  <span>Select All Filtered ({filteredAvailableReelsForEdit.length})</span>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => handleSelectPickerTopN(5, filteredAvailableReelsForEdit)}
+                  className="px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 text-slate-700 dark:text-slate-300 text-xs font-extrabold cursor-pointer transition"
+                >
+                  + 5 Reels
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => handleSelectPickerTopN(10, filteredAvailableReelsForEdit)}
+                  className="px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 text-slate-700 dark:text-slate-300 text-xs font-extrabold cursor-pointer transition"
+                >
+                  + 10 Reels
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => handleSelectPickerTopN(20, filteredAvailableReelsForEdit)}
+                  className="px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 text-slate-700 dark:text-slate-300 text-xs font-extrabold cursor-pointer transition"
+                >
+                  + 20 Reels
+                </button>
+
+                {editPickerSelectedNos.length > 0 && (
+                  <button
+                    type="button"
+                    onClick={handleDeselectAllPickerReels}
+                    className="px-2.5 py-1 rounded-lg bg-red-50 dark:bg-red-950/40 hover:bg-red-100 text-red-600 dark:text-red-400 text-xs font-extrabold border border-red-200 dark:border-red-800 cursor-pointer transition ml-auto flex items-center gap-1"
+                  >
+                    <X className="h-3 w-3" />
+                    <span>Clear Selection</span>
+                  </button>
+                )}
+              </div>
+
+              {/* Row B: Product & Grade Filter Chips */}
+              <div className="flex flex-wrap items-center gap-1.5 pt-0.5">
+                <span className="text-[10px] font-black text-slate-400 uppercase tracking-wider mr-1">
+                  Product:
+                </span>
+
+                <button
+                  type="button"
+                  onClick={() => setEditPickerProductFilter('ALL')}
+                  className={`px-2.5 py-0.5 rounded-full text-xs font-bold cursor-pointer transition ${
+                    editPickerProductFilter === 'ALL'
+                      ? 'bg-slate-900 dark:bg-white text-white dark:text-slate-900'
+                      : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 hover:bg-slate-200'
+                  }`}
+                >
+                  All Products ({availableReelsForEdit.length})
+                </button>
+
+                {editPickerUniqueProducts.map(prod => {
+                  const count = availableReelsForEdit.filter(r => r.product === prod).length;
+                  return (
+                    <button
+                      key={prod}
+                      type="button"
+                      onClick={() => setEditPickerProductFilter(prod)}
+                      className={`px-2.5 py-0.5 rounded-full text-xs font-bold cursor-pointer transition ${
+                        editPickerProductFilter === prod
+                          ? 'bg-emerald-600 text-white shadow-xs'
+                          : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 hover:bg-slate-200'
+                      }`}
+                    >
+                      {prod} ({count})
+                    </button>
+                  );
+                })}
+
+                {/* Grade Filter Pill Group (All, Grade A, Grade B) */}
+                <div className="flex items-center gap-1 ml-auto bg-slate-100 dark:bg-slate-900 p-0.5 rounded-xl border border-slate-200 dark:border-slate-800">
+                  <span className="text-[9px] font-black text-slate-400 uppercase px-1">Grade:</span>
+                  <button
+                    type="button"
+                    onClick={() => setEditPickerGradeFilter('ALL')}
+                    className={`px-2 py-0.5 rounded-lg text-[10px] font-extrabold cursor-pointer transition ${
+                      editPickerGradeFilter === 'ALL'
+                        ? 'bg-slate-800 text-white dark:bg-slate-200 dark:text-slate-900'
+                        : 'text-slate-600 dark:text-slate-400 hover:text-slate-900'
+                    }`}
+                  >
+                    All
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setEditPickerGradeFilter('A')}
+                    className={`px-2 py-0.5 rounded-lg text-[10px] font-extrabold cursor-pointer transition ${
+                      editPickerGradeFilter === 'A'
+                        ? 'bg-emerald-600 text-white shadow-xs'
+                        : 'text-emerald-700 dark:text-emerald-400 hover:bg-emerald-50 dark:hover:bg-emerald-950/30'
+                    }`}
+                  >
+                    Grade A
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setEditPickerGradeFilter('B')}
+                    className={`px-2 py-0.5 rounded-lg text-[10px] font-extrabold cursor-pointer transition ${
+                      editPickerGradeFilter === 'B'
+                        ? 'bg-amber-600 text-white shadow-xs'
+                        : 'text-amber-700 dark:text-amber-400 hover:bg-amber-50 dark:hover:bg-amber-950/30'
+                    }`}
+                  >
+                    Grade B Only
+                  </button>
+                </div>
+              </div>
+
+              {/* Row C: GSM Filter Chips */}
+              <div className="flex flex-wrap items-center gap-1.5 pt-0.5">
+                <span className="text-[10px] font-black text-slate-400 uppercase tracking-wider mr-1">
+                  GSM:
+                </span>
+
+                <button
+                  type="button"
+                  onClick={() => setEditPickerGsmFilter('ALL')}
+                  className={`px-2.5 py-0.5 rounded-full text-xs font-bold cursor-pointer transition ${
+                    editPickerGsmFilter === 'ALL'
+                      ? 'bg-blue-900 dark:bg-blue-600 text-white'
+                      : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 hover:bg-slate-200'
+                  }`}
+                >
+                  All GSM
+                </button>
+
+                {editPickerUniqueGsms.map(gsm => {
+                  const count = availableReelsForEdit.filter(r => (editPickerProductFilter === 'ALL' || r.product === editPickerProductFilter) && r.gsm === gsm).length;
+                  return (
+                    <button
+                      key={gsm}
+                      type="button"
+                      onClick={() => setEditPickerGsmFilter(gsm)}
+                      className={`px-2.5 py-0.5 rounded-full text-xs font-bold cursor-pointer transition ${
+                        editPickerGsmFilter === gsm
+                          ? 'bg-blue-600 text-white shadow-xs'
+                          : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 hover:bg-slate-200'
+                      }`}
+                    >
+                      {gsm} GSM ({count})
+                    </button>
+                  );
+                })}
+              </div>
+
+              {/* Row D: Size Filter Chips */}
+              <div className="flex flex-wrap items-center gap-1.5 pt-0.5">
+                <span className="text-[10px] font-black text-slate-400 uppercase tracking-wider mr-1">
+                  Size:
+                </span>
+
+                <button
+                  type="button"
+                  onClick={() => setEditPickerSizeFilter('ALL')}
+                  className={`px-2.5 py-0.5 rounded-full text-xs font-bold cursor-pointer transition ${
+                    editPickerSizeFilter === 'ALL'
+                      ? 'bg-indigo-900 dark:bg-indigo-500 text-white'
+                      : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 hover:bg-slate-200'
+                  }`}
+                >
+                  All Sizes
+                </button>
+
+                {editPickerUniqueSizes.map(sz => {
+                  const count = availableReelsForEdit.filter(r =>
+                    (editPickerProductFilter === 'ALL' || r.product === editPickerProductFilter) &&
+                    (editPickerGsmFilter === 'ALL' || r.gsm === editPickerGsmFilter) &&
+                    r.size === sz
+                  ).length;
+                  return (
+                    <button
+                      key={sz}
+                      type="button"
+                      onClick={() => setEditPickerSizeFilter(sz)}
+                      className={`px-2.5 py-0.5 rounded-full text-xs font-bold cursor-pointer transition ${
+                        editPickerSizeFilter === sz
+                          ? 'bg-indigo-600 text-white shadow-xs'
+                          : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 hover:bg-slate-200'
+                      }`}
+                    >
+                      {sz} cm ({count})
+                    </button>
+                  );
+                })}
+              </div>
+
+              {/* Row E: Ply Filter Chips */}
+              <div className="flex flex-wrap items-center gap-1.5 pt-0.5">
+                <span className="text-[10px] font-black text-slate-400 uppercase tracking-wider mr-1">
+                  Ply:
+                </span>
+
+                <button
+                  type="button"
+                  onClick={() => setEditPickerPlyFilter('ALL')}
+                  className={`px-2.5 py-0.5 rounded-full text-xs font-bold cursor-pointer transition ${
+                    editPickerPlyFilter === 'ALL'
+                      ? 'bg-amber-900 dark:bg-amber-600 text-white'
+                      : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 hover:bg-slate-200'
+                  }`}
+                >
+                  All Ply
+                </button>
+
+                {editPickerUniquePlys.map(pVal => {
+                  const count = availableReelsForEdit.filter(r =>
+                    (editPickerProductFilter === 'ALL' || r.product === editPickerProductFilter) &&
+                    (editPickerGsmFilter === 'ALL' || r.gsm === editPickerGsmFilter) &&
+                    (editPickerSizeFilter === 'ALL' || r.size === editPickerSizeFilter) &&
+                    r.ply === pVal
+                  ).length;
+                  return (
+                    <button
+                      key={pVal}
+                      type="button"
+                      onClick={() => setEditPickerPlyFilter(pVal)}
+                      className={`px-2.5 py-0.5 rounded-full text-xs font-bold cursor-pointer transition ${
+                        editPickerPlyFilter === pVal
+                          ? 'bg-amber-600 text-white shadow-xs'
+                          : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 hover:bg-slate-200'
+                      }`}
+                    >
+                      {pVal} Ply ({count})
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+
+            {/* Reels Grid / Table Scroll Area */}
+            <div className="flex-1 overflow-y-auto border border-slate-200 dark:border-slate-800 rounded-2xl max-h-80 min-h-[220px]">
+              {filteredAvailableReelsForEdit.length === 0 ? (
+                <div className="py-16 text-center text-slate-400 space-y-2">
+                  <Package className="h-10 w-10 mx-auto opacity-40 text-slate-400" />
+                  <p className="text-xs font-bold">No in-stock reels match your search/filter criteria.</p>
+                  <p className="text-[10px] text-slate-500">Try clearing your filters or check if reels are already in challans.</p>
+                </div>
+              ) : editPickerViewMode === 'grid' ? (
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2.5 p-3">
+                  {filteredAvailableReelsForEdit.map(reel => {
+                    const isSelected = editPickerSelectedNos.includes(reel.reelNo);
+                    return (
+                      <div
+                        key={reel.reelNo}
+                        onClick={() => handleTogglePickerReel(reel.reelNo)}
+                        className={`p-3 rounded-xl border transition cursor-pointer select-none relative flex flex-col justify-between gap-2 ${
+                          isSelected
+                            ? 'bg-emerald-50/80 dark:bg-[#008163]/15 border-[#008163] shadow-xs'
+                            : 'bg-white dark:bg-slate-900/70 border-slate-200 dark:border-slate-800 hover:border-slate-300 dark:hover:border-slate-700'
+                        }`}
+                      >
+                        <div className="flex items-start justify-between">
+                          <div className="flex items-center gap-2">
+                            <div className={`p-1 rounded-md transition ${isSelected ? 'bg-[#008163] text-white' : 'bg-slate-100 dark:bg-slate-800 text-slate-400'}`}>
+                              {isSelected ? <CheckSquare className="h-4 w-4" /> : <Square className="h-4 w-4" />}
+                            </div>
+                            <span className="font-mono font-black text-xs text-slate-900 dark:text-white">
+                              {reel.reelNo}
+                            </span>
+                          </div>
+                          <span className="px-2 py-0.5 rounded-md bg-emerald-100 dark:bg-emerald-950/60 text-emerald-800 dark:text-emerald-300 font-mono font-black text-xs">
+                            {reel.weight} kg
+                          </span>
+                        </div>
+
+                        <div className="grid grid-cols-3 gap-1 text-[10px] pt-1.5 border-t border-slate-100 dark:border-slate-800/80 font-semibold text-slate-600 dark:text-slate-400">
+                          <div>
+                            <span className="text-[8px] text-slate-400 uppercase block font-bold">Product</span>
+                            <span className="truncate block font-bold text-slate-800 dark:text-slate-200">{reel.product}</span>
+                          </div>
+                          <div>
+                            <span className="text-[8px] text-slate-400 uppercase block font-bold">GSM / Size</span>
+                            <span>{reel.gsm}G &bull; {reel.size}cm</span>
+                          </div>
+                          <div className="text-right">
+                            <span className="text-[8px] text-slate-400 uppercase block font-bold">QC Grade</span>
+                            <span className={`font-black ${reel.qcGrade === 'B' ? 'text-amber-600' : 'text-[#008163] dark:text-emerald-400'}`}>
+                              Grade {reel.qcGrade || 'A'}
+                            </span>
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              ) : (
+                /* High-Density Compact Table View */
+                <table className="w-full text-left text-xs border-collapse">
+                  <thead>
+                    <tr className="border-b border-slate-100 dark:border-slate-800 text-[10px] font-black uppercase text-slate-400 bg-slate-50/50 dark:bg-slate-900/30 sticky top-0 bg-white dark:bg-surface-dark z-10">
+                      <th className="py-2.5 px-3 w-10">Select</th>
+                      <th className="py-2.5 px-3">Reel Number</th>
+                      <th className="py-2.5 px-3">Product</th>
+                      <th className="py-2.5 px-3">GSM</th>
+                      <th className="py-2.5 px-3">Size</th>
+                      <th className="py-2.5 px-3">Ply</th>
+                      <th className="py-2.5 px-3">Weight</th>
+                      <th className="py-2.5 px-3 text-right">QC Grade</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-slate-100 dark:divide-slate-800/80">
+                    {filteredAvailableReelsForEdit.map(reel => {
+                      const isSelected = editPickerSelectedNos.includes(reel.reelNo);
+                      return (
+                        <tr
+                          key={reel.reelNo}
+                          onClick={() => handleTogglePickerReel(reel.reelNo)}
+                          className={`cursor-pointer transition ${
+                            isSelected
+                              ? 'bg-emerald-50/80 dark:bg-[#008163]/20'
+                              : 'hover:bg-slate-50/80 dark:hover:bg-slate-800/30'
+                          }`}
+                        >
+                          <td className="py-2 px-3">
+                            <div className={`p-1 w-6 h-6 rounded-md flex items-center justify-center transition ${isSelected ? 'bg-[#008163] text-white' : 'bg-slate-100 dark:bg-slate-800 text-slate-400'}`}>
+                              {isSelected ? <CheckSquare className="h-3.5 w-3.5" /> : <Square className="h-3.5 w-3.5" />}
+                            </div>
+                          </td>
+                          <td className="py-2 px-3 font-mono font-bold text-slate-900 dark:text-white">{reel.reelNo}</td>
+                          <td className="py-2 px-3 font-bold text-slate-700 dark:text-slate-300">{reel.product}</td>
+                          <td className="py-2 px-3 font-semibold text-slate-600 dark:text-slate-400">{reel.gsm} GSM</td>
+                          <td className="py-2 px-3 font-semibold text-slate-600 dark:text-slate-400">{reel.size} cm</td>
+                          <td className="py-2 px-3 font-semibold text-slate-600 dark:text-slate-400">{reel.ply} Ply</td>
+                          <td className="py-2 px-3 font-mono font-black text-emerald-600 dark:text-emerald-400">{reel.weight} kg</td>
+                          <td className="py-2 px-3 text-right font-black">
+                            <span className={reel.qcGrade === 'B' ? 'text-amber-600' : 'text-[#008163] dark:text-emerald-400'}>
+                              Grade {reel.qcGrade || 'A'}
+                            </span>
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              )}
+            </div>
+
+            {/* Bottom Action Bar */}
+            <div className="flex items-center justify-between pt-3 border-t border-slate-100 dark:border-slate-800">
+              <div className="text-xs font-bold text-slate-600 dark:text-slate-400">
+                Selected: <strong className="text-[#008163] dark:text-emerald-400 font-mono text-sm">{editPickerSelectedNos.length} reels</strong>
+                {editPickerSelectedNos.length > 0 && (
+                  <span className="text-slate-500 font-mono ml-2">
+                    ({reels.filter(r => editPickerSelectedNos.includes(r.reelNo)).reduce((s, r) => s + (r.weight || 0), 0).toLocaleString()} kg)
+                  </span>
+                )}
+              </div>
+
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={() => setIsEditStockPickerOpen(false)}
+                  className="px-4 py-2 border border-slate-200 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-300 font-bold rounded-xl text-xs transition cursor-pointer"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="button"
+                  onClick={handleConfirmAddFromStockPicker}
+                  disabled={editPickerSelectedNos.length === 0}
+                  className={`px-5 py-2 rounded-xl text-xs font-black uppercase tracking-wider transition cursor-pointer flex items-center gap-1.5 shadow-md ${
+                    editPickerSelectedNos.length === 0
+                      ? 'bg-slate-200 dark:bg-slate-800 text-slate-400 cursor-not-allowed'
+                      : 'bg-[#008163] hover:bg-[#006e54] text-white shadow-[#008163]/25'
+                  }`}
+                >
+                  <Check className="h-4 w-4" />
+                  <span>Add Selected ({editPickerSelectedNos.length}) to Challan</span>
+                </button>
+              </div>
+            </div>
+          </div>
         </div>
       )}
 

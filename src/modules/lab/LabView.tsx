@@ -119,6 +119,88 @@ export const LabView: React.FC = () => {
     });
   };
 
+  const handleFillRollPreset = (presetRoll: string) => {
+    if (presetRoll === 'R-20260822-0001') {
+      setProduct('NAPKIN TISSUE');
+      setRollNo('R-20260822-0001');
+      setShift('A');
+      setDateStr('2026-08-22');
+      setTime('08:15');
+      setTargetGsm(18);
+      setWeight(4850);
+      setSpeed(135);
+      setCrepingPct(18.50);
+      setGsmSamples([17.9, 18.1, 18.0, 18.2, 17.8, 18.1, 18.0, 18.3, 17.9, 18.0, 18.1, 18.0, 17.9, 18.1]);
+      setLabResultGsm(18.0);
+      setMoisturePct(5.50);
+      setCaliperMm(85);
+      setBulkCcGm(4.90);
+      setBreakingLengthMd(1.910);
+      setBreakingLengthCd(0.725);
+      setBrightnessPct(85.5);
+      setTearMd(8.50);
+      setTearCd(1.95);
+      setTensileDryMd(310.00);
+      setTensileDryCd(118.50);
+      setStretchDryMd(2.80);
+      setStretchDryCd(1.70);
+      setQcStatus('GRADE_A');
+      setRemarks('Sample tested on 2026-08-22. Exceeds tensile strength, moisture balance, brightness (85.5%) & 18 GSM quality standards with Grade-A clearance.');
+    } else if (presetRoll === 'R-20260812-0001') {
+      setProduct('NAPKIN TISSUE');
+      setRollNo('R-20260812-0001');
+      setShift('A');
+      setDateStr('2026-08-12');
+      setTime('07:30');
+      setTargetGsm(16);
+      setWeight(4500);
+      setSpeed(135);
+      setCrepingPct(18.00);
+      setGsmSamples([15.9, 16.1, 16.0, 16.2, 15.8, 16.1, 16.0, 16.3, 15.9, 16.0, 16.1, 16.0, 15.9, 16.1]);
+      setLabResultGsm(16.0);
+      setMoisturePct(5.40);
+      setCaliperMm(82);
+      setBulkCcGm(4.85);
+      setBreakingLengthMd(1.880);
+      setBreakingLengthCd(0.710);
+      setBrightnessPct(82.5);
+      setTearMd(8.20);
+      setTearCd(1.85);
+      setTensileDryMd(305.50);
+      setTensileDryCd(115.20);
+      setStretchDryMd(2.75);
+      setStretchDryCd(1.65);
+      setQcStatus('GRADE_A');
+      setRemarks('Sample passed all physical strength, moisture & 16 GSM quality benchmarks with Grade-A clearance.');
+    } else if (presetRoll === '11') {
+      setProduct('NAPKIN');
+      setRollNo('11');
+      setShift('A');
+      setDateStr('2026-08-03');
+      setTime('07:50');
+      setTargetGsm(16);
+      setWeight(500);
+      setSpeed(130);
+      setCrepingPct(18.00);
+      setGsmSamples([16.1, 16.6, 16.5, 16.7, 16.9, 17.1, 16.5, 16.6, 16.4, 16.4, 16.6, 16.3, 16.1, 16.1]);
+      setLabResultGsm(16.5);
+      setMoisturePct(5.60);
+      setCaliperMm(80);
+      setBulkCcGm(4.85);
+      setBreakingLengthMd(1.867);
+      setBreakingLengthCd(0.701);
+      setBrightnessPct(81.4);
+      setTearMd(8.00);
+      setTearCd(1.80);
+      setTensileDryMd(302.20);
+      setTensileDryCd(113.47);
+      setStretchDryMd(2.70);
+      setStretchDryCd(1.60);
+      setQcStatus('GRADE_A');
+      setRemarks('Sample meets all physical strength, moisture & GSM quality benchmarks.');
+    }
+  };
+
   const handleSaveReport = (e: React.FormEvent) => {
     e.preventDefault();
     setSuccessMsg('');
@@ -251,7 +333,7 @@ export const LabView: React.FC = () => {
               setErrorMsg('');
               setIsModalOpen(true);
             }}
-            className="px-6 py-3 bg-gradient-to-r from-purple-600 via-indigo-600 to-blue-600 hover:from-purple-700 hover:to-indigo-700 text-white font-black rounded-2xl text-xs uppercase tracking-wider shadow-lg shadow-purple-500/25 transition-all hover:scale-[1.01] active:scale-[0.99] cursor-pointer flex items-center justify-center gap-2"
+            className="px-6 py-3 bg-[#008163] hover:bg-[#006e54] text-white font-black rounded-2xl text-xs uppercase tracking-wider shadow-lg shadow-[#008163]/25 transition-all hover:scale-[1.01] active:scale-[0.99] cursor-pointer flex items-center justify-center gap-2"
           >
             <Plus className="h-4 w-4" />
             <span>Create New Paper Test Report</span>
@@ -497,9 +579,36 @@ export const LabView: React.FC = () => {
               
               {/* Section 1: Header Metadata Parameters */}
               <div className="bg-slate-50 dark:bg-slate-900/60 border border-slate-200 dark:border-slate-800 rounded-2xl p-4 space-y-3">
-                <h4 className="text-xs font-black text-purple-600 dark:text-purple-400 uppercase tracking-wider flex items-center gap-1.5">
-                  <Sliders className="h-3.5 w-3.5" /> 1. Header Roll Parameters
-                </h4>
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-slate-200/80 dark:border-slate-800 pb-2">
+                  <h4 className="text-xs font-black text-[#008163] dark:text-teal-400 uppercase tracking-wider flex items-center gap-1.5">
+                    <Sliders className="h-3.5 w-3.5" /> 1. Header Roll Parameters
+                  </h4>
+                  <div className="flex items-center gap-1.5 flex-wrap">
+                    <span className="text-[10px] font-black text-slate-400 uppercase">Autofill:</span>
+                    <button
+                      type="button"
+                      onClick={() => handleFillRollPreset('R-20260822-0001')}
+                      className="px-2.5 py-1 rounded-lg bg-teal-50 dark:bg-teal-950/60 text-teal-800 dark:text-teal-300 border border-teal-300 dark:border-teal-700 text-[10px] font-black hover:scale-105 active:scale-95 transition cursor-pointer flex items-center gap-1 shadow-2xs"
+                      title="Autofill certified lab test for Roll #R-20260822-0001"
+                    >
+                      <span>✨ Roll #R-20260822-0001 (18 GSM)</span>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => handleFillRollPreset('R-20260812-0001')}
+                      className="px-2 py-1 rounded-lg bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-700 text-[10px] font-bold hover:scale-105 active:scale-95 transition cursor-pointer"
+                    >
+                      <span>Roll #R-20260812-0001</span>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => handleFillRollPreset('11')}
+                      className="px-2 py-1 rounded-lg bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-700 text-[10px] font-bold hover:scale-105 active:scale-95 transition cursor-pointer"
+                    >
+                      <span>Roll #11</span>
+                    </button>
+                  </div>
+                </div>
                 
                 <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 text-xs">
                   <div>
@@ -841,7 +950,7 @@ export const LabView: React.FC = () => {
                 </button>
                 <button
                   type="submit"
-                  className="px-6 py-3 bg-gradient-to-r from-purple-600 via-indigo-600 to-blue-600 text-white font-black rounded-2xl text-xs uppercase tracking-wider shadow-lg shadow-purple-500/25 cursor-pointer hover:scale-[1.01] active:scale-[0.99] transition"
+                  className="px-6 py-3 bg-[#008163] hover:bg-[#006e54] text-white font-black rounded-2xl text-xs uppercase tracking-wider shadow-lg shadow-[#008163]/25 cursor-pointer hover:scale-[1.01] active:scale-[0.99] transition"
                 >
                   Save & Issue Paper Test Report
                 </button>

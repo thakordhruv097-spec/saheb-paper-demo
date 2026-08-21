@@ -416,7 +416,7 @@ export const RawMaterialView: React.FC = () => {
             <div className="flex justify-end pt-1">
               <button
                 type="submit"
-                className="w-full sm:w-auto px-8 py-3 bg-gradient-to-br from-emerald-700 to-teal-600 hover:from-emerald-800 hover:to-teal-700 text-white font-black rounded-2xl text-xs uppercase tracking-wider shadow-lg shadow-emerald-700/25 transition-all hover:scale-[1.01] active:scale-[0.99] cursor-pointer flex items-center justify-center gap-2"
+                className="w-full sm:w-auto px-8 py-3 bg-[#008163] hover:bg-[#006e54] text-white font-black rounded-2xl text-xs uppercase tracking-wider shadow-lg shadow-[#008163]/25 transition-all hover:scale-[1.01] active:scale-[0.99] cursor-pointer flex items-center justify-center gap-2"
               >
                 <Plus className="h-4 w-4" />
                 <span>Confirm Inward</span>
