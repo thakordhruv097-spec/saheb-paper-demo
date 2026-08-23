@@ -133,7 +133,7 @@ export const RoleManagementView: React.FC = () => {
             <div className="p-2 rounded-xl bg-white/10 text-white border border-white/20">
               <ShieldCheck className="h-5 w-5" />
             </div>
-            <h2 className="text-xl font-black tracking-tight">Role Management & Module Permission Matrix</h2>
+            <h1 className="text-xl font-black tracking-tight">Role Management &amp; Module Permission Matrix</h1>
           </div>
           <p className="text-xs text-slate-300 font-medium">
             Granularly assign ERP modules to specific worker profiles and simulate active worker sessions to test permissions
@@ -181,29 +181,29 @@ export const RoleManagementView: React.FC = () => {
                   <div>
                     <div className="flex items-center gap-2 flex-wrap">
                       <h3 className="text-base font-black text-slate-900 dark:text-white tracking-tight">{u.displayName}</h3>
-                      <span className="px-2.5 py-0.5 rounded-lg bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 text-[10px] font-mono font-bold uppercase border border-slate-200 dark:border-slate-700">
+                      <span className="px-2.5 py-0.5 rounded-lg bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 text-xs font-semibold uppercase border border-slate-200 dark:border-slate-700">
                         {empId}
                       </span>
-                      <span className="px-2.5 py-0.5 rounded-full bg-emerald-50 dark:bg-emerald-950/60 text-emerald-600 dark:text-emerald-400 text-[10px] font-extrabold uppercase border border-emerald-200 dark:border-emerald-800/60">
+                      <span className="px-2.5 py-0.5 rounded-full bg-emerald-50 dark:bg-emerald-950/60 text-emerald-600 dark:text-emerald-400 text-xs font-bold border border-emerald-200 dark:border-emerald-800/60">
                         Active
                       </span>
                     </div>
-                    <p className="text-xs font-extrabold text-primary dark:text-blue-400 mt-0.5">{designation}</p>
+                    <p className="text-xs font-bold text-primary dark:text-blue-400 mt-0.5">{designation}</p>
                   </div>
                 </div>
 
                 {/* RIGHT ACTIONS: COUNTER & SIMULATE BUTTON */}
                 <div className="flex items-center gap-3 self-start md:self-auto">
-                  <div className="px-4 py-1.5 rounded-full bg-slate-100 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-slate-800 dark:text-slate-200 text-xs font-black tracking-wide">
+                  <div className="px-3.5 py-1.5 rounded-full bg-slate-100 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-slate-800 dark:text-slate-200 text-xs font-bold tracking-wide">
                     {activeCount} / 13 Modules Active
                   </div>
 
                   <button
                     onClick={() => handleSimulateLogin(u)}
-                    className={`px-4 py-2 rounded-2xl text-xs font-black transition cursor-pointer flex items-center gap-1.5 shadow-sm active:scale-95 ${
+                    className={`px-4 py-2 rounded-xl text-xs font-bold transition cursor-pointer flex items-center gap-1.5 shadow-xs active:scale-95 ${
                       isCurrent
                         ? 'bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400 border border-slate-200 dark:border-slate-700 cursor-default'
-                        : 'bg-gradient-to-br from-cyan-600 to-sky-700 hover:from-cyan-700 hover:to-sky-800 text-white uppercase tracking-wider shadow-md shadow-sky-700/25 transition cursor-pointer'
+                        : 'bg-[#0F52BA] hover:bg-blue-700 text-white shadow-md shadow-blue-700/20 transition cursor-pointer'
                     }`}
                   >
                     {isCurrent ? (
@@ -222,12 +222,12 @@ export const RoleManagementView: React.FC = () => {
               </div>
 
               {/* TOGGLE SUBHEADER */}
-              <div className="text-[10px] font-black uppercase tracking-wider text-slate-500 dark:text-slate-400 font-sans">
-                TOGGLE MODULE PERMISSIONS FOR {u.displayName.toUpperCase()}:
+              <div className="text-xs font-bold text-slate-500 dark:text-slate-400 font-sans">
+                Module Permissions for {u.displayName}:
               </div>
 
               {/* 13 MODULE CHIPS GRID */}
-              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3">
+              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-2.5">
                 {MODULES_13.map(mod => {
                   const isActive = activeModules.includes(mod.key);
 
@@ -235,10 +235,10 @@ export const RoleManagementView: React.FC = () => {
                     <button
                       key={mod.key}
                       onClick={() => handleToggleModule(u, mod.key)}
-                      className={`px-3.5 py-2.5 rounded-full border text-xs font-bold transition-all cursor-pointer flex items-center gap-2 select-none active:scale-95 truncate ${
+                      className={`px-3.5 py-2 rounded-xl border text-xs font-bold transition-all cursor-pointer flex items-center gap-2 select-none active:scale-95 truncate ${
                         isActive
-                          ? 'bg-gradient-to-br from-blue-700 to-blue-900 hover:from-blue-800 hover:to-blue-950 text-white border-blue-600 shadow-sm'
-                          : 'bg-slate-100 hover:bg-slate-200/80 dark:bg-slate-800/70 dark:hover:bg-slate-800 text-slate-600 dark:text-slate-400 border-slate-200 dark:border-slate-700/80'
+                          ? 'bg-[#0F52BA] text-white border-blue-600 shadow-2xs hover:bg-blue-700'
+                          : 'bg-slate-100 hover:bg-slate-200/80 dark:bg-slate-800/70 dark:hover:bg-slate-800 text-slate-600 dark:text-slate-300 border-slate-200 dark:border-slate-700/80'
                       }`}
                     >
                       {isActive ? (

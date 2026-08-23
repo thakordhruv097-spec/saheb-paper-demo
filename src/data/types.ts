@@ -61,6 +61,7 @@ export interface PartyItem {
   contact: string;
   address: string;
 }
+export type Party = PartyItem;
 
 export interface VendorItem {
   id: string;
@@ -75,6 +76,7 @@ export interface VehicleItem {
   driverName: string;
   driverContact: string;
 }
+export type Vehicle = VehicleItem;
 
 export interface PulpFormula {
   id: string;
@@ -124,6 +126,7 @@ export interface Reel {
   status: ReelStatus;
   qcGrade: QCGrade;
   productionDate: string; // YYYY-MM-DD HH:MM
+  challanNo?: string;
   qcInspector?: string;
   qcTimestamp?: string;
   qcGsmResult?: number;
@@ -195,7 +198,9 @@ export interface PackingSlip {
   reelNos: string[];
   driverSignature: string;
   receiverSignature: string;
-  status: 'DRAFT' | 'DISPATCHED';
+  status: 'DRAFT' | 'DISPATCHED' | 'CONFIRMED';
+  dispatchDate?: string;
+  dispatchTime?: string;
 }
 
 export interface StoreItem {

@@ -232,11 +232,6 @@ function formatYMD(d: Date): string {
 
 function seedOneMonthData(): void {
   const today = new Date();
-  const todayStr = formatYMD(today);
-  const seededKey = `saheb_one_month_seeded_v4_${todayStr}`;
-  if (localStorage.getItem(seededKey)) return;
-  localStorage.setItem(seededKey, 'true');
-
   const formulas: PulpFormula[] = [];
   const rolls: MachineRoll[] = [];
   const reels: Reel[] = [];
@@ -634,9 +629,11 @@ export function initializeStorage() {
     console.error(e);
   }
 
-  // Seed one month of operational history if not already present
-  if (!localStorage.getItem('saheb_one_month_seeded_v2')) {
+  // Seed one month of operational history if not already present or sparse
+  const existingRolls = getJSON<MachineRoll[]>(KEYS.ROLLS, []);
+  if (existingRolls.length < 20 || !localStorage.getItem('saheb_one_month_seeded_v5')) {
     seedOneMonthData();
+    localStorage.setItem('saheb_one_month_seeded_v5', 'true');
   }
 }
 

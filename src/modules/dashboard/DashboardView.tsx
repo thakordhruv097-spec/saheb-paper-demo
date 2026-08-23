@@ -39,13 +39,6 @@ import {
   Calendar,
   ChevronLeft,
   ChevronRight,
-  Gauge,
-  Clock,
-  FlaskConical,
-  QrCode,
-  MoreHorizontal,
-  Layers,
-  FileText,
 } from 'lucide-react';
 
 import { useDateFilter } from '../../context/DateFilterContext';
@@ -54,13 +47,7 @@ export const DashboardView: React.FC = () => {
   const { user } = useAuth();
   const { t } = useTranslation();
   const navigate = useNavigate();
-  const { timeframe, selectedDate, dateTick, systemToday } = useDateFilter();
-
-  // Contextual Active Shift ('Shift A' from 08:00 to 20:00, 'Shift B' from 20:00 to 08:00)
-  const activeShift = useMemo(() => {
-    const currentHour = new Date().getHours();
-    return currentHour >= 8 && currentHour < 20 ? 'Shift A' : 'Shift B';
-  }, []);
+  const { timeframe, setTimeframe, selectedDate, dateTick, systemToday } = useDateFilter();
 
   const [period, setPeriod] = useState<'month' | 'year'>('month');
   const [refreshKey, setRefreshKey] = useState(0);
@@ -253,11 +240,17 @@ export const DashboardView: React.FC = () => {
         return { label: rng.label, orders: orderCount || wRolls.length, weight };
       });
 
+      const totalWeight = calculated.reduce((sum, c) => sum + c.weight, 0);
       const maxW = Math.max(...calculated.map(c => c.weight), 1);
-      return calculated.map(c => ({
-        ...c,
-        progress: c.weight > 0 ? Math.min(100, Math.max(12, Math.round((c.weight / maxW) * 100))) : 0,
-      }));
+      return calculated.map(c => {
+        const share = totalWeight > 0 ? ((c.weight / totalWeight) * 100).toFixed(1) : '0.0';
+        const trend = c.weight > 0 ? `+${share}% share` : '0 kg / pending';
+        return {
+          ...c,
+          trend,
+          progress: c.weight > 0 ? Math.min(100, Math.max(12, Math.round((c.weight / maxW) * 100))) : 0,
+        };
+      });
     }
 
     // Period Year
@@ -275,11 +268,17 @@ export const DashboardView: React.FC = () => {
       };
     });
 
+    const totalWeight = calculated.reduce((sum, c) => sum + c.weight, 0);
     const maxW = Math.max(...calculated.map(c => c.weight), 1);
-    return calculated.map(c => ({
-      ...c,
-      progress: c.weight > 0 ? Math.min(100, Math.max(8, Math.round((c.weight / maxW) * 100))) : 0,
-    }));
+    return calculated.map(c => {
+      const share = totalWeight > 0 ? ((c.weight / totalWeight) * 100).toFixed(1) : '0.0';
+      const trend = c.weight > 0 ? `+${share}% share` : '0 kg / pending';
+      return {
+        ...c,
+        trend,
+        progress: c.weight > 0 ? Math.min(100, Math.max(8, Math.round((c.weight / maxW) * 100))) : 0,
+      };
+    });
   }, [period, selectedDate, rolls, packingSlips]);
 
   const analyticsSummary = useMemo(() => {
@@ -1101,9 +1100,13 @@ export const DashboardView: React.FC = () => {
                     <h2 className="text-2xl sm:text-3xl font-extrabold tracking-tight">
                       Saheb Paper Mill Dashboard
                     </h2>
-                    <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-500/20 backdrop-blur-md text-[11px] font-black uppercase tracking-wider text-white border border-emerald-400/40 shadow-xs shrink-0 select-none">
+                    {/* Shift Badge in Header */}
+                    <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-500/20 backdrop-blur-md text-xs font-bold text-white border border-emerald-400/40 shadow-xs">
                       <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
-                      {activeShift} · Running
+                      {new Date().getHours() >= 8 && new Date().getHours() < 20 ? 'Shift A' : 'Shift B'} · Running
+                    </span>
+                    <span className="hidden sm:inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-white/20 dark:bg-white/10 backdrop-blur-md text-xs font-bold text-white border border-white/30 shadow-xs shrink-0">
+                      Live Telemetry
                     </span>
                   </div>
                   <p className="text-xs sm:text-sm text-blue-100/90 font-medium mt-1">
@@ -1146,7 +1149,7 @@ export const DashboardView: React.FC = () => {
                   <div className="text-xl sm:text-2xl font-black group-hover:scale-105 transition-transform origin-left mt-1">
                     {todayProductionKg.toLocaleString()} kg
                   </div>
-                  <div className="text-[11px] text-emerald-300 font-semibold mt-1 flex items-center gap-0.5 truncate">
+                  <div className="text-[11px] text-sky-200 font-semibold mt-1 flex items-center gap-0.5 truncate">
                     <ArrowUpRight className="h-3 w-3 shrink-0 group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-transform" />
                     <span>{filteredRolls.length} Rolls Produced</span>
                   </div>
@@ -1160,7 +1163,7 @@ export const DashboardView: React.FC = () => {
                   <div className="text-xl sm:text-2xl font-black group-hover:scale-105 transition-transform origin-left mt-1">
                     {totalInStockReels} reels
                   </div>
-                  <div className="text-[11px] text-emerald-300 font-semibold mt-1 flex items-center gap-0.5 truncate">
+                  <div className="text-[11px] text-sky-200 font-semibold mt-1 flex items-center gap-0.5 truncate">
                     <CheckCircle2 className="h-3 w-3 shrink-0" />
                     <span>Grade A &amp; B Ready</span>
                   </div>
@@ -1182,7 +1185,7 @@ export const DashboardView: React.FC = () => {
                   <div className="text-xl sm:text-2xl font-black group-hover:scale-105 transition-transform origin-left mt-1">
                     {dispatchedWeightKg.toLocaleString()} kg
                   </div>
-                  <div className="text-[11px] text-emerald-300 font-semibold mt-1 flex items-center gap-0.5 truncate">
+                  <div className="text-[11px] text-sky-200 font-semibold mt-1 flex items-center gap-0.5 truncate">
                     <ArrowUpRight className="h-3 w-3 shrink-0 group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-transform" />
                     <span>{reels.filter(r => r.status === 'DISPATCHED' && isDateInFilter(r.dispatchDetails?.dispatchDate || r.productionDate?.substring(0, 10) || '')).length} Reels Shipped</span>
                   </div>
@@ -1196,7 +1199,7 @@ export const DashboardView: React.FC = () => {
                   <div className="text-xl sm:text-2xl font-black group-hover:scale-105 transition-transform origin-left mt-1">
                     {operatingYieldPct}%
                   </div>
-                  <div className="text-[11px] text-emerald-300 font-semibold mt-1 flex items-center gap-0.5 truncate">
+                  <div className="text-[11px] text-sky-200 font-semibold mt-1 flex items-center gap-0.5 truncate">
                     <ArrowUpRight className="h-3 w-3 shrink-0 group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-transform" />
                     <span>{todayProductionKg > 0 ? `Broke: ${brokeWeightKg.toLocaleString()} kg` : 'Optimal Baseline'}</span>
                   </div>
@@ -1204,389 +1207,13 @@ export const DashboardView: React.FC = () => {
               </div>
             </div>
 
-            {/* 2. PRODUCTION EFFICIENCY SEMI-CIRCLE GAUGE WIDGET */}
-            {(() => {
-              const effVal = Math.min(100, Math.max(0, parseFloat(operatingYieldPct) || 94.2));
-              const gaugeStatus = effVal >= 90 ? 'Optimal' : effVal >= 75 ? 'Good' : 'Needs Attention';
-              const gaugeColor = effVal >= 90 ? '#10B981' : effVal >= 75 ? '#2563EB' : '#EF4444';
-              const arcRadius = 75;
-              const arcCircumference = Math.PI * arcRadius; // ~235.62
-              const arcOffset = arcCircumference * (1 - effVal / 100);
-
-              return (
-                <div className="bg-white dark:bg-surface-dark border border-slate-200 dark:border-slate-700/80 rounded-3xl p-6 shadow-sm space-y-4">
-                  <div className="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-3">
-                    <div className="flex items-center gap-2.5">
-                      <div className="p-2 rounded-xl bg-emerald-50 dark:bg-emerald-950/40 text-emerald-600 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-800">
-                        <Gauge className="h-5 w-5" />
-                      </div>
-                      <div>
-                        <h3 className="text-base font-extrabold text-slate-900 dark:text-white">
-                          Production Efficiency Gauge
-                        </h3>
-                        <p className="text-xs text-slate-400 font-medium">Real-time yield calculation: (Total Prod - Broke) / Total Prod × 100</p>
-                      </div>
-                    </div>
-
-                    <div className="flex items-center gap-2">
-                      <span className="hidden sm:inline-block text-[11px] font-mono font-bold text-slate-500 dark:text-slate-400 bg-slate-100 dark:bg-slate-800 px-3 py-1 rounded-full border border-slate-200 dark:border-slate-700">
-                        Broke: {brokeWeightKg.toLocaleString()} kg / Prod: {todayProductionKg.toLocaleString()} kg
-                      </span>
-                      <button
-                        type="button"
-                        onClick={() => navigate('/machine-production')}
-                        className="p-1.5 rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 transition cursor-pointer"
-                        title="Machine Settings"
-                      >
-                        <MoreHorizontal className="h-4 w-4" />
-                      </button>
-                    </div>
-                  </div>
-
-                  <div className="flex flex-col md:flex-row items-center justify-between gap-6 pt-2">
-                    {/* Semi-Circle SVG Gauge Container */}
-                    <div className="relative w-full max-w-[240px] flex flex-col items-center justify-center shrink-0">
-                      <svg className="w-full h-[120px] overflow-visible" viewBox="0 0 200 115">
-                        <defs>
-                          <linearGradient id="effGaugeGradient" x1="0%" y1="0%" x2="100%" y2="0%">
-                            <stop offset="0%" stopColor="#0F52BA" />
-                            <stop offset="60%" stopColor="#10B981" />
-                            <stop offset="100%" stopColor="#059669" />
-                          </linearGradient>
-                        </defs>
-                        {/* Background Gray Arc */}
-                        <path
-                          d="M 25 100 A 75 75 0 0 1 175 100"
-                          fill="none"
-                          stroke="currentColor"
-                          strokeWidth="14"
-                          strokeLinecap="round"
-                          className="text-slate-100 dark:text-slate-800"
-                        />
-                        {/* Foreground Progress Arc */}
-                        <path
-                          d="M 25 100 A 75 75 0 0 1 175 100"
-                          fill="none"
-                          stroke={effVal >= 90 ? "url(#effGaugeGradient)" : gaugeColor}
-                          strokeWidth="14"
-                          strokeLinecap="round"
-                          strokeDasharray={arcCircumference}
-                          strokeDashoffset={arcOffset}
-                          className="transition-all duration-1000 ease-out"
-                        />
-                      </svg>
-
-                      {/* Big Percentage & Label in Center */}
-                      <div className="absolute inset-0 flex flex-col items-center justify-end pb-1 text-center pointer-events-none">
-                        <span className="text-3xl sm:text-4xl font-black text-slate-900 dark:text-white font-sans tracking-tight leading-none">
-                          {operatingYieldPct}%
-                        </span>
-                        <div className="mt-1.5">
-                          <span
-                            className={`px-3 py-0.5 rounded-full text-[11px] font-black uppercase tracking-wider ${
-                              effVal >= 90
-                                ? 'bg-emerald-100 text-emerald-800 dark:bg-emerald-950/80 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800'
-                                : effVal >= 75
-                                ? 'bg-blue-100 text-blue-800 dark:bg-blue-950/80 dark:text-blue-300 border border-blue-200 dark:border-blue-800'
-                                : 'bg-rose-100 text-rose-800 dark:bg-rose-950/80 dark:text-rose-300 border border-rose-200 dark:border-rose-800'
-                            }`}
-                          >
-                            {gaugeStatus}
-                          </span>
-                        </div>
-                      </div>
-                    </div>
-
-                    {/* Right Side Sparkline Trend Area */}
-                    <div className="flex-1 w-full min-w-[220px] flex flex-col justify-between space-y-3 bg-slate-50/60 dark:bg-slate-900/40 p-4 rounded-2xl border border-slate-100 dark:border-slate-800">
-                      <div className="flex items-center justify-between">
-                        <div>
-                          <span className="text-[11px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">7-Day Efficiency Trend</span>
-                          <div className="flex items-center gap-1.5 mt-0.5">
-                            <ArrowUpRight className="h-4 w-4 text-emerald-500" />
-                            <span className="text-sm font-black text-emerald-600 dark:text-emerald-400 font-mono">+1.8% Yield Gain</span>
-                          </div>
-                        </div>
-                        <div className="text-right">
-                          <span className="text-[10px] text-slate-400 font-bold uppercase block">Target Benchmark</span>
-                          <span className="text-xs font-mono font-black text-slate-800 dark:text-slate-200">≥ 90.0% Optimal</span>
-                        </div>
-                      </div>
-
-                      {/* Smooth Sparkline SVG */}
-                      <div className="w-full h-16 relative">
-                        <svg className="w-full h-full overflow-visible" viewBox="0 0 240 60" preserveAspectRatio="none">
-                          <defs>
-                            <linearGradient id="effSparklineArea" x1="0" y1="0" x2="0" y2="1">
-                              <stop offset="0%" stopColor="#10B981" stopOpacity="0.35" />
-                              <stop offset="100%" stopColor="#10B981" stopOpacity="0.0" />
-                            </linearGradient>
-                          </defs>
-                          <path
-                            d="M 0 45 Q 30 40, 60 42 T 120 28 T 180 22 T 240 12 L 240 60 L 0 60 Z"
-                            fill="url(#effSparklineArea)"
-                          />
-                          <path
-                            d="M 0 45 Q 30 40, 60 42 T 120 28 T 180 22 T 240 12"
-                            fill="none"
-                            stroke="#10B981"
-                            strokeWidth="3"
-                            strokeLinecap="round"
-                          />
-                          <circle cx="240" cy="12" r="3.5" fill="#10B981" />
-                        </svg>
-                      </div>
-
-                      <div className="flex items-center justify-between text-[11px] text-slate-500 dark:text-slate-400 font-medium pt-1 border-t border-slate-200/60 dark:border-slate-800">
-                        <span>Day -6: 91.2%</span>
-                        <span>Day -3: 92.8%</span>
-                        <span className="font-bold text-emerald-600 dark:text-emerald-400">Current: {operatingYieldPct}%</span>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              );
-            })()}
-
-            {/* 3. ACTIVE ROLL QUEUE SECTION (TISSUE PRODUCTS WITH REAL GSM & STATUS) */}
-            <div className="space-y-4">
-              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
-                <div>
-                  <div className="flex items-center gap-2">
-                    <Layers className="h-5 w-5 text-primary dark:text-blue-400" />
-                    <h3 className="text-base sm:text-lg font-extrabold text-slate-900 dark:text-white">Active Roll Queue</h3>
-                  </div>
-                  <p className="text-xs text-slate-400 font-medium mt-0.5">Machine roll production in progress & scheduled queue (Napkin, Toilet, KT, Facial)</p>
-                </div>
-
-                <button
-                  onClick={() => navigate('/machine-production')}
-                  className="text-xs font-extrabold text-primary dark:text-blue-400 hover:underline cursor-pointer flex items-center gap-1 self-start sm:self-auto"
-                >
-                  <Plus className="h-3.5 w-3.5" />
-                  <span>Log New Machine Roll</span>
-                </button>
-              </div>
-
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-                {/* Roll 1: In Progress */}
-                <div className="bg-white dark:bg-surface-dark border border-slate-200 dark:border-slate-700/80 rounded-3xl p-5 shadow-sm space-y-3.5 hover:border-primary/50 transition">
-                  <div className="flex items-start justify-between gap-2">
-                    <div className="min-w-0">
-                      <span className="text-[11px] font-mono font-extrabold text-primary dark:text-blue-400 block truncate">
-                        {rolls[0]?.rollNo || `Roll #R-${selectedDate.replace(/-/g, '')}-01`}
-                      </span>
-                      <h4 className="text-sm font-black text-slate-900 dark:text-white truncate">
-                        Napkin Tissue 18 GSM
-                      </h4>
-                    </div>
-                    <div className="w-9 h-9 rounded-2xl bg-emerald-50 dark:bg-emerald-950/60 text-emerald-600 dark:text-emerald-400 flex items-center justify-center shrink-0 border border-emerald-200 dark:border-emerald-800">
-                      <Package className="h-5 w-5" />
-                    </div>
-                  </div>
-
-                  <div className="space-y-1.5">
-                    <div className="flex items-center justify-between text-xs">
-                      <span className="text-xl font-black text-slate-900 dark:text-white font-mono">
-                        1.1T <span className="text-xs text-slate-400 font-medium">/ 1.2T</span>
-                      </span>
-                      <span className="font-mono font-black text-emerald-600 dark:text-emerald-400 text-xs">
-                        90%
-                      </span>
-                    </div>
-                    <div className="w-full bg-slate-100 dark:bg-slate-800 h-2.5 rounded-full overflow-hidden">
-                      <div className="bg-gradient-to-r from-emerald-500 to-teal-500 h-full rounded-full transition-all duration-500" style={{ width: '90%' }} />
-                    </div>
-                  </div>
-
-                  <div className="flex items-center justify-between pt-1 text-[11px] border-t border-slate-100 dark:border-slate-800 text-slate-500 dark:text-slate-400">
-                    <span className="font-semibold">ETA 14:30 · Shift A</span>
-                    <span className="px-2 py-0.5 rounded-full text-[9px] font-black uppercase bg-emerald-100 text-emerald-800 dark:bg-emerald-950/60 dark:text-emerald-300 flex items-center gap-1">
-                      <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
-                      In Progress
-                    </span>
-                  </div>
-                </div>
-
-                {/* Roll 2: Queued */}
-                <div className="bg-white dark:bg-surface-dark border border-slate-200 dark:border-slate-700/80 rounded-3xl p-5 shadow-sm space-y-3.5 hover:border-primary/50 transition">
-                  <div className="flex items-start justify-between gap-2">
-                    <div className="min-w-0">
-                      <span className="text-[11px] font-mono font-extrabold text-slate-500 dark:text-slate-400 block truncate">
-                        {rolls[1]?.rollNo || `Roll #R-${selectedDate.replace(/-/g, '')}-02`}
-                      </span>
-                      <h4 className="text-sm font-black text-slate-900 dark:text-white truncate">
-                        Toilet Tissue 17 GSM
-                      </h4>
-                    </div>
-                    <div className="w-9 h-9 rounded-2xl bg-blue-50 dark:bg-blue-950/60 text-primary dark:text-blue-400 flex items-center justify-center shrink-0 border border-blue-200 dark:border-blue-800">
-                      <Package className="h-5 w-5" />
-                    </div>
-                  </div>
-
-                  <div className="space-y-1.5">
-                    <div className="flex items-center justify-between text-xs">
-                      <span className="text-xl font-black text-slate-900 dark:text-white font-mono">
-                        0.0T <span className="text-xs text-slate-400 font-medium">/ 1.0T</span>
-                      </span>
-                      <span className="font-mono font-bold text-slate-400 text-xs">
-                        Queue
-                      </span>
-                    </div>
-                    <div className="w-full bg-slate-100 dark:bg-slate-800 h-2.5 rounded-full overflow-hidden">
-                      <div className="bg-blue-500 h-full rounded-full" style={{ width: '0%' }} />
-                    </div>
-                  </div>
-
-                  <div className="flex items-center justify-between pt-1 text-[11px] border-t border-slate-100 dark:border-slate-800 text-slate-500 dark:text-slate-400">
-                    <span className="font-semibold">Sched 15:00 · Shift A</span>
-                    <span className="px-2 py-0.5 rounded-full text-[9px] font-black uppercase bg-amber-100 text-amber-800 dark:bg-amber-950/60 dark:text-amber-300">
-                      Queued
-                    </span>
-                  </div>
-                </div>
-
-                {/* Roll 3: Queued */}
-                <div className="bg-white dark:bg-surface-dark border border-slate-200 dark:border-slate-700/80 rounded-3xl p-5 shadow-sm space-y-3.5 hover:border-primary/50 transition">
-                  <div className="flex items-start justify-between gap-2">
-                    <div className="min-w-0">
-                      <span className="text-[11px] font-mono font-extrabold text-slate-500 dark:text-slate-400 block truncate">
-                        {`Roll #R-${selectedDate.replace(/-/g, '')}-03`}
-                      </span>
-                      <h4 className="text-sm font-black text-slate-900 dark:text-white truncate">
-                        Kitchen Towel (KT) 21 GSM
-                      </h4>
-                    </div>
-                    <div className="w-9 h-9 rounded-2xl bg-purple-50 dark:bg-purple-950/60 text-purple-600 dark:text-purple-400 flex items-center justify-center shrink-0 border border-purple-200 dark:border-purple-800">
-                      <Package className="h-5 w-5" />
-                    </div>
-                  </div>
-
-                  <div className="space-y-1.5">
-                    <div className="flex items-center justify-between text-xs">
-                      <span className="text-xl font-black text-slate-900 dark:text-white font-mono">
-                        0.0T <span className="text-xs text-slate-400 font-medium">/ 1.2T</span>
-                      </span>
-                      <span className="font-mono font-bold text-slate-400 text-xs">
-                        Queue
-                      </span>
-                    </div>
-                    <div className="w-full bg-slate-100 dark:bg-slate-800 h-2.5 rounded-full overflow-hidden">
-                      <div className="bg-purple-500 h-full rounded-full" style={{ width: '0%' }} />
-                    </div>
-                  </div>
-
-                  <div className="flex items-center justify-between pt-1 text-[11px] border-t border-slate-100 dark:border-slate-800 text-slate-500 dark:text-slate-400">
-                    <span className="font-semibold">Sched 17:30 · Shift B</span>
-                    <span className="px-2 py-0.5 rounded-full text-[9px] font-black uppercase bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300">
-                      Queued
-                    </span>
-                  </div>
-                </div>
-
-                {/* Roll 4: Queued */}
-                <div className="bg-white dark:bg-surface-dark border border-slate-200 dark:border-slate-700/80 rounded-3xl p-5 shadow-sm space-y-3.5 hover:border-primary/50 transition">
-                  <div className="flex items-start justify-between gap-2">
-                    <div className="min-w-0">
-                      <span className="text-[11px] font-mono font-extrabold text-slate-500 dark:text-slate-400 block truncate">
-                        {`Roll #R-${selectedDate.replace(/-/g, '')}-04`}
-                      </span>
-                      <h4 className="text-sm font-black text-slate-900 dark:text-white truncate">
-                        Facial Tissue 15 GSM
-                      </h4>
-                    </div>
-                    <div className="w-9 h-9 rounded-2xl bg-amber-50 dark:bg-amber-950/60 text-amber-600 dark:text-amber-400 flex items-center justify-center shrink-0 border border-amber-200 dark:border-amber-800">
-                      <Package className="h-5 w-5" />
-                    </div>
-                  </div>
-
-                  <div className="space-y-1.5">
-                    <div className="flex items-center justify-between text-xs">
-                      <span className="text-xl font-black text-slate-900 dark:text-white font-mono">
-                        0.0T <span className="text-xs text-slate-400 font-medium">/ 1.0T</span>
-                      </span>
-                      <span className="font-mono font-bold text-slate-400 text-xs">
-                        Queue
-                      </span>
-                    </div>
-                    <div className="w-full bg-slate-100 dark:bg-slate-800 h-2.5 rounded-full overflow-hidden">
-                      <div className="bg-amber-500 h-full rounded-full" style={{ width: '0%' }} />
-                    </div>
-                  </div>
-
-                  <div className="flex items-center justify-between pt-1 text-[11px] border-t border-slate-100 dark:border-slate-800 text-slate-500 dark:text-slate-400">
-                    <span className="font-semibold">Sched 20:00 · Shift B</span>
-                    <span className="px-2 py-0.5 rounded-full text-[9px] font-black uppercase bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300">
-                      Queued
-                    </span>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            {/* 4. QUICK ACTIONS SECTION (MATCHING REFERENCE PATTERN IN ENTERPRISE BLUE) */}
-            <div className="space-y-3.5">
-              <div className="flex items-center justify-between">
-                <div>
-                  <h3 className="text-base font-extrabold text-slate-900 dark:text-white">Quick Actions</h3>
-                  <p className="text-xs text-slate-400 font-medium">Instant operational shortcuts & telemetry access</p>
-                </div>
-              </div>
-
-              <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4">
-                <button
-                  type="button"
-                  onClick={() => navigate('/qr-scanner')}
-                  className="p-4 sm:p-5 rounded-2xl bg-gradient-to-br from-[#0F52BA] via-blue-600 to-indigo-700 text-white shadow-md hover:shadow-xl hover:scale-[1.02] active:scale-[0.98] transition flex flex-col items-center justify-center gap-2 cursor-pointer text-center group"
-                >
-                  <div className="p-2.5 rounded-xl bg-white/20 backdrop-blur-md group-hover:scale-110 transition-transform">
-                    <QrCode className="h-6 w-6 text-white" />
-                  </div>
-                  <span className="text-xs font-black tracking-tight">Scan Roll QR</span>
-                </button>
-
-                <button
-                  type="button"
-                  onClick={() => navigate('/machine-production')}
-                  className="p-4 sm:p-5 rounded-2xl bg-gradient-to-br from-[#0F52BA] via-blue-600 to-indigo-700 text-white shadow-md hover:shadow-xl hover:scale-[1.02] active:scale-[0.98] transition flex flex-col items-center justify-center gap-2 cursor-pointer text-center group"
-                >
-                  <div className="p-2.5 rounded-xl bg-white/20 backdrop-blur-md group-hover:scale-110 transition-transform">
-                    <Clock className="h-6 w-6 text-white" />
-                  </div>
-                  <span className="text-xs font-black tracking-tight">Add Downtime</span>
-                </button>
-
-                <button
-                  type="button"
-                  onClick={() => navigate('/lab')}
-                  className="p-4 sm:p-5 rounded-2xl bg-gradient-to-br from-[#0F52BA] via-blue-600 to-indigo-700 text-white shadow-md hover:shadow-xl hover:scale-[1.02] active:scale-[0.98] transition flex flex-col items-center justify-center gap-2 cursor-pointer text-center group"
-                >
-                  <div className="p-2.5 rounded-xl bg-white/20 backdrop-blur-md group-hover:scale-110 transition-transform">
-                    <FlaskConical className="h-6 w-6 text-white" />
-                  </div>
-                  <span className="text-xs font-black tracking-tight">Input Quality Lab</span>
-                </button>
-
-                <button
-                  type="button"
-                  onClick={() => navigate('/monthly-yearly-reporting')}
-                  className="p-4 sm:p-5 rounded-2xl bg-gradient-to-br from-[#0F52BA] via-blue-600 to-indigo-700 text-white shadow-md hover:shadow-xl hover:scale-[1.02] active:scale-[0.98] transition flex flex-col items-center justify-center gap-2 cursor-pointer text-center group"
-                >
-                  <div className="p-2.5 rounded-xl bg-white/20 backdrop-blur-md group-hover:scale-110 transition-transform">
-                    <BarChart2 className="h-6 w-6 text-white" />
-                  </div>
-                  <span className="text-xs font-black tracking-tight">View Reports</span>
-                </button>
-              </div>
-            </div>
-
-            {/* 5. MIDDLE SECTION: PRODUCTION ANALYTICS & LIVE ACTIVITY STREAM */}
+            {/* 2. MIDDLE SECTION: PRODUCTION ANALYTICS & LIVE ACTIVITY STREAM */}
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 items-stretch">
               <div className="lg:col-span-2 bg-white dark:bg-surface-dark border border-slate-200 dark:border-slate-700 rounded-2xl p-6 shadow-sm space-y-5">
                 <div className="flex items-center justify-between border-b pb-4 dark:border-slate-700">
                   <div>
                     <h3 className="text-base font-bold text-slate-900 dark:text-white">Production Performance Analytics</h3>
-                    <p className="text-xs text-slate-400 mt-0.5">Comprehensive mill output metrics & historical breakdown</p>
+                    <p className="text-xs text-slate-400 mt-0.5">Comprehensive mill output metrics &amp; historical breakdown</p>
                   </div>
 
                   {/* DYNAMIC THIS MONTH / THIS YEAR TOGGLE BUTTONS */}
@@ -1616,7 +1243,7 @@ export const DashboardView: React.FC = () => {
                   </div>
                 </div>
 
-                {/* DYNAMIC PROGRESS BARS */}
+                {/* DYNAMIC PROGRESS BARS WITH CLEAN TYPOGRAPHY */}
                 <div className="space-y-4">
                   {analyticsData.map(item => (
                     <div key={item.label} className="space-y-1.5">
@@ -1624,14 +1251,14 @@ export const DashboardView: React.FC = () => {
                         <span className="font-bold text-slate-800 dark:text-slate-200">
                           {item.label} <span className="font-normal text-slate-400 ml-2">• {item.orders} orders</span>
                         </span>
-                        <div className="flex items-center gap-3 font-mono">
-                          <span className="text-emerald-600 dark:text-emerald-400 font-bold">+12.5%</span>
-                          <span className="font-bold text-slate-900 dark:text-white">{(item.weight).toLocaleString()} kg</span>
+                        <div className="flex items-center gap-3 font-sans">
+                          <span className="text-primary dark:text-blue-400 font-bold text-xs">{item.trend}</span>
+                          <span className="font-black text-slate-900 dark:text-white">{(item.weight).toLocaleString()} kg</span>
                         </div>
                       </div>
                       <div className="w-full bg-slate-100 dark:bg-slate-800 h-7 rounded-lg overflow-hidden">
-                        <div className="bg-[#0F52BA] h-full rounded-lg flex items-center justify-end pr-3 transition-all duration-500" style={{ width: `${item.progress}%` }}>
-                          <span className="text-[11px] font-bold text-white font-mono">{item.progress}%</span>
+                        <div className="bg-[#0F52BA] h-full rounded-lg flex items-center justify-end pr-3 transition-all duration-500 shadow-xs" style={{ width: `${item.progress}%` }}>
+                          <span className="text-[11px] font-bold text-white">{item.progress}%</span>
                         </div>
                       </div>
                     </div>
@@ -1640,21 +1267,21 @@ export const DashboardView: React.FC = () => {
 
                 {/* DYNAMIC 4 MINI STAT CARDS */}
                 <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 pt-2">
-                  <div className="bg-blue-50/60 dark:bg-blue-950/20 border border-blue-100 dark:border-blue-900/40 rounded-xl p-3 text-center">
+                  <div className="bg-blue-50/70 dark:bg-blue-950/30 border border-blue-100 dark:border-blue-900/40 rounded-xl p-3 text-center">
                     <div className="text-base font-black text-[#0F52BA] dark:text-blue-400">{analyticsSummary.totalProd}</div>
-                    <div className="text-[10px] text-slate-500 font-medium">Total Production</div>
+                    <div className="text-[10px] text-slate-500 dark:text-slate-400 font-semibold">Total Production</div>
                   </div>
-                  <div className="bg-emerald-50/60 dark:bg-emerald-950/20 border border-emerald-100 dark:border-emerald-900/40 rounded-xl p-3 text-center">
-                    <div className="text-base font-black text-emerald-600 dark:text-emerald-400">{analyticsSummary.growth}</div>
-                    <div className="text-[10px] text-slate-500 font-medium">Growth Rate</div>
+                  <div className="bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700 rounded-xl p-3 text-center">
+                    <div className="text-base font-black text-slate-900 dark:text-white">{analyticsSummary.growth}</div>
+                    <div className="text-[10px] text-slate-500 dark:text-slate-400 font-semibold">Growth Rate</div>
                   </div>
-                  <div className="bg-purple-50/60 dark:bg-purple-950/20 border border-purple-100 dark:border-purple-900/40 rounded-xl p-3 text-center">
-                    <div className="text-base font-black text-purple-600 dark:text-purple-400">{analyticsSummary.avgOutput}</div>
-                    <div className="text-[10px] text-slate-500 font-medium">Avg Output</div>
+                  <div className="bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700 rounded-xl p-3 text-center">
+                    <div className="text-base font-black text-slate-900 dark:text-white">{analyticsSummary.avgOutput}</div>
+                    <div className="text-[10px] text-slate-500 dark:text-slate-400 font-semibold">Avg Output</div>
                   </div>
-                  <div className="bg-amber-50/60 dark:bg-amber-950/20 border border-amber-100 dark:border-amber-900/40 rounded-xl p-3 text-center">
-                    <div className="text-base font-black text-amber-600 dark:text-amber-400">{analyticsSummary.totalReels}</div>
-                    <div className="text-[10px] text-slate-500 font-medium">Total Reels</div>
+                  <div className="bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700 rounded-xl p-3 text-center">
+                    <div className="text-base font-black text-slate-900 dark:text-white">{analyticsSummary.totalReels}</div>
+                    <div className="text-[10px] text-slate-500 dark:text-slate-400 font-semibold">Total Reels</div>
                   </div>
                 </div>
               </div>
@@ -1697,11 +1324,20 @@ export const DashboardView: React.FC = () => {
                   style={{ maxHeight: period === 'month' ? '250px' : '440px' }}
                 >
                   {unifiedActivityStream.length === 0 ? (
-                    <div className="py-10 text-center space-y-2 border border-dashed border-slate-200 dark:border-slate-700 rounded-2xl">
-                      <Activity className="h-8 w-8 text-slate-300 mx-auto" />
-                      <p className="text-xs text-slate-500 font-medium">
-                        No operator activities recorded for {selectedDate} ({timeframe.toUpperCase()}).
-                      </p>
+                    <div className="py-12 px-4 text-center space-y-3 border border-dashed border-slate-200 dark:border-slate-700/80 rounded-2xl bg-slate-50/50 dark:bg-slate-900/30">
+                      <div className="w-10 h-10 rounded-2xl bg-slate-100 dark:bg-slate-800 text-slate-400 flex items-center justify-center mx-auto">
+                        <Activity className="h-5 w-5" />
+                      </div>
+                      <div>
+                        <p className="text-xs font-bold text-slate-700 dark:text-slate-300">No Operator Activity Logs</p>
+                        <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">No changes recorded for {selectedDate} ({timeframe.toUpperCase()}).</p>
+                      </div>
+                      <button
+                        onClick={() => setTimeframe('all')}
+                        className="px-3.5 py-1.5 rounded-xl bg-slate-200 dark:bg-slate-800 text-xs font-bold text-slate-700 dark:text-slate-200 hover:bg-slate-300 dark:hover:bg-slate-700 transition cursor-pointer"
+                      >
+                        View All Activity
+                      </button>
                     </div>
                   ) : (
                     unifiedActivityStream.slice(0, 10).map(item => (
@@ -1753,7 +1389,7 @@ export const DashboardView: React.FC = () => {
                       <h3 className="text-base font-extrabold text-slate-900 dark:text-white">
                         Shift Output Allocation
                       </h3>
-                      <p className="text-[11px] text-slate-400 font-medium">Production split across Shift A & B for {selectedDate}</p>
+                      <p className="text-xs text-slate-500 dark:text-slate-400 font-medium">Production split across Shift A &amp; B for {selectedDate}</p>
                     </div>
                   </div>
                   <span className="px-2.5 py-1 rounded-full bg-slate-100 dark:bg-slate-800 text-[10px] font-black text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-slate-700 font-mono">
@@ -2009,10 +1645,10 @@ export const DashboardView: React.FC = () => {
                       <Flame className="h-5 w-5" />
                     </div>
                     <div>
-                      <h3 className="text-base font-extrabold text-slate-900 dark:text-white">
-                        Boiler & Energy Telemetry
+                      <h3 className="text-base font-extrabold text-slate-900 dark:text-white truncate">
+                        Boiler &amp; Steam Telemetry
                       </h3>
-                      <p className="text-[11px] text-slate-400 font-medium">Steam pressure & fuel consumption</p>
+                      <p className="text-xs text-slate-500 dark:text-slate-400 font-medium">Steam pressure &amp; fuel consumption</p>
                     </div>
                   </div>
                   <span className="px-2.5 py-1 rounded-full bg-amber-100 dark:bg-amber-950/80 text-amber-700 dark:text-amber-300 text-[10px] font-black uppercase tracking-wider">

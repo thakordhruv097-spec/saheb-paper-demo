@@ -537,7 +537,7 @@ export const SystemMindMapView: React.FC = () => {
                     y={cardHeight / 2 + 4}
                     fill={text}
                     fontSize="11px"
-                    fontFamily="monospace, sans-serif"
+                    fontFamily="'Inter', sans-serif"
                     fontWeight={node.type === 'root' || node.type === 'module' ? 'bold' : 'normal'}
                   >
                     {node.label.length > 22 ? `${node.label.substring(0, 20)}...` : node.label}

@@ -88,7 +88,7 @@ export const DispatchedReelsVault: React.FC<DispatchedReelsVaultProps> = ({
       slip.reelNos.forEach(rNo => {
         if (!seenReelNos.has(rNo)) {
           seenReelNos.add(rNo);
-          const foundReel = reels.find(r => r.reelNo === rNo) || {
+          const foundReel: Reel = reels.find(r => r.reelNo === rNo) || {
             reelNo: rNo,
             parentRollNo: 'N/A',
             product: 'Napkin Tissue',
@@ -96,9 +96,11 @@ export const DispatchedReelsVault: React.FC<DispatchedReelsVaultProps> = ({
             size: 30,
             ply: 2,
             weight: 300,
+            dia: 1000,
             joint: 0,
             status: 'DISPATCHED',
             qcGrade: 'A',
+            productionDate: '2026-08-22 10:00',
           };
 
           list.push({

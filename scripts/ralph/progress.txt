@@ -1,0 +1,3 @@
+# Ralph Progress Log & Learnings
+
+- [US-001]: Initialized unified corporate blue palette (#0F52BA) and clean slate surfaces across Layout and DashboardView. Zero build errors verified.

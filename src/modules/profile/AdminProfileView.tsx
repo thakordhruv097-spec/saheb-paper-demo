@@ -95,7 +95,7 @@ export const AdminProfileView: React.FC<AdminProfileViewProps> = ({ defaultTab }
         <div className="flex items-center gap-3.5 relative z-10">
           <div className="space-y-0.5 min-w-0 flex-1">
             <div className="flex items-center gap-2 flex-wrap">
-              <h1 className="text-lg font-black tracking-tight truncate">{user.displayName}</h1>
+              <h2 className="text-lg font-black tracking-tight truncate">{user.displayName}</h2>
               <span className="px-2 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider bg-amber-400/20 text-amber-300 border border-amber-400/30">
                 Master Admin
               </span>

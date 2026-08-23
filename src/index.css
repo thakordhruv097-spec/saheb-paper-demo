@@ -3,72 +3,71 @@
 @variant dark (&:where(.dark, .dark *));
 
 @theme {
-  /* Nature-Inspired Teal Palette (Paper Industry Connection) */
-  --color-primary: #0d7c7c;
-  --color-primary-light: #7dd3d3;
-  --color-primary-dark: #0a5858;
-  --color-sage: #9dc5b8;
-  --color-accent: #0d7c7c;
-  --color-success: #4ade80;
-  --color-warning: #fb923c;
+  /* Corporate Saheb Blue Palette */
+  --color-primary: #0F52BA;
+  --color-primary-light: #3b82f6;
+  --color-primary-dark: #1d4ed8;
+  --color-accent: #2563eb;
+  --color-success: #10b981;
+  --color-warning: #f59e0b;
   --color-danger: #ef4444;
 
-  /* Light Mode Backgrounds */
-  --color-bg-light: #e8f5f2;
-  --color-bg-gradient-start: #d4ecec;
-  --color-bg-gradient-end: #e8f5f2;
+  /* Light Mode Backgrounds - Crisp Clean Slate / Pure White */
+  --color-bg-light: #f8fafc;
+  --color-bg-gradient-start: #f1f5f9;
+  --color-bg-gradient-end: #f8fafc;
   --color-surface-light: #ffffff;
-  --color-surface-tint: #f8fafa;
-  --color-border-light: #c7e7e7;
+  --color-surface-tint: #f8fafc;
+  --color-border-light: #e2e8f0;
 
-  /* Dark Mode Backgrounds */
-  --color-bg-dark: #0f2828;
-  --color-bg-dark-gradient-start: #1a3838;
-  --color-bg-dark-gradient-end: #0f2828;
-  --color-surface-dark: #1a3535;
-  --color-surface-dark-elevated: #2c4a4a;
-  --color-border-dark: #2c4a4a;
+  /* Dark Mode Backgrounds - Deep Slate & Midnight Navy */
+  --color-bg-dark: #0b1329;
+  --color-bg-dark-gradient-start: #0f172a;
+  --color-bg-dark-gradient-end: #0b1329;
+  --color-surface-dark: #131d38;
+  --color-surface-dark-elevated: #1e293b;
+  --color-border-dark: #1e293b;
 
   /* Text Colors */
-  --color-text-light-primary: #0f2828;
-  --color-text-light-secondary: #4a6363;
-  --color-text-dark-primary: #f8fafa;
-  --color-text-dark-secondary: #b8d4d4;
+  --color-text-light-primary: #0f172a;
+  --color-text-light-secondary: #64748b;
+  --color-text-dark-primary: #f8fafc;
+  --color-text-dark-secondary: #94a3b8;
 
-  /* Typography */
-  --font-sans: "Inter", system-ui, -apple-system, sans-serif;
-  --font-heading: "Inter", system-ui, -apple-system, sans-serif;
-  --font-mono: ui-monospace, "SF Mono", "Cascadia Mono", "Segoe UI Mono", monospace;
+  /* Typography - Clean Regular Sans-Serif Everywhere */
+  --font-sans: "Inter", "Plus Jakarta Sans", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  --font-heading: "Plus Jakarta Sans", "Inter", sans-serif;
+  --font-mono: "Inter", "Plus Jakarta Sans", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
 
   /* Spacing & Sizing (Mobile-First) */
   --spacing-touch-target: 44px;
   --radius-card: 16px;
   --radius-button: 9999px;
   --radius-input: 12px;
-  --shadow-card: 0 4px 12px rgba(13, 124, 124, 0.08);
-  --shadow-card-hover: 0 8px 24px rgba(13, 124, 124, 0.12);
+  --shadow-card: 0 4px 12px rgba(15, 82, 186, 0.06);
+  --shadow-card-hover: 0 8px 24px rgba(15, 82, 186, 0.12);
 }
 
-/* Keep Inter for consistency with existing design */
-.font-mono,
-[class*="font-mono"] {
-  font-family: ui-monospace, "SF Mono", "Cascadia Mono", "Segoe UI Mono", monospace !important;
+/* Systemic Fix: Ensure every numeric value, badge, and code class uses the same regular clean font */
+.font-mono, [class*="font-mono"], code, pre, kbd, samp {
+  font-family: "Inter", "Plus Jakarta Sans", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif !important;
+  font-feature-settings: normal !important;
+  letter-spacing: normal !important;
 }
 
-html,
-body,
-#root {
-  font-family: "Inter", sans-serif;
+html, body, #root {
+  font-family: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
   margin: 0;
   padding: 0;
   min-height: 100vh;
   background-color: #f8fafc;
 }
 
-html.dark,
-html.dark body,
-.dark #root {
-  background-color: #0f2828;
+html.dark, html.dark body, .dark #root {
+  background-color: #0b1329;
 }
 
 /* Remove native number input up/down count spinner arrows globally across the full demo */
@@ -141,50 +140,43 @@ input[type="number"] {
 }
 
 ::-webkit-scrollbar {
-  width: 9px;
-  height: 9px;
+  width: 8px;
+  height: 8px;
 }
-
 ::-webkit-scrollbar-track {
   background: #f1f5f9;
 }
-
 .dark ::-webkit-scrollbar-track,
 html.dark ::-webkit-scrollbar-track {
   background: #0b1329;
 }
-
 ::-webkit-scrollbar-thumb {
-  background: linear-gradient(180deg, #0d7c7c 0%, #0a5858 100%);
+  background: linear-gradient(180deg, #3b82f6 0%, #1d4ed8 100%);
   border-radius: 9999px;
   border: 1.5px solid #f1f5f9;
   background-clip: padding-box;
-  box-shadow: 0 0 6px rgba(13, 124, 124, 0.3);
+  box-shadow: 0 0 6px rgba(15, 82, 186, 0.25);
 }
-
 .dark ::-webkit-scrollbar-thumb,
 html.dark ::-webkit-scrollbar-thumb {
   border: 1.5px solid #0b1329;
-  box-shadow: 0 0 8px rgba(13, 124, 124, 0.4);
+  box-shadow: 0 0 8px rgba(15, 82, 186, 0.35);
 }
-
 ::-webkit-scrollbar-thumb:hover {
-  background: linear-gradient(180deg, #0a5858 0%, #0d7c7c 100%);
+  background: linear-gradient(180deg, #1d4ed8 0%, #0F52BA 100%);
 }
 
-/* Hide scrollbars completely & enforce teal background for login page */
+/* Hide scrollbars completely & enforce blue background for login page */
 html.login-active,
 body.login-active,
 #root:has(.login-page-container) {
-  background: linear-gradient(135deg, #d4ecec 0%, #e8f5f2 100%) !important;
+  background: linear-gradient(135deg, #0b1329 0%, #1e293b 100%) !important;
   min-height: 100vh !important;
   min-height: 100dvh !important;
   height: 100% !important;
   overflow: hidden !important;
-  -ms-overflow-style: none !important;
-  /* IE and Edge */
-  scrollbar-width: none !important;
-  /* Firefox */
+  -ms-overflow-style: none !important; /* IE and Edge */
+  scrollbar-width: none !important; /* Firefox */
 }
 
 .custom-scrollbar,
@@ -201,8 +193,7 @@ body.login-active::-webkit-scrollbar,
 .no-scrollbar::-webkit-scrollbar,
 .login-page-container::-webkit-scrollbar,
 .login-page-container *::-webkit-scrollbar {
-  display: none !important;
-  /* Chrome, Safari, Opera */
+  display: none !important; /* Chrome, Safari, Opera */
   width: 0px !important;
   height: 0px !important;
   background: transparent !important;
@@ -210,7 +201,6 @@ body.login-active::-webkit-scrollbar,
 
 /* ==========================================================================
    CUSTOM REDESIGNED SCROLLBAR (EXCLUSIVE TO DASHBOARD PAGE)
-   Dynamically adapts track & border colors based on Light / Dark theme
    ========================================================================== */
 
 /* Dimensions */
@@ -218,29 +208,26 @@ body.login-active::-webkit-scrollbar,
 .dashboard-active::-webkit-scrollbar,
 body.dashboard-active::-webkit-scrollbar,
 html.dashboard-active::-webkit-scrollbar {
-  width: 9px;
-  height: 9px;
+  width: 8px;
+  height: 8px;
 }
 
 .dashboard-custom-scrollbar::-webkit-scrollbar {
-  width: 7px;
-  height: 7px;
+  width: 6px;
+  height: 6px;
 }
 
-/* --------------------------------------------------------------------------
-   LIGHT MODE STYLES (Default / html:not(.dark))
-   -------------------------------------------------------------------------- */
+/* Light Mode Styles */
 .dashboard-main-scrollbar {
   scrollbar-width: thin;
-  scrollbar-color: #0d7c7c #e8f5f2;
+  scrollbar-color: #3b82f6 #f8fafc;
 }
 
 .dashboard-custom-scrollbar {
   scrollbar-width: thin;
-  scrollbar-color: #0d7c7c #e8f5f2;
+  scrollbar-color: #3b82f6 #f8fafc;
 }
 
-/* Light Track (Matches Light Theme Background) */
 .dashboard-main-scrollbar::-webkit-scrollbar-track,
 .dashboard-active::-webkit-scrollbar-track,
 body.dashboard-active::-webkit-scrollbar-track,
@@ -249,7 +236,7 @@ html.dashboard-active::-webkit-scrollbar-track,
 .dashboard-active::-webkit-scrollbar-track-piece,
 .dashboard-custom-scrollbar::-webkit-scrollbar-track,
 .dashboard-custom-scrollbar::-webkit-scrollbar-track-piece {
-  background: #e8f5f2 !important;
+  background: #f8fafc !important;
   border-radius: 0 !important;
 }
 
@@ -258,20 +245,19 @@ html.dashboard-active::-webkit-scrollbar-track,
 body.dashboard-active::-webkit-scrollbar-corner,
 html.dashboard-active::-webkit-scrollbar-corner,
 .dashboard-custom-scrollbar::-webkit-scrollbar-corner {
-  background: #e8f5f2 !important;
+  background: #f8fafc !important;
 }
 
-/* Light Thumb (Teal pill with light matching border) */
 .dashboard-main-scrollbar::-webkit-scrollbar-thumb,
 .dashboard-active::-webkit-scrollbar-thumb,
 body.dashboard-active::-webkit-scrollbar-thumb,
 html.dashboard-active::-webkit-scrollbar-thumb,
 .dashboard-custom-scrollbar::-webkit-scrollbar-thumb {
-  background: linear-gradient(180deg, #0d7c7c 0%, #0a5858 100%) !important;
+  background: linear-gradient(180deg, #3b82f6 0%, #1d4ed8 100%) !important;
   border-radius: 9999px !important;
-  border: 1.5px solid #e8f5f2 !important;
+  border: 1.5px solid #f8fafc !important;
   background-clip: padding-box !important;
-  box-shadow: 0 0 6px rgba(13, 124, 124, 0.3);
+  box-shadow: 0 0 6px rgba(15, 82, 186, 0.25);
 }
 
 .dashboard-main-scrollbar::-webkit-scrollbar-thumb:hover,
@@ -279,26 +265,23 @@ html.dashboard-active::-webkit-scrollbar-thumb,
 body.dashboard-active::-webkit-scrollbar-thumb:hover,
 html.dashboard-active::-webkit-scrollbar-thumb:hover,
 .dashboard-custom-scrollbar::-webkit-scrollbar-thumb:hover {
-  background: linear-gradient(180deg, #0a5858 0%, #0d7c7c 100%) !important;
-  box-shadow: 0 0 10px rgba(13, 124, 124, 0.5);
+  background: linear-gradient(180deg, #1d4ed8 0%, #0F52BA 100%) !important;
+  box-shadow: 0 0 10px rgba(15, 82, 186, 0.4);
 }
 
-/* --------------------------------------------------------------------------
-   DARK MODE STYLES (html.dark / .dark)
-   -------------------------------------------------------------------------- */
+/* Dark Mode Styles */
 .dark .dashboard-main-scrollbar,
 html.dark .dashboard-main-scrollbar,
 html.dark.dashboard-active {
   scrollbar-width: thin;
-  scrollbar-color: #0d7c7c #0f2828;
+  scrollbar-color: #3b82f6 #0b1329;
 }
 
 .dark .dashboard-custom-scrollbar {
   scrollbar-width: thin;
-  scrollbar-color: #0d7c7c #0f2828;
+  scrollbar-color: #3b82f6 #0b1329;
 }
 
-/* Dark Track (Matches Dark Theme Background) */
 .dark .dashboard-main-scrollbar::-webkit-scrollbar-track,
 .dark.dashboard-active::-webkit-scrollbar-track,
 .dark body.dashboard-active::-webkit-scrollbar-track,
@@ -312,7 +295,7 @@ html.dark html.dashboard-active::-webkit-scrollbar-track,
 .dark html.dashboard-active::-webkit-scrollbar-track-piece,
 .dark .dashboard-custom-scrollbar::-webkit-scrollbar-track,
 .dark .dashboard-custom-scrollbar::-webkit-scrollbar-track-piece {
-  background: #0f2828 !important;
+  background: #0b1329 !important;
   border-radius: 0 !important;
 }
 
@@ -322,33 +305,28 @@ html.dark html.dashboard-active::-webkit-scrollbar-track,
 .dark html.dashboard-active::-webkit-scrollbar-corner,
 html.dark .dashboard-main-scrollbar::-webkit-scrollbar-corner,
 .dark .dashboard-custom-scrollbar::-webkit-scrollbar-corner {
-  background: #0f2828 !important;
+  background: #0b1329 !important;
 }
 
-/* Dark Thumb (Teal pill with dark matching border) */
 .dark .dashboard-main-scrollbar::-webkit-scrollbar-thumb,
 .dark.dashboard-active::-webkit-scrollbar-thumb,
 .dark body.dashboard-active::-webkit-scrollbar-thumb,
 .dark html.dashboard-active::-webkit-scrollbar-thumb,
-html.dark .dashboard-main-scrollbar::-webkit-scrollbar-thumb,
-html.dark body.dashboard-active::-webkit-scrollbar-thumb,
-html.dark html.dashboard-active::-webkit-scrollbar-thumb,
 .dark .dashboard-custom-scrollbar::-webkit-scrollbar-thumb {
-  background: linear-gradient(180deg, #0d7c7c 0%, #0a5858 100%) !important;
+  background: linear-gradient(180deg, #3b82f6 0%, #1d4ed8 100%) !important;
   border-radius: 9999px !important;
-  border: 1.5px solid #0f2828 !important;
+  border: 1.5px solid #0b1329 !important;
   background-clip: padding-box !important;
-  box-shadow: 0 0 8px rgba(13, 124, 124, 0.4);
+  box-shadow: 0 0 8px rgba(15, 82, 186, 0.35);
 }
 
 .dark .dashboard-main-scrollbar::-webkit-scrollbar-thumb:hover,
 .dark.dashboard-active::-webkit-scrollbar-thumb:hover,
 .dark body.dashboard-active::-webkit-scrollbar-thumb:hover,
 .dark html.dashboard-active::-webkit-scrollbar-thumb:hover,
-html.dark .dashboard-main-scrollbar::-webkit-scrollbar-thumb:hover,
 .dark .dashboard-custom-scrollbar::-webkit-scrollbar-thumb:hover {
-  background: linear-gradient(180deg, #0a5858 0%, #0d7c7c 100%) !important;
-  box-shadow: 0 0 12px rgba(13, 124, 124, 0.6);
+  background: linear-gradient(180deg, #1d4ed8 0%, #0F52BA 100%) !important;
+  box-shadow: 0 0 12px rgba(15, 82, 186, 0.5);
 }
 
 
@@ -362,8 +340,7 @@ html.dark .dashboard-main-scrollbar::-webkit-scrollbar-thumb:hover,
   }
 
   /* Reset main layouts */
-  html,
-  body {
+  html, body {
     background: #ffffff !important;
     background-color: #ffffff !important;
     color: #000000 !important;
@@ -420,7 +397,7 @@ html.dark .dashboard-main-scrollbar::-webkit-scrollbar-thumb:hover,
     visibility: hidden !important;
   }
 
-  #printable-receipt-modal>div {
+  #printable-receipt-modal > div {
     max-width: 100% !important;
     width: 100% !important;
     padding: 0 !important;
@@ -511,21 +488,3 @@ body.print-a4-labels .qr-label-card {
   background: white !important;
   border-radius: 4px !important;
 }
-
-/* Sleek Sidebar Custom Scrollbar */
-.sidebar-scrollbar::-webkit-scrollbar {
-  width: 4px;
-}
-.sidebar-scrollbar::-webkit-scrollbar-track {
-  background: transparent;
-}
-.sidebar-scrollbar::-webkit-scrollbar-thumb {
-  background: rgba(13, 124, 124, 0.2);
-  border-radius: 9999px;
-}
-.dark .sidebar-scrollbar::-webkit-scrollbar-thumb {
-  background: rgba(125, 211, 211, 0.2);
-}
-.sidebar-scrollbar::-webkit-scrollbar-thumb:hover {
-  background: rgba(13, 124, 124, 0.4);
-}

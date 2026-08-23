@@ -1,0 +1,12 @@
+{
+  "project": "Saheb Paper ERP",
+  "branchName": "main",
+  "userStories": [
+    {
+      "id": "US-001",
+      "title": "Unify Corporate Blue Palette across all dashboard widgets",
+      "passes": true,
+      "notes": "Verified that all backgrounds, hero banners, analytics bars, and scrollbars follow corporate blue and slate theme."
+    }
+  ]
+}

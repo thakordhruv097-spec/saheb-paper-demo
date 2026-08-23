@@ -72,12 +72,6 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
   const { timeframe, setTimeframe, selectedDate, setSelectedDate, handlePrevDate, handleNextDate, systemToday } = useDateFilter();
   const [isDatePickerModalOpen, setIsDatePickerModalOpen] = useState(false);
 
-  // Contextual Active Shift ('Shift A' from 08:00 to 20:00, 'Shift B' from 20:00 to 08:00)
-  const activeShift = useMemo(() => {
-    const currentHour = new Date().getHours();
-    return currentHour >= 8 && currentHour < 20 ? 'Shift A' : 'Shift B';
-  }, []);
-
   // Profile Modal state
   const [isProfileModalOpen, setIsProfileModalOpen] = useState(false);
   const [profileDisplayName, setProfileDisplayName] = useState('');
@@ -491,8 +485,8 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
   return (
     <div className="min-h-screen bg-bg-light dark:bg-bg-dark text-text-light-primary dark:text-slate-100 flex flex-col transition-colors duration-200">
 
-      {/* 1. Header (Common across all sizes) - Light Mode: Clean White / Dark Mode: #1a3535 */}
-      <header className={`sticky top-0 z-30 bg-white/95 dark:bg-[#1a3535]/95 text-slate-900 dark:text-white backdrop-blur-xl border-b border-slate-200/80 dark:border-[#284848] shadow-2xs h-16 flex items-center justify-between px-4 lg:px-6 transition-all duration-300 ${user ? 'md:ml-64' : ''
+      {/* 1. Header (Common across all sizes) - Light Mode: Clean White / Dark Mode: #131d38 */}
+      <header className={`sticky top-0 z-30 bg-white/95 dark:bg-[#131d38]/95 text-slate-900 dark:text-white backdrop-blur-xl border-b border-slate-200/80 dark:border-slate-800 shadow-2xs h-16 flex items-center justify-between px-4 lg:px-6 transition-all duration-300 ${user ? 'md:ml-64' : ''
         } ${showHeader ? 'translate-y-0 opacity-100' : '-translate-y-full opacity-0 pointer-events-none'
         }`}>
 
@@ -501,7 +495,7 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
           {location.pathname !== '/' ? (
             <button
               onClick={() => navigate(-1)}
-              className="p-2 rounded-xl bg-slate-100/80 dark:bg-[#254545] hover:bg-slate-200 dark:hover:bg-[#2c5252] text-slate-700 dark:text-white transition flex items-center gap-1.5 cursor-pointer border border-slate-200/60 dark:border-[#2c4a4a]"
+              className="p-2 rounded-xl bg-slate-100/80 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-white transition flex items-center gap-1.5 cursor-pointer border border-slate-200/60 dark:border-slate-700"
               title="Navigate Back"
             >
               <ArrowLeft className="h-4.5 w-4.5" />
@@ -512,12 +506,12 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
               {(user?.role === 'Admin' || user?.role === 'Management') && (
                 <button
                   onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-                  className="p-2 rounded-xl bg-slate-100/80 dark:bg-[#254545] hover:bg-slate-200 dark:hover:bg-[#2c5252] text-slate-700 dark:text-white md:hidden transition border border-slate-200/60 dark:border-[#2c4a4a]"
+                  className="p-2 rounded-xl bg-slate-100/80 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-white md:hidden transition border border-slate-200/60 dark:border-slate-700"
                 >
                   {mobileMenuOpen ? (
                     <X className="h-5 w-5" />
                   ) : (
-                    <svg className="h-5 w-5 text-primary dark:text-teal-300" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                    <svg className="h-5 w-5 text-primary dark:text-blue-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
                       <line x1="3" y1="6" x2="21" y2="6" />
                       <line x1="3" y1="12" x2="15" y2="12" />
                       <line x1="3" y1="18" x2="9" y2="18" />
@@ -528,21 +522,27 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
 
               {/* Mobile Only Header Logo */}
               <div className="flex md:hidden items-center gap-3 cursor-pointer group select-none" onClick={() => navigate('/')}>
-                <img src={`${import.meta.env.BASE_URL}logo.png`} alt="Saheb Paper Logo" className="h-9 w-9 object-contain rounded-xl shadow-md shadow-blue-600/10 group-hover:scale-105 transition-transform duration-200 border border-slate-200 dark:border-[#2c4a4a] bg-white p-0.5" />
+                <img src={`${import.meta.env.BASE_URL}logo.png`} alt="Saheb Paper Logo" className="h-9 w-9 object-contain rounded-xl shadow-md shadow-blue-600/10 group-hover:scale-105 transition-transform duration-200 border border-slate-200 dark:border-slate-700 bg-white p-0.5" />
                 <div className="block">
                   <div className="flex items-center gap-1.5">
-                    <h1 className="text-sm font-black text-slate-900 dark:text-white leading-none tracking-tight">
+                    <span className="text-sm font-black text-slate-900 dark:text-white leading-none tracking-tight">
                       {t('login.title')}
-                    </h1>
-                    <span className="px-1.5 py-0.2 rounded-full bg-blue-50 dark:bg-teal-900/60 text-primary dark:text-teal-300 text-[9px] font-extrabold uppercase border border-blue-200/60 dark:border-teal-700/60">
+                    </span>
+                    <span className="px-1.5 py-0.2 rounded-full bg-blue-50 dark:bg-blue-950/60 text-primary dark:text-blue-300 text-[9px] font-extrabold uppercase border border-blue-200/60 dark:border-blue-800/60">
                       ERP
                     </span>
                   </div>
-                  <p className="text-[10px] text-slate-500 dark:text-teal-200/70 font-medium tracking-tight mt-0.5 truncate">
+                  <p className="text-[10px] text-slate-500 dark:text-slate-400 font-medium tracking-tight mt-0.5 truncate">
                     {t('login.subtitle')}
                   </p>
                 </div>
               </div>
+
+              {/* Header Shift Badge (Mobile context) */}
+              <span className="hidden xs:inline-flex md:hidden items-center gap-1.5 px-2.5 py-1 rounded-full bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800 text-[10px] font-black uppercase tracking-wider shadow-2xs">
+                <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                {new Date().getHours() >= 8 && new Date().getHours() < 20 ? 'Shift A' : 'Shift B'} · Running
+              </span>
             </>
           )}
         </div>
@@ -550,17 +550,11 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
         {/* Right Side Header Controls */}
         <div className="flex items-center gap-2 sm:gap-3">
 
-          {/* Contextual Active Shift Badge */}
-          <div className="hidden xs:inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-emerald-500/10 dark:bg-emerald-500/20 text-emerald-700 dark:text-emerald-300 border border-emerald-500/30 text-[10px] sm:text-[11px] font-black uppercase tracking-wider select-none shadow-2xs">
-            <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
-            <span>{activeShift} · Running</span>
-          </div>
-
           {/* Date & Timeframe Filter controls (Admin/Management Only) */}
           {(user?.role === 'Admin' || user?.role === 'Management') && (
             <div className="flex items-center gap-2">
               {/* Timeframe Selector Pill */}
-              <div className="bg-white dark:bg-[#122828] border border-slate-200 dark:border-[#284848] rounded-xl p-0.5 flex items-center gap-0.5 shadow-2xs">
+              <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl p-0.5 flex items-center gap-0.5 shadow-2xs">
                 {(['day', 'week', 'month', 'all'] as const).map(tf => (
                   <button
                     key={tf}
@@ -579,7 +573,7 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
               <div className="flex items-center gap-1">
                 <button
                   onClick={handlePrevDate}
-                  className="p-1 sm:p-1.5 rounded-lg bg-white dark:bg-[#122828] border border-slate-200 dark:border-[#284848] text-slate-600 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-[#1a3838] transition cursor-pointer shadow-2xs"
+                  className="p-1 sm:p-1.5 rounded-lg bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 transition cursor-pointer shadow-2xs"
                   title="Previous Date"
                 >
                   <ChevronLeft className="h-3.5 w-3.5" />
@@ -588,13 +582,13 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
                 <div className="relative" ref={headerDatePickerRef}>
                   <div
                     onClick={() => setIsDatePickerModalOpen(prev => !prev)}
-                    className="flex items-center bg-white dark:bg-[#122828] border border-slate-200 dark:border-[#284848] rounded-lg px-2 sm:px-3 py-1 shadow-2xs group cursor-pointer hover:bg-slate-50 dark:hover:bg-[#1a3838] transition select-none"
+                    className="flex items-center bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg px-2 sm:px-3 py-1 shadow-2xs group cursor-pointer hover:bg-slate-50 dark:hover:bg-slate-800 transition select-none"
                     title="Click to select date"
                   >
                     <span className="text-[11px] sm:text-xs font-black text-slate-900 dark:text-white mr-1.5 font-sans">
                       {selectedDate}
                     </span>
-                    <Calendar className="h-3.5 w-3.5 text-primary dark:text-teal-300 group-hover:scale-110 transition-transform" />
+                    <Calendar className="h-3.5 w-3.5 text-primary dark:text-blue-400 group-hover:scale-110 transition-transform" />
                   </div>
 
                   {isDatePickerModalOpen && (
@@ -611,7 +605,7 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
                 <button
                   onClick={handleNextDate}
                   disabled={selectedDate >= systemToday}
-                  className="p-1 sm:p-1.5 rounded-lg bg-white dark:bg-[#122828] border border-slate-200 dark:border-[#284848] text-slate-600 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-[#1a3838] transition cursor-pointer shadow-2xs disabled:opacity-30 disabled:cursor-not-allowed disabled:pointer-events-none"
+                  className="p-1 sm:p-1.5 rounded-lg bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 transition cursor-pointer shadow-2xs disabled:opacity-30 disabled:cursor-not-allowed disabled:pointer-events-none"
                   title="Next Date"
                 >
                   <ChevronRight className="h-3.5 w-3.5" />
@@ -623,7 +617,7 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
           {/* Theme Toggle Button */}
           <button
             onClick={() => setDarkMode(!darkMode)}
-            className="p-2 rounded-xl bg-slate-100/90 dark:bg-[#254545] border border-slate-200/80 dark:border-[#2c4a4a] hover:bg-slate-200/80 dark:hover:bg-[#2c5252] transition cursor-pointer text-slate-600 dark:text-amber-300 shadow-2xs"
+            className="p-2 rounded-xl bg-slate-100/90 dark:bg-slate-800 border border-slate-200/80 dark:border-slate-700 hover:bg-slate-200/80 dark:hover:bg-slate-700 transition cursor-pointer text-slate-600 dark:text-amber-300 shadow-2xs"
             title="Toggle Light/Dark Theme"
           >
             {darkMode ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
@@ -633,26 +627,26 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
           <div className="relative">
             <button
               onClick={toggleBell}
-              className="p-2 rounded-xl bg-slate-100/90 dark:bg-[#254545] border border-slate-200/80 dark:border-[#2c4a4a] hover:bg-slate-200/80 dark:hover:bg-[#2c5252] transition cursor-pointer text-slate-600 dark:text-slate-200 relative shadow-2xs"
+              className="p-2 rounded-xl bg-slate-100/90 dark:bg-slate-800 border border-slate-200/80 dark:border-slate-700 hover:bg-slate-200/80 dark:hover:bg-slate-700 transition cursor-pointer text-slate-600 dark:text-slate-200 relative shadow-2xs"
               title="Notifications & Alerts"
             >
               <Bell className="h-4 w-4" />
               {activeNotifications.length > 0 && (
-                <span className="absolute top-1 right-1 h-2.5 w-2.5 rounded-full bg-red-500 ring-2 ring-white dark:ring-[#1a3535] animate-pulse"></span>
+                <span className="absolute top-1 right-1 h-2.5 w-2.5 rounded-full bg-red-500 ring-2 ring-white dark:ring-[#131d38] animate-pulse"></span>
               )}
             </button>
 
             {bellOpen && (
               <div
                 onClick={(e) => e.stopPropagation()}
-                className="absolute right-0 top-full mt-2 bg-white dark:bg-[#1a3535] border border-slate-200 dark:border-[#284848] text-slate-900 dark:text-white rounded-2xl shadow-2xl py-3 w-80 sm:w-88 z-50 max-h-96 overflow-y-auto font-sans"
+                className="absolute right-0 top-full mt-2 bg-white dark:bg-[#131d38] border border-slate-200 dark:border-slate-800 text-slate-900 dark:text-white rounded-2xl shadow-2xl py-3 w-80 sm:w-88 z-50 max-h-96 overflow-y-auto font-sans"
               >
-                <div className="px-4 pb-2.5 border-b border-slate-100 dark:border-[#284848] flex justify-between items-center">
+                <div className="px-4 pb-2.5 border-b border-slate-100 dark:border-slate-800 flex justify-between items-center">
                   <span className="text-xs font-black text-slate-900 dark:text-white uppercase tracking-wider">Alerts & Notifications</span>
                   {activeNotifications.length > 0 ? (
                     <button
                       onClick={clearAllNotifications}
-                      className="text-xs font-extrabold text-primary dark:text-teal-300 hover:underline cursor-pointer"
+                      className="text-xs font-extrabold text-primary dark:text-blue-400 hover:underline cursor-pointer"
                     >
                       Clear All
                     </button>
@@ -661,14 +655,14 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
                   )}
                 </div>
 
-                <div className="divide-y divide-slate-100 dark:divide-[#284848]">
+                <div className="divide-y divide-slate-100 dark:divide-slate-800">
                   {activeNotifications.length === 0 ? (
                     <div className="p-6 text-center text-xs text-slate-500 dark:text-slate-300 font-medium">
                       System healthy. No active alerts.
                     </div>
                   ) : (
                     activeNotifications.map(n => (
-                      <div key={n.id} className="p-3.5 hover:bg-slate-50 dark:hover:bg-[#254545] transition text-left space-y-1.5 relative group">
+                      <div key={n.id} className="p-3.5 hover:bg-slate-50 dark:hover:bg-slate-800/60 transition text-left space-y-1.5 relative group">
                         <div className="flex items-start justify-between gap-2">
                           <div className="flex items-center gap-2 min-w-0">
                             <span className={`h-2 w-2 rounded-full shrink-0 ${n.type === 'stock' ? 'bg-amber-500' :
@@ -678,7 +672,7 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
                           </div>
                           <button
                             onClick={(e) => dismissNotification(n.id, e)}
-                            className="p-1 rounded text-slate-400 dark:text-slate-300 hover:text-red-600 dark:hover:text-red-400 hover:bg-slate-100 dark:hover:bg-[#2c5252] cursor-pointer shrink-0 transition"
+                            className="p-1 rounded text-slate-400 dark:text-slate-300 hover:text-red-600 dark:hover:text-red-400 hover:bg-slate-100 dark:hover:bg-slate-700 cursor-pointer shrink-0 transition"
                             title="Dismiss alert"
                           >
                             <X className="h-3.5 w-3.5" />
@@ -695,10 +689,10 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
 
           {/* Top Right Header Profile & User Badges */}
           {user && (
-            <div className="flex items-center gap-2 border-l pl-3 border-slate-200 dark:border-[#284848]">
+            <div className="flex items-center gap-2 border-l pl-3 border-slate-200 dark:border-slate-800">
               <div className="hidden lg:block text-right">
                 <p className="text-xs font-black text-slate-900 dark:text-white leading-tight">{user.displayName}</p>
-                <span className="inline-block text-[10px] font-extrabold uppercase tracking-wider text-primary dark:text-teal-300 bg-primary/10 dark:bg-teal-900/60 px-2 py-0.5 rounded-full border border-primary/20 dark:border-teal-700/60 mt-0.5">
+                <span className="inline-block text-[10px] font-extrabold uppercase tracking-wider text-primary dark:text-blue-400 bg-primary/10 dark:bg-blue-950/60 px-2 py-0.5 rounded-full border border-primary/20 dark:border-blue-800/60 mt-0.5">
                   {user.role}
                 </span>
               </div>
@@ -715,10 +709,10 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
 
                 {profileDropdownOpen && (
                   <div className="absolute right-0 top-full mt-2 z-50 animate-in fade-in zoom-in-95 duration-150">
-                    <div className="bg-white dark:bg-[#1a3535] border border-slate-200 dark:border-[#284848] text-slate-900 dark:text-white rounded-2xl shadow-2xl overflow-hidden py-1.5 w-56 font-sans">
-                      <div className="px-4 py-3 border-b border-slate-100 dark:border-[#284848] bg-slate-50/50 dark:bg-[#122828]">
+                    <div className="bg-white dark:bg-[#131d38] border border-slate-200 dark:border-slate-800 text-slate-900 dark:text-white rounded-2xl shadow-2xl overflow-hidden py-1.5 w-56 font-sans">
+                      <div className="px-4 py-3 border-b border-slate-100 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900">
                         <p className="text-sm font-black text-slate-900 dark:text-white leading-tight">{user.displayName}</p>
-                        <p className="text-xs text-slate-500 dark:text-teal-200/70 font-mono mt-0.5">@{user.username} ({user.role})</p>
+                        <p className="text-xs text-slate-500 dark:text-slate-400 font-mono mt-0.5">@{user.username} ({user.role})</p>
                       </div>
 
                       <button
@@ -726,9 +720,9 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
                           navigate('/profile');
                           setProfileDropdownOpen(false);
                         }}
-                        className="w-full flex items-center gap-2.5 px-4 py-2.5 text-xs font-bold text-slate-700 dark:text-slate-200 hover:bg-blue-50 dark:hover:bg-[#254545] text-left transition border-b border-slate-100 dark:border-[#284848] cursor-pointer"
+                        className="w-full flex items-center gap-2.5 px-4 py-2.5 text-xs font-bold text-slate-700 dark:text-slate-200 hover:bg-blue-50 dark:hover:bg-slate-800 text-left transition border-b border-slate-100 dark:border-slate-800 cursor-pointer"
                       >
-                        <User className="h-4 w-4 text-primary dark:text-teal-300" />
+                        <User className="h-4 w-4 text-primary dark:text-blue-400" />
                         <span>My Profile & Details</span>
                       </button>
 
@@ -738,7 +732,7 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
                             navigate('/role-management');
                             setProfileDropdownOpen(false);
                           }}
-                          className="w-full flex items-center gap-2.5 px-4 py-2.5 text-xs font-bold text-slate-700 dark:text-slate-200 hover:bg-amber-50 dark:hover:bg-[#254545] text-left transition border-b border-slate-100 dark:border-[#284848] cursor-pointer"
+                          className="w-full flex items-center gap-2.5 px-4 py-2.5 text-xs font-bold text-slate-700 dark:text-slate-200 hover:bg-amber-50 dark:hover:bg-slate-800 text-left transition border-b border-slate-100 dark:border-slate-800 cursor-pointer"
                         >
                           <Shield className="h-4 w-4 text-amber-500 dark:text-amber-400" />
                           <span>Role Management</span>
@@ -751,7 +745,7 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
                             navigate('/user-management');
                             setProfileDropdownOpen(false);
                           }}
-                          className="w-full flex items-center gap-2.5 px-4 py-2.5 text-xs font-semibold text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-[#254545] text-left transition border-b border-slate-100 dark:border-[#284848] cursor-pointer"
+                          className="w-full flex items-center gap-2.5 px-4 py-2.5 text-xs font-semibold text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-800 text-left transition border-b border-slate-100 dark:border-slate-800 cursor-pointer"
                         >
                           <Settings className="h-4 w-4 text-purple-600 dark:text-purple-400" />
                           <span>User Management</span>
@@ -779,22 +773,22 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
       </header>
 
       <div className="flex flex-1 relative overflow-hidden">
-        {/* 2. Left Sidebar (Tablet/Desktop: md:flex) - Light Mode: Clean White / Dark Mode: #1a3535 */}
+        {/* 2. Left Sidebar (Tablet/Desktop: md:flex) - Light Mode: Clean White / Dark Mode: #131d38 */}
         {user && (
-          <aside className="hidden md:flex flex-col fixed top-0 left-0 bottom-0 w-64 bg-white dark:bg-[#1a3535] text-slate-800 dark:text-white border-r border-slate-200/80 dark:border-[#284848] z-40 select-none shadow-xs overflow-hidden h-screen">
+          <aside className="hidden md:flex flex-col fixed top-0 left-0 bottom-0 w-64 bg-white dark:bg-[#131d38] text-slate-800 dark:text-white border-r border-slate-200/80 dark:border-slate-800 z-40 select-none shadow-xs overflow-hidden h-screen">
             {/* Sidebar Top Header with Logo */}
-            <div className="h-14 px-3.5 flex items-center gap-2.5 border-b border-slate-200/80 dark:border-[#284848] shrink-0 cursor-pointer group select-none" onClick={() => navigate('/')}>
-              <img src={`${import.meta.env.BASE_URL}logo.png`} alt="Saheb Paper Logo" className="h-8 w-8 object-contain rounded-xl shadow-md shadow-blue-600/10 dark:shadow-teal-950/40 group-hover:scale-105 transition-transform duration-200 border border-slate-200 dark:border-[#2c4a4a] bg-white p-0.5 shrink-0" />
+            <div className="h-16 px-4 flex items-center gap-3 border-b border-slate-200/80 dark:border-slate-800 shrink-0 cursor-pointer group select-none" onClick={() => navigate('/')}>
+              <img src={`${import.meta.env.BASE_URL}logo.png`} alt="Saheb Paper Logo" className="h-9 w-9 object-contain rounded-xl shadow-md shadow-blue-600/10 dark:shadow-blue-950/40 group-hover:scale-105 transition-transform duration-200 border border-slate-200 dark:border-slate-700 bg-white p-0.5 shrink-0" />
               <div className="min-w-0 flex-1">
                 <div className="flex items-center gap-1.5">
-                  <h1 className="text-xs font-black text-slate-900 dark:text-white leading-none tracking-tight truncate font-heading">
+                  <span className="text-xs font-black text-slate-900 dark:text-white leading-none tracking-tight truncate font-heading">
                     {t('login.title')}
-                  </h1>
-                  <span className="px-1.5 py-0.2 rounded-full bg-blue-50 dark:bg-teal-900/60 text-primary dark:text-teal-300 text-[8.5px] font-extrabold uppercase border border-blue-200/60 dark:border-teal-700/60 shrink-0">
+                  </span>
+                  <span className="px-1.5 py-0.2 rounded-full bg-blue-50 dark:bg-blue-950/60 text-primary dark:text-blue-300 text-[9px] font-extrabold uppercase border border-blue-200/60 dark:border-blue-800/60 shrink-0">
                     ERP
                   </span>
                 </div>
-                <p className="text-[9.5px] text-slate-500 dark:text-teal-200/70 font-medium tracking-tight truncate mt-0.5">
+                <p className="text-xs text-slate-500 dark:text-slate-400 font-medium tracking-tight truncate mt-0.5">
                   {t('login.subtitle')}
                 </p>
               </div>
@@ -805,12 +799,12 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
 
               {/* Render Categorized Dynamic Sections */}
               {sidebarSections.map((section) => (
-                <div key={section.title} className="space-y-1">
-                  <div className="px-2.5 pt-1 pb-0.5 text-[9.5px] font-black uppercase tracking-wider text-slate-400 dark:text-teal-300/70 font-sans leading-none">
+                <div key={section.title} className="space-y-0.5">
+                  <div className="px-3 pt-1 pb-0.5 text-[10px] font-black uppercase tracking-wider text-slate-400 dark:text-slate-400 font-sans">
                     {section.title}
                   </div>
 
-                  <div className="space-y-1">
+                  <div className="space-y-0.5">
                     {section.items.map(item => {
                       const Icon = item.icon;
                       const isActive = location.pathname === item.path || (item.id === 'dispatch_receipt' && location.pathname.startsWith('/dispatch-receipt')) || (item.id === 'utilities_etp' && (location.pathname.startsWith('/utilities-&-etp') || location.pathname.startsWith('/utilites-&-etp') || location.pathname.startsWith('/utilities-etp')));
@@ -818,13 +812,13 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
                         <button
                           key={item.id}
                           onClick={() => navigate(item.path)}
-                          className={`w-full flex items-center justify-between px-3 py-2 rounded-xl transition-all duration-150 text-left cursor-pointer group ${isActive
-                            ? 'bg-gradient-to-r from-blue-600 via-indigo-600 to-blue-700 dark:from-teal-600 dark:via-emerald-600 dark:to-teal-700 text-white font-black shadow-xs shadow-blue-600/25 dark:shadow-teal-900/40'
-                            : 'text-slate-600 dark:text-slate-200 hover:bg-slate-100/90 dark:hover:bg-[#254545] hover:text-slate-900 dark:hover:text-white font-bold'
+                          className={`w-full flex items-center justify-between px-3 py-2 rounded-xl transition-all duration-200 text-left cursor-pointer group ${isActive
+                            ? 'bg-gradient-to-r from-blue-600 via-indigo-600 to-blue-700 dark:from-blue-600 dark:via-indigo-600 dark:to-blue-700 text-white font-black shadow-md shadow-blue-600/25 dark:shadow-blue-900/40'
+                            : 'text-slate-600 dark:text-slate-200 hover:bg-slate-100/90 dark:hover:bg-slate-800 hover:text-slate-900 dark:hover:text-white font-bold'
                             }`}
                         >
                           <div className="flex items-center gap-2.5 min-w-0">
-                            <Icon className={`h-4 w-4 flex-shrink-0 transition-transform duration-150 ${isActive ? 'text-white' : 'text-slate-400 dark:text-teal-300/80 group-hover:text-primary dark:group-hover:text-white'
+                            <Icon className={`h-4 w-4 flex-shrink-0 transition-transform duration-200 ${isActive ? 'text-white' : 'text-slate-400 dark:text-slate-400 group-hover:text-primary dark:group-hover:text-white'
                               }`} />
                             <span className="text-xs font-sans tracking-wide leading-tight truncate">
                               {item.label}
@@ -857,22 +851,22 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
         </main>
       </div>
 
-      {/* 4. Mobile Slide-out Menu - Light Mode: Clean White / Dark Mode: #1a3535 */}
+      {/* 4. Mobile Slide-out Menu - Light Mode: Clean White / Dark Mode: #131d38 */}
       {mobileMenuOpen && user && (
         <div className="fixed inset-0 z-50 flex md:hidden bg-slate-900/60 backdrop-blur-sm" onClick={() => setMobileMenuOpen(false)}>
           <div
-            className="w-80 bg-white dark:bg-[#1a3535] text-slate-900 dark:text-white border-r border-slate-200 dark:border-[#284848] h-full p-5 flex flex-col shadow-2xl transition"
+            className="w-80 bg-white dark:bg-[#131d38] text-slate-900 dark:text-white border-r border-slate-200 dark:border-slate-800 h-full p-5 flex flex-col shadow-2xl transition"
             onClick={e => e.stopPropagation()}
           >
             {/* Drawer Header & Profile Card */}
-            <div className="flex items-center justify-between border-b border-slate-100 dark:border-[#284848] pb-4 mb-4">
+            <div className="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-4 mb-4">
               <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-2xl bg-gradient-to-tr from-primary to-indigo-600 dark:from-teal-600 dark:to-emerald-600 text-white flex items-center justify-center font-bold text-sm shadow-md">
+                <div className="w-10 h-10 rounded-2xl bg-gradient-to-tr from-primary to-indigo-600 text-white flex items-center justify-center font-bold text-sm shadow-md">
                   <User className="h-5 w-5" />
                 </div>
                 <div>
                   <h3 className="font-extrabold text-sm text-slate-900 dark:text-white leading-tight">{user.displayName}</h3>
-                  <span className="text-[10px] font-black uppercase text-primary dark:text-teal-300 tracking-wider">
+                  <span className="text-[10px] font-black uppercase text-primary dark:text-blue-400 tracking-wider">
                     {user.role === 'Admin' ? 'Master Admin' : user.role}
                   </span>
                 </div>
@@ -896,8 +890,8 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
                       setMobileMenuOpen(false);
                     }}
                     className={`flex items-center gap-3 px-4 py-3 rounded-xl text-left text-xs font-bold transition cursor-pointer ${isActive
-                      ? 'bg-slate-900 text-white dark:bg-gradient-to-r dark:from-teal-600 dark:to-emerald-600 dark:text-white font-extrabold shadow-sm'
-                      : 'text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-[#254545]'
+                      ? 'bg-[#0F52BA] text-white font-extrabold shadow-sm'
+                      : 'text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800'
                       }`}
                   >
                     <Icon className="h-4.5 w-4.5" />
@@ -908,7 +902,7 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
             </div>
 
             {/* Logout Button inside Mobile Drawer */}
-            <div className="pt-4 border-t border-slate-100 dark:border-[#284848]">
+            <div className="pt-4 border-t border-slate-100 dark:border-slate-800">
               <button
                 onClick={() => {
                   setMobileMenuOpen(false);
@@ -929,10 +923,10 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
       {user && (
         <>
           {/* Subtle Background Backdrop Mask to prevent page content bleed */}
-          <div className={`fixed bottom-0 left-0 right-0 h-20 bg-gradient-to-t from-slate-100 via-slate-100/90 to-transparent dark:from-[#0f2828] dark:to-transparent pointer-events-none z-30 md:hidden transition-all duration-300 ${showBottomNav ? 'opacity-100' : 'opacity-0'
+          <div className={`fixed bottom-0 left-0 right-0 h-20 bg-gradient-to-t from-slate-100 via-slate-100/90 to-transparent dark:from-[#0b1329] dark:to-transparent pointer-events-none z-30 md:hidden transition-all duration-300 ${showBottomNav ? 'opacity-100' : 'opacity-0'
             }`} />
           {/* 5-TAB SYNCHRONIZED MOBILE BOTTOM NAVIGATION */}
-          <nav className={`fixed bottom-3 left-3 right-3 h-16 bg-white/95 dark:bg-[#1a3535]/95 backdrop-blur-xl border border-slate-200/80 dark:border-[#284848] rounded-3xl shadow-2xl flex md:hidden items-center justify-around px-1.5 z-40 select-none transition-all duration-300 ease-in-out ${showBottomNav ? 'translate-y-0 opacity-100' : 'translate-y-[calc(100%+2rem)] opacity-0 pointer-events-none'
+          <nav className={`fixed bottom-3 left-3 right-3 h-16 bg-white/95 dark:bg-[#131d38]/95 backdrop-blur-xl border border-slate-200/80 dark:border-slate-800 rounded-3xl shadow-2xl flex md:hidden items-center justify-around px-1.5 z-40 select-none transition-all duration-300 ease-in-out ${showBottomNav ? 'translate-y-0 opacity-100' : 'translate-y-[calc(100%+2rem)] opacity-0 pointer-events-none'
             }`}>
             {mobileTabs.map((tab, idx) => {
               const isActive = activeTabIndex === idx;
