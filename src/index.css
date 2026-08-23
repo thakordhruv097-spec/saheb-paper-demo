@@ -340,18 +340,27 @@ html.dark .dashboard-main-scrollbar::-webkit-scrollbar-corner,
   }
 
   /* Reset main layouts */
-  html, body {
+  html, body, #root, #app, main, .min-h-screen {
     background: #ffffff !important;
     background-color: #ffffff !important;
     color: #000000 !important;
     min-height: auto !important;
-    height: 100% !important;
-    overflow: hidden !important;
-    font-size: 11px !important;
+    height: auto !important;
+    overflow: visible !important;
     margin: 0 !important;
+    margin-left: 0 !important;
     padding: 0 !important;
     -webkit-print-color-adjust: exact !important;
     print-color-adjust: exact !important;
+  }
+
+  main {
+    margin-left: 0 !important;
+    padding: 0 !important;
+    overflow: visible !important;
+    display: block !important;
+    width: 100% !important;
+    max-width: 100% !important;
   }
 
   /* Hide UI navigation, sidebar, headers, and interactive buttons */
@@ -440,27 +449,26 @@ html.dark .dashboard-main-scrollbar::-webkit-scrollbar-corner,
   .printable-qr-card,
   .printable-qr-card * {
     visibility: visible !important;
+    page-break-inside: avoid !important;
+    break-inside: avoid !important;
   }
 
   #printable-label-studio-output {
     display: block !important;
     visibility: visible !important;
-    position: fixed !important;
-    top: 0 !important;
-    left: 0 !important;
-    right: 0 !important;
-    bottom: 0 !important;
+    position: static !important;
+    left: auto !important;
+    top: auto !important;
     width: 100% !important;
-    max-width: 100% !important;
-    height: 100% !important;
+    max-width: 185mm !important;
+    margin: 0 auto !important;
     background: #ffffff !important;
     background-color: #ffffff !important;
     color: #000000 !important;
-    padding: 5mm !important;
-    margin: 0 !important;
-    z-index: 99999999 !important;
+    padding: 0 !important;
     box-sizing: border-box !important;
-    overflow: hidden !important;
+    overflow: visible !important;
+    z-index: auto !important;
   }
 }
 

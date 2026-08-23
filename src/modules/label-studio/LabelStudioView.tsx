@@ -426,7 +426,7 @@ export const LabelStudioView: React.FC = () => {
         </div>
       </div>
 
-      {/* 2. DEDICATED PRINT OUTPUT (ALL COPIES GUARANTEED ON ONE SINGLE A4 PAGE) */}
+      {/* 2. DEDICATED PRINT OUTPUT */}
       <div
         id="printable-label-studio-output"
         className="hidden print:block w-full bg-white text-black"
@@ -438,148 +438,330 @@ export const LabelStudioView: React.FC = () => {
           padding: '0',
         }}
       >
-        {/* 1 COPY: 1 Card Centered on Single Page */}
+        {/* 1 COPY: 1 Standard Card Centered */}
         {copies === 1 && (
-          <div className="flex items-center justify-center min-h-[250mm] w-full max-w-[185mm] mx-auto">
-            <div
-              className="printable-qr-slip bg-white text-slate-950 p-6 rounded-2xl border-2 border-slate-950 text-center flex flex-col items-center justify-between mx-auto"
-              style={{ width: '135mm', height: '185mm', boxSizing: 'border-box' }}
-            >
-              <div className="border-b-2 border-slate-950 pb-3 w-full text-center">
-                <h2 className="text-lg font-black tracking-wider uppercase text-slate-950 leading-tight font-heading">
-                  {COMPANY_CONFIG.name}
-                </h2>
-              </div>
-              <div className="w-full flex items-center justify-center py-3">
-                <QRCodeSVG
-                  value={computedQrValue}
-                  size={240}
-                  level="M"
-                  includeMargin={false}
-                  bgColor="#ffffff"
-                  fgColor="#000000"
-                />
-              </div>
-              <div className="pt-3 pb-1 border-t-2 border-slate-950 w-full text-center">
-                <p className="text-sm font-black uppercase tracking-widest text-slate-700 leading-tight">
-                  QR CODE NAME
-                </p>
-                <p className="text-3xl font-black font-mono text-slate-950 mt-1 tracking-wider leading-tight">
-                  {barcodeNo || '260500571'}
-                </p>
-              </div>
-            </div>
-          </div>
-        )}
-
-        {/* 2 COPIES: 2 Cards Side-by-Side on Single Page */}
-        {copies === 2 && (
-          <div className="grid grid-cols-2 gap-4 w-full max-w-[185mm] mx-auto pt-6">
-            {Array.from({ length: 2 }).map((_, index) => (
+          <div className="flex items-center justify-center min-h-[220mm] w-full max-w-[185mm] mx-auto pt-6">
+            <div className="w-[90mm]">
               <div
-                key={index}
-                className="printable-qr-slip bg-white text-slate-950 p-4 rounded-2xl border-2 border-slate-950 text-center flex flex-col items-center justify-between mx-auto w-full"
-                style={{ height: '140mm', boxSizing: 'border-box' }}
+                className="printable-qr-slip bg-white text-slate-950 p-2 rounded-2xl border-2 border-slate-950 text-center flex flex-col items-center justify-between mx-auto w-full"
+                style={{ height: '84mm', maxHeight: '84mm', boxSizing: 'border-box', pageBreakInside: 'avoid', breakInside: 'avoid' }}
               >
-                <div className="border-b-2 border-slate-950 pb-2 w-full text-center">
-                  <h2 className="text-base font-black tracking-wide uppercase text-slate-950 leading-tight font-heading">
-                    {COMPANY_CONFIG.name}
-                  </h2>
-                </div>
-                <div className="w-full flex items-center justify-center py-2">
-                  <QRCodeSVG
-                    value={computedQrValue}
-                    size={175}
-                    level="M"
-                    includeMargin={false}
-                    bgColor="#ffffff"
-                    fgColor="#000000"
-                  />
-                </div>
-                <div className="pt-2 pb-1 border-t-2 border-slate-950 w-full text-center">
-                  <p className="text-xs font-black uppercase tracking-widest text-slate-700 leading-tight">
-                    QR CODE NAME
-                  </p>
-                  <p className="text-2xl font-black font-mono text-slate-950 mt-1 tracking-wider leading-tight">
-                    {barcodeNo || '260500571'}
-                  </p>
-                </div>
-              </div>
-            ))}
-          </div>
-        )}
-
-        {/* 4 COPIES: 4 Cards in a 2x2 Grid on Single Page */}
-        {copies === 4 && (
-          <div className="grid grid-cols-2 gap-3 w-full max-w-[185mm] mx-auto pt-1">
-            {Array.from({ length: 4 }).map((_, index) => (
-              <div
-                key={index}
-                className="printable-qr-slip bg-white text-slate-950 p-3 rounded-2xl border-2 border-slate-950 text-center flex flex-col items-center justify-between mx-auto w-full"
-                style={{ height: '112mm', boxSizing: 'border-box' }}
-              >
-                <div className="border-b-2 border-slate-950 pb-1.5 w-full text-center">
-                  <h2 className="text-sm font-black tracking-wide uppercase text-slate-950 leading-tight font-heading">
+                <div className="border-b-2 border-slate-950 pb-1 w-full text-center">
+                  <h2 style={{ fontSize: '14px', fontWeight: 900, textTransform: 'uppercase', letterSpacing: '0.03em', color: '#000000', margin: 0, lineHeight: '1.2' }}>
                     {COMPANY_CONFIG.name}
                   </h2>
                 </div>
                 <div className="w-full flex items-center justify-center py-1">
                   <QRCodeSVG
                     value={computedQrValue}
-                    size={135}
+                    size={95}
                     level="M"
                     includeMargin={false}
                     bgColor="#ffffff"
                     fgColor="#000000"
                   />
                 </div>
-                <div className="pt-1.5 pb-0.5 border-t-2 border-slate-950 w-full text-center">
-                  <p className="text-[11px] font-black uppercase tracking-widest text-slate-700 leading-tight">
+                <div className="pt-1 pb-0.5 border-t-2 border-slate-950 w-full text-center">
+                  <p style={{ fontSize: '11px', fontWeight: 900, textTransform: 'uppercase', letterSpacing: '0.08em', color: '#475569', margin: '0 0 1px 0' }}>
                     QR CODE NAME
                   </p>
-                  <p className="text-xl font-black font-mono text-slate-950 mt-0.5 tracking-wider leading-tight">
+                  <p style={{ fontSize: '19px', fontWeight: 900, fontFamily: 'monospace', letterSpacing: '0.05em', color: '#000000', margin: 0, lineHeight: '1.1' }}>
                     {barcodeNo || '260500571'}
                   </p>
                 </div>
               </div>
-            ))}
+            </div>
           </div>
         )}
 
-        {/* 8 COPIES: 8 Cards in a 2x4 Grid on Single Page */}
+        {/* 2 COPIES: 2 Standard Cards Side-by-Side */}
+        {copies === 2 && (
+          <div className="w-full max-w-[185mm] mx-auto pt-6">
+            <div style={{ display: 'flex', gap: '10px', width: '100%', pageBreakInside: 'avoid', breakInside: 'avoid' }}>
+              {Array.from({ length: 2 }).map((_, index) => (
+                <div key={index} style={{ flex: '1 1 50%', minWidth: 0 }}>
+                  <div
+                    className="printable-qr-slip bg-white text-slate-950 p-2 rounded-2xl border-2 border-slate-950 text-center flex flex-col items-center justify-between mx-auto w-full"
+                    style={{ height: '84mm', maxHeight: '84mm', boxSizing: 'border-box', pageBreakInside: 'avoid', breakInside: 'avoid' }}
+                  >
+                    <div className="border-b-2 border-slate-950 pb-1 w-full text-center">
+                      <h2 style={{ fontSize: '14px', fontWeight: 900, textTransform: 'uppercase', letterSpacing: '0.03em', color: '#000000', margin: 0, lineHeight: '1.2' }}>
+                        {COMPANY_CONFIG.name}
+                      </h2>
+                    </div>
+                    <div className="w-full flex items-center justify-center py-1">
+                      <QRCodeSVG
+                        value={computedQrValue}
+                        size={95}
+                        level="M"
+                        includeMargin={false}
+                        bgColor="#ffffff"
+                        fgColor="#000000"
+                      />
+                    </div>
+                    <div className="pt-1 pb-0.5 border-t-2 border-slate-950 w-full text-center">
+                      <p style={{ fontSize: '11px', fontWeight: 900, textTransform: 'uppercase', letterSpacing: '0.08em', color: '#475569', margin: '0 0 1px 0' }}>
+                        QR CODE NAME
+                      </p>
+                      <p style={{ fontSize: '19px', fontWeight: 900, fontFamily: 'monospace', letterSpacing: '0.05em', color: '#000000', margin: 0, lineHeight: '1.1' }}>
+                        {barcodeNo || '260500571'}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* 4 COPIES: 4 Standard Cards in a 2x2 Layout on Single Page */}
+        {copies === 4 && (
+          <div className="w-full max-w-[185mm] mx-auto pt-1">
+            {/* Row 1 */}
+            <div style={{ display: 'flex', gap: '10px', width: '100%', marginBottom: '10px', pageBreakInside: 'avoid', breakInside: 'avoid' }}>
+              {[0, 1].map(index => (
+                <div key={index} style={{ flex: '1 1 50%', minWidth: 0 }}>
+                  <div
+                    className="printable-qr-slip bg-white text-slate-950 p-2 rounded-2xl border-2 border-slate-950 text-center flex flex-col items-center justify-between mx-auto w-full"
+                    style={{ height: '84mm', maxHeight: '84mm', boxSizing: 'border-box', pageBreakInside: 'avoid', breakInside: 'avoid' }}
+                  >
+                    <div className="border-b-2 border-slate-950 pb-1 w-full text-center">
+                      <h2 style={{ fontSize: '14px', fontWeight: 900, textTransform: 'uppercase', letterSpacing: '0.03em', color: '#000000', margin: 0, lineHeight: '1.2' }}>
+                        {COMPANY_CONFIG.name}
+                      </h2>
+                    </div>
+                    <div className="w-full flex items-center justify-center py-1">
+                      <QRCodeSVG
+                        value={computedQrValue}
+                        size={95}
+                        level="M"
+                        includeMargin={false}
+                        bgColor="#ffffff"
+                        fgColor="#000000"
+                      />
+                    </div>
+                    <div className="pt-1 pb-0.5 border-t-2 border-slate-950 w-full text-center">
+                      <p style={{ fontSize: '11px', fontWeight: 900, textTransform: 'uppercase', letterSpacing: '0.08em', color: '#475569', margin: '0 0 1px 0' }}>
+                        QR CODE NAME
+                      </p>
+                      <p style={{ fontSize: '19px', fontWeight: 900, fontFamily: 'monospace', letterSpacing: '0.05em', color: '#000000', margin: 0, lineHeight: '1.1' }}>
+                        {barcodeNo || '260500571'}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            {/* Row 2 */}
+            <div style={{ display: 'flex', gap: '10px', width: '100%', pageBreakInside: 'avoid', breakInside: 'avoid' }}>
+              {[2, 3].map(index => (
+                <div key={index} style={{ flex: '1 1 50%', minWidth: 0 }}>
+                  <div
+                    className="printable-qr-slip bg-white text-slate-950 p-2 rounded-2xl border-2 border-slate-950 text-center flex flex-col items-center justify-between mx-auto w-full"
+                    style={{ height: '84mm', maxHeight: '84mm', boxSizing: 'border-box', pageBreakInside: 'avoid', breakInside: 'avoid' }}
+                  >
+                    <div className="border-b-2 border-slate-950 pb-1 w-full text-center">
+                      <h2 style={{ fontSize: '14px', fontWeight: 900, textTransform: 'uppercase', letterSpacing: '0.03em', color: '#000000', margin: 0, lineHeight: '1.2' }}>
+                        {COMPANY_CONFIG.name}
+                      </h2>
+                    </div>
+                    <div className="w-full flex items-center justify-center py-1">
+                      <QRCodeSVG
+                        value={computedQrValue}
+                        size={95}
+                        level="M"
+                        includeMargin={false}
+                        bgColor="#ffffff"
+                        fgColor="#000000"
+                      />
+                    </div>
+                    <div className="pt-1 pb-0.5 border-t-2 border-slate-950 w-full text-center">
+                      <p style={{ fontSize: '11px', fontWeight: 900, textTransform: 'uppercase', letterSpacing: '0.08em', color: '#475569', margin: '0 0 1px 0' }}>
+                        QR CODE NAME
+                      </p>
+                      <p style={{ fontSize: '19px', fontWeight: 900, fontFamily: 'monospace', letterSpacing: '0.05em', color: '#000000', margin: 0, lineHeight: '1.1' }}>
+                        {barcodeNo || '260500571'}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* 8 COPIES: 2 Pages of 4 Standard Cards Each (Exact 4x Size) */}
         {copies === 8 && (
-          <div className="grid grid-cols-2 gap-2 w-full max-w-[185mm] mx-auto pt-1">
-            {Array.from({ length: 8 }).map((_, index) => (
-              <div
-                key={index}
-                className="printable-qr-slip bg-white text-slate-950 p-2 rounded-xl border border-slate-950 text-center flex flex-col items-center justify-between mx-auto w-full"
-                style={{ height: '56mm', boxSizing: 'border-box' }}
-              >
-                <div className="border-b border-slate-950 pb-0.5 w-full text-center">
-                  <h2 className="text-[10px] font-black tracking-wide uppercase text-slate-950 leading-none font-heading">
-                    {COMPANY_CONFIG.name}
-                  </h2>
-                </div>
-                <div className="w-full flex items-center justify-center py-0.5">
-                  <QRCodeSVG
-                    value={computedQrValue}
-                    size={75}
-                    level="M"
-                    includeMargin={false}
-                    bgColor="#ffffff"
-                    fgColor="#000000"
-                  />
-                </div>
-                <div className="pt-0.5 border-t border-slate-950 w-full flex items-center justify-center gap-1.5 text-center">
-                  <span className="text-[9px] font-black uppercase tracking-wider text-slate-700">
-                    QR NAME:
-                  </span>
-                  <span className="text-xs font-black font-mono text-slate-950 tracking-wider">
-                    {barcodeNo || '260500571'}
-                  </span>
-                </div>
+          <div className="w-full" style={{ display: 'block' }}>
+            {/* PAGE 1: 4 Standard Cards */}
+            <div
+              className="print-page-break"
+              style={{
+                pageBreakAfter: 'always',
+                breakAfter: 'page',
+                display: 'block',
+                width: '100%',
+                maxWidth: '185mm',
+                margin: '0 auto',
+                boxSizing: 'border-box',
+              }}
+            >
+              {/* Row 1 */}
+              <div style={{ display: 'flex', gap: '10px', width: '100%', marginBottom: '10px', pageBreakInside: 'avoid', breakInside: 'avoid' }}>
+                {[0, 1].map(index => (
+                  <div key={`p1-${index}`} style={{ flex: '1 1 50%', minWidth: 0 }}>
+                    <div
+                      className="printable-qr-slip bg-white text-slate-950 p-2 rounded-2xl border-2 border-slate-950 text-center flex flex-col items-center justify-between mx-auto w-full"
+                      style={{ height: '84mm', maxHeight: '84mm', boxSizing: 'border-box', pageBreakInside: 'avoid', breakInside: 'avoid' }}
+                    >
+                      <div className="border-b-2 border-slate-950 pb-1 w-full text-center">
+                        <h2 style={{ fontSize: '14px', fontWeight: 900, textTransform: 'uppercase', letterSpacing: '0.03em', color: '#000000', margin: 0, lineHeight: '1.2' }}>
+                          {COMPANY_CONFIG.name}
+                        </h2>
+                      </div>
+                      <div className="w-full flex items-center justify-center py-1">
+                        <QRCodeSVG
+                          value={computedQrValue}
+                          size={95}
+                          level="M"
+                          includeMargin={false}
+                          bgColor="#ffffff"
+                          fgColor="#000000"
+                        />
+                      </div>
+                      <div className="pt-1 pb-0.5 border-t-2 border-slate-950 w-full text-center">
+                        <p style={{ fontSize: '11px', fontWeight: 900, textTransform: 'uppercase', letterSpacing: '0.08em', color: '#475569', margin: '0 0 1px 0' }}>
+                          QR CODE NAME
+                        </p>
+                        <p style={{ fontSize: '19px', fontWeight: 900, fontFamily: 'monospace', letterSpacing: '0.05em', color: '#000000', margin: 0, lineHeight: '1.1' }}>
+                          {barcodeNo || '260500571'}
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                ))}
               </div>
-            ))}
+
+              {/* Row 2 */}
+              <div style={{ display: 'flex', gap: '10px', width: '100%', pageBreakInside: 'avoid', breakInside: 'avoid' }}>
+                {[2, 3].map(index => (
+                  <div key={`p1-${index}`} style={{ flex: '1 1 50%', minWidth: 0 }}>
+                    <div
+                      className="printable-qr-slip bg-white text-slate-950 p-2 rounded-2xl border-2 border-slate-950 text-center flex flex-col items-center justify-between mx-auto w-full"
+                      style={{ height: '84mm', maxHeight: '84mm', boxSizing: 'border-box', pageBreakInside: 'avoid', breakInside: 'avoid' }}
+                    >
+                      <div className="border-b-2 border-slate-950 pb-1 w-full text-center">
+                        <h2 style={{ fontSize: '14px', fontWeight: 900, textTransform: 'uppercase', letterSpacing: '0.03em', color: '#000000', margin: 0, lineHeight: '1.2' }}>
+                          {COMPANY_CONFIG.name}
+                        </h2>
+                      </div>
+                      <div className="w-full flex items-center justify-center py-1">
+                        <QRCodeSVG
+                          value={computedQrValue}
+                          size={95}
+                          level="M"
+                          includeMargin={false}
+                          bgColor="#ffffff"
+                          fgColor="#000000"
+                        />
+                      </div>
+                      <div className="pt-1 pb-0.5 border-t-2 border-slate-950 w-full text-center">
+                        <p style={{ fontSize: '11px', fontWeight: 900, textTransform: 'uppercase', letterSpacing: '0.08em', color: '#475569', margin: '0 0 1px 0' }}>
+                          QR CODE NAME
+                        </p>
+                        <p style={{ fontSize: '19px', fontWeight: 900, fontFamily: 'monospace', letterSpacing: '0.05em', color: '#000000', margin: 0, lineHeight: '1.1' }}>
+                          {barcodeNo || '260500571'}
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* PAGE 2: 4 Standard Cards */}
+            <div
+              style={{
+                display: 'block',
+                width: '100%',
+                maxWidth: '185mm',
+                margin: '0 auto',
+                boxSizing: 'border-box',
+              }}
+            >
+              {/* Row 1 */}
+              <div style={{ display: 'flex', gap: '10px', width: '100%', marginBottom: '10px', pageBreakInside: 'avoid', breakInside: 'avoid' }}>
+                {[0, 1].map(index => (
+                  <div key={`p2-${index}`} style={{ flex: '1 1 50%', minWidth: 0 }}>
+                    <div
+                      className="printable-qr-slip bg-white text-slate-950 p-2 rounded-2xl border-2 border-slate-950 text-center flex flex-col items-center justify-between mx-auto w-full"
+                      style={{ height: '84mm', maxHeight: '84mm', boxSizing: 'border-box', pageBreakInside: 'avoid', breakInside: 'avoid' }}
+                    >
+                      <div className="border-b-2 border-slate-950 pb-1 w-full text-center">
+                        <h2 style={{ fontSize: '14px', fontWeight: 900, textTransform: 'uppercase', letterSpacing: '0.03em', color: '#000000', margin: 0, lineHeight: '1.2' }}>
+                          {COMPANY_CONFIG.name}
+                        </h2>
+                      </div>
+                      <div className="w-full flex items-center justify-center py-1">
+                        <QRCodeSVG
+                          value={computedQrValue}
+                          size={95}
+                          level="M"
+                          includeMargin={false}
+                          bgColor="#ffffff"
+                          fgColor="#000000"
+                        />
+                      </div>
+                      <div className="pt-1 pb-0.5 border-t-2 border-slate-950 w-full text-center">
+                        <p style={{ fontSize: '11px', fontWeight: 900, textTransform: 'uppercase', letterSpacing: '0.08em', color: '#475569', margin: '0 0 1px 0' }}>
+                          QR CODE NAME
+                        </p>
+                        <p style={{ fontSize: '19px', fontWeight: 900, fontFamily: 'monospace', letterSpacing: '0.05em', color: '#000000', margin: 0, lineHeight: '1.1' }}>
+                          {barcodeNo || '260500571'}
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+
+              {/* Row 2 */}
+              <div style={{ display: 'flex', gap: '10px', width: '100%', pageBreakInside: 'avoid', breakInside: 'avoid' }}>
+                {[2, 3].map(index => (
+                  <div key={`p2-${index}`} style={{ flex: '1 1 50%', minWidth: 0 }}>
+                    <div
+                      className="printable-qr-slip bg-white text-slate-950 p-2 rounded-2xl border-2 border-slate-950 text-center flex flex-col items-center justify-between mx-auto w-full"
+                      style={{ height: '84mm', maxHeight: '84mm', boxSizing: 'border-box', pageBreakInside: 'avoid', breakInside: 'avoid' }}
+                    >
+                      <div className="border-b-2 border-slate-950 pb-1 w-full text-center">
+                        <h2 style={{ fontSize: '14px', fontWeight: 900, textTransform: 'uppercase', letterSpacing: '0.03em', color: '#000000', margin: 0, lineHeight: '1.2' }}>
+                          {COMPANY_CONFIG.name}
+                        </h2>
+                      </div>
+                      <div className="w-full flex items-center justify-center py-1">
+                        <QRCodeSVG
+                          value={computedQrValue}
+                          size={95}
+                          level="M"
+                          includeMargin={false}
+                          bgColor="#ffffff"
+                          fgColor="#000000"
+                        />
+                      </div>
+                      <div className="pt-1 pb-0.5 border-t-2 border-slate-950 w-full text-center">
+                        <p style={{ fontSize: '11px', fontWeight: 900, textTransform: 'uppercase', letterSpacing: '0.08em', color: '#475569', margin: '0 0 1px 0' }}>
+                          QR CODE NAME
+                        </p>
+                        <p style={{ fontSize: '19px', fontWeight: 900, fontFamily: 'monospace', letterSpacing: '0.05em', color: '#000000', margin: 0, lineHeight: '1.1' }}>
+                          {barcodeNo || '260500571'}
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
           </div>
         )}
       </div>
