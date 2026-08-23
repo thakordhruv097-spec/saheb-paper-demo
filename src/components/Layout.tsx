@@ -72,6 +72,12 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
   const { timeframe, setTimeframe, selectedDate, setSelectedDate, handlePrevDate, handleNextDate, systemToday } = useDateFilter();
   const [isDatePickerModalOpen, setIsDatePickerModalOpen] = useState(false);
 
+  // Contextual Active Shift ('Shift A' from 08:00 to 20:00, 'Shift B' from 20:00 to 08:00)
+  const activeShift = useMemo(() => {
+    const currentHour = new Date().getHours();
+    return currentHour >= 8 && currentHour < 20 ? 'Shift A' : 'Shift B';
+  }, []);
+
   // Profile Modal state
   const [isProfileModalOpen, setIsProfileModalOpen] = useState(false);
   const [profileDisplayName, setProfileDisplayName] = useState('');
@@ -543,6 +549,12 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
 
         {/* Right Side Header Controls */}
         <div className="flex items-center gap-2 sm:gap-3">
+
+          {/* Contextual Active Shift Badge */}
+          <div className="hidden xs:inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-emerald-500/10 dark:bg-emerald-500/20 text-emerald-700 dark:text-emerald-300 border border-emerald-500/30 text-[10px] sm:text-[11px] font-black uppercase tracking-wider select-none shadow-2xs">
+            <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+            <span>{activeShift} · Running</span>
+          </div>
 
           {/* Date & Timeframe Filter controls (Admin/Management Only) */}
           {(user?.role === 'Admin' || user?.role === 'Management') && (
