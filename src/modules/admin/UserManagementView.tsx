@@ -20,30 +20,30 @@ import {
 } from 'lucide-react';
 
 const MASTER_ROLES: { key: UserRole; label: string; desc: string; color: string }[] = [
-  { key: 'Admin', label: '👑 Admin Owner', desc: 'Full Master System Control', color: 'bg-red-100 text-red-700 dark:bg-red-950/40 dark:text-red-400 border-red-200 dark:border-red-800' },
-  { key: 'PlantManager', label: '🏭 Plant Manager', desc: 'Mill Operations & Production', color: 'bg-indigo-100 text-indigo-700 dark:bg-indigo-950/40 dark:text-indigo-400 border-indigo-200 dark:border-indigo-800' },
-  { key: 'LabOperator', label: '🥣 Pulper (Pulp Mill)', desc: 'Pulper & Pulp Mill Operations', color: 'bg-purple-100 text-purple-700 dark:bg-purple-950/40 dark:text-purple-400 border-purple-200 dark:border-purple-800' },
-  { key: 'Viewer', label: '👁️ Viewer', desc: 'Read-Only System Observer', color: 'bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300 border-slate-200 dark:border-slate-700' },
-  { key: 'Shopper', label: '🛒 Shopper (Purchase)', desc: 'Waste Paper & Chemical Purchase', color: 'bg-emerald-100 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-400 border-emerald-200 dark:border-emerald-800' },
-  { key: 'Dispatcher', label: '🚚 Dispatcher', desc: 'Reel Stock & Delivery Order', color: 'bg-amber-100 text-amber-700 dark:bg-amber-950/40 dark:text-amber-400 border-amber-200 dark:border-amber-800' },
+  { key: 'Admin', label: 'Admin Owner', desc: 'Full Master System Control', color: 'bg-amber-500/10 text-amber-800 dark:text-amber-300 border-amber-300/50 dark:border-amber-700/50' },
+  { key: 'PlantManager', label: 'Plant Manager', desc: 'Mill Operations & Production', color: 'bg-slate-100 text-slate-800 dark:bg-slate-800 dark:text-slate-200 border-slate-300 dark:border-slate-700' },
+  { key: 'LabOperator', label: 'Pulper (Pulp Mill)', desc: 'Pulper & Pulp Mill Operations', color: 'bg-slate-100 text-slate-800 dark:bg-slate-800 dark:text-slate-200 border-slate-300 dark:border-slate-700' },
+  { key: 'Viewer', label: 'Viewer', desc: 'Read-Only System Observer', color: 'bg-slate-100 text-slate-800 dark:bg-slate-800 dark:text-slate-200 border-slate-300 dark:border-slate-700' },
+  { key: 'Shopper', label: 'Shopper (Purchase)', desc: 'Waste Paper & Chemical Purchase', color: 'bg-slate-100 text-slate-800 dark:bg-slate-800 dark:text-slate-200 border-slate-300 dark:border-slate-700' },
+  { key: 'Dispatcher', label: 'Dispatcher', desc: 'Reel Stock & Delivery Order', color: 'bg-slate-100 text-slate-800 dark:bg-slate-800 dark:text-slate-200 border-slate-300 dark:border-slate-700' },
 ];
 
 const ROLE_COLORS: Record<string, string> = {
-  Admin: 'bg-red-100 text-red-700 dark:bg-red-950/40 dark:text-red-400 border-red-200 dark:border-red-800',
-  PlantManager: 'bg-indigo-100 text-indigo-700 dark:bg-indigo-950/40 dark:text-indigo-400 border-indigo-200 dark:border-indigo-800',
-  LabOperator: 'bg-purple-100 text-purple-700 dark:bg-purple-950/40 dark:text-purple-400 border-purple-200 dark:border-purple-800',
-  Viewer: 'bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300 border-slate-200 dark:border-slate-700',
-  Shopper: 'bg-emerald-100 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-400 border-emerald-200 dark:border-emerald-800',
-  Dispatcher: 'bg-amber-100 text-amber-700 dark:bg-amber-950/40 dark:text-amber-400 border-amber-200 dark:border-amber-800',
+  Admin: 'bg-amber-500/10 text-amber-800 dark:text-amber-300 border-amber-300/40 dark:border-amber-700/50',
+  PlantManager: 'bg-slate-100 text-slate-700 dark:bg-slate-800/90 dark:text-slate-200 border-slate-200 dark:border-slate-700',
+  LabOperator: 'bg-slate-100 text-slate-700 dark:bg-slate-800/90 dark:text-slate-200 border-slate-200 dark:border-slate-700',
+  Viewer: 'bg-slate-100 text-slate-700 dark:bg-slate-800/90 dark:text-slate-200 border-slate-200 dark:border-slate-700',
+  Shopper: 'bg-slate-100 text-slate-700 dark:bg-slate-800/90 dark:text-slate-200 border-slate-200 dark:border-slate-700',
+  Dispatcher: 'bg-slate-100 text-slate-700 dark:bg-slate-800/90 dark:text-slate-200 border-slate-200 dark:border-slate-700',
 };
 
 const ROLE_LABELS: Record<string, string> = {
-  Admin: '👑 Admin',
-  PlantManager: '🏭 Plant Manager',
-  LabOperator: '🥣 Pulper',
-  Viewer: '👁️ Viewer',
-  Shopper: '🛒 Shopper',
-  Dispatcher: '🚚 Dispatcher',
+  Admin: 'Admin',
+  PlantManager: 'Plant Manager',
+  LabOperator: 'Pulper',
+  Viewer: 'Viewer',
+  Shopper: 'Shopper',
+  Dispatcher: 'Dispatcher',
 };
 
 export const UserManagementView: React.FC = () => {
@@ -283,7 +283,7 @@ export const UserManagementView: React.FC = () => {
 
         <button
           onClick={handleOpenAddModal}
-          className="px-5 py-3 rounded-2xl bg-[#008163] hover:bg-[#006e54] text-white font-black text-xs uppercase tracking-wider shadow-md transition cursor-pointer flex items-center justify-center gap-2 shrink-0 active:scale-95"
+          className="px-4 py-2.5 rounded-xl bg-primary hover:bg-primary-dark text-white font-black text-xs uppercase tracking-wider shadow-sm transition cursor-pointer flex items-center justify-center gap-2 shrink-0 active:scale-95"
         >
           <Plus className="h-4 w-4" />
           <span>Add New User</span>
@@ -292,9 +292,9 @@ export const UserManagementView: React.FC = () => {
 
 
 
-      {/* 3. SEARCH & ROLE FILTER BAR */}
+      {/* 3. SEARCH BAR */}
       <div className="bg-white dark:bg-surface-dark border border-slate-200 dark:border-slate-700/80 rounded-2xl p-3 shadow-xs flex flex-col sm:flex-row gap-3 items-center justify-between">
-        <div className="relative w-full sm:w-80">
+        <div className="relative w-full sm:w-96">
           <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
           <input
             type="text"
@@ -304,24 +304,18 @@ export const UserManagementView: React.FC = () => {
             className="w-full pl-10 pr-9 py-2 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-xs font-semibold text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-primary/40"
           />
           {searchTerm && (
-            <button onClick={() => setSearchTerm('')} className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600">
+            <button 
+              onClick={() => setSearchTerm('')} 
+              className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600"
+              aria-label="Clear search query"
+            >
               <X className="h-4 w-4" />
             </button>
           )}
         </div>
 
-        <div className="flex items-center gap-2 w-full sm:w-auto">
-          <span className="text-xs font-bold text-slate-500 shrink-0">Filter by Role:</span>
-          <select
-            value={filterRole}
-            onChange={e => setFilterRole(e.target.value)}
-            className="w-full sm:w-auto py-2 px-3 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-xs font-bold text-slate-700 dark:text-slate-200 focus:outline-none cursor-pointer"
-          >
-            <option value="ALL">All Roles ({users.length})</option>
-            {MASTER_ROLES.map(r => (
-              <option key={r.key} value={r.key}>{r.label}</option>
-            ))}
-          </select>
+        <div className="flex items-center gap-2 text-xs font-semibold text-slate-500 dark:text-slate-400 shrink-0">
+          <span>Showing <strong className="text-slate-800 dark:text-white">{filteredUsers.length}</strong> of {users.length} accounts</span>
         </div>
       </div>
 
@@ -331,7 +325,7 @@ export const UserManagementView: React.FC = () => {
           <thead>
             <tr className="bg-slate-50/80 dark:bg-slate-900/80 border-b border-slate-200 dark:border-slate-700 text-slate-400 uppercase tracking-wider font-extrabold text-[10px]">
               <th className="py-4 px-6">User Details</th>
-              <th className="py-4 px-6">Assigned Roles (Multi-Role)</th>
+              <th className="py-4 px-6 text-center">Assigned Roles (Multi-Role)</th>
               <th className="py-4 px-6">Mobile & Email</th>
               <th className="py-4 px-6">4-Digit PIN</th>
               <th className="py-4 px-6">Status</th>
@@ -357,11 +351,10 @@ export const UserManagementView: React.FC = () => {
                   </td>
 
                   {/* Assigned Multi-Roles */}
-                  <td className="py-4 px-6">
-                    <div className="flex flex-wrap gap-1.5 max-w-xs">
+                  <td className="py-4 px-6 text-center">
+                    <div className="flex flex-wrap gap-1.5 justify-center items-center">
                       {assignedRoles.map(rKey => (
-                        <span key={rKey} className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-extrabold border ${ROLE_COLORS[rKey] || 'bg-slate-100 text-slate-700'}`}>
-                          <Shield className="h-3 w-3" />
+                        <span key={rKey} className={`inline-flex items-center justify-center px-3 py-1 rounded-full text-[11px] font-extrabold border ${ROLE_COLORS[rKey] || 'bg-slate-100 text-slate-700'}`}>
                           {ROLE_LABELS[rKey] || rKey}
                         </span>
                       ))}
@@ -408,19 +401,20 @@ export const UserManagementView: React.FC = () => {
                     <div className="flex items-center justify-end gap-2">
                       <button
                         onClick={() => handleOpenEditModal(u)}
-                        className="p-2 text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-xl transition cursor-pointer flex items-center gap-1 text-xs font-bold"
+                        className="px-2.5 py-1.5 text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-xl transition cursor-pointer flex items-center gap-1 text-xs font-bold"
                         title="Edit Account & Roles"
                       >
-                        <Pencil className="h-4 w-4 text-primary" />
+                        <Pencil className="h-3.5 w-3.5 text-primary" />
                         <span>Edit</span>
                       </button>
 
                       <button
                         onClick={() => setDeletingUser(u)}
-                        className="p-2 text-red-500 hover:bg-red-50 dark:hover:bg-red-950/30 rounded-xl transition cursor-pointer flex items-center gap-1 text-xs font-bold"
+                        className="px-2.5 py-1.5 text-red-500 hover:bg-red-50 dark:hover:bg-red-950/30 rounded-xl transition cursor-pointer flex items-center gap-1 text-xs font-bold"
                         title="Delete User"
                       >
-                        <Trash2 className="h-4 w-4" />
+                        <Trash2 className="h-3.5 w-3.5" />
+                        <span>Delete</span>
                       </button>
                     </div>
                   </td>
@@ -483,13 +477,13 @@ export const UserManagementView: React.FC = () => {
                 <div className="flex items-center gap-2">
                   <button
                     onClick={() => handleOpenEditModal(u)}
-                    className="px-3 py-1 bg-primary/10 text-primary font-bold text-xs rounded-xl flex items-center gap-1 cursor-pointer"
+                    className="px-2.5 py-1.5 text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-xl transition cursor-pointer flex items-center gap-1 text-xs font-bold"
                   >
-                    <Pencil className="h-3.5 w-3.5" /> Edit
+                    <Pencil className="h-3.5 w-3.5 text-primary" /> Edit
                   </button>
                   <button
                     onClick={() => setDeletingUser(u)}
-                    className="px-3 py-1 bg-red-50 text-red-600 font-bold text-xs rounded-xl flex items-center gap-1 cursor-pointer"
+                    className="px-2.5 py-1.5 text-red-500 hover:bg-red-50 dark:hover:bg-red-950/30 rounded-xl transition cursor-pointer flex items-center gap-1 text-xs font-bold"
                   >
                     <Trash2 className="h-3.5 w-3.5" /> Delete
                   </button>
@@ -603,14 +597,14 @@ export const UserManagementView: React.FC = () => {
               <div className="flex gap-3 pt-2">
                 <button
                   type="submit"
-                  className="flex-1 py-3 bg-[#008163] hover:bg-[#006e54] text-white rounded-xl text-xs font-black uppercase tracking-wider shadow-md cursor-pointer transition"
+                  className="flex-1 py-2.5 px-4 bg-primary hover:bg-primary-dark text-white rounded-xl text-xs font-black uppercase tracking-wider shadow-sm cursor-pointer transition flex items-center justify-center gap-2"
                 >
                   Create User Account
                 </button>
                 <button
                   type="button"
                   onClick={() => setShowAddModal(false)}
-                  className="px-5 py-3 border border-slate-200 dark:border-slate-700 rounded-xl text-xs font-bold text-slate-600 dark:text-slate-300 hover:bg-slate-100 cursor-pointer"
+                  className="px-4 py-2.5 border border-slate-200 dark:border-slate-700 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 rounded-xl text-xs font-bold text-slate-600 dark:text-slate-300 cursor-pointer transition"
                 >
                   Cancel
                 </button>
@@ -716,14 +710,14 @@ export const UserManagementView: React.FC = () => {
               <div className="flex gap-3 pt-2">
                 <button
                   type="submit"
-                  className="flex-1 py-3 bg-[#008163] hover:bg-[#006e54] text-white rounded-xl text-xs font-black uppercase tracking-wider shadow-md cursor-pointer transition flex items-center justify-center gap-2"
+                  className="flex-1 py-2.5 px-4 bg-primary hover:bg-primary-dark text-white rounded-xl text-xs font-black uppercase tracking-wider shadow-sm cursor-pointer transition flex items-center justify-center gap-2"
                 >
                   <Save className="h-4 w-4" /> Save Changes
                 </button>
                 <button
                   type="button"
                   onClick={() => setEditingUser(null)}
-                  className="px-5 py-3 border border-slate-200 dark:border-slate-700 rounded-xl text-xs font-bold text-slate-600 dark:text-slate-300 hover:bg-slate-100 cursor-pointer"
+                  className="px-4 py-2.5 border border-slate-200 dark:border-slate-700 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 rounded-xl text-xs font-bold text-slate-600 dark:text-slate-300 cursor-pointer transition"
                 >
                   Cancel
                 </button>
@@ -748,14 +742,14 @@ export const UserManagementView: React.FC = () => {
               <button
                 type="button"
                 onClick={handleConfirmDelete}
-                className="flex-1 py-2.5 bg-red-600 hover:bg-red-700 text-white rounded-xl text-xs font-black shadow-md cursor-pointer"
+                className="flex-1 py-2.5 px-4 bg-red-600 hover:bg-red-700 text-white rounded-xl text-xs font-black shadow-sm cursor-pointer transition"
               >
                 Yes, Delete
               </button>
               <button
                 type="button"
                 onClick={() => setDeletingUser(null)}
-                className="flex-1 py-2.5 border border-slate-200 dark:border-slate-700 rounded-xl text-xs font-bold text-slate-600 dark:text-slate-300 hover:bg-slate-100 cursor-pointer"
+                className="flex-1 py-2.5 px-4 border border-slate-200 dark:border-slate-700 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 rounded-xl text-xs font-bold text-slate-600 dark:text-slate-300 cursor-pointer transition"
               >
                 Cancel
               </button>
