@@ -516,7 +516,7 @@ export const MachineView: React.FC = () => {
               onDateFromChange={setMachDateFrom}
               onDateToChange={setMachDateTo}
               filterFields={[
-                { id: 'shift', label: 'Shift', options: [{label: 'Shift A', value: 'A'}, {label: 'Shift B', value: 'B'}, {label: 'Shift C', value: 'C'}] },
+                { id: 'shift', label: 'Shift', options: [{label: 'Day Shift', value: 'A'}, {label: 'Night Shift', value: 'B'}] },
                 { id: 'product', label: 'Product', options: [...new Set(rolls.map(r => r.product))].map(p => ({label: p, value: p})) },
               ]}
               activeFilters={{ shift: machShiftFilter, product: machProductFilter }}
@@ -532,14 +532,22 @@ export const MachineView: React.FC = () => {
             {filteredRolls.length === 0 ? (
               <p className="text-xs text-slate-400 py-4 text-center font-medium">No production rolls found.</p>
             ) : (
-              [...filteredRolls].reverse().slice(0, 15).map(r => (
-                <div key={r.rollNo} className="p-3.5 bg-slate-50 dark:bg-slate-900/60 border border-slate-200 dark:border-slate-800 rounded-2xl space-y-2">
-                  <div className="flex justify-between items-center">
-                    <span className="font-black font-mono text-xs text-primary dark:text-blue-400">{r.rollNo}</span>
-                    <span className="px-2 py-0.5 rounded-full bg-blue-100 dark:bg-blue-950/60 text-primary dark:text-blue-300 text-[9px] font-black uppercase">
-                      Shift {r.shift}
-                    </span>
-                  </div>
+              [...filteredRolls].reverse().slice(0, 15).map(r => {
+                const isDay = (r.shift as string) === 'A' || (r.shift as string) === 'Day';
+                const isNight = (r.shift as string) === 'B' || (r.shift as string) === 'Night';
+                const shiftDisplay = isDay ? 'Day' : isNight ? 'Night' : r.shift;
+                return (
+                  <div key={r.rollNo} className="p-3.5 bg-slate-50 dark:bg-slate-900/60 border border-slate-200 dark:border-slate-800 rounded-2xl space-y-2">
+                    <div className="flex justify-between items-center">
+                      <span className="font-black font-mono text-xs text-primary dark:text-blue-400">{r.rollNo}</span>
+                      <span className={`px-2 py-0.5 rounded-full text-[9px] font-black uppercase ${
+                        isDay 
+                          ? 'bg-amber-100 dark:bg-amber-950/60 text-amber-700 dark:text-amber-300' 
+                          : 'bg-blue-100 dark:bg-blue-950/60 text-blue-700 dark:text-blue-300'
+                      }`}>
+                        {shiftDisplay}
+                      </span>
+                    </div>
                   <div className="grid grid-cols-2 gap-1 text-[11px] text-slate-600 dark:text-slate-300">
                     <div>
                       <span className="text-slate-400 uppercase text-[9px] block">Product</span>
@@ -569,7 +577,8 @@ export const MachineView: React.FC = () => {
                     </div>
                   )}
                 </div>
-              ))
+                );
+              })
             )}
           </div>
         </div>

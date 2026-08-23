@@ -50,11 +50,14 @@
 }
 
 /* Keep Inter for consistency with existing design */
-.font-mono, [class*="font-mono"] {
+.font-mono,
+[class*="font-mono"] {
   font-family: ui-monospace, "SF Mono", "Cascadia Mono", "Segoe UI Mono", monospace !important;
 }
 
-html, body, #root {
+html,
+body,
+#root {
   font-family: "Inter", sans-serif;
   margin: 0;
   padding: 0;
@@ -62,7 +65,9 @@ html, body, #root {
   background-color: #f8fafc;
 }
 
-html.dark, html.dark body, .dark #root {
+html.dark,
+html.dark body,
+.dark #root {
   background-color: #0f2828;
 }
 
@@ -139,13 +144,16 @@ input[type="number"] {
   width: 9px;
   height: 9px;
 }
+
 ::-webkit-scrollbar-track {
   background: #f1f5f9;
 }
+
 .dark ::-webkit-scrollbar-track,
 html.dark ::-webkit-scrollbar-track {
   background: #0b1329;
 }
+
 ::-webkit-scrollbar-thumb {
   background: linear-gradient(180deg, #0d7c7c 0%, #0a5858 100%);
   border-radius: 9999px;
@@ -153,11 +161,13 @@ html.dark ::-webkit-scrollbar-track {
   background-clip: padding-box;
   box-shadow: 0 0 6px rgba(13, 124, 124, 0.3);
 }
+
 .dark ::-webkit-scrollbar-thumb,
 html.dark ::-webkit-scrollbar-thumb {
   border: 1.5px solid #0b1329;
   box-shadow: 0 0 8px rgba(13, 124, 124, 0.4);
 }
+
 ::-webkit-scrollbar-thumb:hover {
   background: linear-gradient(180deg, #0a5858 0%, #0d7c7c 100%);
 }
@@ -171,8 +181,10 @@ body.login-active,
   min-height: 100dvh !important;
   height: 100% !important;
   overflow: hidden !important;
-  -ms-overflow-style: none !important; /* IE and Edge */
-  scrollbar-width: none !important; /* Firefox */
+  -ms-overflow-style: none !important;
+  /* IE and Edge */
+  scrollbar-width: none !important;
+  /* Firefox */
 }
 
 .custom-scrollbar,
@@ -189,7 +201,8 @@ body.login-active::-webkit-scrollbar,
 .no-scrollbar::-webkit-scrollbar,
 .login-page-container::-webkit-scrollbar,
 .login-page-container *::-webkit-scrollbar {
-  display: none !important; /* Chrome, Safari, Opera */
+  display: none !important;
+  /* Chrome, Safari, Opera */
   width: 0px !important;
   height: 0px !important;
   background: transparent !important;
@@ -349,7 +362,8 @@ html.dark .dashboard-main-scrollbar::-webkit-scrollbar-thumb:hover,
   }
 
   /* Reset main layouts */
-  html, body {
+  html,
+  body {
     background: #ffffff !important;
     background-color: #ffffff !important;
     color: #000000 !important;
@@ -406,7 +420,7 @@ html.dark .dashboard-main-scrollbar::-webkit-scrollbar-thumb:hover,
     visibility: hidden !important;
   }
 
-  #printable-receipt-modal > div {
+  #printable-receipt-modal>div {
     max-width: 100% !important;
     width: 100% !important;
     padding: 0 !important;
@@ -498,4 +512,20 @@ body.print-a4-labels .qr-label-card {
   border-radius: 4px !important;
 }
 
-
+/* Sleek Sidebar Custom Scrollbar */
+.sidebar-scrollbar::-webkit-scrollbar {
+  width: 4px;
+}
+.sidebar-scrollbar::-webkit-scrollbar-track {
+  background: transparent;
+}
+.sidebar-scrollbar::-webkit-scrollbar-thumb {
+  background: rgba(13, 124, 124, 0.2);
+  border-radius: 9999px;
+}
+.dark .sidebar-scrollbar::-webkit-scrollbar-thumb {
+  background: rgba(125, 211, 211, 0.2);
+}
+.sidebar-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: rgba(13, 124, 124, 0.4);
+}

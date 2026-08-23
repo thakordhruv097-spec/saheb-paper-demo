@@ -223,7 +223,7 @@ export function printPaperTestReport(report: PaperTestReport): void {
         <td class="label-cell">ROLL NO:</td>
         <td class="val-cell">${report.rollNo}</td>
         <td class="label-cell">SHIFT:</td>
-        <td class="val-cell">${report.shift}</td>
+        <td class="val-cell">${(report.shift as string) === 'A' || (report.shift as string) === 'Day' ? 'Day' : (report.shift as string) === 'B' || (report.shift as string) === 'Night' ? 'Night' : report.shift}</td>
         <td class="label-cell">DATE:</td>
         <td class="val-cell">${report.date.split('-').reverse().join('.')}</td>
       </tr>

@@ -55,9 +55,10 @@ import {
 } from 'lucide-react';
 
 import { WorkflowStepBadge, WORKFLOW_STEPS } from '../../components/WorkflowStepBadge';
+import { DispatchedReelsVault } from './DispatchedReelsVault';
 
 interface DispatchViewProps {
-  initialTab?: 'orders' | 'create_slip' | 'slips_list';
+  initialTab?: 'orders' | 'create_slip' | 'slips_list' | 'dispatched_vault';
   hideTabs?: boolean;
   hideHeader?: boolean;
   onOpenScanner?: () => void;
@@ -77,7 +78,8 @@ export const DispatchView: React.FC<DispatchViewProps> = ({ initialTab = 'orders
   const products = getProducts();
 
   // Tab View Toggle - Determine from URL pathname or initialTab prop
-  const [activeTab, setActiveTab] = useState<'orders' | 'create_slip' | 'slips_list'>(() => {
+  const [activeTab, setActiveTab] = useState<'orders' | 'create_slip' | 'slips_list' | 'dispatched_vault'>(() => {
+    if (location.pathname.includes('dispatched-reels') || location.pathname.includes('dispatched-vault')) return 'dispatched_vault';
     if (location.pathname.includes('packing-slips')) return 'slips_list';
     if (location.pathname.includes('draft-packing-slip')) return 'create_slip';
     return initialTab;
@@ -85,7 +87,9 @@ export const DispatchView: React.FC<DispatchViewProps> = ({ initialTab = 'orders
 
   // Sync tab with URL location changes
   useEffect(() => {
-    if (location.pathname.includes('packing-slips')) {
+    if (location.pathname.includes('dispatched-reels') || location.pathname.includes('dispatched-vault')) {
+      setActiveTab('dispatched_vault');
+    } else if (location.pathname.includes('packing-slips')) {
       setActiveTab('slips_list');
     } else if (location.pathname.includes('draft-packing-slip')) {
       setActiveTab('create_slip');
@@ -97,7 +101,7 @@ export const DispatchView: React.FC<DispatchViewProps> = ({ initialTab = 'orders
     setOrders(getPendingOrders());
   }, [location.pathname, initialTab]);
 
-  const handleTabChange = (tab: 'orders' | 'create_slip' | 'slips_list') => {
+  const handleTabChange = (tab: 'orders' | 'create_slip' | 'slips_list' | 'dispatched_vault') => {
     setActiveTab(tab);
     setReels(getReels());
     setSlips(getPackingSlips());
@@ -109,6 +113,8 @@ export const DispatchView: React.FC<DispatchViewProps> = ({ initialTab = 'orders
         navigate('/dispatch-receipt/draft-packing-slip');
       } else if (tab === 'slips_list') {
         navigate('/dispatch-receipt/packing-slips-&-challans');
+      } else if (tab === 'dispatched_vault') {
+        navigate('/dispatch-receipt/dispatched-reels');
       }
     }
   };
@@ -864,13 +870,13 @@ export const DispatchView: React.FC<DispatchViewProps> = ({ initialTab = 'orders
 
       {/* Enhanced Accessible Segmented Tab Bar */}
       {!hideTabs && (
-        <div className="bg-white dark:bg-slate-900/90 p-1.5 rounded-2xl border border-slate-200/90 dark:border-slate-800 shadow-sm w-full max-w-xl">
-          <div className="grid grid-cols-2 gap-1.5">
+        <div className="bg-white dark:bg-slate-900/90 p-1.5 rounded-2xl border border-slate-200/90 dark:border-slate-800 shadow-sm w-full">
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-1.5 w-full">
             {initialTab === 'orders' ? (
               <button
                 type="button"
                 onClick={() => { setActiveTab('orders'); setSuccessMsg(''); setErrorMsg(''); }}
-                className="col-span-2 w-full flex items-center justify-center gap-2.5 py-3 px-4 rounded-xl text-xs sm:text-sm font-black transition-all cursor-pointer bg-gradient-to-r from-blue-600 via-indigo-600 to-blue-700 text-white shadow-md"
+                className="col-span-1 sm:col-span-3 w-full flex items-center justify-center gap-2.5 py-3 px-4 rounded-xl text-xs sm:text-sm font-black transition-all cursor-pointer bg-gradient-to-r from-blue-600 via-indigo-600 to-blue-700 text-white shadow-md"
               >
                 <FileText className="h-4.5 w-4.5" />
                 <span>Customer Order Bookings</span>
@@ -907,6 +913,26 @@ export const DispatchView: React.FC<DispatchViewProps> = ({ initialTab = 'orders
                       : 'bg-blue-50 dark:bg-blue-950/60 text-primary dark:text-blue-400 border border-blue-200/60 dark:border-blue-800/60'
                   }`}>
                     {slips.length}
+                  </span>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => handleTabChange('dispatched_vault')}
+                  className={`w-full flex items-center justify-center gap-2 py-2.5 sm:py-3 px-3 sm:px-4 rounded-xl text-xs sm:text-sm font-black transition-all duration-200 cursor-pointer ${
+                    activeTab === 'dispatched_vault'
+                      ? 'bg-gradient-to-r from-purple-600 via-indigo-600 to-purple-700 text-white shadow-md shadow-purple-600/25 scale-[1.01]'
+                      : 'text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800/80 hover:text-slate-900 dark:hover:text-white'
+                  }`}
+                >
+                  <PackageCheck className="h-4 w-4 shrink-0" />
+                  <span className="truncate">Dispatched Reels</span>
+                  <span className={`px-2 py-0.5 rounded-full text-[11px] font-black shrink-0 ${
+                    activeTab === 'dispatched_vault' 
+                      ? 'bg-white/20 text-white border border-white/30' 
+                      : 'bg-purple-50 dark:bg-purple-950/60 text-purple-600 dark:text-purple-300 border border-purple-200/60 dark:border-purple-800/60'
+                  }`}>
+                    {reels.filter(r => r.status === 'DISPATCHED' || r.challanNo).length}
                   </span>
                 </button>
               </>
@@ -3194,6 +3220,21 @@ export const DispatchView: React.FC<DispatchViewProps> = ({ initialTab = 'orders
             </div>
           </div>
         </div>
+      )}
+
+      {/* 3. TAB: Dispatched Reels Archive & Vault (Test Section) */}
+      {activeTab === 'dispatched_vault' && (
+        <DispatchedReelsVault
+          reels={reels}
+          slips={slips}
+          parties={parties}
+          vehicles={vehicles}
+          onViewChallan={(slip) => setViewingSlip(slip)}
+          onPrintChallan={(slip) => {
+            setViewingSlip(slip);
+            setTimeout(() => window.print(), 150);
+          }}
+        />
       )}
 
       {/* Challan View Detail Modal / Printable Receipt (Multi-Page & Spec Grouped) */}

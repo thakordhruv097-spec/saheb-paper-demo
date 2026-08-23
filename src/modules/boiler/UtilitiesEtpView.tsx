@@ -1,14 +1,19 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../auth/AuthContext';
-import { useLocation } from 'react-router-dom';
+import { useLocation, useNavigate } from 'react-router-dom';
 import { BoilerView } from './BoilerView';
 import { EtpView } from '../etp/EtpView';
 import { ElectricityView } from '../electricity/ElectricityView';
 import { Flame, Droplet, Lightbulb } from 'lucide-react';
 
-export const UtilitiesEtpView: React.FC = () => {
+interface UtilitiesEtpViewProps {
+  initialTab?: 'boiler' | 'etp_chemicals' | 'electricity';
+}
+
+export const UtilitiesEtpView: React.FC<UtilitiesEtpViewProps> = ({ initialTab }) => {
   const { user } = useAuth();
   const location = useLocation();
+  const navigate = useNavigate();
 
   const isUserAdmin = user?.role === 'Admin' || (user?.roles && user.roles.includes('Admin'));
 
@@ -16,14 +21,36 @@ export const UtilitiesEtpView: React.FC = () => {
   const canAccessEtp = isUserAdmin || (user?.customModules && Array.isArray(user.customModules) ? user.customModules.includes('etp') : true);
   const canAccessElectricity = isUserAdmin || (user?.customModules && Array.isArray(user.customModules) ? user.customModules.includes('electricity') : true);
 
-  // Read ?tab= query param from URL for bottom-nav deep linking (mobile)
+  // Read tab from path, initialTab prop, or ?tab= query param
   const getTabFromUrl = (): 'boiler' | 'etp_chemicals' | 'electricity' => {
+    // 1. If explicit initialTab is passed from route, use it
+    if (initialTab) {
+      if (initialTab === 'boiler' && canAccessBoiler) return 'boiler';
+      if (initialTab === 'etp_chemicals' && canAccessEtp) return 'etp_chemicals';
+      if (initialTab === 'electricity' && canAccessElectricity) return 'electricity';
+    }
+
+    const path = location.pathname.toLowerCase();
+
+    // 2. Check specific end-route segments (do NOT match generic "etp" inside "utilities-&-etp")
+    if (path.includes('boiler-operations') || path.endsWith('/boiler')) {
+      if (canAccessBoiler) return 'boiler';
+    }
+    if (path.includes('etp-water') || path.includes('etp-chemicals') || path.endsWith('/etp')) {
+      if (canAccessEtp) return 'etp_chemicals';
+    }
+    if (path.includes('electricity') || path.includes('power-grid')) {
+      if (canAccessElectricity) return 'electricity';
+    }
+
+    // 3. Check query param ?tab=
     const params = new URLSearchParams(location.search);
     const tab = params.get('tab');
-    if (tab === 'etp' && canAccessEtp) return 'etp_chemicals';
-    if (tab === 'electricity' && canAccessElectricity) return 'electricity';
     if (tab === 'boiler' && canAccessBoiler) return 'boiler';
+    if ((tab === 'etp' || tab === 'etp_chemicals') && canAccessEtp) return 'etp_chemicals';
+    if (tab === 'electricity' && canAccessElectricity) return 'electricity';
 
+    // 4. Default fallback based on permissions
     if (canAccessBoiler) return 'boiler';
     if (canAccessEtp) return 'etp_chemicals';
     if (canAccessElectricity) return 'electricity';
@@ -32,10 +59,21 @@ export const UtilitiesEtpView: React.FC = () => {
 
   const [activeTab, setActiveTab] = useState<'boiler' | 'etp_chemicals' | 'electricity'>(getTabFromUrl);
 
-  // Sync tab when URL query param changes
+  // Sync tab when URL pathname or search query param changes
   useEffect(() => {
     setActiveTab(getTabFromUrl());
-  }, [location.search]);
+  }, [location.pathname, location.search, initialTab]);
+
+  const handleTabChange = (tab: 'boiler' | 'etp_chemicals' | 'electricity') => {
+    setActiveTab(tab);
+    if (tab === 'boiler') {
+      navigate('/utilities-&-etp/boiler-operations');
+    } else if (tab === 'etp_chemicals') {
+      navigate('/utilities-&-etp/etp-water-&-chemicals');
+    } else if (tab === 'electricity') {
+      navigate('/utilities-&-etp/electricity-&-power-grid');
+    }
+  };
 
   if (!canAccessBoiler && !canAccessEtp && !canAccessElectricity) {
     return (
@@ -75,7 +113,7 @@ export const UtilitiesEtpView: React.FC = () => {
       <div className="bg-slate-100 dark:bg-slate-800/80 p-1.5 rounded-2xl flex flex-wrap sm:flex-nowrap gap-1.5 border border-slate-200 dark:border-slate-700/80 shadow-inner print:hidden">
         {canAccessBoiler && (
           <button
-            onClick={() => setActiveTab('boiler')}
+            onClick={() => handleTabChange('boiler')}
             className={`flex-1 min-w-[120px] flex items-center justify-center gap-2 px-5 py-3 rounded-xl text-xs font-extrabold transition-all duration-200 cursor-pointer ${
               activeTab === 'boiler'
                 ? 'bg-gradient-to-r from-orange-500 to-amber-600 text-white shadow-md shadow-orange-500/25 scale-[1.01]'
@@ -89,7 +127,7 @@ export const UtilitiesEtpView: React.FC = () => {
 
         {canAccessEtp && (
           <button
-            onClick={() => setActiveTab('etp_chemicals')}
+            onClick={() => handleTabChange('etp_chemicals')}
             className={`flex-1 min-w-[120px] flex items-center justify-center gap-2 px-5 py-3 rounded-xl text-xs font-extrabold transition-all duration-200 cursor-pointer ${
               activeTab === 'etp_chemicals'
                 ? 'bg-gradient-to-r from-blue-600 to-teal-600 text-white shadow-md shadow-blue-500/25 scale-[1.01]'
@@ -97,13 +135,13 @@ export const UtilitiesEtpView: React.FC = () => {
             }`}
           >
             <Droplet className="h-4 w-4" />
-            <span>ETP Water & Chemicals</span>
+            <span>ETP Water &amp; Chemicals</span>
           </button>
         )}
 
         {canAccessElectricity && (
           <button
-            onClick={() => setActiveTab('electricity')}
+            onClick={() => handleTabChange('electricity')}
             className={`flex-1 min-w-[120px] flex items-center justify-center gap-2 px-5 py-3 rounded-xl text-xs font-extrabold transition-all duration-200 cursor-pointer ${
               activeTab === 'electricity'
                 ? 'bg-gradient-to-r from-amber-500 to-yellow-600 text-white shadow-md shadow-amber-500/25 scale-[1.01]'
@@ -111,7 +149,7 @@ export const UtilitiesEtpView: React.FC = () => {
             }`}
           >
             <Lightbulb className="h-4 w-4" />
-            <span>Electricity & Power Grid</span>
+            <span>Electricity &amp; Power Grid</span>
           </button>
         )}
       </div>

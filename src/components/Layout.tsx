@@ -229,15 +229,15 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
   const mobileTabs = useMemo(() => {
     let prodPath = '/machine-production';
     if (user?.role === 'PulpOperator') prodPath = '/pulp-mill-operations';
-    else if (user?.role === 'BoilerOperator') prodPath = '/utilities-etp?tab=boiler';
+    else if (user?.role === 'BoilerOperator') prodPath = '/utilities-&-etp/boiler-operations';
     else if (user?.role === 'RewinderOperator') prodPath = '/rewinding-reel-conversion';
-    else if (user?.role === 'EtpOperator') prodPath = '/utilities-etp?tab=etp';
+    else if (user?.role === 'EtpOperator') prodPath = '/utilities-&-etp/etp-water-&-chemicals';
 
     return [
       { id: 'home', path: '/', label: 'Home', icon: LayoutDashboard, aliases: [] },
-      { id: 'production', path: prodPath, label: 'Production', icon: Factory, aliases: ['/machine-production', '/pulp-mill-operations', '/rewinding-reel-conversion', '/utilities-etp'] },
+      { id: 'production', path: prodPath, label: 'Production', icon: Factory, aliases: ['/machine-production', '/pulp-mill-operations', '/rewinding-reel-conversion', '/utilities-etp', '/utilities-&-etp/boiler-operations', '/utilities-&-etp/etp-water-&-chemicals', '/utilities-&-etp/electricity-&-power-grid', '/utilites-&-etp/boiler-operations', '/utilities-&-etp'] },
       { id: 'scan', path: '/qr-scanner', label: 'Scan', icon: QrCode, aliases: ['/traceability'] },
-      { id: 'dispatch', path: '/dispatch-receipt/draft-packing-slip', label: 'Dispatch', icon: Truck, aliases: ['/dispatch-receipt/draft-packing-slip', '/dispatch-receipt/packing-slips-&-challans', '/dispatch-receipt', '/finished-stock-dispatch', '/stock-categorization'] },
+      { id: 'dispatch', path: '/dispatch-receipt/draft-packing-slip', label: 'Dispatch', icon: Truck, aliases: ['/dispatch-receipt/draft-packing-slip', '/dispatch-receipt/packing-slips-&-challans', '/dispatch-receipt/dispatched-reels', '/dispatch-receipt', '/finished-stock-dispatch', '/stock-categorization'] },
       { id: 'more', path: '/profile', label: 'More', icon: User, aliases: ['/admin-profile', '/role-management', '/user-management', '/monthly-yearly-reporting', '/raw-material-stock'] },
     ];
   }, [user]);
@@ -447,7 +447,7 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
     { id: 'machine_production', path: '/machine-production', label: t('nav.machine', 'Machine Production'), icon: Cog },
     { id: 'rewinding_reel_conversion', path: '/rewinding-reel-conversion', label: t('nav.rewinder', 'Rewinder Section'), icon: RotateCw },
     { id: 'lab', path: '/lab', label: 'Lab Quality Control', icon: Beaker },
-    { id: 'utilities_etp', path: '/utilities-etp', label: t('nav.utilities_etp', 'Utilities and ETP'), icon: Flame },
+    { id: 'utilities_etp', path: '/utilities-&-etp/boiler-operations', label: t('nav.utilities_etp', 'Utilities and ETP'), icon: Flame },
     { id: 'dispatch_receipt', path: '/dispatch-receipt/draft-packing-slip', label: t('nav.dispatch_receipt', 'Dispatch Receipt'), icon: Truck },
     { id: 'finished_stock_dispatch', path: '/stock-categorization', label: t('nav.finished_stock_dispatch', 'Stock Categorization'), icon: Layers },
     { id: 'spareparts_management', path: '/spareparts-management', label: t('nav.store', 'Store Inventory'), icon: Wrench },
@@ -522,7 +522,7 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
 
               {/* Mobile Only Header Logo */}
               <div className="flex md:hidden items-center gap-3 cursor-pointer group select-none" onClick={() => navigate('/')}>
-                <img src="/logo.png" alt="Saheb Paper Logo" className="h-9 w-9 object-contain rounded-xl shadow-md shadow-blue-600/10 group-hover:scale-105 transition-transform duration-200 border border-slate-200 dark:border-[#2c4a4a] bg-white p-0.5" />
+                <img src={`${import.meta.env.BASE_URL}logo.png`} alt="Saheb Paper Logo" className="h-9 w-9 object-contain rounded-xl shadow-md shadow-blue-600/10 group-hover:scale-105 transition-transform duration-200 border border-slate-200 dark:border-[#2c4a4a] bg-white p-0.5" />
                 <div className="block">
                   <div className="flex items-center gap-1.5">
                     <h1 className="text-sm font-black text-slate-900 dark:text-white leading-none tracking-tight">
@@ -771,48 +771,48 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
         {user && (
           <aside className="hidden md:flex flex-col fixed top-0 left-0 bottom-0 w-64 bg-white dark:bg-[#1a3535] text-slate-800 dark:text-white border-r border-slate-200/80 dark:border-[#284848] z-40 select-none shadow-xs overflow-hidden h-screen">
             {/* Sidebar Top Header with Logo */}
-            <div className="h-16 px-4 flex items-center gap-3 border-b border-slate-200/80 dark:border-[#284848] shrink-0 cursor-pointer group select-none" onClick={() => navigate('/')}>
-              <img src="/logo.png" alt="Saheb Paper Logo" className="h-9 w-9 object-contain rounded-xl shadow-md shadow-blue-600/10 dark:shadow-teal-950/40 group-hover:scale-105 transition-transform duration-200 border border-slate-200 dark:border-[#2c4a4a] bg-white p-0.5 shrink-0" />
+            <div className="h-14 px-3.5 flex items-center gap-2.5 border-b border-slate-200/80 dark:border-[#284848] shrink-0 cursor-pointer group select-none" onClick={() => navigate('/')}>
+              <img src={`${import.meta.env.BASE_URL}logo.png`} alt="Saheb Paper Logo" className="h-8 w-8 object-contain rounded-xl shadow-md shadow-blue-600/10 dark:shadow-teal-950/40 group-hover:scale-105 transition-transform duration-200 border border-slate-200 dark:border-[#2c4a4a] bg-white p-0.5 shrink-0" />
               <div className="min-w-0 flex-1">
                 <div className="flex items-center gap-1.5">
                   <h1 className="text-xs font-black text-slate-900 dark:text-white leading-none tracking-tight truncate font-heading">
                     {t('login.title')}
                   </h1>
-                  <span className="px-1.5 py-0.2 rounded-full bg-blue-50 dark:bg-teal-900/60 text-primary dark:text-teal-300 text-[9px] font-extrabold uppercase border border-blue-200/60 dark:border-teal-700/60 shrink-0">
+                  <span className="px-1.5 py-0.2 rounded-full bg-blue-50 dark:bg-teal-900/60 text-primary dark:text-teal-300 text-[8.5px] font-extrabold uppercase border border-blue-200/60 dark:border-teal-700/60 shrink-0">
                     ERP
                   </span>
                 </div>
-                <p className="text-[10px] text-slate-500 dark:text-teal-200/70 font-medium tracking-tight truncate mt-0.5">
+                <p className="text-[9.5px] text-slate-500 dark:text-teal-200/70 font-medium tracking-tight truncate mt-0.5">
                   {t('login.subtitle')}
                 </p>
               </div>
             </div>
 
-            {/* Locked Sidebar Navigation Sections */}
-            <div className="flex flex-col gap-2 flex-1 px-3 py-2.5 overflow-hidden select-none">
+            {/* Sidebar Navigation Sections - Balanced Harmonious Spacing */}
+            <div className="flex-1 px-3 py-2.5 overflow-hidden select-none flex flex-col space-y-2.5">
 
               {/* Render Categorized Dynamic Sections */}
               {sidebarSections.map((section) => (
-                <div key={section.title} className="space-y-0.5">
-                  <div className="px-3 pt-1 pb-0.5 text-[10px] font-black uppercase tracking-wider text-slate-400 dark:text-teal-200/60 font-sans">
+                <div key={section.title} className="space-y-1">
+                  <div className="px-2.5 pt-1 pb-0.5 text-[9.5px] font-black uppercase tracking-wider text-slate-400 dark:text-teal-300/70 font-sans leading-none">
                     {section.title}
                   </div>
 
-                  <div className="space-y-0.5">
+                  <div className="space-y-1">
                     {section.items.map(item => {
                       const Icon = item.icon;
-                      const isActive = location.pathname === item.path || (item.id === 'dispatch_receipt' && location.pathname.startsWith('/dispatch-receipt'));
+                      const isActive = location.pathname === item.path || (item.id === 'dispatch_receipt' && location.pathname.startsWith('/dispatch-receipt')) || (item.id === 'utilities_etp' && (location.pathname.startsWith('/utilities-&-etp') || location.pathname.startsWith('/utilites-&-etp') || location.pathname.startsWith('/utilities-etp')));
                       return (
                         <button
                           key={item.id}
                           onClick={() => navigate(item.path)}
-                          className={`w-full flex items-center justify-between px-3 py-2 rounded-xl transition-all duration-200 text-left cursor-pointer group ${isActive
-                            ? 'bg-gradient-to-r from-blue-600 via-indigo-600 to-blue-700 dark:from-teal-600 dark:via-emerald-600 dark:to-teal-700 text-white font-black shadow-md shadow-blue-600/25 dark:shadow-teal-900/40'
+                          className={`w-full flex items-center justify-between px-3 py-2 rounded-xl transition-all duration-150 text-left cursor-pointer group ${isActive
+                            ? 'bg-gradient-to-r from-blue-600 via-indigo-600 to-blue-700 dark:from-teal-600 dark:via-emerald-600 dark:to-teal-700 text-white font-black shadow-xs shadow-blue-600/25 dark:shadow-teal-900/40'
                             : 'text-slate-600 dark:text-slate-200 hover:bg-slate-100/90 dark:hover:bg-[#254545] hover:text-slate-900 dark:hover:text-white font-bold'
                             }`}
                         >
                           <div className="flex items-center gap-2.5 min-w-0">
-                            <Icon className={`h-4 w-4 flex-shrink-0 transition-transform duration-200 ${isActive ? 'text-white' : 'text-slate-400 dark:text-teal-300/80 group-hover:text-primary dark:group-hover:text-white'
+                            <Icon className={`h-4 w-4 flex-shrink-0 transition-transform duration-150 ${isActive ? 'text-white' : 'text-slate-400 dark:text-teal-300/80 group-hover:text-primary dark:group-hover:text-white'
                               }`} />
                             <span className="text-xs font-sans tracking-wide leading-tight truncate">
                               {item.label}
@@ -875,7 +875,7 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
 
               {visibleMenuItems.map(item => {
                 const Icon = item.icon;
-                const isActive = location.pathname === item.path || (item.id === 'dispatch_receipt' && location.pathname.startsWith('/dispatch-receipt'));
+                const isActive = location.pathname === item.path || (item.id === 'dispatch_receipt' && location.pathname.startsWith('/dispatch-receipt')) || (item.id === 'utilities_etp' && (location.pathname.startsWith('/utilities-&-etp') || location.pathname.startsWith('/utilites-&-etp') || location.pathname.startsWith('/utilities-etp')));
                 return (
                   <button
                     key={item.id}

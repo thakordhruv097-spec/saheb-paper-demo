@@ -36,7 +36,22 @@ export const PrintLabelModal: React.FC<PrintLabelModalProps> = ({
   initialType = 'REEL',
 }) => {
   useBodyScrollLock(isOpen);
-  const stockReels = getReels();
+  const stockReels = React.useMemo(() => {
+    const all = getReels();
+    const seen = new Set<string>();
+    const unique = all.filter(r => {
+      if (!r.reelNo || seen.has(r.reelNo)) return false;
+      seen.add(r.reelNo);
+      return true;
+    });
+    // Most recent reel is 1st (newest date / highest reel sequence)
+    return unique.sort((a, b) => {
+      if (a.productionDate && b.productionDate && a.productionDate !== b.productionDate) {
+        return b.productionDate.localeCompare(a.productionDate);
+      }
+      return b.reelNo.localeCompare(a.reelNo, undefined, { numeric: true, sensitivity: 'base' });
+    });
+  }, []);
   const productsList = getProducts();
 
   // Mode selection: REEL | STOCK | LOT | CUSTOM
@@ -526,7 +541,7 @@ export const PrintLabelModal: React.FC<PrintLabelModalProps> = ({
               <button
                 type="button"
                 onClick={handlePrint}
-                className="w-full bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white font-extrabold py-3.5 px-4 rounded-2xl text-xs uppercase tracking-wider shadow-lg shadow-blue-500/25 transition cursor-pointer flex items-center justify-center gap-2"
+                className="w-full bg-[#008163] hover:bg-[#006e54] text-white font-black py-3.5 px-4 rounded-2xl text-xs uppercase tracking-wider shadow-lg shadow-[#008163]/25 transition-all hover:scale-[1.01] active:scale-[0.99] cursor-pointer flex items-center justify-center gap-2"
               >
                 <Printer className="h-4 w-4" />
                 <span>Print {copies}x Label Now</span>

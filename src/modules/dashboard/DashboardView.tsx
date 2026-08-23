@@ -321,7 +321,7 @@ export const DashboardView: React.FC = () => {
                     <RefreshCw className="h-4 w-4" />
                   </button>
                   <button
-                    onClick={() => navigate('/utilities-etp')}
+                    onClick={() => navigate('/utilities-&-etp/boiler-operations')}
                     className="px-4 py-2.5 bg-white text-orange-700 hover:bg-amber-50 font-bold rounded-xl text-xs shadow-md transition flex items-center gap-2 cursor-pointer"
                   >
                     <Plus className="h-4 w-4" /> Log Shift Readings
@@ -360,7 +360,7 @@ export const DashboardView: React.FC = () => {
                 </div>
               </div>
               <button
-                onClick={() => navigate('/utilities-etp')}
+                onClick={() => navigate('/utilities-&-etp/boiler-operations')}
                 className="px-5 py-2.5 bg-orange-600 hover:bg-orange-700 text-white text-xs font-bold rounded-xl shadow-sm transition cursor-pointer"
               >
                 Open Boiler Section &gt;
@@ -989,7 +989,7 @@ export const DashboardView: React.FC = () => {
                   </div>
                 </div>
                 <button
-                  onClick={() => navigate('/utilities-etp')}
+                  onClick={() => navigate('/utilities-&-etp/etp-water-&-chemicals')}
                   className="text-xs font-extrabold text-cyan-600 dark:text-cyan-400 hover:underline cursor-pointer self-start sm:self-auto"
                 >
                   Open ETP Treatment Center &gt;

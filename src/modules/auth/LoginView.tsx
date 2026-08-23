@@ -193,7 +193,7 @@ export const LoginView: React.FC = () => {
               Paper Mill Management System
             </p>
           </div>
-          <img src="/logo.png" alt={`${COMPANY_CONFIG.shortName} Logo`} className="h-8 w-8 sm:h-10 sm:w-10 md:h-11 md:w-11 object-contain rounded-xl shadow-xs border border-slate-200/80 bg-white p-0.5 shrink-0" />
+          <img src={`${import.meta.env.BASE_URL}logo.png`} alt={`${COMPANY_CONFIG.shortName} Logo`} className="h-8 w-8 sm:h-10 sm:w-10 md:h-11 md:w-11 object-contain rounded-xl shadow-xs border border-slate-200/80 bg-white p-0.5 shrink-0" />
         </div>
 
         {/* 1. Login Mode */}

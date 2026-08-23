@@ -178,15 +178,69 @@ export default function App() {
               }
             />
 
+            {/* Utilities & ETP Routes */}
             <Route
-              path="/utilities-etp"
+              path="/utilities-&-etp/boiler-operations"
               element={
                 <ProtectedRoute moduleName="utilities_etp">
                   <Layout>
-                    <UtilitiesEtpView />
+                    <UtilitiesEtpView initialTab="boiler" />
                   </Layout>
                 </ProtectedRoute>
               }
+            />
+
+            <Route
+              path="/utilites-&-etp/boiler-operations"
+              element={<Navigate to="/utilities-&-etp/boiler-operations" replace />}
+            />
+
+            <Route
+              path="/utilities-&-etp/etp-water-&-chemicals"
+              element={
+                <ProtectedRoute moduleName="utilities_etp">
+                  <Layout>
+                    <UtilitiesEtpView initialTab="etp_chemicals" />
+                  </Layout>
+                </ProtectedRoute>
+              }
+            />
+
+            <Route
+              path="/utilities-&-etp/electricity-&-power-grid"
+              element={
+                <ProtectedRoute moduleName="utilities_etp">
+                  <Layout>
+                    <UtilitiesEtpView initialTab="electricity" />
+                  </Layout>
+                </ProtectedRoute>
+              }
+            />
+
+            {/* Aliases & Fallbacks */}
+            <Route
+              path="/utilities-&-etp"
+              element={<Navigate to="/utilities-&-etp/boiler-operations" replace />}
+            />
+            <Route
+              path="/utilites-&-etp"
+              element={<Navigate to="/utilities-&-etp/boiler-operations" replace />}
+            />
+            <Route
+              path="/utilities-etp"
+              element={<Navigate to="/utilities-&-etp/boiler-operations" replace />}
+            />
+            <Route
+              path="/utilities-etp/boiler-operations"
+              element={<Navigate to="/utilities-&-etp/boiler-operations" replace />}
+            />
+            <Route
+              path="/utilities-etp/etp-water-&-chemicals"
+              element={<Navigate to="/utilities-&-etp/etp-water-&-chemicals" replace />}
+            />
+            <Route
+              path="/utilities-etp/electricity-&-power-grid"
+              element={<Navigate to="/utilities-&-etp/electricity-&-power-grid" replace />}
             />
 
             <Route
@@ -278,6 +332,17 @@ export default function App() {
                 <ProtectedRoute moduleName="dispatch_receipt">
                   <Layout>
                     <DispatchView initialTab="slips_list" />
+                  </Layout>
+                </ProtectedRoute>
+              }
+            />
+
+            <Route
+              path="/dispatch-receipt/dispatched-reels"
+              element={
+                <ProtectedRoute moduleName="dispatch_receipt">
+                  <Layout>
+                    <DispatchView initialTab="dispatched_vault" />
                   </Layout>
                 </ProtectedRoute>
               }

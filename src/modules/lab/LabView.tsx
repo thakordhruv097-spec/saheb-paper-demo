@@ -434,7 +434,7 @@ export const LabView: React.FC = () => {
               onDateFromChange={setLabDateFrom}
               onDateToChange={setLabDateTo}
               filterFields={[
-                { id: 'shift', label: 'Shift', options: [{label: 'Shift A', value: 'A'}, {label: 'Shift B', value: 'B'}, {label: 'Shift C', value: 'C'}] },
+                { id: 'shift', label: 'Shift', options: [{label: 'Day Shift', value: 'A'}, {label: 'Night Shift', value: 'B'}] },
                 { id: 'qc', label: 'QC Status', options: [{label: 'Grade A', value: 'GRADE_A'}, {label: 'Grade B', value: 'GRADE_B'}, {label: 'Rejected', value: 'REJECTED'}] },
               ]}
               activeFilters={{ shift: labShiftFilter, qc: labQcFilter }}
@@ -453,9 +453,9 @@ export const LabView: React.FC = () => {
             <thead>
               <tr className="border-b border-slate-200 dark:border-slate-800 text-slate-400 uppercase text-[9px] sm:text-[10px] font-black tracking-wider bg-slate-50/50 dark:bg-slate-900/60">
                 <th className="py-2.5 px-2 sm:px-3">Report ID</th>
+                <th className="py-2.5 px-2 sm:px-3 font-mono">Roll No</th>
                 <th className="py-2.5 px-2 sm:px-3">Date / Time</th>
                 <th className="py-2.5 px-2 sm:px-3">Product</th>
-                <th className="py-2.5 px-2 sm:px-3 font-mono">Roll No</th>
                 <th className="py-2.5 px-2 sm:px-3">Shift</th>
                 <th className="py-2.5 px-2 sm:px-3 font-mono">Target / Avg GSM</th>
                 <th className="py-2.5 px-2 sm:px-3 font-mono">Moisture</th>
@@ -475,10 +475,16 @@ export const LabView: React.FC = () => {
                   // Format long IDs cleanly
                   const displayId = report.id.length > 22 ? report.id.replace(/-R-\d+/, '') : report.id;
                   const displayRollNo = report.rollNo.startsWith('#') ? report.rollNo : `#${report.rollNo}`;
+                  const isDay = (report.shift as string) === 'A' || (report.shift as string) === 'Day';
+                  const isNight = (report.shift as string) === 'B' || (report.shift as string) === 'Night';
+                  const shiftDisplay = isDay ? 'Day' : isNight ? 'Night' : report.shift;
                   return (
                     <tr key={report.id} className="hover:bg-slate-50 dark:hover:bg-slate-800/40 transition">
                       <td className="py-2.5 px-2 sm:px-3 font-mono font-bold text-purple-600 dark:text-purple-400 text-[11px] truncate max-w-[140px]" title={report.id}>
                         {displayId}
+                      </td>
+                      <td className="py-2.5 px-2 sm:px-3 font-mono font-black text-slate-900 dark:text-white text-[11px]">
+                        {displayRollNo}
                       </td>
                       <td className="py-2.5 px-2 sm:px-3 font-mono text-slate-600 dark:text-slate-300 text-[11px]">
                         {report.date.split('-').reverse().join('.')} {report.time}
@@ -486,12 +492,13 @@ export const LabView: React.FC = () => {
                       <td className="py-2.5 px-2 sm:px-3 font-bold text-slate-900 dark:text-white text-[11px] truncate max-w-[110px]" title={report.product}>
                         {report.product}
                       </td>
-                      <td className="py-2.5 px-2 sm:px-3 font-mono font-black text-slate-900 dark:text-white text-[11px]">
-                        {displayRollNo}
-                      </td>
                       <td className="py-2.5 px-2 sm:px-3 text-center whitespace-nowrap">
-                        <span className="inline-block px-2 py-0.5 rounded-md text-[10px] font-black uppercase bg-blue-500/10 dark:bg-blue-400/10 text-blue-600 dark:text-blue-400 border border-blue-500/20 leading-none">
-                          Shift {report.shift}
+                        <span className={`inline-block px-2.5 py-0.5 rounded-md text-[10px] font-black uppercase border leading-none ${
+                          isDay
+                            ? 'bg-amber-500/10 dark:bg-amber-400/10 text-amber-600 dark:text-amber-400 border-amber-500/20'
+                            : 'bg-blue-500/10 dark:bg-blue-400/10 text-blue-600 dark:text-blue-400 border-blue-500/20'
+                        }`}>
+                          {shiftDisplay}
                         </span>
                       </td>
                       <td className="py-2.5 px-2 sm:px-3 font-mono text-[11px]">
@@ -642,8 +649,8 @@ export const LabView: React.FC = () => {
                       onChange={e => setShift(e.target.value as any)}
                       className="w-full p-2 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl font-bold dark:text-white"
                     >
-                      <option value="A">Shift A</option>
-                      <option value="B">Shift B</option>
+                      <option value="A">Day Shift</option>
+                      <option value="B">Night Shift</option>
                     </select>
                   </div>
 
