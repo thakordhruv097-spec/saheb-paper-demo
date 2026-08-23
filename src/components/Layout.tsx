@@ -441,24 +441,24 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
 
   const menuItems = [
     { id: 'dashboard', path: '/', label: t('nav.dashboard', 'Dashboard'), icon: LayoutDashboard },
-    { id: 'orders', path: '/orders', label: t('nav.orders', 'Order Bookings'), icon: FileText },
-    { id: 'raw_material_stock', path: '/raw-material-stock', label: t('nav.raw_material', 'Raw Material Stock'), icon: Warehouse },
-    { id: 'pulp_mill_operations', path: '/pulp-mill-operations', label: t('nav.pulp_mill', 'Pulp Mill Operations'), icon: Factory },
+    { id: 'raw_material_stock', path: '/raw-material-stock', label: t('nav.raw_material', 'Raw Material'), icon: Warehouse },
+    { id: 'pulp_mill_operations', path: '/pulp-mill-operations', label: t('nav.pulp_mill', 'Pulp Mill'), icon: Factory },
     { id: 'machine_production', path: '/machine-production', label: t('nav.machine', 'Machine Production'), icon: Cog },
-    { id: 'rewinding_reel_conversion', path: '/rewinding-reel-conversion', label: t('nav.rewinder', 'Rewinder Section'), icon: RotateCw },
+    { id: 'rewinding_reel_conversion', path: '/rewinding-reel-conversion', label: t('nav.rewinder', 'Rewinder Roll-to-Reel'), icon: RotateCw },
     { id: 'lab', path: '/lab', label: 'Lab Quality Control', icon: Beaker },
-    { id: 'utilities_etp', path: '/utilities-&-etp/boiler-operations', label: t('nav.utilities_etp', 'Utilities and ETP'), icon: Flame },
+    { id: 'orders', path: '/orders', label: t('nav.orders', 'Order Bookings'), icon: FileText },
+    { id: 'utilities_etp', path: '/utilities-&-etp/boiler-operations', label: t('nav.utilities_etp', 'Utilities & ETP'), icon: Flame },
     { id: 'dispatch_receipt', path: '/dispatch-receipt/draft-packing-slip', label: t('nav.dispatch_receipt', 'Dispatch Receipt'), icon: Truck },
     { id: 'finished_stock_dispatch', path: '/stock-categorization', label: t('nav.finished_stock_dispatch', 'Stock Categorization'), icon: Layers },
-    { id: 'spareparts_management', path: '/spareparts-management', label: t('nav.store', 'Store Inventory'), icon: Wrench },
+    { id: 'spareparts_management', path: '/spareparts-management', label: t('nav.store', 'Spares Store'), icon: Wrench },
     { id: 'label_studio', path: '/label-studio', label: 'Label Studio', icon: Tag },
     { id: 'monthly_yearly_reporting', path: '/monthly-yearly-reporting', label: t('nav.reports', 'Mill Reports'), icon: BarChart2 },
-    { id: 'admin_panel_audit', path: '/admin-panel-audit', label: t('nav.admin_masters', 'Settings'), icon: Settings },
+    { id: 'admin_panel_audit', path: '/admin-panel-audit', label: t('nav.admin_masters', 'Admin Masters'), icon: Settings },
   ];
 
   const visibleMenuItems = menuItems.filter(item => hasAccess(item.id));
 
-  // Dynamic Section Categories for Sidebar
+  // Dynamic Section Categories for Sidebar (Locked Proportions)
   const sidebarSections = useMemo(() => {
     const core = visibleMenuItems.filter(i => ['dashboard'].includes(i.id));
     const production = visibleMenuItems.filter(i => ['raw_material_stock', 'pulp_mill_operations', 'machine_production', 'rewinding_reel_conversion', 'lab'].includes(i.id));
@@ -775,13 +775,13 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
       <div className="flex flex-1 relative overflow-hidden">
         {/* 2. Left Sidebar (Tablet/Desktop: md:flex) - Light Mode: Clean White / Dark Mode: #131d38 */}
         {user && (
-          <aside className="hidden md:flex flex-col fixed top-0 left-0 bottom-0 w-64 bg-white dark:bg-[#131d38] text-slate-800 dark:text-white border-r border-slate-200/80 dark:border-slate-800 z-40 select-none shadow-xs overflow-hidden h-screen">
+          <aside className="hidden md:flex flex-col fixed top-0 left-0 bottom-0 w-68 bg-white dark:bg-[#131d38] text-slate-800 dark:text-white border-r border-slate-200/80 dark:border-slate-800 z-40 select-none shadow-xs overflow-hidden h-screen">
             {/* Sidebar Top Header with Logo */}
-            <div className="h-16 px-4 flex items-center gap-3 border-b border-slate-200/80 dark:border-slate-800 shrink-0 cursor-pointer group select-none" onClick={() => navigate('/')}>
-              <img src={`${import.meta.env.BASE_URL}logo.png`} alt="Saheb Paper Logo" className="h-9 w-9 object-contain rounded-xl shadow-md shadow-blue-600/10 dark:shadow-blue-950/40 group-hover:scale-105 transition-transform duration-200 border border-slate-200 dark:border-slate-700 bg-white p-0.5 shrink-0" />
+            <div className="h-15 px-3.5 flex items-center gap-2.5 border-b border-slate-200/80 dark:border-slate-800 shrink-0 cursor-pointer group select-none" onClick={() => navigate('/')}>
+              <img src={`${import.meta.env.BASE_URL}logo.png`} alt="Saheb Paper Logo" className="h-8.5 w-8.5 object-contain rounded-xl shadow-md shadow-blue-600/10 dark:shadow-blue-950/40 group-hover:scale-105 transition-transform duration-200 border border-slate-200 dark:border-slate-700 bg-white p-0.5 shrink-0" />
               <div className="min-w-0 flex-1">
                 <div className="flex items-center gap-1.5">
-                  <span className="text-xs font-black text-slate-900 dark:text-white leading-none tracking-tight truncate font-heading">
+                  <span className="text-sm font-black text-slate-900 dark:text-white leading-none tracking-tight truncate font-heading">
                     {t('login.title')}
                   </span>
                   <span className="px-1.5 py-0.2 rounded-full bg-blue-50 dark:bg-blue-950/60 text-primary dark:text-blue-300 text-[9px] font-extrabold uppercase border border-blue-200/60 dark:border-blue-800/60 shrink-0">
@@ -794,46 +794,49 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
               </div>
             </div>
 
-            {/* Sidebar Navigation Sections - Balanced Harmonious Spacing */}
-            <div className="flex-1 px-3 py-2.5 overflow-hidden select-none flex flex-col space-y-2.5">
+            {/* Sidebar Navigation Sections - Proportional Full Height Distribution */}
+            <div className="flex-1 px-3 py-2 select-none flex flex-col justify-between overflow-hidden">
 
               {/* Render Categorized Dynamic Sections */}
-              {sidebarSections.map((section) => (
-                <div key={section.title} className="space-y-0.5">
-                  <div className="px-3 pt-1 pb-0.5 text-[10px] font-black uppercase tracking-wider text-slate-400 dark:text-slate-400 font-sans">
-                    {section.title}
-                  </div>
+              {sidebarSections.map((section) => {
+                const flexGrowClass = section.items.length === 1 ? 'flex-[1]' : section.items.length === 5 ? 'flex-[5]' : 'flex-[3]';
+                return (
+                  <div key={section.title} className={`${flexGrowClass} flex flex-col justify-between py-1`}>
+                    <div className="px-3 pb-0.5 text-[10px] font-black uppercase tracking-wider text-slate-400 dark:text-slate-400 font-sans shrink-0">
+                      {section.title}
+                    </div>
 
-                  <div className="space-y-0.5">
-                    {section.items.map(item => {
-                      const Icon = item.icon;
-                      const isActive = location.pathname === item.path || (item.id === 'dispatch_receipt' && location.pathname.startsWith('/dispatch-receipt')) || (item.id === 'utilities_etp' && (location.pathname.startsWith('/utilities-&-etp') || location.pathname.startsWith('/utilites-&-etp') || location.pathname.startsWith('/utilities-etp')));
-                      return (
-                        <button
-                          key={item.id}
-                          onClick={() => navigate(item.path)}
-                          className={`w-full flex items-center justify-between px-3 py-2 rounded-xl transition-all duration-200 text-left cursor-pointer group ${isActive
-                            ? 'bg-gradient-to-r from-blue-600 via-indigo-600 to-blue-700 dark:from-blue-600 dark:via-indigo-600 dark:to-blue-700 text-white font-black shadow-md shadow-blue-600/25 dark:shadow-blue-900/40'
-                            : 'text-slate-600 dark:text-slate-200 hover:bg-slate-100/90 dark:hover:bg-slate-800 hover:text-slate-900 dark:hover:text-white font-bold'
-                            }`}
-                        >
-                          <div className="flex items-center gap-2.5 min-w-0">
-                            <Icon className={`h-4 w-4 flex-shrink-0 transition-transform duration-200 ${isActive ? 'text-white' : 'text-slate-400 dark:text-slate-400 group-hover:text-primary dark:group-hover:text-white'
-                              }`} />
-                            <span className="text-xs font-sans tracking-wide leading-tight truncate">
-                              {item.label}
-                            </span>
-                          </div>
+                    <div className="flex-1 flex flex-col justify-between space-y-0.5">
+                      {section.items.map(item => {
+                        const Icon = item.icon;
+                        const isActive = location.pathname === item.path || (item.id === 'dispatch_receipt' && location.pathname.startsWith('/dispatch-receipt')) || (item.id === 'utilities_etp' && (location.pathname.startsWith('/utilities-&-etp') || location.pathname.startsWith('/utilites-&-etp') || location.pathname.startsWith('/utilities-etp')));
+                        return (
+                          <button
+                            key={item.id}
+                            onClick={() => navigate(item.path)}
+                            className={`w-full flex-1 flex items-center justify-between px-3 py-1 rounded-xl transition-all duration-200 text-left cursor-pointer group ${isActive
+                              ? 'bg-gradient-to-r from-blue-600 via-indigo-600 to-blue-700 dark:from-blue-600 dark:via-indigo-600 dark:to-blue-700 text-white font-black shadow-md shadow-blue-600/25 dark:shadow-blue-900/40'
+                              : 'text-slate-600 dark:text-slate-200 hover:bg-slate-100/90 dark:hover:bg-slate-800 hover:text-slate-900 dark:hover:text-white font-bold'
+                              }`}
+                          >
+                            <div className="flex items-center gap-3 min-w-0">
+                              <Icon className={`h-4 w-4 flex-shrink-0 transition-transform duration-200 ${isActive ? 'text-white' : 'text-slate-400 dark:text-slate-400 group-hover:text-primary dark:group-hover:text-white'
+                                }`} />
+                              <span className="text-[13px] font-sans tracking-normal leading-tight truncate font-bold">
+                                {item.label}
+                              </span>
+                            </div>
 
-                          {isActive && (
-                            <span className="h-1.5 w-1.5 rounded-full bg-white shadow-xs animate-pulse shrink-0"></span>
-                          )}
-                        </button>
-                      );
-                    })}
+                            {isActive && (
+                              <span className="h-1.5 w-1.5 rounded-full bg-white shadow-xs animate-pulse shrink-0"></span>
+                            )}
+                          </button>
+                        );
+                      })}
+                    </div>
                   </div>
-                </div>
-              ))}
+                );
+              })}
             </div>
           </aside>
         )}
@@ -843,7 +846,7 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
           ref={mainRef}
           onTouchStart={handleTouchStart}
           onTouchEnd={handleTouchEnd}
-          className={`flex-1 flex flex-col overflow-y-auto pb-32 md:pb-6 relative min-w-0 ${user ? 'md:ml-64' : ''
+          className={`flex-1 flex flex-col overflow-y-auto pb-32 md:pb-6 relative min-w-0 ${user ? 'md:ml-68' : ''
             } dashboard-main-scrollbar`}
         >
           {/* Actual children page content */}

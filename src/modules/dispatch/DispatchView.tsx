@@ -2461,7 +2461,7 @@ export const DispatchView: React.FC<DispatchViewProps> = ({ initialTab = 'orders
                           top: `${menuPos.top}px`,
                           right: `${menuPos.right}px`,
                         }}
-                        className="w-38 bg-white dark:bg-[#1a3535] border border-slate-200 dark:border-[#284848] rounded-2xl shadow-2xl z-[9999] p-1.5 space-y-1 animate-in fade-in zoom-in-95 text-left select-none font-sans"
+                        className="w-38 bg-white dark:bg-[#131d38] border border-slate-200 dark:border-[#203058] rounded-2xl shadow-2xl z-[9999] p-1.5 space-y-1 animate-in fade-in zoom-in-95 text-left select-none font-sans"
                         onClick={(e) => e.stopPropagation()}
                       >
                         <button

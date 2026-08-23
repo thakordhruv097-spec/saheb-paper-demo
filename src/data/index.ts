@@ -72,8 +72,8 @@ const DEFAULT_USERS: User[] = [
     empId: 'EMP-001',
     designation: 'Admin / Owner',
     customModules: [
-      'dashboard', 'raw_material_stock', 'pulp_mill_operations', 'machine_production', 'rewinding_reel_conversion',
-      'boiler', 'etp', 'electricity', 'orders', 'finished_stock_dispatch', 'dispatch', 'spareparts_management', 'monthly_yearly_reporting'
+      'dashboard', 'raw_material_stock', 'pulp_mill_operations', 'machine_production', 'rewinding_reel_conversion', 'lab',
+      'utilities_etp', 'orders', 'finished_stock_dispatch', 'dispatch', 'spareparts_management', 'monthly_yearly_reporting'
     ]
   },
   {
@@ -102,7 +102,10 @@ const DEFAULT_USERS: User[] = [
     securityAnswer: 'blue',
     empId: 'EMP-003',
     designation: 'Pulper (Pulp Mill Operator)',
-    customModules: ['dashboard', 'boiler', 'etp', 'electricity', 'machine_production']
+    customModules: [
+      'dashboard', 'raw_material_stock', 'pulp_mill_operations', 'machine_production', 'rewinding_reel_conversion', 'lab',
+      'utilities_etp', 'orders', 'finished_stock_dispatch', 'dispatch', 'spareparts_management', 'monthly_yearly_reporting'
+    ]
   },
   {
     username: 'dispatcher',
@@ -598,12 +601,20 @@ export function initializeStorage() {
         }
       }
 
-      if (u.username.toLowerCase() === 'pulper') {
-        if (newU.displayName !== 'Pulper' || newU.designation !== 'Pulper (Pulp Mill Operator)') {
-          newU.displayName = 'Pulper';
-          newU.designation = 'Pulper (Pulp Mill Operator)';
-          modified = true;
-        }
+      if (
+        u.username.toLowerCase() === 'pulper' ||
+        u.username.toLowerCase() === 'lab' ||
+        u.displayName.toLowerCase().includes('lab') ||
+        (u.designation && u.designation.toLowerCase().includes('lab')) ||
+        u.role === 'LabOperator'
+      ) {
+        newU.displayName = 'Pulper';
+        newU.designation = 'Pulper (Pulp Mill Operator)';
+        newU.empId = 'EMP-003';
+        newU.username = 'pulper';
+        newU.role = 'LabOperator';
+        newU.roles = ['LabOperator'];
+        modified = true;
       }
 
       if (modified) updated = true;
@@ -645,7 +656,7 @@ export function getLogs(): TransactionLog[] {
   return getJSON<TransactionLog[]>(KEYS.LOGS, []);
 }
 
-export function addLog(module: string, action: string, details: string, user: string): TransactionLog {
+export function addLog(module: string, action: string, details: string, user: string = 'System'): TransactionLog {
   const logs = getLogs();
   const newLog: TransactionLog = {
     id: `log-${Date.now()}-${Math.random().toString(36).substring(2, 7)}`,
@@ -656,7 +667,7 @@ export function addLog(module: string, action: string, details: string, user: st
     user,
   };
   logs.unshift(newLog);
-  setJSON(KEYS.LOGS, logs);
+  setJSON(KEYS.LOGS, logs.slice(0, 500)); // Cap to latest 500 logs for high-efficiency storage
   return newLog;
 }
 
@@ -669,9 +680,23 @@ export function getUsers(): User[] {
     let displayName = u.displayName;
     let designation = u.designation;
 
-    if (u.username.toLowerCase() === 'pulper') {
-      displayName = 'Pulper';
-      designation = 'Pulper (Pulp Mill Operator)';
+    const isPulperOrLab =
+      u.username.toLowerCase() === 'pulper' ||
+      u.username.toLowerCase() === 'lab' ||
+      u.displayName.toLowerCase().includes('lab') ||
+      (u.designation && u.designation.toLowerCase().includes('lab')) ||
+      u.role === 'LabOperator';
+
+    if (isPulperOrLab) {
+      return {
+        ...u,
+        displayName: 'Pulper',
+        designation: 'Pulper (Pulp Mill Operator)',
+        empId: 'EMP-003',
+        username: 'pulper',
+        role: 'LabOperator' as UserRole,
+        roles: ['LabOperator' as UserRole],
+      };
     }
 
     if (u.username === 'admin') {
@@ -690,12 +715,22 @@ export function getUsers(): User[] {
       : [primaryRole];
     if (userRoles.length === 0) userRoles = [primaryRole];
 
+    let customModules = u.customModules;
+    if (customModules && Array.isArray(customModules)) {
+      const hasAnyUtils = customModules.some(m => ['boiler', 'etp', 'electricity', 'utilities_etp'].includes(m));
+      customModules = customModules.filter(m => !['boiler', 'etp', 'electricity', 'utilities_etp'].includes(m));
+      if (hasAnyUtils) {
+        customModules.push('utilities_etp');
+      }
+    }
+
     return {
       ...u,
       displayName,
       designation,
       role: primaryRole,
       roles: userRoles,
+      customModules,
     };
   });
 }
@@ -722,6 +757,26 @@ export function updateUserModules(username: string, customModules: string[], ope
   if (user) {
     user.customModules = customModules;
     setJSON(KEYS.USERS, users);
+
+    // Sync active session if this user is currently active
+    const rawSession = localStorage.getItem('saheb_session');
+    if (rawSession) {
+      try {
+        const session = JSON.parse(rawSession);
+        if (session.user && session.user.username.toLowerCase() === username.toLowerCase()) {
+          session.user.customModules = customModules;
+          localStorage.setItem('saheb_session', JSON.stringify(session));
+          localStorage.setItem('saheb_active_user', JSON.stringify(session.user));
+        }
+      } catch (e) {
+        console.error(e);
+      }
+    }
+
+    if (typeof window !== 'undefined') {
+      window.dispatchEvent(new Event('storage'));
+    }
+
     addLog('Admin', 'Role Permissions Updated', `Updated module permissions for ${user.displayName} (@${username}): ${customModules.length} active modules`, operator);
     return true;
   }

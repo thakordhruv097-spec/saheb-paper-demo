@@ -1262,11 +1262,11 @@ export const FinishStockView: React.FC<FinishStockViewProps> = ({ hideHeader = f
           }}
         >
           <div 
-            className="bg-white dark:bg-[#1a3535] border border-slate-200 dark:border-[#284848] rounded-3xl max-w-lg w-full p-6 space-y-4 shadow-2xl text-left select-none animate-in fade-in zoom-in-95" 
+            className="bg-white dark:bg-[#131d38] border border-slate-200 dark:border-[#203058] rounded-3xl max-w-lg w-full p-6 space-y-4 shadow-2xl text-left select-none animate-in fade-in zoom-in-95" 
             onClick={(e) => e.stopPropagation()}
           >
             {/* Modal Header */}
-            <div className="border-b border-slate-100 dark:border-[#284848] pb-3 flex justify-between items-center">
+            <div className="border-b border-slate-100 dark:border-[#203058] pb-3 flex justify-between items-center">
               <div className="flex items-center gap-2.5">
                 <div className="p-2 rounded-xl bg-blue-50 dark:bg-blue-950/60 text-blue-600 dark:text-blue-400 border border-blue-200/60 dark:border-blue-800/60">
                   <Beaker className="h-5 w-5" />

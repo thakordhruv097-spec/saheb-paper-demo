@@ -1,4 +1,5 @@
 import React, { useState, useMemo } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../auth/AuthContext';
 import { getUsers, updateUserModules } from '../../data/index';
 import type { User } from '../../data/types';
@@ -10,23 +11,23 @@ import {
   Plus,
   Check,
   UserCheck,
-  Zap
+  Zap,
+  Lock
 } from 'lucide-react';
 
-export interface ModuleDefinition {
+interface ModuleDefinition {
   key: string;
   label: string;
 }
 
-export const MODULES_13: ModuleDefinition[] = [
+const MODULES_LIST: ModuleDefinition[] = [
   { key: 'dashboard', label: 'Dashboard' },
   { key: 'raw_material_stock', label: 'Raw Material Sto...' },
   { key: 'pulp_mill_operations', label: 'Pulp Mill' },
   { key: 'machine_production', label: 'Plant Manager' },
   { key: 'rewinding_reel_conversion', label: 'Rewinder' },
-  { key: 'boiler', label: 'Boiler' },
-  { key: 'etp', label: 'ETP' },
-  { key: 'electricity', label: 'Electricity' },
+  { key: 'lab', label: 'Lab Quality' },
+  { key: 'utilities_etp', label: 'Utilities & ETP' },
   { key: 'orders', label: 'Pending Orders' },
   { key: 'finished_stock_dispatch', label: 'Finish Stock' },
   { key: 'dispatch', label: 'Dispatch' },
@@ -34,7 +35,10 @@ export const MODULES_13: ModuleDefinition[] = [
   { key: 'monthly_yearly_reporting', label: 'Reports & Analy...' },
 ];
 
+const MODULES_13 = MODULES_LIST;
+
 export const RoleManagementView: React.FC = () => {
+  const navigate = useNavigate();
   const { user: currentUser, simulateWorkerLogin, updateUserProfile } = useAuth();
 
   if (currentUser?.role !== 'Admin') {
@@ -43,17 +47,45 @@ export const RoleManagementView: React.FC = () => {
         <div className="w-12 h-12 rounded-2xl bg-red-100 dark:bg-red-950/50 text-red-600 dark:text-red-400 mx-auto flex items-center justify-center">
           <ShieldAlert className="h-6 w-6" />
         </div>
-        <h3 className="text-base font-black text-slate-900 dark:text-white">Access Restricted</h3>
-        <p className="text-xs text-slate-500 dark:text-slate-400 font-medium max-w-md mx-auto">
+        <h3 className="text-base font-black text-slate-900 dark:text-white">Super Admin Access Only</h3>
+        <p className="text-xs text-slate-500 dark:text-slate-400 max-w-md mx-auto">
           Role & Module Permission management is restricted to Super Admin only.
         </p>
       </div>
     );
   }
 
-  const [users, setUsers] = useState<User[]>(() => getUsers());
+  const loadRoleWorkers = (): User[] => {
+    const raw = getUsers();
+    return raw.map(u => {
+      const isPulperOrLab =
+        u.username.toLowerCase() === 'pulper' ||
+        u.username.toLowerCase() === 'lab' ||
+        u.displayName.toLowerCase().includes('lab') ||
+        (u.designation && u.designation.toLowerCase().includes('lab')) ||
+        u.role === 'LabOperator';
+
+      if (isPulperOrLab) {
+        return {
+          ...u,
+          username: 'pulper',
+          displayName: 'Pulper',
+          empId: 'EMP-003',
+          designation: 'Pulper (Pulp Mill Operator)',
+          role: 'LabOperator' as const,
+        };
+      }
+      return u;
+    });
+  };
+
+  const [users, setUsers] = useState<User[]>(() => loadRoleWorkers());
   const [searchTerm, setSearchTerm] = useState('');
   const [toastMsg, setToastMsg] = useState('');
+
+  React.useEffect(() => {
+    setUsers(loadRoleWorkers());
+  }, []);
 
   const triggerToast = (msg: string) => {
     setToastMsg(msg);
@@ -61,10 +93,16 @@ export const RoleManagementView: React.FC = () => {
   };
 
   const reloadUsers = () => {
-    setUsers(getUsers());
+    setUsers(loadRoleWorkers());
   };
 
   const handleToggleModule = (targetUser: User, moduleKey: string) => {
+    // Admin roles are permanently locked
+    if (targetUser.role === 'Admin' || targetUser.username.toLowerCase() === 'admin') {
+      triggerToast('Super Admin permissions are permanently locked to full system authority');
+      return;
+    }
+
     const currentModules = targetUser.customModules && Array.isArray(targetUser.customModules)
       ? [...targetUser.customModules]
       : MODULES_13.map(m => m.key);
@@ -80,14 +118,14 @@ export const RoleManagementView: React.FC = () => {
 
     // Save to storage
     updateUserModules(targetUser.username, updatedModules, currentUser?.displayName || 'Admin');
-    
+
     // If updating current active user session, update state
     if (currentUser?.username.toLowerCase() === targetUser.username.toLowerCase()) {
       updateUserProfile({ customModules: updatedModules });
     }
 
     reloadUsers();
-    
+
     const modLabel = MODULES_13.find(m => m.key === moduleKey)?.label || moduleKey;
     const action = exists ? 'disabled for' : 'granted to';
     triggerToast(`"${modLabel}" role ${action} ${targetUser.displayName}`);
@@ -102,6 +140,7 @@ export const RoleManagementView: React.FC = () => {
     const success = await simulateWorkerLogin(targetUser.username);
     if (success) {
       triggerToast(`Simulating active worker session: ${targetUser.displayName} (${targetUser.designation || targetUser.role})`);
+      navigate('/', { replace: true });
     }
   };
 
@@ -156,14 +195,17 @@ export const RoleManagementView: React.FC = () => {
       {/* USER PROFILE CARDS LIST */}
       <div className="space-y-4">
         {filteredUsers.map(u => {
+          const isAdmin = u.role === 'Admin' || u.username.toLowerCase() === 'admin';
           const isCurrent = currentUser?.username.toLowerCase() === u.username.toLowerCase();
-          const activeModules = u.customModules && Array.isArray(u.customModules)
-            ? u.customModules
-            : MODULES_13.map(m => m.key);
+          const activeModules = isAdmin
+            ? MODULES_13.map(m => m.key)
+            : (u.customModules && Array.isArray(u.customModules)
+              ? u.customModules
+              : MODULES_13.map(m => m.key));
           const activeCount = activeModules.length;
 
           const empId = u.empId || `EMP-${Math.floor(100 + Math.random() * 900)}`;
-          const designation = u.designation || (u.role === 'Admin' ? 'Admin / Owner' : `${u.displayName} (${u.role})`);
+          const designation = u.designation || (isAdmin ? 'Admin / Owner' : `${u.displayName} (${u.role})`);
 
           return (
             <div
@@ -174,7 +216,11 @@ export const RoleManagementView: React.FC = () => {
               <div className="flex flex-col md:flex-row md:items-center justify-between gap-3 pb-3 border-b border-slate-100 dark:border-slate-800">
                 <div className="flex items-center gap-3.5">
                   {/* User Initial Circle */}
-                  <div className="w-11 h-11 rounded-2xl bg-primary/10 text-primary dark:text-blue-400 font-black text-lg flex items-center justify-center shrink-0 border border-primary/20">
+                  <div className={`w-11 h-11 rounded-2xl font-black text-lg flex items-center justify-center shrink-0 border ${
+                    isAdmin 
+                      ? 'bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-500/20' 
+                      : 'bg-primary/10 text-primary dark:text-blue-400 border-primary/20'
+                  }`}>
                     {u.displayName.substring(0, 1).toUpperCase()}
                   </div>
 
@@ -187,24 +233,33 @@ export const RoleManagementView: React.FC = () => {
                       <span className="px-2.5 py-0.5 rounded-full bg-emerald-50 dark:bg-emerald-950/60 text-emerald-600 dark:text-emerald-400 text-xs font-bold border border-emerald-200 dark:border-emerald-800/60">
                         Active
                       </span>
+                      {isAdmin && (
+                        <span className="px-2.5 py-0.5 rounded-full bg-amber-500/10 text-amber-700 dark:text-amber-400 text-xs font-bold border border-amber-500/30 flex items-center gap-1">
+                          <Lock className="h-3 w-3" /> Master Authority
+                        </span>
+                      )}
                     </div>
-                    <p className="text-xs font-bold text-primary dark:text-blue-400 mt-0.5">{designation}</p>
+                    <p className={`text-xs font-bold mt-0.5 ${isAdmin ? 'text-amber-600 dark:text-amber-400' : 'text-primary dark:text-blue-400'}`}>{designation}</p>
                   </div>
                 </div>
 
                 {/* RIGHT ACTIONS: COUNTER & SIMULATE BUTTON */}
                 <div className="flex items-center gap-3 self-start md:self-auto">
-                  <div className="px-3.5 py-1.5 rounded-full bg-slate-100 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-slate-800 dark:text-slate-200 text-xs font-bold tracking-wide">
-                    {activeCount} / 13 Modules Active
+                  <div className={`px-3.5 py-1.5 rounded-full border text-xs font-bold tracking-wide flex items-center gap-1.5 ${
+                    isAdmin
+                      ? 'bg-amber-500/10 border-amber-500/30 text-amber-700 dark:text-amber-400'
+                      : 'bg-slate-100 dark:bg-slate-900 border-slate-200 dark:border-slate-700 text-slate-800 dark:text-slate-200'
+                  }`}>
+                    {isAdmin && <Lock className="h-3.5 w-3.5 text-amber-500" />}
+                    <span>{isAdmin ? `${MODULES_LIST.length} / ${MODULES_LIST.length} Modules Locked` : `${activeCount} / ${MODULES_LIST.length} Modules Active`}</span>
                   </div>
 
                   <button
                     onClick={() => handleSimulateLogin(u)}
-                    className={`px-4 py-2 rounded-xl text-xs font-bold transition cursor-pointer flex items-center gap-1.5 shadow-xs active:scale-95 ${
-                      isCurrent
+                    className={`px-4 py-2 rounded-xl text-xs font-bold transition cursor-pointer flex items-center gap-1.5 shadow-xs active:scale-95 ${isCurrent
                         ? 'bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400 border border-slate-200 dark:border-slate-700 cursor-default'
                         : 'bg-[#0F52BA] hover:bg-blue-700 text-white shadow-md shadow-blue-700/20 transition cursor-pointer'
-                    }`}
+                      }`}
                   >
                     {isCurrent ? (
                       <>
@@ -222,26 +277,37 @@ export const RoleManagementView: React.FC = () => {
               </div>
 
               {/* TOGGLE SUBHEADER */}
-              <div className="text-xs font-bold text-slate-500 dark:text-slate-400 font-sans">
-                Module Permissions for {u.displayName}:
+              <div className="text-xs font-bold text-slate-500 dark:text-slate-400 font-sans flex items-center justify-between">
+                <span>Module Permissions for {u.displayName}:</span>
+                {isAdmin && (
+                  <span className="text-[11px] font-extrabold text-amber-600 dark:text-amber-400 flex items-center gap-1">
+                    <Lock className="h-3 w-3" /> Permanent Full Access (Locked)
+                  </span>
+                )}
               </div>
 
               {/* 13 MODULE CHIPS GRID */}
               <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-2.5">
                 {MODULES_13.map(mod => {
-                  const isActive = activeModules.includes(mod.key);
+                  const isActive = isAdmin ? true : activeModules.includes(mod.key);
 
                   return (
                     <button
                       key={mod.key}
                       onClick={() => handleToggleModule(u, mod.key)}
                       className={`px-3.5 py-2 rounded-xl border text-xs font-bold transition-all cursor-pointer flex items-center gap-2 select-none active:scale-95 truncate ${
-                        isActive
-                          ? 'bg-[#0F52BA] text-white border-blue-600 shadow-2xs hover:bg-blue-700'
-                          : 'bg-slate-100 hover:bg-slate-200/80 dark:bg-slate-800/70 dark:hover:bg-slate-800 text-slate-600 dark:text-slate-300 border-slate-200 dark:border-slate-700/80'
-                      }`}
+                        isAdmin
+                          ? 'bg-[#0F52BA] text-white border-blue-600/80 shadow-2xs cursor-default'
+                          : isActive
+                            ? 'bg-[#0F52BA] text-white border-blue-600 shadow-2xs hover:bg-blue-700'
+                            : 'bg-slate-100 hover:bg-slate-200/80 dark:bg-slate-800/70 dark:hover:bg-slate-800 text-slate-600 dark:text-slate-300 border-slate-200 dark:border-slate-700/80'
+                        }`}
                     >
-                      {isActive ? (
+                      {isAdmin ? (
+                        <div className="w-4 h-4 rounded-full bg-white/20 flex items-center justify-center shrink-0">
+                          <Lock className="h-2.5 w-2.5 text-amber-300" />
+                        </div>
+                      ) : isActive ? (
                         <div className="w-4 h-4 rounded-full bg-white/20 flex items-center justify-center shrink-0">
                           <Check className="h-3 w-3 text-white" />
                         </div>

@@ -122,13 +122,13 @@ export const LabelStudioView: React.FC = () => {
   return (
     <div className="space-y-6 p-4 sm:p-6 pb-24 text-slate-900 dark:text-slate-100 w-full max-w-7xl mx-auto font-sans">
       {/* 1. Top Category Tabs Bar */}
-      <div className="flex items-center gap-2 overflow-x-auto bg-slate-100 dark:bg-[#1a3535] p-2 rounded-2xl border border-slate-200/80 dark:border-[#2c4a4a] shadow-xs custom-scrollbar">
+      <div className="flex items-center gap-2 overflow-x-auto bg-slate-100 dark:bg-[#131d38] p-2 rounded-2xl border border-slate-200/80 dark:border-[#203058] shadow-xs custom-scrollbar">
         <button
           onClick={() => handleTabSwitch('reel')}
           className={`flex items-center gap-2 px-5 py-2.5 rounded-xl font-black text-xs transition cursor-pointer shrink-0 ${
             activeTab === 'reel'
               ? 'bg-gradient-to-r from-blue-600 to-indigo-600 text-white shadow-md shadow-blue-500/25'
-              : 'text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white hover:bg-white/80 dark:hover:bg-[#0f2828]/50'
+              : 'text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white hover:bg-white/80 dark:hover:bg-[#1b2a4e]/60'
           }`}
         >
           <QrCode className="h-4 w-4" />
@@ -140,7 +140,7 @@ export const LabelStudioView: React.FC = () => {
           className={`flex items-center gap-2 px-5 py-2.5 rounded-xl font-black text-xs transition cursor-pointer shrink-0 ${
             activeTab === 'warehouse'
               ? 'bg-gradient-to-r from-blue-600 to-indigo-600 text-white shadow-md shadow-blue-500/25'
-              : 'text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white hover:bg-white/80 dark:hover:bg-[#0f2828]/50'
+              : 'text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white hover:bg-white/80 dark:hover:bg-[#1b2a4e]/60'
           }`}
         >
           <Box className="h-4 w-4" />
@@ -152,7 +152,7 @@ export const LabelStudioView: React.FC = () => {
           className={`flex items-center gap-2 px-5 py-2.5 rounded-xl font-black text-xs transition cursor-pointer shrink-0 ${
             activeTab === 'raw_material'
               ? 'bg-gradient-to-r from-blue-600 to-indigo-600 text-white shadow-md shadow-blue-500/25'
-              : 'text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white hover:bg-white/80 dark:hover:bg-[#0f2828]/50'
+              : 'text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white hover:bg-white/80 dark:hover:bg-[#1b2a4e]/60'
           }`}
         >
           <Layers className="h-4 w-4" />
@@ -164,7 +164,7 @@ export const LabelStudioView: React.FC = () => {
           className={`flex items-center gap-2 px-5 py-2.5 rounded-xl font-black text-xs transition cursor-pointer shrink-0 ${
             activeTab === 'custom'
               ? 'bg-gradient-to-r from-blue-600 to-indigo-600 text-white shadow-md shadow-blue-500/25'
-              : 'text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white hover:bg-white/80 dark:hover:bg-[#0f2828]/50'
+              : 'text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white hover:bg-white/80 dark:hover:bg-[#1b2a4e]/60'
           }`}
         >
           <Sparkles className="h-4 w-4" />
@@ -175,7 +175,7 @@ export const LabelStudioView: React.FC = () => {
       {/* 2. Main Studio 2-Column Grid */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
         {/* Left Column: Form Controls (7 cols) */}
-        <div className="lg:col-span-7 space-y-5 bg-white dark:bg-[#1a3535] border border-slate-200/90 dark:border-[#2c4a4a] rounded-3xl p-6 shadow-sm">
+        <div className="lg:col-span-7 space-y-5 bg-white dark:bg-[#131d38] border border-slate-200/90 dark:border-[#203058] rounded-3xl p-6 shadow-sm">
           {/* LOAD EXISTING REEL FROM STOCK */}
           <div>
             <label className="block text-[11px] font-black uppercase tracking-wider text-slate-500 dark:text-slate-300 mb-1.5">
@@ -185,7 +185,7 @@ export const LabelStudioView: React.FC = () => {
               <select
                 value={selectedReelNo}
                 onChange={e => handleSelectReelFromStock(e.target.value)}
-                className="w-full p-3.5 bg-slate-50 dark:bg-[#0f2828] border border-slate-200 dark:border-[#2c4a4a] text-slate-900 dark:text-white rounded-2xl text-xs font-bold focus:ring-2 focus:ring-primary focus:outline-none cursor-pointer appearance-none pr-10 focus:bg-white dark:focus:bg-[#0f2828] transition"
+                className="w-full p-3.5 bg-slate-50 dark:bg-[#0d1527] border border-slate-200 dark:border-[#203058] text-slate-900 dark:text-white rounded-2xl text-xs font-bold focus:ring-2 focus:ring-primary focus:outline-none cursor-pointer appearance-none pr-10 focus:bg-white dark:focus:bg-[#0d1527] transition"
               >
                 {reelsList.map(reel => (
                   <option key={reel.reelNo} value={reel.reelNo}>
@@ -207,7 +207,7 @@ export const LabelStudioView: React.FC = () => {
                 type="text"
                 value={barcodeNo}
                 onChange={e => setBarcodeNo(e.target.value)}
-                className="w-full p-3 bg-slate-50 dark:bg-[#0f2828] border border-slate-200 dark:border-[#2c4a4a] text-slate-900 dark:text-white rounded-2xl text-xs font-bold font-mono focus:ring-2 focus:ring-primary focus:outline-none focus:bg-white dark:focus:bg-[#0f2828] transition"
+                className="w-full p-3 bg-slate-50 dark:bg-[#0d1527] border border-slate-200 dark:border-[#203058] text-slate-900 dark:text-white rounded-2xl text-xs font-bold font-mono focus:ring-2 focus:ring-primary focus:outline-none focus:bg-white dark:focus:bg-[#0d1527] transition"
               />
             </div>
 
@@ -219,7 +219,7 @@ export const LabelStudioView: React.FC = () => {
                 type="text"
                 value={qrCodeEmbedValue}
                 onChange={e => setQrCodeEmbedValue(e.target.value)}
-                className="w-full p-3 bg-slate-50 dark:bg-[#0f2828] border border-slate-200 dark:border-[#2c4a4a] text-slate-900 dark:text-white rounded-2xl text-xs font-bold font-mono focus:ring-2 focus:ring-primary focus:outline-none focus:bg-white dark:focus:bg-[#0f2828] transition"
+                className="w-full p-3 bg-slate-50 dark:bg-[#0d1527] border border-slate-200 dark:border-[#203058] text-slate-900 dark:text-white rounded-2xl text-xs font-bold font-mono focus:ring-2 focus:ring-primary focus:outline-none focus:bg-white dark:focus:bg-[#0d1527] transition"
               />
             </div>
           </div>
@@ -233,7 +233,7 @@ export const LabelStudioView: React.FC = () => {
               type="text"
               value={productTitle}
               onChange={e => setProductTitle(e.target.value)}
-              className="w-full p-3 bg-slate-50 dark:bg-[#0f2828] border border-slate-200 dark:border-[#2c4a4a] text-slate-900 dark:text-white rounded-2xl text-xs font-bold focus:ring-2 focus:ring-primary focus:outline-none focus:bg-white dark:focus:bg-[#0f2828] transition"
+              className="w-full p-3 bg-slate-50 dark:bg-[#0d1527] border border-slate-200 dark:border-[#203058] text-slate-900 dark:text-white rounded-2xl text-xs font-bold focus:ring-2 focus:ring-primary focus:outline-none focus:bg-white dark:focus:bg-[#0d1527] transition"
             />
           </div>
 
@@ -247,7 +247,7 @@ export const LabelStudioView: React.FC = () => {
                 type="text"
                 value={gsm}
                 onChange={e => setGsm(e.target.value)}
-                className="w-full p-3 bg-slate-50 dark:bg-[#0f2828] border border-slate-200 dark:border-[#2c4a4a] text-slate-900 dark:text-white rounded-2xl text-xs font-bold font-mono focus:ring-2 focus:ring-primary focus:outline-none focus:bg-white dark:focus:bg-[#0f2828] transition"
+                className="w-full p-3 bg-slate-50 dark:bg-[#0d1527] border border-slate-200 dark:border-[#203058] text-slate-900 dark:text-white rounded-2xl text-xs font-bold font-mono focus:ring-2 focus:ring-primary focus:outline-none focus:bg-white dark:focus:bg-[#0d1527] transition"
               />
             </div>
 
@@ -259,7 +259,7 @@ export const LabelStudioView: React.FC = () => {
                 type="text"
                 value={sizeWidth}
                 onChange={e => setSizeWidth(e.target.value)}
-                className="w-full p-3 bg-slate-50 dark:bg-[#0f2828] border border-slate-200 dark:border-[#2c4a4a] text-slate-900 dark:text-white rounded-2xl text-xs font-bold font-mono focus:ring-2 focus:ring-primary focus:outline-none focus:bg-white dark:focus:bg-[#0f2828] transition"
+                className="w-full p-3 bg-slate-50 dark:bg-[#0d1527] border border-slate-200 dark:border-[#203058] text-slate-900 dark:text-white rounded-2xl text-xs font-bold font-mono focus:ring-2 focus:ring-primary focus:outline-none focus:bg-white dark:focus:bg-[#0d1527] transition"
               />
             </div>
 
@@ -271,15 +271,15 @@ export const LabelStudioView: React.FC = () => {
                 type="text"
                 value={netWeightKg}
                 onChange={e => setNetWeightKg(e.target.value)}
-                className="w-full p-3 bg-slate-50 dark:bg-[#0f2828] border border-slate-200 dark:border-[#2c4a4a] text-slate-900 dark:text-white rounded-2xl text-xs font-bold font-mono text-emerald-600 dark:text-emerald-400 focus:ring-2 focus:ring-primary focus:outline-none focus:bg-white dark:focus:bg-[#0f2828] transition"
+                className="w-full p-3 bg-slate-50 dark:bg-[#0d1527] border border-slate-200 dark:border-[#203058] text-slate-900 dark:text-white rounded-2xl text-xs font-bold font-mono text-emerald-600 dark:text-emerald-400 focus:ring-2 focus:ring-primary focus:outline-none focus:bg-white dark:focus:bg-[#0d1527] transition"
               />
             </div>
           </div>
 
           {/* Row 7: Label Size, Mode Toggle & Copies */}
-          <div className="space-y-4 pt-4 border-t border-slate-200/80 dark:border-[#2c4a4a]">
+          <div className="space-y-4 pt-4 border-t border-slate-200/80 dark:border-[#203058]">
             {/* System Mode Switcher (Test ID-Only vs Old System) */}
-            <div className="p-3.5 bg-blue-50/70 dark:bg-[#0f2828] border border-blue-200/80 dark:border-[#2c4a4a] rounded-2xl flex flex-col sm:flex-row items-center justify-between gap-3">
+            <div className="p-3.5 bg-blue-50/70 dark:bg-[#0d1527] border border-blue-200/80 dark:border-[#203058] rounded-2xl flex flex-col sm:flex-row items-center justify-between gap-3">
               <div>
                 <span className="text-xs font-black text-slate-900 dark:text-white flex items-center gap-1.5">
                   <span className="h-2 w-2 rounded-full bg-emerald-500 animate-pulse"></span>
@@ -292,7 +292,7 @@ export const LabelStudioView: React.FC = () => {
                 </p>
               </div>
 
-              <div className="flex items-center gap-1.5 shrink-0 bg-white dark:bg-[#1a3535] p-1 rounded-xl border border-slate-200 dark:border-[#2c4a4a] shadow-2xs">
+              <div className="flex items-center gap-1.5 shrink-0 bg-white dark:bg-[#131d38] p-1 rounded-xl border border-slate-200 dark:border-[#203058] shadow-2xs">
                 <button
                   onClick={() => setQrEncodingMode('id_only')}
                   className={`px-3 py-1.5 rounded-lg text-[11px] font-bold transition cursor-pointer ${
@@ -317,40 +317,51 @@ export const LabelStudioView: React.FC = () => {
               </div>
             </div>
 
-            <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
-              <div className="flex items-center gap-3 w-full sm:w-auto">
-                <label className="text-xs font-bold text-slate-600 dark:text-slate-300 whitespace-nowrap">
-                  Label Size:
+            {/* Row: Label Output Size & Batch Print Copies */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-1">
+              {/* Label Output Format / Size Card */}
+              <div className="p-3 bg-slate-50 dark:bg-[#0d1527] border border-slate-200 dark:border-[#203058] rounded-2xl space-y-1.5">
+                <label className="block text-[11px] font-black uppercase tracking-wider text-slate-500 dark:text-slate-300">
+                  Label Output Size
                 </label>
-                <select
-                  value={labelSize}
-                  onChange={e => setLabelSize(e.target.value)}
-                  className="p-2.5 bg-slate-50 dark:bg-[#0f2828] border border-slate-200 dark:border-[#2c4a4a] text-slate-900 dark:text-white rounded-xl text-xs font-bold cursor-pointer focus:outline-none focus:ring-2 focus:ring-primary transition"
-                >
-                  <option value='4" x 6" (Thermal Sticker 100x150mm)'>
-                    4" x 6" (Thermal Sticker 100x150mm)
-                  </option>
-                  <option value='3" x 4" (Compact Sticker 75x100mm)'>
-                    3" x 4" (Compact Sticker 75x100mm)
-                  </option>
-                </select>
+                <div className="relative">
+                  <select
+                    value={labelSize}
+                    onChange={e => setLabelSize(e.target.value)}
+                    className="w-full p-2.5 bg-white dark:bg-[#131d38] border border-slate-200 dark:border-[#203058] text-slate-900 dark:text-white rounded-xl text-xs font-bold cursor-pointer focus:outline-none focus:ring-2 focus:ring-primary transition appearance-none pr-8"
+                  >
+                    <option value='4" x 6" (Thermal Sticker 100x150mm)'>
+                      4" x 6" (Thermal Sticker 100×150mm)
+                    </option>
+                    <option value='3" x 4" (Compact Sticker 75x100mm)'>
+                      3" x 4" (Compact Sticker 75×100mm)
+                    </option>
+                  </select>
+                  <ChevronDown className="absolute right-3 top-3 h-3.5 w-3.5 text-slate-400 pointer-events-none" />
+                </div>
               </div>
 
-              <div className="flex items-center gap-2">
-                <span className="text-xs font-bold text-slate-600 dark:text-slate-300">Copies:</span>
-                {[1, 2, 4].map(c => (
-                  <button
-                    key={c}
-                    onClick={() => setCopies(c)}
-                    className={`px-3 py-1.5 rounded-xl font-bold text-xs transition cursor-pointer ${
-                      copies === c
-                        ? 'bg-blue-600 text-white shadow-md shadow-blue-500/25'
-                        : 'bg-slate-100 dark:bg-[#0f2828] border border-slate-200 dark:border-[#2c4a4a] text-slate-700 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-[#2c4a4a]'
-                    }`}
-                  >
-                    {c}x
-                  </button>
-                ))}
+              {/* Print Quantity / Copies Card */}
+              <div className="p-3 bg-slate-50 dark:bg-[#0d1527] border border-slate-200 dark:border-[#203058] rounded-2xl space-y-1.5 flex flex-col justify-between">
+                <label className="block text-[11px] font-black uppercase tracking-wider text-slate-500 dark:text-slate-300">
+                  Print Copies
+                </label>
+                <div className="flex items-center gap-1.5">
+                  {[1, 2, 4, 8].map(c => (
+                    <button
+                      key={c}
+                      type="button"
+                      onClick={() => setCopies(c)}
+                      className={`flex-1 py-2 rounded-xl font-black text-xs transition cursor-pointer text-center ${
+                        copies === c
+                          ? 'bg-[#0F52BA] text-white shadow-md shadow-blue-600/30'
+                          : 'bg-white dark:bg-[#131d38] border border-slate-200 dark:border-[#203058] text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-[#1e2d54]'
+                      }`}
+                    >
+                      {c}x
+                    </button>
+                  ))}
+                </div>
               </div>
             </div>
           </div>

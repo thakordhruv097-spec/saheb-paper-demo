@@ -4,6 +4,7 @@ import { useAuth } from '../auth/AuthContext';
 import { useTranslation } from 'react-i18next';
 import { User, Edit3, ShieldCheck, Mail, Phone, Lock, HelpCircle, CheckCircle2, Eye, EyeOff, X, KeyRound, Sparkles, LogOut, Building2 } from 'lucide-react';
 import { COMPANY_CONFIG } from '../../config/company';
+import { MODULES_13 } from '../../data/types';
 
 interface OperatorProfileViewProps {
   defaultTab?: 'profile';
@@ -214,6 +215,26 @@ export const OperatorProfileView: React.FC<OperatorProfileViewProps> = () => {
                   <span className="text-[10px] font-bold uppercase text-slate-400 block">Plant Location</span>
                   <span className="font-medium text-slate-700 dark:text-slate-300">{COMPANY_CONFIG.address}</span>
                 </div>
+              </div>
+            </div>
+
+            {/* Dynamic Active Module Permissions */}
+            <div className="sm:col-span-2 p-4 rounded-2xl bg-slate-50/70 dark:bg-slate-900/60 border border-slate-200/70 dark:border-slate-700/70 space-y-3">
+              <div className="flex items-center justify-between">
+                <span className="text-[11px] font-bold uppercase tracking-wider text-slate-400 flex items-center gap-1.5">
+                  <ShieldCheck className="h-3.5 w-3.5 text-primary" /> Active Module Permissions ({user.customModules ? user.customModules.length : MODULES_13.length}/{MODULES_13.length})
+                </span>
+                <span className="text-xs font-bold px-2.5 py-0.5 rounded-full bg-blue-100 dark:bg-blue-950 text-primary dark:text-blue-300 border border-blue-200/60 dark:border-blue-800/60">
+                  Role Synchronized
+                </span>
+              </div>
+              <div className="flex flex-wrap gap-2">
+                {MODULES_13.filter(m => (user.customModules || []).includes(m.key)).map(m => (
+                  <span key={m.key} className="px-3 py-1.5 rounded-xl bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-200 text-xs font-bold border border-slate-200 dark:border-slate-700 flex items-center gap-2 shadow-2xs">
+                    <CheckCircle2 className="h-3.5 w-3.5 text-emerald-500 shrink-0" />
+                    <span>{m.label}</span>
+                  </span>
+                ))}
               </div>
             </div>
 

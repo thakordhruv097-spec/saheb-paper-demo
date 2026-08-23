@@ -65,6 +65,31 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     setLoading(false);
   }, []);
 
+  useEffect(() => {
+    const syncSessionFromStorage = () => {
+      const rawSession = localStorage.getItem('saheb_session');
+      if (rawSession) {
+        try {
+          const session: SessionData = JSON.parse(rawSession);
+          const currentUsers = getUsers();
+          const activeDbUser = currentUsers.find(u => u.username.toLowerCase() === session.user.username.toLowerCase());
+          if (activeDbUser && activeDbUser.active !== false) {
+            setUser({ ...activeDbUser });
+          }
+        } catch (err) {
+          console.error(err);
+        }
+      }
+    };
+
+    window.addEventListener('storage', syncSessionFromStorage);
+    window.addEventListener('focus', syncSessionFromStorage);
+    return () => {
+      window.removeEventListener('storage', syncSessionFromStorage);
+      window.removeEventListener('focus', syncSessionFromStorage);
+    };
+  }, []);
+
   const login = async (username: string, pin: string): Promise<boolean> => {
     const users = getUsers();
     const foundUser = users.find(
@@ -78,140 +103,130 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       }
 
       const token = `token_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`;
-      const expiresAt = Date.now() + SESSION_DURATION_MS;
-      const sessionData: SessionData = { token, expiresAt, user: foundUser };
+      const expiresAt = Date.now() + 8 * 60 * 60 * 1000; // 8 hours duration
 
+      const session: SessionData = {
+        token,
+        user: foundUser,
+        expiresAt,
+      };
+
+      localStorage.setItem('saheb_session', JSON.stringify(session));
+      localStorage.setItem('saheb_active_user', JSON.stringify(foundUser)); // fallback key
       setUser(foundUser);
-      localStorage.setItem('saheb_session', JSON.stringify(sessionData));
-      localStorage.setItem('saheb_active_user', JSON.stringify(foundUser));
-      addLog('Auth', 'Login Success', `User ${foundUser.username} logged in as ${foundUser.role}`, foundUser.username);
+      addLog('Auth', 'Login Successful', `User authenticated: ${foundUser.username}`, foundUser.username);
       return true;
-    } else {
-      addLog('Auth', 'Login Failure', `Failed login attempt for username: ${username}`, 'System');
-      return false;
     }
+    return false;
   };
 
   const logout = () => {
     if (user) {
-      addLog('Auth', 'Logout', `User ${user.username} logged out`, user.username);
+      addLog('Auth', 'Logout', `User logged out: ${user.username}`, user.username);
     }
     clearSession();
   };
 
   const resetPin = async (username: string, newPin: string): Promise<boolean> => {
     const users = getUsers();
-    const foundUser = users.find(u => u.username.toLowerCase() === username.toLowerCase());
+    const userToReset = users.find(u => u.username.toLowerCase() === username.toLowerCase());
+    if (!userToReset) return false;
 
-    if (foundUser) {
-      const success = updateRawUserPin(foundUser.username, newPin);
-      if (success) {
-        const updatedUser = { ...foundUser, pin: newPin, needsPinReset: false };
-        const token = `token_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`;
-        const expiresAt = Date.now() + SESSION_DURATION_MS;
-        const sessionData: SessionData = { token, expiresAt, user: updatedUser };
-
-        setUser(updatedUser);
-        localStorage.setItem('saheb_session', JSON.stringify(sessionData));
-        localStorage.setItem('saheb_active_user', JSON.stringify(updatedUser));
-        return true;
-      }
-    }
-    return false;
+    return updateRawUserPin(userToReset.username, newPin);
   };
 
-  const updateUserProfile = async (updatedFields: Partial<User>): Promise<boolean> => {
+  const updateUserProfile = async (updates: Partial<User>): Promise<boolean> => {
     if (!user) return false;
     const users = getUsers();
-    const existingIndex = users.findIndex(u => u.username.toLowerCase() === user.username.toLowerCase());
-    if (existingIndex > -1) {
-      const updatedUser: User = {
-        ...users[existingIndex],
-        ...updatedFields,
-      };
-      saveUser(updatedUser);
+    const idx = users.findIndex(u => u.username.toLowerCase() === user.username.toLowerCase());
+    if (idx === -1) return false;
 
-      // Update active state & session storage
-      setUser(updatedUser);
-      const rawSession = localStorage.getItem('saheb_session');
-      if (rawSession) {
-        try {
-          const session = JSON.parse(rawSession);
-          session.user = updatedUser;
-          localStorage.setItem('saheb_session', JSON.stringify(session));
-        } catch (e) {
-          console.error(e);
-        }
+    const updatedUser: User = { ...users[idx], ...updates };
+    saveUser(updatedUser);
+
+    // Update session storage
+    const rawSession = localStorage.getItem('saheb_session');
+    if (rawSession) {
+      try {
+        const session: SessionData = JSON.parse(rawSession);
+        session.user = updatedUser;
+        localStorage.setItem('saheb_session', JSON.stringify(session));
+      } catch (err) {
+        console.error(err);
       }
-      localStorage.setItem('saheb_active_user', JSON.stringify(updatedUser));
-      addLog('Auth', 'Profile Update', `User ${updatedUser.username} updated profile details (${updatedUser.displayName})`, updatedUser.username);
-      return true;
     }
-    return false;
+    localStorage.setItem('saheb_active_user', JSON.stringify(updatedUser));
+    setUser(updatedUser);
+    window.dispatchEvent(new Event('storage'));
+    return true;
   };
 
-  const simulateWorkerLogin = async (targetUsername: string): Promise<boolean> => {
+  const simulateWorkerLogin = async (username: string): Promise<boolean> => {
     const users = getUsers();
-    const foundUser = users.find(u => u.username.toLowerCase() === targetUsername.toLowerCase());
-    if (foundUser) {
-      const token = `token_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`;
-      const expiresAt = Date.now() + SESSION_DURATION_MS;
-      const sessionData: SessionData = { token, expiresAt, user: foundUser };
+    const targetUser = users.find(u => u.username.toLowerCase() === username.toLowerCase());
+    if (!targetUser) return false;
 
-      setUser(foundUser);
-      localStorage.setItem('saheb_session', JSON.stringify(sessionData));
-      localStorage.setItem('saheb_active_user', JSON.stringify(foundUser));
-      addLog('Auth', 'Worker Login Simulated', `Simulated active session for @${foundUser.username} (${foundUser.displayName})`, user?.displayName || 'Admin');
-      return true;
-    }
-    return false;
+    const token = `token_sim_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`;
+    const expiresAt = Date.now() + 8 * 60 * 60 * 1000;
+
+    const session: SessionData = {
+      token,
+      user: targetUser,
+      expiresAt,
+    };
+
+    localStorage.setItem('saheb_session', JSON.stringify(session));
+    localStorage.setItem('saheb_active_user', JSON.stringify(targetUser));
+    setUser(targetUser);
+    window.dispatchEvent(new Event('storage'));
+    addLog('Auth', 'Worker Login Simulated', `Admin simulated session for: ${targetUser.username} (${targetUser.displayName})`, 'Admin');
+    return true;
   };
 
+  // GRANULAR PERMISSION EVALUATION (STRICT NO-FALLBACK TO PREVENT PERMISSION BYPASS)
   const hasAccess = (moduleName: string): boolean => {
     if (!user) return false;
-    const userRoles = user.roles && user.roles.length > 0 ? user.roles : [user.role];
-    if (user.role === 'Admin' || user.username === 'admin' || userRoles.includes('Admin')) return true;
 
-    // Get user's custom modules assigned strictly via Role Management system
+    // Super Admin has master authority across all endpoints
+    if (user.role === 'Admin') return true;
+
+    // Custom assigned modules configured by Admin in Role Management
     const custom = user.customModules && Array.isArray(user.customModules)
       ? user.customModules
-      : ['dashboard'];
+      : [];
 
     // Direct match against assigned custom module keys
     if (custom.includes(moduleName)) return true;
 
-    // Route level access checks for sections that contain sub-modules
-    if (moduleName === 'pulp_mill_operations') return custom.includes('pulp_mill_operations');
+    // Route & Menu level access checks
+    if (moduleName === 'dashboard') return custom.includes('dashboard');
     if (moduleName === 'raw_material_stock') return custom.includes('raw_material_stock');
+    if (moduleName === 'pulp_mill_operations') return custom.includes('pulp_mill_operations');
     if (moduleName === 'machine_production') return custom.includes('machine_production');
     if (moduleName === 'rewinding_reel_conversion') return custom.includes('rewinding_reel_conversion');
-    if (moduleName === 'lab') return custom.includes('machine_production') || custom.includes('pulp_mill_operations');
+    if (moduleName === 'lab') return custom.includes('lab');
 
-    // Utilities & ETP section: Accessible if ANY of boiler, etp, electricity, or utilities_etp is toggled ON
-    if (moduleName === 'utilities_etp') {
+    // Individual utilities and unified module
+    if (moduleName === 'boiler' || moduleName === 'etp' || moduleName === 'electricity' || moduleName === 'utilities_etp') {
       return custom.includes('utilities_etp') || custom.includes('boiler') || custom.includes('etp') || custom.includes('electricity');
     }
 
     if (moduleName === 'orders') return custom.includes('orders');
 
-    // Finished Stock & Stock Categorization section route: Accessible for all authorized logged-in users
+    // Finished Stock & Stock Categorization
     if (moduleName === 'finished_stock_dispatch') {
-      return (
-        userRoles.includes('Admin') ||
-        userRoles.includes('Management') ||
-        custom.includes('finished_stock_dispatch') ||
-        custom.includes('dispatch') ||
-        custom.includes('stock_category') ||
-        custom.includes('finish_stock') ||
-        true
-      );
+      return custom.includes('finished_stock_dispatch') || custom.includes('finish_stock') || custom.includes('stock_category');
+    }
+
+    // Dispatch Receipt & Vault
+    if (moduleName === 'dispatch_receipt' || moduleName === 'dispatch') {
+      return custom.includes('dispatch') || custom.includes('dispatch_receipt');
     }
 
     if (moduleName === 'spareparts_management') return custom.includes('spareparts_management');
-    if (moduleName === 'label_studio') return custom.includes('label_studio') || custom.includes('monthly_yearly_reporting') || userRoles.includes('Admin') || userRoles.includes('Management');
+    if (moduleName === 'label_studio') return custom.includes('label_studio');
     if (moduleName === 'monthly_yearly_reporting') return custom.includes('monthly_yearly_reporting');
-    if (moduleName === 'admin_panel_audit') return custom.includes('admin_panel_audit') || userRoles.includes('Admin');
-    if (moduleName === 'dashboard') return custom.includes('dashboard');
+    if (moduleName === 'admin_panel_audit') return custom.includes('admin_panel_audit');
 
     // STRICT DENIAL: If a module is NOT enabled in Role Management, DENY ACCESS!
     return false;

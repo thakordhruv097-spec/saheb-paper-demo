@@ -182,7 +182,7 @@ export default function App() {
             <Route
               path="/utilities-&-etp/boiler-operations"
               element={
-                <ProtectedRoute moduleName="utilities_etp">
+                <ProtectedRoute moduleName="boiler">
                   <Layout>
                     <UtilitiesEtpView initialTab="boiler" />
                   </Layout>
@@ -198,7 +198,7 @@ export default function App() {
             <Route
               path="/utilities-&-etp/etp-water-&-chemicals"
               element={
-                <ProtectedRoute moduleName="utilities_etp">
+                <ProtectedRoute moduleName="etp">
                   <Layout>
                     <UtilitiesEtpView initialTab="etp_chemicals" />
                   </Layout>
@@ -209,7 +209,7 @@ export default function App() {
             <Route
               path="/utilities-&-etp/electricity-&-power-grid"
               element={
-                <ProtectedRoute moduleName="utilities_etp">
+                <ProtectedRoute moduleName="electricity">
                   <Layout>
                     <UtilitiesEtpView initialTab="electricity" />
                   </Layout>

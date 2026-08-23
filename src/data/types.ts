@@ -31,6 +31,29 @@ export interface User {
   customModules?: string[];
 }
 
+export interface ModuleDefinition {
+  key: string;
+  label: string;
+}
+
+export const MODULES_LIST: ModuleDefinition[] = [
+  { key: 'dashboard', label: 'Dashboard' },
+  { key: 'raw_material_stock', label: 'Raw Material Stock' },
+  { key: 'pulp_mill_operations', label: 'Pulp Mill' },
+  { key: 'machine_production', label: 'Plant Manager' },
+  { key: 'rewinding_reel_conversion', label: 'Rewinder' },
+  { key: 'lab', label: 'Lab Quality Control' },
+  { key: 'utilities_etp', label: 'Utilities & ETP' },
+  { key: 'orders', label: 'Pending Orders' },
+  { key: 'finished_stock_dispatch', label: 'Finish Stock' },
+  { key: 'dispatch', label: 'Dispatch' },
+  { key: 'spareparts_management', label: 'Store (Spares)' },
+  { key: 'monthly_yearly_reporting', label: 'Reports & Analytics' },
+];
+
+export const MODULES_11 = MODULES_LIST;
+export const MODULES_13 = MODULES_LIST;
+
 export type RawMaterialCategory =
   | 'WASTE_PAPER'
   | 'OTHER_RAW_MATERIAL'
@@ -233,10 +256,10 @@ export interface PaperTestReport {
   weight: number; // e.g. 500 (kg)
   speed: number; // e.g. 130 (m/min)
   crepingPct: number; // e.g. 18.00 (%)
-  
+
   // 14 GSM sample profile readings across roll width
   gsmSamples: number[];
-  
+
   // Auto-calculated profile stats
   avgGsm: number;
   maxGsm: number;
