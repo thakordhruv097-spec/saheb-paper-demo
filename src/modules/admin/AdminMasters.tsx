@@ -47,7 +47,7 @@ export const AdminMasters: React.FC = () => {
   const { user } = useAuth();
   const location = useLocation();
 
-  const [activeTab, setActiveTab] = useState<'products' | 'raw_materials' | 'parties' | 'vendors' | 'vehicles' | 'users' | 'roles' | 'backup' | 'logs'>(() => {
+  const [activeTab, setActiveTab] = useState<'products' | 'raw_materials' | 'parties' | 'vendors' | 'users' | 'roles' | 'backup' | 'logs'>(() => {
     if (location.state && (location.state as any).tab) {
       return (location.state as any).tab;
     }
@@ -739,21 +739,23 @@ export const AdminMasters: React.FC = () => {
   return (
     <div className="space-y-6 font-sans pb-12">
 
-      {/* 1. HERO GRADIENT HEADER BANNER */}
-      <div className="bg-gradient-to-r from-blue-700 via-indigo-600 to-slate-900 rounded-3xl p-6 sm:p-8 text-white shadow-xl relative overflow-hidden">
-        <div className="absolute -top-16 -right-16 w-64 h-64 rounded-full bg-white/10 blur-xl pointer-events-none" />
-        <div className="absolute -bottom-20 -left-20 w-80 h-80 rounded-full bg-blue-400/10 blur-2xl pointer-events-none" />
-
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-6 relative z-10">
-          <div className="flex items-center gap-4">
-            <div className="p-3.5 rounded-2xl bg-white/15 backdrop-blur-md border border-white/20 text-white shadow-lg shrink-0">
-              <Settings className="h-8 w-8" />
+      {/* 1. CLEAN MINIMAL HEADER CARD (OPTION A) */}
+      <div className="bg-white dark:bg-[#131d38] rounded-2xl sm:rounded-3xl p-4 sm:p-5 text-slate-900 dark:text-white shadow-xs">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+          <div className="flex items-center gap-3.5">
+            <div className="p-2.5 sm:p-3 rounded-2xl bg-blue-50 dark:bg-blue-950/60 border border-blue-200/60 dark:border-blue-900/50 text-primary dark:text-blue-400 shadow-2xs shrink-0">
+              <Settings className="h-6 w-6 sm:h-7 sm:w-7" />
             </div>
             <div>
-              <div className="flex flex-wrap items-center gap-3">
-                <h2 className="text-2xl sm:text-3xl font-black tracking-tight">{t('masters.title')}</h2>
+              <div className="flex flex-wrap items-center gap-2.5">
+                <h1 className="text-xl sm:text-2xl font-black tracking-tight font-heading text-slate-900 dark:text-white">
+                  {t('masters.title')}
+                </h1>
+                <span className="px-3 py-1 rounded-full bg-blue-50 dark:bg-blue-950/60 text-primary dark:text-blue-400 border border-blue-200/80 dark:border-blue-800/80 text-xs font-bold">
+                  System Admin
+                </span>
               </div>
-              <p className="text-xs sm:text-sm text-blue-100/90 font-medium mt-1">
+              <p className="text-xs sm:text-sm text-slate-500 dark:text-slate-400 font-medium mt-0.5">
                 Maintain registry listings, manage system backups, and review audit trails.
               </p>
             </div>
@@ -761,13 +763,11 @@ export const AdminMasters: React.FC = () => {
         </div>
       </div>
 
-
-
       {/* 3. NAVIGATION TABS PILLS */}
       <div className="flex items-center bg-slate-100/90 dark:bg-slate-800/90 p-1.5 rounded-2xl border border-slate-200/80 dark:border-slate-700 overflow-x-auto scrollbar-none gap-1.5 w-full">
         <button
           onClick={() => { setActiveTab('products'); setSuccessMsg(''); setErrorMsg(''); }}
-          className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-black transition-all cursor-pointer whitespace-nowrap shrink-0 ${activeTab === 'products' ? 'bg-gradient-to-r from-blue-600 to-indigo-600 text-white shadow-md' : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
+          className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer whitespace-nowrap shrink-0 ${activeTab === 'products' ? 'bg-primary text-white shadow-xs' : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
             }`}
         >
           <ShoppingBag className="h-4 w-4" />
@@ -775,7 +775,7 @@ export const AdminMasters: React.FC = () => {
         </button>
         <button
           onClick={() => { setActiveTab('raw_materials'); setSuccessMsg(''); setErrorMsg(''); }}
-          className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-black transition-all cursor-pointer whitespace-nowrap shrink-0 ${activeTab === 'raw_materials' ? 'bg-gradient-to-r from-blue-600 to-indigo-600 text-white shadow-md' : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
+          className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer whitespace-nowrap shrink-0 ${activeTab === 'raw_materials' ? 'bg-primary text-white shadow-xs' : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
             }`}
         >
           <Boxes className="h-4 w-4" />
@@ -783,7 +783,7 @@ export const AdminMasters: React.FC = () => {
         </button>
         <button
           onClick={() => { setActiveTab('parties'); setSuccessMsg(''); setErrorMsg(''); }}
-          className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-black transition-all cursor-pointer whitespace-nowrap shrink-0 ${activeTab === 'parties' ? 'bg-gradient-to-r from-blue-600 to-indigo-600 text-white shadow-md' : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
+          className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer whitespace-nowrap shrink-0 ${activeTab === 'parties' ? 'bg-primary text-white shadow-xs' : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
             }`}
         >
           <Users className="h-4 w-4" />
@@ -791,24 +791,16 @@ export const AdminMasters: React.FC = () => {
         </button>
         <button
           onClick={() => { setActiveTab('vendors'); setSuccessMsg(''); setErrorMsg(''); }}
-          className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-black transition-all cursor-pointer whitespace-nowrap shrink-0 ${activeTab === 'vendors' ? 'bg-gradient-to-r from-blue-600 to-indigo-600 text-white shadow-md' : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
+          className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer whitespace-nowrap shrink-0 ${activeTab === 'vendors' ? 'bg-primary text-white shadow-xs' : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
             }`}
         >
           <Users className="h-4 w-4" />
           <span>{t('masters.vendors')}</span>
         </button>
-        <button
-          onClick={() => { setActiveTab('vehicles'); setSuccessMsg(''); setErrorMsg(''); }}
-          className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-black transition-all cursor-pointer whitespace-nowrap shrink-0 ${activeTab === 'vehicles' ? 'bg-gradient-to-r from-blue-600 to-indigo-600 text-white shadow-md' : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
-            }`}
-        >
-          <Truck className="h-4 w-4" />
-          <span>{t('masters.vehicles')}</span>
-        </button>
 
         <button
           onClick={() => { setActiveTab('roles'); setSuccessMsg(''); setErrorMsg(''); }}
-          className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-black transition-all cursor-pointer whitespace-nowrap shrink-0 ${activeTab === 'roles' ? 'bg-gradient-to-r from-blue-600 to-indigo-600 text-white shadow-md' : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
+          className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer whitespace-nowrap shrink-0 ${activeTab === 'roles' ? 'bg-primary text-white shadow-xs' : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
             }`}
         >
           <ShieldAlert className="h-4 w-4" />
@@ -816,7 +808,7 @@ export const AdminMasters: React.FC = () => {
         </button>
         <button
           onClick={() => { setActiveTab('backup'); setSuccessMsg(''); setErrorMsg(''); }}
-          className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-black transition-all cursor-pointer whitespace-nowrap shrink-0 ${activeTab === 'backup' ? 'bg-gradient-to-r from-blue-600 to-indigo-600 text-white shadow-md' : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
+          className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer whitespace-nowrap shrink-0 ${activeTab === 'backup' ? 'bg-primary text-white shadow-xs' : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
             }`}
         >
           <Database className="h-4 w-4" />
@@ -824,7 +816,7 @@ export const AdminMasters: React.FC = () => {
         </button>
         <button
           onClick={() => { setActiveTab('logs'); setSuccessMsg(''); setErrorMsg(''); }}
-          className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-black transition-all cursor-pointer whitespace-nowrap shrink-0 ${activeTab === 'logs' ? 'bg-gradient-to-r from-blue-600 to-indigo-600 text-white shadow-md' : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
+          className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer whitespace-nowrap shrink-0 ${activeTab === 'logs' ? 'bg-primary text-white shadow-xs' : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
             }`}
         >
           <ShieldAlert className="h-4 w-4" />
@@ -849,17 +841,17 @@ export const AdminMasters: React.FC = () => {
             </div>
           )}
 
-          <div className="bg-white dark:bg-surface-dark border border-slate-200 dark:border-slate-700/80 rounded-3xl p-6 shadow-sm">
+          <div className="neumorphic-card p-6">
 
             {/* Live Search Box */}
             {activeTab !== 'backup' && activeTab !== 'logs' && activeTab !== 'roles' && (
-              <div className="mb-5 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-2xl p-3 flex items-center gap-3">
+              <div className="mb-5 bg-slate-50 dark:bg-slate-900 rounded-2xl p-3 flex items-center gap-3">
                 <Search className="h-4 w-4 text-slate-400 shrink-0" />
                 <input
                   type="text"
                   value={mastersSearchQuery}
                   onChange={e => setMastersSearchQuery(e.target.value)}
-                  placeholder={`Search ${activeTab === 'products' ? 'products' : activeTab === 'raw_materials' ? 'raw materials' : activeTab === 'parties' ? 'parties' : activeTab === 'vendors' ? 'vendors' : activeTab === 'vehicles' ? 'vehicles' : activeTab === 'users' ? 'users' : 'master records'}...`}
+                  placeholder={`Search ${activeTab === 'products' ? 'products' : activeTab === 'raw_materials' ? 'raw materials' : activeTab === 'parties' ? 'parties' : activeTab === 'vendors' ? 'vendors' : activeTab === 'users' ? 'users' : 'master records'}...`}
                   className="bg-transparent border-none text-xs font-semibold focus:outline-none w-full dark:text-white placeholder-slate-400"
                 />
                 <div className="p-1.5 rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-500 shrink-0">
@@ -972,7 +964,7 @@ export const AdminMasters: React.FC = () => {
                 {/* Mobile View Cards */}
                 <div className="block md:hidden space-y-2.5 pb-16">
                   {filteredProducts.map(p => (
-                    <div key={p.id} className="p-3.5 bg-slate-50 dark:bg-slate-900/60 border border-slate-200/80 dark:border-slate-800 rounded-2xl flex items-center justify-between gap-3 text-xs">
+                    <div key={p.id} className="p-3.5 bg-slate-50 dark:bg-slate-900/60 rounded-2xl flex items-center justify-between gap-3 text-xs">
                       <div className="space-y-1 min-w-0 flex-1">
                         <div className="flex items-center gap-2">
                           <span className="font-bold text-slate-800 dark:text-white text-xs">{p.name}</span>
@@ -1225,7 +1217,7 @@ export const AdminMasters: React.FC = () => {
                       rm.category === 'CHEMICAL' ? 'Chemical' : 'Firewood';
 
                     return (
-                      <div key={rm.id} className="p-3.5 bg-slate-50 dark:bg-slate-900/60 border border-slate-200/80 dark:border-slate-800 rounded-2xl flex items-center justify-between gap-3 text-xs">
+                      <div key={rm.id} className="p-3.5 bg-slate-50 dark:bg-slate-900/60 rounded-2xl flex items-center justify-between gap-3 text-xs">
                         <div className="space-y-1 min-w-0 flex-1">
                           <div className="flex items-center gap-2 flex-wrap">
                             <span className="font-bold text-slate-800 dark:text-white text-xs">{rm.name}</span>
@@ -1404,7 +1396,7 @@ export const AdminMasters: React.FC = () => {
                 {/* Mobile View Cards */}
                 <div className="block md:hidden space-y-2.5 pb-16">
                   {filteredParties.map(pt => (
-                    <div key={pt.id} className="p-3.5 bg-slate-50 dark:bg-slate-900/60 border border-slate-200/80 dark:border-slate-800 rounded-2xl flex items-center justify-between gap-3 text-xs">
+                    <div key={pt.id} className="p-3.5 bg-slate-50 dark:bg-slate-900/60 rounded-2xl flex items-center justify-between gap-3 text-xs">
                       <div className="space-y-1 min-w-0 flex-1">
                         <div className="font-bold text-slate-800 dark:text-white truncate">{pt.name}</div>
                         <div className="font-mono text-[11px] text-slate-500 dark:text-slate-400">{pt.contact || 'No contact'}</div>
@@ -1575,7 +1567,7 @@ export const AdminMasters: React.FC = () => {
                 {/* Mobile View Cards */}
                 <div className="block md:hidden space-y-2.5 pb-16">
                   {filteredVendors.map(vd => (
-                    <div key={vd.id} className="p-3.5 bg-slate-50 dark:bg-slate-900/60 border border-slate-200/80 dark:border-slate-800 rounded-2xl flex items-center justify-between gap-3 text-xs">
+                    <div key={vd.id} className="p-3.5 bg-slate-50 dark:bg-slate-900/60 rounded-2xl flex items-center justify-between gap-3 text-xs">
                       <div className="space-y-1 min-w-0 flex-1">
                         <div className="font-bold text-slate-800 dark:text-white truncate">{vd.name}</div>
                         <div className="font-mono text-[11px] text-slate-500 dark:text-slate-400">{vd.contact || 'No contact'}</div>
@@ -1640,177 +1632,6 @@ export const AdminMasters: React.FC = () => {
                               >
                                 <Trash2 size={13} className="text-red-500" />
                                 Delete Vendor
-                              </button>
-                            </div>
-                          </>
-                        )}
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </>
-            )}
-
-            {/* Vehicles Listing */}
-            {activeTab === 'vehicles' && (
-              <>
-                {/* Desktop View */}
-                <div className="hidden md:block overflow-x-auto min-h-[280px] pb-16">
-                  <table className="w-full text-left text-xs border-collapse">
-                    <thead>
-                      <tr className="border-b border-slate-100 dark:border-slate-700 text-text-light-secondary dark:text-slate-400">
-                        <th className="py-2.5 px-3 font-bold uppercase">Vehicle Number</th>
-                        <th className="py-2.5 px-3 font-bold uppercase">Driver Name</th>
-                        <th className="py-2.5 px-3 font-bold uppercase">Contact</th>
-                        <th className="py-2.5 px-3 font-bold uppercase text-right">Actions</th>
-                      </tr>
-                    </thead>
-                    <tbody className="divide-y divide-slate-100 dark:divide-slate-700">
-                      {filteredVehicles.map(vh => (
-                        <tr key={vh.id} className="hover:bg-slate-50 dark:hover:bg-slate-800/30">
-                          <td className="py-2.5 px-3 font-bold text-primary dark:text-blue-400 font-mono">{vh.vehicleNo}</td>
-                          <td className="py-2.5 px-3 font-semibold text-slate-800 dark:text-white">{vh.driverName}</td>
-                          <td className="py-2.5 px-3 font-mono text-text-light-secondary dark:text-slate-400">{vh.driverContact}</td>
-                          <td className="py-2.5 px-3 text-right">
-                            <div className={`inline-block text-left ${openMenuFor === vh.id ? 'relative z-50' : 'relative'}`}>
-                              <button
-                                onClick={(e) => handleOpenMenu(e, vh.id)}
-                                className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 rounded-lg p-1.5 cursor-pointer relative"
-                              >
-                                <MoreVertical size={15} />
-                              </button>
-                              {openMenuFor === vh.id && (
-                                <>
-                                  <div
-                                    className="fixed inset-0 bg-black/10 dark:bg-black/30 backdrop-blur-[0.5px] z-40"
-                                    onClick={(e) => {
-                                      e.stopPropagation();
-                                      setOpenMenuFor(null);
-                                    }}
-                                  />
-                                  <div
-                                    ref={menuRef}
-                                    style={{
-                                      position: 'fixed',
-                                      top: menuPos?.top !== undefined ? `${menuPos.top}px` : undefined,
-                                      bottom: menuPos?.bottom !== undefined ? `${menuPos.bottom}px` : undefined,
-                                      right: menuPos?.right !== undefined ? `${menuPos.right}px` : undefined,
-                                    }}
-                                    className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl shadow-2xl py-1 w-44 z-[9999] text-left font-sans animate-in fade-in zoom-in-95 duration-150"
-                                    onClick={(e) => e.stopPropagation()}
-                                  >
-                                    <button
-                                      onMouseDown={(e) => { e.preventDefault(); e.stopPropagation(); setViewingItem({ type: 'vehicle', data: vh }); setOpenMenuFor(null); }}
-                                      onClick={(e) => { e.preventDefault(); e.stopPropagation(); setViewingItem({ type: 'vehicle', data: vh }); setOpenMenuFor(null); }}
-                                      className="w-full flex items-center gap-2 px-3 py-1.5 text-[11px] font-semibold text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-700/60 text-left transition cursor-pointer"
-                                    >
-                                      <Eye size={13} className="text-slate-500" />
-                                      View Details
-                                    </button>
-                                    <button
-                                      onMouseDown={(e) => { e.preventDefault(); e.stopPropagation(); setEditingItem({ type: 'vehicle', data: { ...vh } }); setOpenMenuFor(null); }}
-                                      onClick={(e) => { e.preventDefault(); e.stopPropagation(); setEditingItem({ type: 'vehicle', data: { ...vh } }); setOpenMenuFor(null); }}
-                                      className="w-full flex items-center gap-2 px-3 py-1.5 text-[11px] font-semibold text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-700/60 text-left transition cursor-pointer"
-                                    >
-                                      <Pencil size={13} className="text-slate-500" />
-                                      Edit Details
-                                    </button>
-                                    <button
-                                      onMouseDown={(e) => { e.preventDefault(); e.stopPropagation(); handleExportMasterItem('vehicle', vh); setOpenMenuFor(null); }}
-                                      onClick={(e) => { e.preventDefault(); e.stopPropagation(); handleExportMasterItem('vehicle', vh); setOpenMenuFor(null); }}
-                                      className="w-full flex items-center gap-2 px-3 py-1.5 text-[11px] font-semibold text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-700/60 text-left transition cursor-pointer"
-                                    >
-                                      <Download size={13} className="text-slate-500" />
-                                      Export Details
-                                    </button>
-                                    <div className="border-t border-slate-100 dark:border-slate-700 my-1" />
-                                    <button
-                                      onMouseDown={(e) => { e.preventDefault(); e.stopPropagation(); handleDeleteMasterItem('vehicle', vh); setOpenMenuFor(null); }}
-                                      onClick={(e) => { e.preventDefault(); e.stopPropagation(); handleDeleteMasterItem('vehicle', vh); setOpenMenuFor(null); }}
-                                      className="w-full flex items-center gap-2 px-3 py-1.5 text-[11px] font-semibold text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/20 text-left transition cursor-pointer"
-                                    >
-                                      <Trash2 size={13} className="text-red-500" />
-                                      Delete Vehicle
-                                    </button>
-                                  </div>
-                                </>
-                              )}
-                            </div>
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-
-                {/* Mobile View Cards */}
-                <div className="block md:hidden space-y-2.5 pb-16">
-                  {filteredVehicles.map(vh => (
-                    <div key={vh.id} className="p-3.5 bg-slate-50 dark:bg-slate-900/60 border border-slate-200/80 dark:border-slate-800 rounded-2xl flex items-center justify-between gap-3 text-xs">
-                      <div className="space-y-1 min-w-0 flex-1">
-                        <div className="font-mono font-black text-primary dark:text-blue-400 text-xs">{vh.vehicleNo}</div>
-                        <div className="font-bold text-slate-800 dark:text-white truncate">{vh.driverName}</div>
-                        <div className="font-mono text-[11px] text-slate-500 dark:text-slate-400">{vh.driverContact || 'No contact'}</div>
-                      </div>
-                      <div className={`inline-block text-left ${openMenuFor === vh.id ? 'relative z-50' : 'relative'}`}>
-                        <button
-                          onClick={(e) => handleOpenMenu(e, vh.id)}
-                          className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 rounded-lg p-1.5 cursor-pointer relative"
-                        >
-                          <MoreVertical size={16} />
-                        </button>
-                        {openMenuFor === vh.id && (
-                          <>
-                            <div
-                              className="fixed inset-0 bg-black/10 dark:bg-black/30 backdrop-blur-[0.5px] z-40"
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                setOpenMenuFor(null);
-                              }}
-                            />
-                            <div
-                              ref={menuRef}
-                              style={{
-                                position: 'fixed',
-                                top: menuPos?.top !== undefined ? `${menuPos.top}px` : undefined,
-                                bottom: menuPos?.bottom !== undefined ? `${menuPos.bottom}px` : undefined,
-                                right: menuPos?.right !== undefined ? `${menuPos.right}px` : undefined,
-                              }}
-                              className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl shadow-2xl py-1 w-44 z-[9999] text-left font-sans animate-in fade-in zoom-in-95 duration-150"
-                              onClick={(e) => e.stopPropagation()}
-                            >
-                              <button
-                                onMouseDown={(e) => { e.preventDefault(); e.stopPropagation(); setViewingItem({ type: 'vehicle', data: vh }); setOpenMenuFor(null); }}
-                                onClick={(e) => { e.preventDefault(); e.stopPropagation(); setViewingItem({ type: 'vehicle', data: vh }); setOpenMenuFor(null); }}
-                                className="w-full flex items-center gap-2 px-3 py-1.5 text-[11px] font-semibold text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-700/60 text-left transition cursor-pointer"
-                              >
-                                <Eye size={13} className="text-slate-500" />
-                                View Details
-                              </button>
-                              <button
-                                onMouseDown={(e) => { e.preventDefault(); e.stopPropagation(); setEditingItem({ type: 'vehicle', data: { ...vh } }); setOpenMenuFor(null); }}
-                                onClick={(e) => { e.preventDefault(); e.stopPropagation(); setEditingItem({ type: 'vehicle', data: { ...vh } }); setOpenMenuFor(null); }}
-                                className="w-full flex items-center gap-2 px-3 py-1.5 text-[11px] font-semibold text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-700/60 text-left transition cursor-pointer"
-                              >
-                                <Pencil size={13} className="text-slate-500" />
-                                Edit Details
-                              </button>
-                              <button
-                                onMouseDown={(e) => { e.preventDefault(); e.stopPropagation(); handleExportMasterItem('vehicle', vh); setOpenMenuFor(null); }}
-                                onClick={(e) => { e.preventDefault(); e.stopPropagation(); handleExportMasterItem('vehicle', vh); setOpenMenuFor(null); }}
-                                className="w-full flex items-center gap-2 px-3 py-1.5 text-[11px] font-semibold text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-700/60 text-left transition cursor-pointer"
-                              >
-                                <Download size={13} className="text-slate-500" />
-                                Export Details
-                              </button>
-                              <div className="border-t border-slate-100 dark:border-slate-700 my-1" />
-                              <button
-                                onMouseDown={(e) => { e.preventDefault(); e.stopPropagation(); handleDeleteMasterItem('vehicle', vh); setOpenMenuFor(null); }}
-                                onClick={(e) => { e.preventDefault(); e.stopPropagation(); handleDeleteMasterItem('vehicle', vh); setOpenMenuFor(null); }}
-                                className="w-full flex items-center gap-2 px-3 py-1.5 text-[11px] font-semibold text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/20 text-left transition cursor-pointer"
-                              >
-                                <Trash2 size={13} className="text-red-500" />
-                                Delete Vehicle
                               </button>
                             </div>
                           </>
@@ -1954,7 +1775,7 @@ export const AdminMasters: React.FC = () => {
                 <div className="bg-gradient-to-br from-blue-50/70 via-indigo-50/40 to-slate-50 dark:from-slate-900/90 dark:via-blue-950/40 dark:to-slate-900 border border-blue-200/80 dark:border-blue-900/60 rounded-3xl p-6 space-y-4">
                   <div className="flex items-center justify-between border-b border-blue-200/60 dark:border-blue-800/60 pb-3">
                     <div className="flex items-center gap-3">
-                      <div className="p-2.5 rounded-2xl bg-blue-600 text-white shadow-md shadow-blue-500/20">
+                      <div className="p-2.5 rounded-2xl bg-primary text-white shadow-md shadow-blue-500/20">
                         <Building2 className="h-5 w-5" />
                       </div>
                       <div>
@@ -2139,7 +1960,7 @@ export const AdminMasters: React.FC = () => {
 
         {/* Right Action Panel (1/3 width) - Only show if adding Masters (not backup/logs/roles) */}
         {activeTab !== 'backup' && activeTab !== 'logs' && activeTab !== 'roles' && (
-          <div className="bg-white dark:bg-surface-dark border border-slate-200 dark:border-slate-700/80 rounded-3xl p-6 shadow-sm">
+          <div className="neumorphic-card p-6">
 
             {/* Add User Form */}
             {activeTab === 'users' && (
@@ -2155,7 +1976,7 @@ export const AdminMasters: React.FC = () => {
                     type="text"
                     value={usrUsername}
                     onChange={e => setUsrUsername(e.target.value)}
-                    className="block w-full py-2.5 px-3.5 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-2xl text-xs font-bold focus:outline-none focus:ring-2 focus:ring-primary dark:text-white font-mono"
+                    className="block w-full py-2.5 px-3.5 bg-slate-50 dark:bg-slate-900 rounded-2xl text-xs font-bold focus:outline-none focus:ring-2 focus:ring-primary dark:text-white font-mono"
                     placeholder="e.g. operator_john"
                   />
                 </div>
@@ -2166,7 +1987,7 @@ export const AdminMasters: React.FC = () => {
                     type="text"
                     value={usrDisplayName}
                     onChange={e => setUsrDisplayName(e.target.value)}
-                    className="block w-full py-2.5 px-3.5 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-2xl text-xs font-bold focus:outline-none focus:ring-2 focus:ring-primary dark:text-white"
+                    className="block w-full py-2.5 px-3.5 bg-slate-50 dark:bg-slate-900 rounded-2xl text-xs font-bold focus:outline-none focus:ring-2 focus:ring-primary dark:text-white"
                     placeholder="e.g. John Doe"
                   />
                 </div>
@@ -2178,7 +1999,7 @@ export const AdminMasters: React.FC = () => {
                     maxLength={4}
                     value={usrPin}
                     onChange={e => setUsrPin(e.target.value.replace(/\D/g, ''))}
-                    className="block w-full py-2.5 px-3.5 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-2xl text-xs font-bold focus:outline-none focus:ring-2 focus:ring-primary dark:text-white font-mono"
+                    className="block w-full py-2.5 px-3.5 bg-slate-50 dark:bg-slate-900 rounded-2xl text-xs font-bold focus:outline-none focus:ring-2 focus:ring-primary dark:text-white font-mono"
                     placeholder="e.g. 1234"
                   />
                 </div>
@@ -2188,7 +2009,7 @@ export const AdminMasters: React.FC = () => {
                   <select
                     value={usrRole}
                     onChange={e => setUsrRole(e.target.value as UserRole)}
-                    className="block w-full py-2.5 px-3.5 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-2xl text-xs font-bold focus:outline-none focus:ring-2 focus:ring-primary dark:text-white cursor-pointer"
+                    className="block w-full py-2.5 px-3.5 bg-slate-50 dark:bg-slate-900 rounded-2xl text-xs font-bold focus:outline-none focus:ring-2 focus:ring-primary dark:text-white cursor-pointer"
                   >
                     <option value="Admin">Admin (Full Control)</option>
                     <option value="Management">Management (Reports/Read-Only)</option>
@@ -2208,7 +2029,7 @@ export const AdminMasters: React.FC = () => {
                     type="email"
                     value={usrEmail}
                     onChange={e => setUsrEmail(e.target.value)}
-                    className="block w-full py-2.5 px-3.5 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-2xl text-xs font-bold focus:outline-none focus:ring-2 focus:ring-primary dark:text-white"
+                    className="block w-full py-2.5 px-3.5 bg-slate-50 dark:bg-slate-900 rounded-2xl text-xs font-bold focus:outline-none focus:ring-2 focus:ring-primary dark:text-white"
                     placeholder="e.g. user@sahebpaper.com"
                   />
                 </div>
@@ -2219,7 +2040,7 @@ export const AdminMasters: React.FC = () => {
                     type="text"
                     value={usrPhone}
                     onChange={e => setUsrPhone(e.target.value)}
-                    className="block w-full py-2.5 px-3.5 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-2xl text-xs font-bold focus:outline-none focus:ring-2 focus:ring-primary dark:text-white"
+                    className="block w-full py-2.5 px-3.5 bg-slate-50 dark:bg-slate-900 rounded-2xl text-xs font-bold focus:outline-none focus:ring-2 focus:ring-primary dark:text-white"
                     placeholder="e.g. 9876543210"
                   />
                 </div>
@@ -2247,7 +2068,7 @@ export const AdminMasters: React.FC = () => {
                     type="text"
                     value={pName}
                     onChange={e => setPName(e.target.value)}
-                    className="block w-full py-2.5 px-3.5 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-2xl text-xs font-bold focus:outline-none focus:ring-2 focus:ring-primary dark:text-white"
+                    className="block w-full py-2.5 px-3.5 bg-slate-50 dark:bg-slate-900 rounded-2xl text-xs font-bold focus:outline-none focus:ring-2 focus:ring-primary dark:text-white"
                     placeholder="e.g. Napkin Tissue"
                   />
                 </div>
@@ -2257,7 +2078,7 @@ export const AdminMasters: React.FC = () => {
                   <select
                     value={pGrade}
                     onChange={e => setPGrade(e.target.value as 'A' | 'B')}
-                    className="block w-full py-2.5 px-3.5 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-2xl text-xs font-bold focus:outline-none focus:ring-2 focus:ring-primary dark:text-white cursor-pointer"
+                    className="block w-full py-2.5 px-3.5 bg-slate-50 dark:bg-slate-900 rounded-2xl text-xs font-bold focus:outline-none focus:ring-2 focus:ring-primary dark:text-white cursor-pointer"
                   >
                     <option value="A">Grade A (Standard)</option>
                     <option value="B">Grade B (B-Grade/Off-spec)</option>
@@ -2271,7 +2092,7 @@ export const AdminMasters: React.FC = () => {
                       type="number"
                       value={pGsm}
                       onChange={e => setPGsm(e.target.value)}
-                      className="block w-full py-2.5 px-2 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-2xl text-xs font-bold focus:outline-none focus:ring-2 focus:ring-primary dark:text-white font-mono"
+                      className="block w-full py-2.5 px-2 bg-slate-50 dark:bg-slate-900 rounded-2xl text-xs font-bold focus:outline-none focus:ring-2 focus:ring-primary dark:text-white font-mono"
                       placeholder="18"
                     />
                   </div>
@@ -2281,7 +2102,7 @@ export const AdminMasters: React.FC = () => {
                       type="number"
                       value={pSize}
                       onChange={e => setPSize(e.target.value)}
-                      className="block w-full py-2.5 px-2 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-2xl text-xs font-bold focus:outline-none focus:ring-2 focus:ring-primary dark:text-white font-mono"
+                      className="block w-full py-2.5 px-2 bg-slate-50 dark:bg-slate-900 rounded-2xl text-xs font-bold focus:outline-none focus:ring-2 focus:ring-primary dark:text-white font-mono"
                       placeholder="30"
                     />
                   </div>
@@ -2291,7 +2112,7 @@ export const AdminMasters: React.FC = () => {
                       type="number"
                       value={pPly}
                       onChange={e => setPPly(e.target.value)}
-                      className="block w-full py-2.5 px-2 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-2xl text-xs font-bold focus:outline-none focus:ring-2 focus:ring-primary dark:text-white font-mono"
+                      className="block w-full py-2.5 px-2 bg-slate-50 dark:bg-slate-900 rounded-2xl text-xs font-bold focus:outline-none focus:ring-2 focus:ring-primary dark:text-white font-mono"
                       placeholder="2"
                     />
                   </div>
@@ -2320,7 +2141,7 @@ export const AdminMasters: React.FC = () => {
                     type="text"
                     value={rmName}
                     onChange={e => setRmName(e.target.value)}
-                    className="block w-full py-2.5 px-3.5 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-2xl text-xs font-bold focus:outline-none focus:ring-2 focus:ring-primary dark:text-white"
+                    className="block w-full py-2.5 px-3.5 bg-slate-50 dark:bg-slate-900 rounded-2xl text-xs font-bold focus:outline-none focus:ring-2 focus:ring-primary dark:text-white"
                     placeholder="e.g. DSR Chemical, Softwood Pulp"
                   />
                 </div>
@@ -2330,7 +2151,7 @@ export const AdminMasters: React.FC = () => {
                   <select
                     value={rmCategory}
                     onChange={e => setRmCategory(e.target.value as RawMaterialCategory)}
-                    className="block w-full py-2.5 px-3.5 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-2xl text-xs font-bold focus:outline-none focus:ring-2 focus:ring-primary dark:text-white cursor-pointer"
+                    className="block w-full py-2.5 px-3.5 bg-slate-50 dark:bg-slate-900 rounded-2xl text-xs font-bold focus:outline-none focus:ring-2 focus:ring-primary dark:text-white cursor-pointer"
                   >
                     <option value="WASTE_PAPER">Waste Paper</option>
                     <option value="OTHER_RAW_MATERIAL">Other Raw Material</option>
@@ -2345,7 +2166,7 @@ export const AdminMasters: React.FC = () => {
                     type="number"
                     value={rmReorderLevel}
                     onChange={e => setRmReorderLevel(e.target.value)}
-                    className="block w-full py-2.5 px-3.5 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-2xl text-xs font-bold focus:outline-none focus:ring-2 focus:ring-primary dark:text-white font-mono"
+                    className="block w-full py-2.5 px-3.5 bg-slate-50 dark:bg-slate-900 rounded-2xl text-xs font-bold focus:outline-none focus:ring-2 focus:ring-primary dark:text-white font-mono"
                     placeholder="e.g. 500"
                   />
                 </div>
@@ -2356,7 +2177,7 @@ export const AdminMasters: React.FC = () => {
                     type="number"
                     value={rmInitialStock}
                     onChange={e => setRmInitialStock(e.target.value)}
-                    className="block w-full py-2.5 px-3.5 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-2xl text-xs font-bold focus:outline-none focus:ring-2 focus:ring-primary dark:text-white font-mono"
+                    className="block w-full py-2.5 px-3.5 bg-slate-50 dark:bg-slate-900 rounded-2xl text-xs font-bold focus:outline-none focus:ring-2 focus:ring-primary dark:text-white font-mono"
                     placeholder="0"
                   />
                 </div>
@@ -2384,7 +2205,7 @@ export const AdminMasters: React.FC = () => {
                     type="text"
                     value={ptName}
                     onChange={e => setPtName(e.target.value)}
-                    className="block w-full py-2.5 px-3.5 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-2xl text-xs font-bold focus:outline-none focus:ring-2 focus:ring-primary dark:text-white"
+                    className="block w-full py-2.5 px-3.5 bg-slate-50 dark:bg-slate-900 rounded-2xl text-xs font-bold focus:outline-none focus:ring-2 focus:ring-primary dark:text-white"
                     placeholder="e.g. Ambika Traders"
                   />
                 </div>
@@ -2396,7 +2217,7 @@ export const AdminMasters: React.FC = () => {
                     maxLength={10}
                     value={ptContact}
                     onChange={e => setPtContact(e.target.value.replace(/\D/g, '').slice(0, 10))}
-                    className="block w-full py-2.5 px-3.5 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-2xl text-xs font-bold focus:outline-none focus:ring-2 focus:ring-primary dark:text-white font-mono"
+                    className="block w-full py-2.5 px-3.5 bg-slate-50 dark:bg-slate-900 rounded-2xl text-xs font-bold focus:outline-none focus:ring-2 focus:ring-primary dark:text-white font-mono"
                     placeholder="e.g. 9876543210"
                   />
                 </div>
@@ -2407,7 +2228,7 @@ export const AdminMasters: React.FC = () => {
                     value={ptAddress}
                     onChange={e => setPtAddress(e.target.value)}
                     rows={3}
-                    className="block w-full py-2.5 px-3.5 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-2xl text-xs font-bold focus:outline-none focus:ring-2 focus:ring-primary dark:text-white"
+                    className="block w-full py-2.5 px-3.5 bg-slate-50 dark:bg-slate-900 rounded-2xl text-xs font-bold focus:outline-none focus:ring-2 focus:ring-primary dark:text-white"
                     placeholder="e.g. Surat, Gujarat"
                   />
                 </div>
@@ -2435,7 +2256,7 @@ export const AdminMasters: React.FC = () => {
                     type="text"
                     value={vdName}
                     onChange={e => setVdName(e.target.value)}
-                    className="block w-full py-2.5 px-3.5 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-2xl text-xs font-bold focus:outline-none focus:ring-2 focus:ring-primary dark:text-white"
+                    className="block w-full py-2.5 px-3.5 bg-slate-50 dark:bg-slate-900 rounded-2xl text-xs font-bold focus:outline-none focus:ring-2 focus:ring-primary dark:text-white"
                     placeholder="e.g. Gujarat Waste"
                   />
                 </div>
@@ -2447,7 +2268,7 @@ export const AdminMasters: React.FC = () => {
                     maxLength={10}
                     value={vdContact}
                     onChange={e => setVdContact(e.target.value.replace(/\D/g, '').slice(0, 10))}
-                    className="block w-full py-2.5 px-3.5 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-2xl text-xs font-bold focus:outline-none focus:ring-2 focus:ring-primary dark:text-white font-mono"
+                    className="block w-full py-2.5 px-3.5 bg-slate-50 dark:bg-slate-900 rounded-2xl text-xs font-bold focus:outline-none focus:ring-2 focus:ring-primary dark:text-white font-mono"
                     placeholder="e.g. 9998887770"
                   />
                 </div>
@@ -2458,7 +2279,7 @@ export const AdminMasters: React.FC = () => {
                     value={vdAddress}
                     onChange={e => setVdAddress(e.target.value)}
                     rows={3}
-                    className="block w-full py-2.5 px-3.5 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-2xl text-xs font-bold focus:outline-none focus:ring-2 focus:ring-primary dark:text-white"
+                    className="block w-full py-2.5 px-3.5 bg-slate-50 dark:bg-slate-900 rounded-2xl text-xs font-bold focus:outline-none focus:ring-2 focus:ring-primary dark:text-white"
                     placeholder="e.g. Baroda, Gujarat"
                   />
                 </div>
@@ -2468,57 +2289,6 @@ export const AdminMasters: React.FC = () => {
                   className="w-full bg-gradient-to-r from-blue-600 via-indigo-600 to-blue-700 hover:from-blue-700 hover:to-indigo-700 text-white font-black py-3 rounded-2xl text-xs uppercase tracking-wider shadow-lg shadow-blue-500/25 transition-all hover:scale-[1.01] active:scale-[0.99] cursor-pointer"
                 >
                   Add Supplier Vendor
-                </button>
-              </form>
-            )}
-
-            {/* Add Vehicle Form */}
-            {activeTab === 'vehicles' && (
-              <form onSubmit={handleVehicleSubmit} className="space-y-4">
-                <h3 className="text-xs font-black text-slate-900 dark:text-white uppercase tracking-wider mb-4 border-b border-slate-100 dark:border-slate-800 pb-3 flex items-center gap-2">
-                  <Plus className="h-4 w-4 text-primary" />
-                  {t('masters.add_vehicle')}
-                </h3>
-
-                <div>
-                  <label className="block text-[11px] font-black text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-1.5">Vehicle Number</label>
-                  <input
-                    type="text"
-                    value={vhNo}
-                    onChange={e => setVhNo(e.target.value)}
-                    className="block w-full py-2.5 px-3.5 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-2xl text-xs font-bold focus:outline-none focus:ring-2 focus:ring-primary dark:text-white font-mono"
-                    placeholder="e.g. GJ-05-BY-1234"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-[11px] font-black text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-1.5">Driver Name</label>
-                  <input
-                    type="text"
-                    value={vhDriver}
-                    onChange={e => setVhDriver(e.target.value)}
-                    className="block w-full py-2.5 px-3.5 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-2xl text-xs font-bold focus:outline-none focus:ring-2 focus:ring-primary dark:text-white"
-                    placeholder="Driver name"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-[11px] font-black text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-1.5">Driver Contact (10 Digits)</label>
-                  <input
-                    type="text"
-                    maxLength={10}
-                    value={vhContact}
-                    onChange={e => setVhContact(e.target.value.replace(/\D/g, '').slice(0, 10))}
-                    className="block w-full py-2.5 px-3.5 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-2xl text-xs font-bold focus:outline-none focus:ring-2 focus:ring-primary dark:text-white font-mono"
-                    placeholder="e.g. 9988776655"
-                  />
-                </div>
-
-                <button
-                  type="submit"
-                  className="w-full bg-gradient-to-r from-blue-600 via-indigo-600 to-blue-700 hover:from-blue-700 hover:to-indigo-700 text-white font-black py-3 rounded-2xl text-xs uppercase tracking-wider shadow-lg shadow-blue-500/25 transition-all hover:scale-[1.01] active:scale-[0.99] cursor-pointer"
-                >
-                  Add Vehicle Record
                 </button>
               </form>
             )}

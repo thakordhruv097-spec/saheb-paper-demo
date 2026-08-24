@@ -21,6 +21,7 @@ import {
   Eye,
   Beaker,
 } from 'lucide-react';
+import { WorkflowStepBadge, WORKFLOW_STEPS } from '../../components/WorkflowStepBadge';
 import { useBodyScrollLock } from '../../hooks/useBodyScrollLock';
 
 interface FinishStockViewProps {
@@ -329,27 +330,22 @@ export const FinishStockView: React.FC<FinishStockViewProps> = ({ hideHeader = f
   return (
     <div className="space-y-6 font-sans pb-12 text-left">
       
-      {/* 1. HERO GRADIENT HEADER BANNER */}
+      {/* 1. CLEAN MINIMAL HEADER CARD (OPTION A) */}
       {!hideHeader && (
-        <div className="bg-gradient-to-r from-blue-700 via-indigo-600 to-slate-900 rounded-3xl p-6 sm:p-8 text-white shadow-xl relative overflow-hidden">
-          <div className="absolute -top-16 -right-16 w-64 h-64 rounded-full bg-white/10 blur-xl pointer-events-none" />
-          <div className="absolute -bottom-20 -left-20 w-80 h-80 rounded-full bg-blue-400/10 blur-2xl pointer-events-none" />
-
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-6 relative z-10">
-            <div className="flex items-center gap-4">
-              <div className="p-3.5 rounded-2xl bg-white/15 backdrop-blur-md border border-white/20 text-white shadow-lg shrink-0">
-                <Package className="h-8 w-8" />
+        <div className="bg-white dark:bg-[#131d38] rounded-2xl sm:rounded-3xl p-4 sm:p-5 text-slate-900 dark:text-white shadow-xs">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+            <div className="flex items-center gap-3.5">
+              <div className="p-2.5 sm:p-3 rounded-2xl bg-blue-50 dark:bg-blue-950/60 border border-blue-200/60 dark:border-blue-900/50 text-primary dark:text-blue-400 shadow-2xs shrink-0">
+                <Package className="h-6 w-6 sm:h-7 sm:w-7" />
               </div>
               <div>
-                <div className="flex flex-wrap items-center gap-3">
-                  <h2 className="text-2xl sm:text-3xl font-black tracking-tight">{t('finish_stock.title')}</h2>
-                  {user?.role !== 'Admin' && (
-                    <span className="px-3 py-1 rounded-full bg-white/20 backdrop-blur-md text-[11px] font-extrabold tracking-wider uppercase text-white border border-white/30 shadow-xs">
-                      {new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'short', day: 'numeric', year: 'numeric' })}
-                    </span>
-                  )}
+                <div className="flex flex-wrap items-center gap-2.5">
+                  <h1 className="text-xl sm:text-2xl font-black tracking-tight font-heading text-slate-900 dark:text-white">
+                    {t('finish_stock.title')}
+                  </h1>
+                  <WorkflowStepBadge stepInfo={WORKFLOW_STEPS.finishedStock} />
                 </div>
-                <p className="text-xs sm:text-sm text-blue-100/90 font-medium mt-1">
+                <p className="text-xs sm:text-sm text-slate-500 dark:text-slate-400 font-medium mt-0.5">
                   Browse finished reels inventory using step-by-step cascading filters (Product → GSM → Size → Ply).
                 </p>
               </div>
@@ -363,10 +359,10 @@ export const FinishStockView: React.FC<FinishStockViewProps> = ({ hideHeader = f
         <button
           type="button"
           onClick={() => setActiveTab('grade_a')}
-          className={`border rounded-3xl p-5 shadow-sm flex items-center gap-4 text-left transition cursor-pointer ${
+          className={`neumorphic-card p-5 flex items-center gap-4 text-left transition cursor-pointer ${
             activeTab === 'grade_a'
-              ? 'bg-emerald-50/70 dark:bg-emerald-950/40 border-emerald-500 ring-2 ring-emerald-400'
-              : 'bg-white dark:bg-surface-dark border-slate-200 dark:border-slate-700/80 hover:border-emerald-300'
+              ? 'ring-2 ring-emerald-500 bg-emerald-50/70 dark:bg-emerald-950/40'
+              : 'hover:border-emerald-300'
           }`}
         >
           <div className="p-3 rounded-2xl bg-emerald-50 dark:bg-emerald-950/40 text-emerald-600 dark:text-emerald-400 border border-emerald-200/60 dark:border-emerald-800/60">
@@ -381,10 +377,10 @@ export const FinishStockView: React.FC<FinishStockViewProps> = ({ hideHeader = f
         <button
           type="button"
           onClick={() => setActiveTab('grade_b')}
-          className={`border rounded-3xl p-5 shadow-sm flex items-center gap-4 text-left transition cursor-pointer ${
+          className={`neumorphic-card p-5 flex items-center gap-4 text-left transition cursor-pointer ${
             activeTab === 'grade_b'
-              ? 'bg-amber-50/70 dark:bg-amber-950/40 border-amber-500 ring-2 ring-amber-400'
-              : 'bg-white dark:bg-surface-dark border-slate-200 dark:border-slate-700/80 hover:border-amber-300'
+              ? 'ring-2 ring-amber-500 bg-amber-50/70 dark:bg-amber-950/40'
+              : 'hover:border-amber-300'
           }`}
         >
           <div className="p-3 rounded-2xl bg-amber-50 dark:bg-amber-950/40 text-amber-600 dark:text-amber-400 border border-amber-200/60 dark:border-amber-800/60">
@@ -399,10 +395,10 @@ export const FinishStockView: React.FC<FinishStockViewProps> = ({ hideHeader = f
         <button
           type="button"
           onClick={() => setActiveTab('pending_qc')}
-          className={`border rounded-3xl p-5 shadow-sm flex items-center gap-4 text-left transition cursor-pointer ${
+          className={`neumorphic-card p-5 flex items-center gap-4 text-left transition cursor-pointer ${
             activeTab === 'pending_qc'
-              ? 'bg-purple-50/70 dark:bg-purple-950/40 border-purple-500 ring-2 ring-purple-400'
-              : 'bg-white dark:bg-surface-dark border-slate-200 dark:border-slate-700/80 hover:border-purple-300'
+              ? 'ring-2 ring-purple-500 bg-purple-50/70 dark:bg-purple-950/40'
+              : 'hover:border-purple-300'
           }`}
         >
           <div className="p-3 rounded-2xl bg-purple-50 dark:bg-purple-950/40 text-purple-600 dark:text-purple-400 border border-purple-200/60 dark:border-purple-800/60 relative">
@@ -420,15 +416,15 @@ export const FinishStockView: React.FC<FinishStockViewProps> = ({ hideHeader = f
 
       {/* 2.5 STEP 7 WORKFLOW GUIDE & 1-CLICK QC APPROVAL BANNER */}
       {pendingQcCount > 0 && (
-        <div className="p-4 sm:p-5 bg-gradient-to-r from-purple-900/30 via-indigo-900/20 to-slate-900/40 border border-purple-500/30 dark:border-purple-500/40 rounded-3xl flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 shadow-sm">
+        <div className="p-4 sm:p-5 bg-white dark:bg-[#131d38] border border-blue-200/80 dark:border-blue-900/60 rounded-3xl flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 shadow-xs">
           <div className="flex items-center gap-3.5">
-            <div className="p-3 rounded-2xl bg-purple-500/20 text-purple-400 border border-purple-500/30 shrink-0">
+            <div className="p-3 rounded-2xl bg-blue-50 dark:bg-blue-950/60 text-primary dark:text-blue-400 border border-blue-200/60 dark:border-blue-900/50 shrink-0">
               <Sparkles className="h-6 w-6 animate-pulse" />
             </div>
             <div>
               <h4 className="text-sm font-black text-slate-900 dark:text-white flex items-center gap-2">
                 <span>Step 7: Quality Inspection &amp; Stock Categorization</span>
-                <span className="px-2 py-0.5 rounded-full bg-purple-500 text-white text-[10px] font-black">
+                <span className="px-2 py-0.5 rounded-full bg-blue-100 dark:bg-blue-950/60 text-primary dark:text-blue-400 border border-blue-200/80 dark:border-blue-800/80 text-[10px] font-black">
                   {pendingQcCount} Reels Pending
                 </span>
               </h4>
@@ -442,7 +438,7 @@ export const FinishStockView: React.FC<FinishStockViewProps> = ({ hideHeader = f
             <button
               type="button"
               onClick={handleBulkApproveAllGradeA}
-              className="w-full sm:w-auto px-5 py-2.5 bg-[#008163] hover:bg-[#006e54] text-white font-black text-xs uppercase tracking-wider rounded-2xl shadow-lg shadow-[#008163]/25 transition cursor-pointer flex items-center justify-center gap-2"
+              className="w-full sm:w-auto px-5 py-2.5 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white font-black text-xs uppercase tracking-wider rounded-2xl shadow-lg shadow-blue-500/25 transition cursor-pointer flex items-center justify-center gap-2"
             >
               <CheckSquare className="h-4 w-4" />
               <span>✨ 1-Click Approve All as Grade A</span>
@@ -452,7 +448,7 @@ export const FinishStockView: React.FC<FinishStockViewProps> = ({ hideHeader = f
       )}
 
       {/* 3. FAST FILTER TOOLBAR (CASCADING PRODUCT, GRADE, GSM, SIZE PILL CHIPS) */}
-      <div className="bg-white dark:bg-surface-dark border border-slate-200 dark:border-slate-700/80 rounded-3xl p-4 sm:p-5 shadow-sm space-y-3.5">
+      <div className="neumorphic-card p-4 sm:p-5 space-y-3.5">
         
         {/* Row 1: Search input + Reset Filter Action */}
         <div className="flex items-center gap-3">
@@ -585,7 +581,7 @@ export const FinishStockView: React.FC<FinishStockViewProps> = ({ hideHeader = f
             onClick={() => handleGsmChange('ALL')}
             className={`px-3 py-1 rounded-full text-xs font-bold cursor-pointer transition ${
               filterGsm === 'ALL'
-                ? 'bg-blue-900 dark:bg-blue-600 text-white shadow-xs'
+                ? 'bg-blue-900 dark:bg-primary text-white shadow-xs'
                 : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700'
             }`}
           >
@@ -601,7 +597,7 @@ export const FinishStockView: React.FC<FinishStockViewProps> = ({ hideHeader = f
                 onClick={() => handleGsmChange(String(gsm))}
                 className={`px-3 py-1 rounded-full text-xs font-bold cursor-pointer transition ${
                   filterGsm === String(gsm)
-                    ? 'bg-blue-600 text-white shadow-xs'
+                    ? 'bg-primary text-white shadow-xs'
                     : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700'
                 }`}
               >
@@ -697,7 +693,7 @@ export const FinishStockView: React.FC<FinishStockViewProps> = ({ hideHeader = f
 
       {/* Grouped Stock View */}
       {groupedStock.length === 0 ? (
-        <div className="bg-white dark:bg-surface-dark border border-slate-200 dark:border-slate-700/80 rounded-3xl p-8 sm:p-12 text-center text-xs font-bold text-slate-500 dark:text-slate-400 shadow-sm flex flex-col items-center justify-center gap-3.5">
+        <div className="bg-white dark:bg-surface-dark rounded-3xl p-8 sm:p-12 text-center text-xs font-bold text-slate-500 dark:text-slate-400 shadow-sm flex flex-col items-center justify-center gap-3.5">
           <div className="p-3.5 rounded-2xl bg-slate-100 dark:bg-slate-800 text-slate-400">
             <AlertCircle className="h-8 w-8" />
           </div>
@@ -747,7 +743,7 @@ export const FinishStockView: React.FC<FinishStockViewProps> = ({ hideHeader = f
       ) : (
         <div className="space-y-6">
           {groupedStock.map((group, index) => (
-            <div key={index} className="bg-white dark:bg-surface-dark border border-slate-200 dark:border-slate-700/80 rounded-3xl overflow-hidden shadow-sm">
+            <div key={index} className="neumorphic-card overflow-hidden">
               {/* Group Header */}
               <div className="bg-slate-50 dark:bg-slate-900/60 border-b border-slate-200 dark:border-slate-800 px-6 py-4 flex flex-wrap justify-between items-center gap-3">
                 <div>
@@ -992,14 +988,14 @@ export const FinishStockView: React.FC<FinishStockViewProps> = ({ hideHeader = f
             </div>
 
             {/* LIVE MATCHING STATS BANNER */}
-            <div className="p-4 rounded-2xl bg-gradient-to-r from-blue-700 to-indigo-800 text-white shadow-md space-y-1">
-              <div className="text-[10px] font-black uppercase tracking-wider text-blue-200 flex items-center gap-1.5">
+            <div className="p-4 rounded-2xl bg-blue-50/70 dark:bg-blue-950/40 border border-blue-200/80 dark:border-blue-900/60 text-slate-900 dark:text-white shadow-2xs space-y-1">
+              <div className="text-[10px] font-black uppercase tracking-wider text-primary dark:text-blue-400 flex items-center gap-1.5">
                 <Layers className="h-3.5 w-3.5" /> Live Filter Results
               </div>
               <div className="text-xl font-black font-mono">
-                {matchingFilteredList.length} <span className="text-xs font-normal">Reels</span>
+                {matchingFilteredList.length} <span className="text-xs font-semibold text-slate-500 dark:text-slate-400">Reels</span>
                 <span className="mx-2 opacity-40">|</span>
-                {matchingTotalWeightKg.toLocaleString()} <span className="text-xs font-normal">kg ({matchingTotalWeightMT} MT)</span>
+                {matchingTotalWeightKg.toLocaleString()} <span className="text-xs font-semibold text-slate-500 dark:text-slate-400">kg ({matchingTotalWeightMT} MT)</span>
               </div>
             </div>
 
@@ -1017,7 +1013,7 @@ export const FinishStockView: React.FC<FinishStockViewProps> = ({ hideHeader = f
                 <select
                   value={filterProduct}
                   onChange={e => handleProductChange(e.target.value)}
-                  className="w-full py-2.5 px-3.5 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-2xl text-xs font-bold text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-primary/40 cursor-pointer"
+                  className="w-full py-2.5 px-3.5 bg-slate-50 dark:bg-slate-900 rounded-2xl text-xs font-bold text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-primary/40 cursor-pointer"
                 >
                   <option value="ALL">All Products ({availableProducts.length})</option>
                   {availableProducts.map(p => (
@@ -1037,7 +1033,7 @@ export const FinishStockView: React.FC<FinishStockViewProps> = ({ hideHeader = f
                 <select
                   value={filterGsm}
                   onChange={e => handleGsmChange(e.target.value)}
-                  className="w-full py-2.5 px-3.5 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-2xl text-xs font-bold text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-primary/40 cursor-pointer"
+                  className="w-full py-2.5 px-3.5 bg-slate-50 dark:bg-slate-900 rounded-2xl text-xs font-bold text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-primary/40 cursor-pointer"
                 >
                   <option value="ALL">All GSMs ({availableGsms.length} available)</option>
                   {availableGsms.map(g => (
@@ -1057,7 +1053,7 @@ export const FinishStockView: React.FC<FinishStockViewProps> = ({ hideHeader = f
                 <select
                   value={filterSize}
                   onChange={e => handleSizeChange(e.target.value)}
-                  className="w-full py-2.5 px-3.5 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-2xl text-xs font-bold text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-primary/40 cursor-pointer"
+                  className="w-full py-2.5 px-3.5 bg-slate-50 dark:bg-slate-900 rounded-2xl text-xs font-bold text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-primary/40 cursor-pointer"
                 >
                   <option value="ALL">All Sizes ({availableSizes.length} available)</option>
                   {availableSizes.map(s => (
@@ -1077,7 +1073,7 @@ export const FinishStockView: React.FC<FinishStockViewProps> = ({ hideHeader = f
                 <select
                   value={filterPly}
                   onChange={e => handlePlyChange(e.target.value)}
-                  className="w-full py-2.5 px-3.5 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-2xl text-xs font-bold text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-primary/40 cursor-pointer"
+                  className="w-full py-2.5 px-3.5 bg-slate-50 dark:bg-slate-900 rounded-2xl text-xs font-bold text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-primary/40 cursor-pointer"
                 >
                   <option value="ALL">All Ply ({availablePlys.length} available)</option>
                   {availablePlys.map(p => (
@@ -1093,7 +1089,7 @@ export const FinishStockView: React.FC<FinishStockViewProps> = ({ hideHeader = f
               <button
                 type="button"
                 onClick={handleClearAllFilters}
-                className="px-4 py-3 border border-slate-200 dark:border-slate-700 rounded-2xl text-xs font-black text-red-600 hover:bg-red-50 dark:hover:bg-red-950/20 transition cursor-pointer flex items-center justify-center gap-1.5 shrink-0"
+                className="px-4 py-3 rounded-2xl text-xs font-black text-red-600 hover:bg-red-50 dark:hover:bg-red-950/20 transition cursor-pointer flex items-center justify-center gap-1.5 shrink-0"
               >
                 <RotateCcw className="h-4 w-4" /> Clear All
               </button>
@@ -1101,7 +1097,7 @@ export const FinishStockView: React.FC<FinishStockViewProps> = ({ hideHeader = f
               <button
                 type="button"
                 onClick={() => setShowFilterModal(false)}
-                className="flex-1 py-3 bg-primary hover:bg-blue-700 text-white rounded-2xl text-xs font-black uppercase tracking-wider shadow-md transition cursor-pointer flex items-center justify-center gap-2"
+                className="flex-1 py-3 bg-primary hover:bg-primary-dark text-white rounded-2xl text-xs font-black uppercase tracking-wider shadow-md transition cursor-pointer flex items-center justify-center gap-2"
               >
                 <span>Apply & View ({matchingFilteredList.length} Reels)</span>
               </button>
@@ -1122,7 +1118,7 @@ export const FinishStockView: React.FC<FinishStockViewProps> = ({ hideHeader = f
             }
           }}
         >
-          <div className="bg-white dark:bg-surface-dark border border-slate-200 dark:border-slate-700 rounded-3xl max-w-md w-full p-6 space-y-4 shadow-2xl text-left" onClick={(e) => e.stopPropagation()}>
+          <div className="bg-white dark:bg-surface-dark rounded-3xl max-w-md w-full p-6 space-y-4 shadow-2xl text-left" onClick={(e) => e.stopPropagation()}>
             
             <div className="border-b border-slate-100 dark:border-slate-800 pb-3 flex justify-between items-center">
               <h3 className="text-sm font-black text-slate-900 dark:text-white uppercase tracking-wider">
@@ -1155,7 +1151,7 @@ export const FinishStockView: React.FC<FinishStockViewProps> = ({ hideHeader = f
                 <select
                   value={qcGrade}
                   onChange={e => setQcGrade(e.target.value as 'A' | 'B')}
-                  className="block w-full py-2.5 px-3.5 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-2xl text-xs font-bold focus:outline-none focus:ring-2 focus:ring-primary dark:text-white cursor-pointer"
+                  className="block w-full py-2.5 px-3.5 bg-slate-50 dark:bg-slate-900 rounded-2xl text-xs font-bold focus:outline-none focus:ring-2 focus:ring-primary dark:text-white cursor-pointer"
                 >
                   <option value="A">QC PASS - Grade A (Standard Stock)</option>
                   <option value="B">QC FAIL - Grade B (B-Grade Stock)</option>
@@ -1172,7 +1168,7 @@ export const FinishStockView: React.FC<FinishStockViewProps> = ({ hideHeader = f
                     step="0.01"
                     value={gsmResult}
                     onChange={e => setGsmResult(e.target.value)}
-                    className="block w-full py-2.5 px-3.5 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-2xl text-xs font-bold focus:outline-none focus:ring-2 focus:ring-primary dark:text-white"
+                    className="block w-full py-2.5 px-3.5 bg-slate-50 dark:bg-slate-900 rounded-2xl text-xs font-bold focus:outline-none focus:ring-2 focus:ring-primary dark:text-white"
                     placeholder="18"
                   />
                 </div>
@@ -1186,7 +1182,7 @@ export const FinishStockView: React.FC<FinishStockViewProps> = ({ hideHeader = f
                     step="0.1"
                     value={brightness}
                     onChange={e => setBrightness(e.target.value)}
-                    className="block w-full py-2.5 px-3.5 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-2xl text-xs font-bold focus:outline-none focus:ring-2 focus:ring-primary dark:text-white"
+                    className="block w-full py-2.5 px-3.5 bg-slate-50 dark:bg-slate-900 rounded-2xl text-xs font-bold focus:outline-none focus:ring-2 focus:ring-primary dark:text-white"
                     placeholder="85"
                   />
                 </div>
@@ -1222,7 +1218,7 @@ export const FinishStockView: React.FC<FinishStockViewProps> = ({ hideHeader = f
                       if (isNaN(num) || num < 1) setSoftness('1');
                       else if (num > 10) setSoftness('10');
                     }}
-                    className="block w-full py-2.5 px-3.5 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-2xl text-xs font-bold focus:outline-none focus:ring-2 focus:ring-primary dark:text-white"
+                    className="block w-full py-2.5 px-3.5 bg-slate-50 dark:bg-slate-900 rounded-2xl text-xs font-bold focus:outline-none focus:ring-2 focus:ring-primary dark:text-white"
                     placeholder="7"
                   />
                 </div>
@@ -1235,14 +1231,14 @@ export const FinishStockView: React.FC<FinishStockViewProps> = ({ hideHeader = f
                     type="text"
                     value={inspector}
                     onChange={e => setInspector(e.target.value)}
-                    className="block w-full py-2.5 px-3.5 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-2xl text-xs font-bold focus:outline-none focus:ring-2 focus:ring-primary dark:text-white"
+                    className="block w-full py-2.5 px-3.5 bg-slate-50 dark:bg-slate-900 rounded-2xl text-xs font-bold focus:outline-none focus:ring-2 focus:ring-primary dark:text-white"
                   />
                 </div>
               </div>
 
               <button
                 type="submit"
-                className="w-full bg-[#008163] hover:bg-[#006e54] text-white font-black py-3 rounded-2xl text-xs uppercase tracking-wider shadow-lg shadow-[#008163]/25 transition-all hover:scale-[1.01] active:scale-[0.99] cursor-pointer flex items-center justify-center gap-2"
+                className="w-full bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white font-black py-3 rounded-2xl text-xs uppercase tracking-wider shadow-lg shadow-blue-500/25 transition-all hover:scale-[1.01] active:scale-[0.99] cursor-pointer flex items-center justify-center gap-2"
               >
                 <Check className="h-4 w-4" />
                 <span>Submit Quality Inspection Log</span>

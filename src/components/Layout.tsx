@@ -7,7 +7,9 @@ import { CustomDatePickerModal } from './CustomDatePickerModal';
 import { getRawMaterials, getReels, getPendingOrders } from '../data/index';
 import {
   LayoutDashboard,
+  LayoutGrid,
   Warehouse,
+  Home,
   Factory,
   Cog,
   RotateCw,
@@ -440,6 +442,7 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
   };
 
   const menuItems = [
+<<<<<<< HEAD
     { id: 'dashboard', path: '/', label: t('nav.dashboard', 'Dashboard'), icon: LayoutDashboard },
     { id: 'raw_material_stock', path: '/raw-material-stock', label: t('nav.raw_material', 'Raw Material'), icon: Warehouse },
     { id: 'pulp_mill_operations', path: '/pulp-mill-operations', label: t('nav.pulp_mill', 'Pulp Mill'), icon: Factory },
@@ -454,6 +457,22 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
     { id: 'label_studio', path: '/label-studio', label: 'Label Studio', icon: Tag },
     { id: 'monthly_yearly_reporting', path: '/monthly-yearly-reporting', label: t('nav.reports', 'Mill Reports'), icon: BarChart2 },
     { id: 'admin_panel_audit', path: '/admin-panel-audit', label: t('nav.admin_masters', 'Admin Masters'), icon: Settings },
+=======
+    { id: 'dashboard', path: '/', label: 'Dashboard', icon: LayoutGrid },
+    { id: 'raw_material_stock', path: '/raw-material-stock', label: 'Raw Material', icon: Home },
+    { id: 'pulp_mill_operations', path: '/pulp-mill-operations', label: 'Pulp Mill', icon: Factory },
+    { id: 'machine_production', path: '/machine-production', label: 'Machine Production', icon: Cog },
+    { id: 'rewinding_reel_conversion', path: '/rewinding-reel-conversion', label: 'Rewinder Roll-to-Reel', icon: RotateCw },
+    { id: 'lab', path: '/lab', label: 'Lab Quality Control', icon: FlaskConical },
+    { id: 'orders', path: '/orders', label: 'Order Bookings', icon: FileText },
+    { id: 'utilities_etp', path: '/utilities-&-etp/boiler-operations', label: 'Utilities & ETP', icon: Droplet },
+    { id: 'dispatch_receipt', path: '/dispatch-receipt/draft-packing-slip', label: 'Dispatch Receipt', icon: Truck },
+    { id: 'finished_stock_dispatch', path: '/stock-categorization', label: 'Stock Categorization', icon: Layers },
+    { id: 'spareparts_management', path: '/spareparts-management', label: 'Spares Store', icon: Wrench },
+    { id: 'label_studio', path: '/label-studio', label: 'Label Studio', icon: Tag },
+    { id: 'monthly_yearly_reporting', path: '/monthly-yearly-reporting', label: 'Mill Reports', icon: BarChart2 },
+    { id: 'admin_panel_audit', path: '/admin-panel-audit', label: 'Admin Masters', icon: Settings },
+>>>>>>> 92dcd6c (feat: complete neomorphic design system redesign across all ERP modules)
   ];
 
   const visibleMenuItems = menuItems.filter(item => hasAccess(item.id));
@@ -466,10 +485,10 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
     const admin = visibleMenuItems.filter(i => ['label_studio', 'monthly_yearly_reporting', 'admin_panel_audit'].includes(i.id));
 
     return [
-      { title: 'Core Navigation', items: core },
-      { title: 'Production & Mill', items: production },
-      { title: 'Operations & Logistics', items: operations },
-      { title: 'Analytics & Governance', items: admin },
+      { title: 'CORE NAVIGATION', items: core },
+      { title: 'PRODUCTION & MILL', items: production },
+      { title: 'OPERATIONS & LOGISTICS', items: operations },
+      { title: 'ANALYTICS & GOVERNANCE', items: admin },
     ].filter(section => section.items.length > 0);
   }, [visibleMenuItems]);
 
@@ -485,8 +504,8 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
   return (
     <div className="min-h-screen bg-bg-light dark:bg-bg-dark text-text-light-primary dark:text-slate-100 flex flex-col transition-colors duration-200">
 
-      {/* 1. Header (Common across all sizes) - Light Mode: Clean White / Dark Mode: #131d38 */}
-      <header className={`sticky top-0 z-30 bg-white/95 dark:bg-[#131d38]/95 text-slate-900 dark:text-white backdrop-blur-xl border-b border-slate-200/80 dark:border-slate-800 shadow-2xs h-16 flex items-center justify-between px-4 lg:px-6 transition-all duration-300 ${user ? 'md:ml-64' : ''
+      {/* 1. Header (Common across all sizes) - Seamless background matching page without white partition bar */}
+      <header className={`sticky top-0 z-30 bg-bg-light/95 dark:bg-bg-dark/95 text-slate-900 dark:text-white backdrop-blur-md h-16 flex items-center justify-between px-4 lg:px-6 transition-all duration-300 ${user ? 'md:ml-[280px]' : ''
         } ${showHeader ? 'translate-y-0 opacity-100' : '-translate-y-full opacity-0 pointer-events-none'
         }`}>
 
@@ -495,7 +514,7 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
           {location.pathname !== '/' ? (
             <button
               onClick={() => navigate(-1)}
-              className="p-2 rounded-xl bg-slate-100/80 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-white transition flex items-center gap-1.5 cursor-pointer border border-slate-200/60 dark:border-slate-700"
+              className="p-2 rounded-2xl bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-700 text-slate-700 dark:text-white transition flex items-center gap-1.5 cursor-pointer shadow-[3px_3px_8px_rgba(163,163,196,0.18),-3px_-3px_8px_rgba(255,255,255,0.95)] dark:shadow-none"
               title="Navigate Back"
             >
               <ArrowLeft className="h-4.5 w-4.5" />
@@ -506,7 +525,7 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
               {(user?.role === 'Admin' || user?.role === 'Management') && (
                 <button
                   onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-                  className="p-2 rounded-xl bg-slate-100/80 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-white md:hidden transition border border-slate-200/60 dark:border-slate-700"
+                  className="p-2 rounded-2xl bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-700 text-slate-700 dark:text-white md:hidden transition shadow-[3px_3px_8px_rgba(163,163,196,0.18),-3px_-3px_8px_rgba(255,255,255,0.95)] dark:shadow-none"
                 >
                   {mobileMenuOpen ? (
                     <X className="h-5 w-5" />
@@ -522,7 +541,7 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
 
               {/* Mobile Only Header Logo */}
               <div className="flex md:hidden items-center gap-3 cursor-pointer group select-none" onClick={() => navigate('/')}>
-                <img src={`${import.meta.env.BASE_URL}logo.png`} alt="Saheb Paper Logo" className="h-9 w-9 object-contain rounded-xl shadow-md shadow-blue-600/10 group-hover:scale-105 transition-transform duration-200 border border-slate-200 dark:border-slate-700 bg-white p-0.5" />
+                <img src={`${import.meta.env.BASE_URL}logo.png`} alt="Saheb Paper Logo" className="h-9 w-9 object-contain rounded-xl shadow-xs border border-slate-200 dark:border-slate-700 bg-white p-0.5" />
                 <div className="block">
                   <div className="flex items-center gap-1.5">
                     <span className="text-sm font-black text-slate-900 dark:text-white leading-none tracking-tight">
@@ -539,7 +558,7 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
               </div>
 
               {/* Header Shift Badge (Mobile context) */}
-              <span className="hidden xs:inline-flex md:hidden items-center gap-1.5 px-2.5 py-1 rounded-full bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800 text-[10px] font-black uppercase tracking-wider shadow-2xs">
+              <span className="hidden xs:inline-flex md:hidden items-center gap-1.5 px-2.5 py-1 rounded-full bg-white dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300 shadow-[2px_2px_6px_rgba(163,163,196,0.15),-2px_-2px_6px_rgba(255,255,255,0.9)] dark:shadow-none text-[10px] font-black uppercase tracking-wider">
                 <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
                 {new Date().getHours() >= 8 && new Date().getHours() < 20 ? 'Shift A' : 'Shift B'} · Running
               </span>
@@ -547,20 +566,20 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
           )}
         </div>
 
-        {/* Right Side Header Controls */}
-        <div className="flex items-center gap-2 sm:gap-3">
+        {/* Right Side Header Controls - Matching exact reference image */}
+        <div className="flex items-center gap-2.5 sm:gap-3">
 
-          {/* Date & Timeframe Filter controls (Admin/Management Only) */}
+          {/* Date & Timeframe Filter controls - COMBINED IN ONE UNIFIED CAPSULE PILL */}
           {(user?.role === 'Admin' || user?.role === 'Management') && (
-            <div className="flex items-center gap-2">
-              {/* Timeframe Selector Pill */}
-              <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl p-0.5 flex items-center gap-0.5 shadow-2xs">
+            <div className="bg-white dark:bg-[#131d38] rounded-full p-1 pl-1.5 pr-2 flex items-center gap-2 shadow-[4px_4px_14px_rgba(163,163,196,0.2),-4px_-4px_14px_rgba(255,255,255,0.95)] dark:shadow-none">
+              {/* Timeframe Selector Sub-pill (Day / Week / Month / All) */}
+              <div className="flex items-center gap-0.5">
                 {(['day', 'week', 'month', 'all'] as const).map(tf => (
                   <button
                     key={tf}
                     onClick={() => setTimeframe(tf)}
-                    className={`px-2 sm:px-3 py-1 text-[11px] sm:text-xs font-extrabold rounded-lg capitalize transition cursor-pointer ${timeframe === tf
-                      ? 'bg-primary text-white shadow-xs'
+                    className={`px-3 sm:px-3.5 py-1 text-[11px] sm:text-xs font-bold rounded-full capitalize transition-all cursor-pointer ${timeframe === tf
+                      ? 'bg-[#5B3DC9] text-white shadow-[0_2px_8px_rgba(91,61,201,0.35)]'
                       : 'text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white'
                       }`}
                   >
@@ -569,11 +588,11 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
                 ))}
               </div>
 
-              {/* Date Stepper & Picker Controls (< 2026-07-26 📅 >) */}
-              <div className="flex items-center gap-1">
+              {/* Date Stepper Sub-controls (< 2026-08-19 📅 >) inside the SAME pill */}
+              <div className="flex items-center gap-0.5">
                 <button
                   onClick={handlePrevDate}
-                  className="p-1 sm:p-1.5 rounded-lg bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 transition cursor-pointer shadow-2xs"
+                  className="p-1 text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-white transition cursor-pointer"
                   title="Previous Date"
                 >
                   <ChevronLeft className="h-3.5 w-3.5" />
@@ -582,13 +601,13 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
                 <div className="relative" ref={headerDatePickerRef}>
                   <div
                     onClick={() => setIsDatePickerModalOpen(prev => !prev)}
-                    className="flex items-center bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg px-2 sm:px-3 py-1 shadow-2xs group cursor-pointer hover:bg-slate-50 dark:hover:bg-slate-800 transition select-none"
+                    className="flex items-center bg-white dark:bg-slate-900 rounded-full px-2.5 sm:px-3 py-0.5 shadow-[inset_1px_1px_3px_rgba(163,163,196,0.2),inset_-1px_-1px_3px_rgba(255,255,255,0.9)] dark:shadow-none group cursor-pointer select-none"
                     title="Click to select date"
                   >
-                    <span className="text-[11px] sm:text-xs font-black text-slate-900 dark:text-white mr-1.5 font-sans">
+                    <span className="text-[11px] sm:text-xs font-bold text-slate-800 dark:text-white mr-1.5 font-sans">
                       {selectedDate}
                     </span>
-                    <Calendar className="h-3.5 w-3.5 text-primary dark:text-blue-400 group-hover:scale-110 transition-transform" />
+                    <Calendar className="h-3.5 w-3.5 text-slate-500 dark:text-slate-400 group-hover:scale-110 transition-transform" />
                   </div>
 
                   {isDatePickerModalOpen && (
@@ -605,7 +624,7 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
                 <button
                   onClick={handleNextDate}
                   disabled={selectedDate >= systemToday}
-                  className="p-1 sm:p-1.5 rounded-lg bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 transition cursor-pointer shadow-2xs disabled:opacity-30 disabled:cursor-not-allowed disabled:pointer-events-none"
+                  className="p-1 text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-white transition cursor-pointer disabled:opacity-30 disabled:cursor-not-allowed disabled:pointer-events-none"
                   title="Next Date"
                 >
                   <ChevronRight className="h-3.5 w-3.5" />
@@ -614,25 +633,25 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
             </div>
           )}
 
-          {/* Theme Toggle Button */}
+          {/* 3. Circular Dark/Light Mode Toggle Button */}
           <button
             onClick={() => setDarkMode(!darkMode)}
-            className="p-2 rounded-xl bg-slate-100/90 dark:bg-slate-800 border border-slate-200/80 dark:border-slate-700 hover:bg-slate-200/80 dark:hover:bg-slate-700 transition cursor-pointer text-slate-600 dark:text-amber-300 shadow-2xs"
+            className="w-9 h-9 rounded-full bg-white dark:bg-[#131d38] flex items-center justify-center shadow-[3px_3px_8px_rgba(163,163,196,0.18),-3px_-3px_8px_rgba(255,255,255,0.95)] dark:shadow-none text-slate-600 dark:text-amber-300 hover:scale-105 transition cursor-pointer shrink-0"
             title="Toggle Light/Dark Theme"
           >
-            {darkMode ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
+            {darkMode ? <Sun className="h-4 w-4 text-amber-400" /> : <Moon className="h-4 w-4 text-slate-600" />}
           </button>
 
-          {/* Notifications Bell Button */}
-          <div className="relative">
+          {/* 4. Circular Notifications Bell Button */}
+          <div className="relative shrink-0">
             <button
               onClick={toggleBell}
-              className="p-2 rounded-xl bg-slate-100/90 dark:bg-slate-800 border border-slate-200/80 dark:border-slate-700 hover:bg-slate-200/80 dark:hover:bg-slate-700 transition cursor-pointer text-slate-600 dark:text-slate-200 relative shadow-2xs"
+              className="w-9 h-9 rounded-full bg-white dark:bg-[#131d38] flex items-center justify-center shadow-[3px_3px_8px_rgba(163,163,196,0.18),-3px_-3px_8px_rgba(255,255,255,0.95)] dark:shadow-none text-slate-600 dark:text-slate-200 relative hover:scale-105 transition cursor-pointer"
               title="Notifications & Alerts"
             >
               <Bell className="h-4 w-4" />
               {activeNotifications.length > 0 && (
-                <span className="absolute top-1 right-1 h-2.5 w-2.5 rounded-full bg-red-500 ring-2 ring-white dark:ring-[#131d38] animate-pulse"></span>
+                <span className="absolute top-1 right-1 h-2 w-2 rounded-full bg-[#5B3DC9] ring-2 ring-white dark:ring-[#131d38]"></span>
               )}
             </button>
 
@@ -687,85 +706,87 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
             )}
           </div>
 
-          {/* Top Right Header Profile & User Badges */}
+          {/* 5. User Profile Capsule Pill - Exact Match with Name, Role Badge, and Circle Avatar */}
           {user && (
-            <div className="flex items-center gap-2 border-l pl-3 border-slate-200 dark:border-slate-800">
-              <div className="hidden lg:block text-right">
-                <p className="text-xs font-black text-slate-900 dark:text-white leading-tight">{user.displayName}</p>
-                <span className="inline-block text-[10px] font-extrabold uppercase tracking-wider text-primary dark:text-blue-400 bg-primary/10 dark:bg-blue-950/60 px-2 py-0.5 rounded-full border border-primary/20 dark:border-blue-800/60 mt-0.5">
-                  {user.role}
-                </span>
+            <div className="relative shrink-0">
+              <div
+                onClick={toggleProfile}
+                className="bg-white dark:bg-[#131d38] rounded-full pl-3.5 pr-1.5 py-1.5 flex items-center gap-2.5 shadow-[4px_4px_12px_rgba(163,163,196,0.18),-4px_-4px_12px_rgba(255,255,255,0.95)] dark:shadow-none cursor-pointer hover:scale-[1.02] transition-all select-none"
+                title="Profile Settings"
+              >
+                <div className="flex flex-col items-start justify-center text-left">
+                  <span className="text-[12px] font-black text-slate-900 dark:text-white leading-none tracking-tight whitespace-nowrap">
+                    {user.displayName}
+                  </span>
+                  <span className="mt-1 px-2 py-0.5 rounded-full bg-[#EDE9FE] dark:bg-purple-950/60 text-[#6C4FE0] dark:text-purple-300 text-[9px] font-black uppercase tracking-wider leading-none">
+                    {user.role}
+                  </span>
+                </div>
+
+                {/* Profile Circle Avatar */}
+                <div className="w-8 h-8 bg-[#5B3DC9] text-white rounded-full flex items-center justify-center shadow-xs shrink-0">
+                  <User className="h-4.5 w-4.5" />
+                </div>
               </div>
 
-              {/* Profile Avatar Button */}
-              <div className="relative hidden md:block">
-                <button
-                  onClick={toggleProfile}
-                  className="h-9 w-9 bg-gradient-to-tr from-primary to-indigo-600 text-white rounded-full flex items-center justify-center cursor-pointer shadow-md shadow-primary/20 hover:scale-105 transition-transform"
-                  title="Profile Settings"
-                >
-                  <User className="h-4 w-4" />
-                </button>
-
-                {profileDropdownOpen && (
-                  <div className="absolute right-0 top-full mt-2 z-50 animate-in fade-in zoom-in-95 duration-150">
-                    <div className="bg-white dark:bg-[#131d38] border border-slate-200 dark:border-slate-800 text-slate-900 dark:text-white rounded-2xl shadow-2xl overflow-hidden py-1.5 w-56 font-sans">
-                      <div className="px-4 py-3 border-b border-slate-100 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900">
-                        <p className="text-sm font-black text-slate-900 dark:text-white leading-tight">{user.displayName}</p>
-                        <p className="text-xs text-slate-500 dark:text-slate-400 font-mono mt-0.5">@{user.username} ({user.role})</p>
-                      </div>
-
-                      <button
-                        onClick={() => {
-                          navigate('/profile');
-                          setProfileDropdownOpen(false);
-                        }}
-                        className="w-full flex items-center gap-2.5 px-4 py-2.5 text-xs font-bold text-slate-700 dark:text-slate-200 hover:bg-blue-50 dark:hover:bg-slate-800 text-left transition border-b border-slate-100 dark:border-slate-800 cursor-pointer"
-                      >
-                        <User className="h-4 w-4 text-primary dark:text-blue-400" />
-                        <span>My Profile & Details</span>
-                      </button>
-
-                      {user.role === 'Admin' && (
-                        <button
-                          onClick={() => {
-                            navigate('/role-management');
-                            setProfileDropdownOpen(false);
-                          }}
-                          className="w-full flex items-center gap-2.5 px-4 py-2.5 text-xs font-bold text-slate-700 dark:text-slate-200 hover:bg-amber-50 dark:hover:bg-slate-800 text-left transition border-b border-slate-100 dark:border-slate-800 cursor-pointer"
-                        >
-                          <Shield className="h-4 w-4 text-amber-500 dark:text-amber-400" />
-                          <span>Role Management</span>
-                        </button>
-                      )}
-
-                      {(user.role === 'Admin' || user.role === 'Management') && (
-                        <button
-                          onClick={() => {
-                            navigate('/user-management');
-                            setProfileDropdownOpen(false);
-                          }}
-                          className="w-full flex items-center gap-2.5 px-4 py-2.5 text-xs font-semibold text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-800 text-left transition border-b border-slate-100 dark:border-slate-800 cursor-pointer"
-                        >
-                          <Settings className="h-4 w-4 text-purple-600 dark:text-purple-400" />
-                          <span>User Management</span>
-                        </button>
-                      )}
-
-                      <button
-                        onClick={() => {
-                          setProfileDropdownOpen(false);
-                          logout();
-                        }}
-                        className="w-full flex items-center gap-2.5 px-4 py-2.5 text-xs font-bold text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/30 text-left transition cursor-pointer"
-                      >
-                        <LogOut className="h-4 w-4 text-red-500 dark:text-red-400" />
-                        <span>Logout</span>
-                      </button>
+              {profileDropdownOpen && (
+                <div className="absolute right-0 top-full mt-2 z-50 animate-in fade-in zoom-in-95 duration-150">
+                  <div className="bg-white dark:bg-[#131d38] border border-slate-200 dark:border-slate-800 text-slate-900 dark:text-white rounded-2xl shadow-2xl overflow-hidden py-1.5 w-56 font-sans">
+                    <div className="px-4 py-3 border-b border-slate-100 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900">
+                      <p className="text-sm font-black text-slate-900 dark:text-white leading-tight">{user.displayName}</p>
+                      <p className="text-xs text-slate-500 dark:text-slate-400 font-mono mt-0.5">@{user.username} ({user.role})</p>
                     </div>
+
+                    <button
+                      onClick={() => {
+                        navigate('/profile');
+                        setProfileDropdownOpen(false);
+                      }}
+                      className="w-full flex items-center gap-2.5 px-4 py-2.5 text-xs font-bold text-slate-700 dark:text-slate-200 hover:bg-blue-50 dark:hover:bg-slate-800 text-left transition border-b border-slate-100 dark:border-slate-800 cursor-pointer"
+                    >
+                      <User className="h-4 w-4 text-primary dark:text-blue-400" />
+                      <span>My Profile & Details</span>
+                    </button>
+
+                    {user.role === 'Admin' && (
+                      <button
+                        onClick={() => {
+                          navigate('/role-management');
+                          setProfileDropdownOpen(false);
+                        }}
+                        className="w-full flex items-center gap-2.5 px-4 py-2.5 text-xs font-bold text-slate-700 dark:text-slate-200 hover:bg-amber-50 dark:hover:bg-slate-800 text-left transition border-b border-slate-100 dark:border-slate-800 cursor-pointer"
+                      >
+                        <Shield className="h-4 w-4 text-amber-500 dark:text-amber-400" />
+                        <span>Role Management</span>
+                      </button>
+                    )}
+
+                    {(user.role === 'Admin' || user.role === 'Management') && (
+                      <button
+                        onClick={() => {
+                          navigate('/user-management');
+                          setProfileDropdownOpen(false);
+                        }}
+                        className="w-full flex items-center gap-2.5 px-4 py-2.5 text-xs font-semibold text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-800 text-left transition border-b border-slate-100 dark:border-slate-800 cursor-pointer"
+                      >
+                        <Settings className="h-4 w-4 text-purple-600 dark:text-purple-400" />
+                        <span>User Management</span>
+                      </button>
+                    )}
+
+                    <button
+                      onClick={() => {
+                        setProfileDropdownOpen(false);
+                        logout();
+                      }}
+                      className="w-full flex items-center gap-2.5 px-4 py-2.5 text-xs font-bold text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/30 text-left transition cursor-pointer"
+                    >
+                      <LogOut className="h-4 w-4 text-red-500 dark:text-red-400" />
+                      <span>Logout</span>
+                    </button>
                   </div>
-                )}
-              </div>
+                </div>
+              )}
             </div>
           )}
 
@@ -773,8 +794,9 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
       </header>
 
       <div className="flex flex-1 relative overflow-hidden">
-        {/* 2. Left Sidebar (Tablet/Desktop: md:flex) - Light Mode: Clean White / Dark Mode: #131d38 */}
+        {/* 2. Left Sidebar (Tablet/Desktop: md:flex) - Floating Neomorphic Card exactly matching 2nd reference image */}
         {user && (
+<<<<<<< HEAD
           <aside className="hidden md:flex flex-col fixed top-0 left-0 bottom-0 w-68 bg-white dark:bg-[#131d38] text-slate-800 dark:text-white border-r border-slate-200/80 dark:border-slate-800 z-40 select-none shadow-xs overflow-hidden h-screen">
             {/* Sidebar Top Header with Logo */}
             <div className="h-15 px-3.5 flex items-center gap-2.5 border-b border-slate-200/80 dark:border-slate-800 shrink-0 cursor-pointer group select-none" onClick={() => navigate('/')}>
@@ -783,17 +805,36 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
                 <div className="flex items-center gap-1.5">
                   <span className="text-sm font-black text-slate-900 dark:text-white leading-none tracking-tight truncate font-heading">
                     {t('login.title')}
+=======
+          <aside className="hidden md:flex flex-col fixed top-3 left-3 bottom-3 w-[260px] bg-white dark:bg-[#131d38] text-slate-800 dark:text-white z-40 select-none shadow-[8px_8px_24px_rgba(163,163,196,0.18),-8px_-8px_24px_rgba(255,255,255,0.95)] dark:shadow-[0_8px_30px_rgba(0,0,0,0.4)] rounded-[28px] overflow-hidden p-3.5 h-[calc(100vh-24px)]">
+            
+            {/* Top Header Card / Pill */}
+            <div 
+              className="bg-white dark:bg-[#1a2544] p-2.5 rounded-2xl flex items-center gap-2.5 shadow-[4px_4px_12px_rgba(163,163,196,0.14),-4px_-4px_12px_rgba(255,255,255,0.95)] dark:shadow-none mb-3 shrink-0 cursor-pointer group select-none transition-all hover:scale-[1.01]" 
+              onClick={() => navigate('/')}
+            >
+              <img 
+                src={`${import.meta.env.BASE_URL}logo.png`} 
+                alt="Saheb Paper Logo" 
+                className="h-9 w-9 object-contain rounded-xl shadow-xs border border-slate-200/80 dark:border-slate-700 bg-white p-0.5 shrink-0" 
+              />
+              <div className="min-w-0 flex-1">
+                <div className="flex items-center gap-1.5">
+                  <span className="text-xs font-black text-slate-900 dark:text-white leading-none tracking-tight truncate">
+                    Saheb Paper Pvt. Ltd.
+>>>>>>> 92dcd6c (feat: complete neomorphic design system redesign across all ERP modules)
                   </span>
-                  <span className="px-1.5 py-0.2 rounded-full bg-blue-50 dark:bg-blue-950/60 text-primary dark:text-blue-300 text-[9px] font-extrabold uppercase border border-blue-200/60 dark:border-blue-800/60 shrink-0">
+                  <span className="px-1.5 py-0.2 rounded-full bg-[#EDE9FE] dark:bg-purple-950/60 text-[#6C4FE0] dark:text-purple-300 text-[9px] font-extrabold uppercase shrink-0">
                     ERP
                   </span>
                 </div>
-                <p className="text-xs text-slate-500 dark:text-slate-400 font-medium tracking-tight truncate mt-0.5">
-                  {t('login.subtitle')}
+                <p className="text-[10px] text-slate-500 dark:text-slate-400 font-medium tracking-tight truncate mt-0.5">
+                  Paper Mill Management System
                 </p>
               </div>
             </div>
 
+<<<<<<< HEAD
             {/* Sidebar Navigation Sections - Proportional Full Height Distribution */}
             <div className="flex-1 px-3 py-2 select-none flex flex-col justify-between overflow-hidden">
 
@@ -834,10 +875,51 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
                         );
                       })}
                     </div>
+=======
+            {/* Sidebar Navigation Sections */}
+            <div className="flex-1 overflow-y-auto pr-1 select-none flex flex-col space-y-3.5 dashboard-custom-scrollbar">
+              {sidebarSections.map((section) => (
+                <div key={section.title} className="space-y-1">
+                  <div className="px-3 pt-1 pb-0.5 text-[10.5px] font-bold uppercase tracking-wider text-[#6B7C96] dark:text-slate-400 font-sans">
+                    {section.title}
+                  </div>
+
+                  <div className="space-y-1">
+                    {section.items.map(item => {
+                      const Icon = item.icon;
+                      const isActive = location.pathname === item.path || (item.id === 'dispatch_receipt' && location.pathname.startsWith('/dispatch-receipt')) || (item.id === 'utilities_etp' && (location.pathname.startsWith('/utilities-&-etp') || location.pathname.startsWith('/utilites-&-etp') || location.pathname.startsWith('/utilities-etp')));
+                      return (
+                        <button
+                          key={item.id}
+                          onClick={() => navigate(item.path)}
+                          className={`w-full flex items-center px-2.5 py-1.5 rounded-[16px] transition-all duration-200 text-left cursor-pointer group ${isActive
+                            ? 'bg-[#EDE9FE] dark:bg-purple-950/60 text-[#6C4FE0] dark:text-purple-300 font-bold shadow-[inset_1px_1px_2px_rgba(108,79,224,0.15)]'
+                            : 'text-slate-700 dark:text-slate-200 hover:bg-[#F3F2FA]/80 dark:hover:bg-slate-800/50'
+                            }`}
+                        >
+                          <div className="flex items-center gap-3 min-w-0">
+                            {isActive ? (
+                              <div className="w-8 h-8 rounded-[12px] bg-white dark:bg-[#1a264a] shadow-[2px_2px_5px_rgba(163,163,196,0.25),-2px_-2px_5px_rgba(255,255,255,0.95)] dark:shadow-none flex items-center justify-center text-[#6C4FE0] dark:text-purple-400 shrink-0">
+                                <Icon className="h-4.5 w-4.5 stroke-[2.2]" />
+                              </div>
+                            ) : (
+                              <div className="w-8 h-8 rounded-full bg-[#F3F2FA] dark:bg-slate-800 shadow-[2px_2px_5px_rgba(163,163,196,0.2),-2px_-2px_5px_rgba(255,255,255,0.95)] dark:shadow-none flex items-center justify-center text-[#6C4FE0]/80 dark:text-purple-400 shrink-0 group-hover:scale-105 transition-transform">
+                                <Icon className="h-4 w-4 stroke-[2]" />
+                              </div>
+                            )}
+                            <span className={`text-xs sm:text-[13px] font-sans tracking-tight leading-tight truncate ${isActive ? 'font-bold text-[#6C4FE0] dark:text-purple-300' : 'font-semibold text-[#334155] dark:text-slate-300 group-hover:text-slate-900 dark:group-hover:text-white'}`}>
+                              {item.label}
+                            </span>
+                          </div>
+                        </button>
+                      );
+                    })}
+>>>>>>> 92dcd6c (feat: complete neomorphic design system redesign across all ERP modules)
                   </div>
                 );
               })}
             </div>
+
           </aside>
         )}
 
@@ -846,7 +928,11 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
           ref={mainRef}
           onTouchStart={handleTouchStart}
           onTouchEnd={handleTouchEnd}
+<<<<<<< HEAD
           className={`flex-1 flex flex-col overflow-y-auto pb-32 md:pb-6 relative min-w-0 ${user ? 'md:ml-68' : ''
+=======
+          className={`flex-1 flex flex-col overflow-y-auto pb-32 md:pb-6 relative min-w-0 ${user ? 'md:ml-[280px]' : ''
+>>>>>>> 92dcd6c (feat: complete neomorphic design system redesign across all ERP modules)
             } dashboard-main-scrollbar`}
         >
           {/* Actual children page content */}
@@ -892,20 +978,41 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
                       navigate(item.path);
                       setMobileMenuOpen(false);
                     }}
-                    className={`flex items-center gap-3 px-4 py-3 rounded-xl text-left text-xs font-bold transition cursor-pointer ${isActive
-                      ? 'bg-[#0F52BA] text-white font-extrabold shadow-sm'
+                    className={`flex items-center gap-3 px-3 py-2 rounded-[16px] text-left transition cursor-pointer ${isActive
+                      ? 'bg-[#E8F0FE] dark:bg-blue-950/60 text-[#1D4ED8] dark:text-blue-300 font-bold shadow-[inset_1px_1px_2px_rgba(180,195,230,0.15)]'
                       : 'text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800'
                       }`}
                   >
-                    <Icon className="h-4.5 w-4.5" />
-                    <span>{item.label}</span>
+                    {isActive ? (
+                      <div className="w-8 h-8 rounded-[12px] bg-white dark:bg-[#1a264a] shadow-[2px_2px_5px_rgba(180,195,230,0.25),-2px_-2px_5px_rgba(255,255,255,0.95)] flex items-center justify-center text-[#2563EB] dark:text-blue-400 shrink-0">
+                        <Icon className="h-4 w-4 stroke-[2.2]" />
+                      </div>
+                    ) : (
+                      <div className="w-8 h-8 rounded-full bg-[#F4F7FC] dark:bg-slate-800 shadow-[2px_2px_5px_rgba(170,185,220,0.25),-2px_-2px_5px_rgba(255,255,255,0.95)] flex items-center justify-center text-[#3B82F6] dark:text-blue-400 shrink-0">
+                        <Icon className="h-4 w-4 stroke-[2]" />
+                      </div>
+                    )}
+                    <span className={`text-xs sm:text-sm ${isActive ? 'font-bold text-[#1D4ED8] dark:text-blue-300' : 'font-semibold text-slate-700 dark:text-slate-200'}`}>{item.label}</span>
                   </button>
                 );
               })}
             </div>
 
-            {/* Logout Button inside Mobile Drawer */}
-            <div className="pt-4 border-t border-slate-100 dark:border-slate-800">
+            {/* Bottom Controls inside Mobile Drawer */}
+            <div className="pt-4 border-t border-slate-100 dark:border-slate-800 space-y-2">
+              <div 
+                onClick={() => setDarkMode(!darkMode)}
+                className="bg-white dark:bg-[#1a2544] rounded-2xl p-2.5 px-3.5 flex items-center justify-between shadow-[3px_3px_10px_rgba(163,163,196,0.18),-3px_-3px_10px_rgba(255,255,255,0.9)] cursor-pointer"
+              >
+                <div className="flex items-center gap-2.5 text-slate-700 dark:text-slate-200">
+                  {darkMode ? <Moon className="h-4 w-4 text-purple-400" /> : <Sun className="h-4 w-4 text-slate-500" />}
+                  <span className="text-xs font-bold">{darkMode ? 'Dark Mode' : 'Light Mode'}</span>
+                </div>
+                <div className={`w-10 h-5 rounded-full p-0.5 transition-colors flex items-center ${darkMode ? 'bg-slate-700 justify-start' : 'bg-[#6C4FE0] justify-end'}`}>
+                  <div className="w-4 h-4 rounded-full bg-white shadow-md transform transition-transform" />
+                </div>
+              </div>
+
               <button
                 onClick={() => {
                   setMobileMenuOpen(false);
@@ -948,8 +1055,8 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
                     title={tab.label}
                   >
                     <div className={`w-11 h-11 rounded-full text-white flex items-center justify-center -mt-5 shadow-xl active:scale-90 transition-all ${isActive
-                      ? 'bg-gradient-to-tr from-blue-600 to-indigo-600 shadow-blue-500/50 ring-4 ring-white dark:ring-slate-900 scale-105'
-                      : 'bg-gradient-to-tr from-blue-600 to-indigo-600 shadow-blue-500/40 ring-4 ring-white dark:ring-slate-900 group-hover:scale-105'
+                      ? 'bg-gradient-to-tr from-blue-600 to-indigo-600 shadow-indigo-500/50 ring-4 ring-white dark:ring-slate-900 scale-105'
+                      : 'bg-gradient-to-tr from-blue-600 to-indigo-600 shadow-indigo-500/40 ring-4 ring-white dark:ring-slate-900 group-hover:scale-105'
                       }`}>
                       <Icon className="h-5 w-5" />
                     </div>

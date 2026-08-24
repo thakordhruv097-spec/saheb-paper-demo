@@ -161,7 +161,7 @@ export const BoilerView: React.FC = () => {
       </div>
 
       {/* 1. OPERATOR SHIFT DATA ENTRY FORM (Directly at top of page) */}
-      <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl p-5 sm:p-6 shadow-xs space-y-5">
+      <div className="neumorphic-card rounded-3xl p-5 sm:p-6 space-y-5">
         <div className="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-3">
           <div className="flex items-center gap-2.5">
             <div className="p-2 rounded-xl bg-gradient-to-br from-orange-500 to-amber-600 text-white shadow-sm shadow-orange-500/30">
@@ -330,7 +330,7 @@ export const BoilerView: React.FC = () => {
       </div>
 
       {/* 2. BOILER DAILY OPERATION REGISTERS (Directly Below Form) */}
-      <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl p-5 sm:p-6 shadow-xs space-y-4">
+      <div className="neumorphic-card rounded-3xl p-5 sm:p-6 space-y-4">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-100 dark:border-slate-800 pb-3">
           <div className="flex items-center gap-2">
             <List className="h-4 w-4 text-orange-500" />
@@ -460,7 +460,7 @@ export const BoilerView: React.FC = () => {
                   return (
                     <div
                       key={log.id}
-                      className="p-3.5 bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700 rounded-2xl space-y-2 text-xs text-left"
+                      className="p-3.5 bg-slate-50 dark:bg-slate-800/60 rounded-2xl space-y-2 text-xs text-left"
                     >
                       <div className="flex justify-between items-center border-b border-slate-200/60 dark:border-slate-700 pb-2">
                         <span className="font-bold font-mono text-slate-900 dark:text-white">{log.date}</span>

@@ -195,7 +195,7 @@ export const MobileProfileView: React.FC = () => {
           {menuDropdownOpen && (
             <div
               onClick={() => setMenuDropdownOpen(false)}
-              className="absolute right-0 top-full mt-1 bg-white dark:bg-surface-dark border border-slate-200 dark:border-slate-700 rounded-2xl shadow-xl py-2 w-48 z-40 text-xs font-bold text-slate-700 dark:text-slate-200"
+              className="absolute right-0 top-full mt-1 bg-white dark:bg-surface-dark rounded-2xl shadow-xl py-2 w-48 z-40 text-xs font-bold text-slate-700 dark:text-slate-200"
             >
               <button
                 onClick={() => setActiveModal('help')}

@@ -26,6 +26,7 @@ import {
   Copy,
   Package,
   ArrowUpDown,
+  MoreVertical,
 } from 'lucide-react';
 
 interface DowntimeLog {
@@ -276,38 +277,40 @@ export const PulpMillView: React.FC = () => {
 
   return (
     <div className="space-y-6">
-      {/* Top Banner Header with Saheb Paper Branding */}
-      <div className="bg-white dark:bg-surface-dark border border-slate-200 dark:border-slate-700/80 rounded-3xl p-6 shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-4">
-        <div>
-          <div className="flex items-center gap-3 mb-1">
-            <div className="p-2.5 rounded-2xl bg-gradient-to-tr from-blue-600 to-indigo-600 text-white shadow-md shadow-blue-500/20">
-              <Factory className="w-5 h-5" />
+      {/* 1. CLEAN MINIMAL HEADER CARD */}
+      <div className="neumorphic-card p-5 text-slate-900 dark:text-white">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+          <div className="flex items-center gap-3.5">
+            <div className="w-12 h-12 rounded-2xl bg-[#EDE9FE] dark:bg-purple-950/60 text-[#6C4FE0] dark:text-purple-400 flex items-center justify-center shadow-xs shrink-0">
+              <Factory className="h-6 w-6" />
             </div>
             <div>
               <div className="flex flex-wrap items-center gap-2.5">
-                <h2 className="text-base font-black text-slate-900 dark:text-white uppercase tracking-wider font-heading">
+                <h1 className="text-xl sm:text-2xl font-black tracking-tight font-heading text-slate-900 dark:text-white">
                   Pulp Mill Daily Setup & Formula Rules
-                </h2>
-                <WorkflowStepBadge stepInfo={WORKFLOW_STEPS.pulpMill} />
+                </h1>
+                <span className="px-2.5 py-0.5 rounded-full bg-[#EDE9FE] dark:bg-purple-950/70 text-[#6C4FE0] dark:text-purple-300 text-[10px] font-black uppercase tracking-wider">
+                  ✦ Step 3/8 Guide ⓘ
+                </span>
               </div>
-              <p className="text-xs text-slate-500 dark:text-slate-400 font-medium tracking-tight">
-                Date: <strong className="text-slate-900 dark:text-white font-mono">{dateStr.split('-').reverse().join('/')}</strong> &bull; Governs automatic raw material deduction on Machine Production.
+              <p className="text-xs sm:text-sm text-slate-500 dark:text-slate-400 font-medium mt-0.5">
+                Date: <strong className="text-slate-900 dark:text-white font-sans">{dateStr.split('-').reverse().join('/')}</strong> &bull; Governs automatic raw material deduction on Machine Production.
               </p>
             </div>
           </div>
-        </div>
 
-        {/* Date Switcher Pill */}
-        <div className="flex items-center gap-2">
-          <button
-            ref={dateBtnRef}
-            type="button"
-            onClick={() => setOpenDatePicker(true)}
-            className="flex items-center gap-2 px-4 py-2.5 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 border border-slate-200 dark:border-slate-700 rounded-2xl text-xs font-black text-slate-700 dark:text-slate-200 cursor-pointer transition"
-          >
-            <Calendar className="h-4 w-4 text-primary dark:text-blue-400" />
-            <span>Select Date: {dateStr.split('-').reverse().join('/')}</span>
-          </button>
+          {/* Date Switcher Pill */}
+          <div className="flex items-center gap-2 self-start sm:self-auto">
+            <button
+              ref={dateBtnRef}
+              type="button"
+              onClick={() => setOpenDatePicker(true)}
+              className="flex items-center gap-2 px-4 py-2.5 bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-700 rounded-full text-xs font-bold text-slate-700 dark:text-slate-200 cursor-pointer transition shadow-[3px_3px_8px_rgba(163,163,196,0.18),-3px_-3px_8px_rgba(255,255,255,0.95)] dark:shadow-none"
+            >
+              <Calendar className="h-4 w-4 text-[#6C4FE0] dark:text-purple-400" />
+              <span>Date: {dateStr.split('-').reverse().join('/')}</span>
+            </button>
+          </div>
         </div>
       </div>
 
@@ -326,59 +329,68 @@ export const PulpMillView: React.FC = () => {
       )}
 
       {/* Main Dual Cards Grid */}
-      <form onSubmit={handleSubmitFormula} className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+      <form onSubmit={handleSubmitFormula} className="grid grid-cols-1 lg:grid-cols-2 gap-6 items-stretch">
         
-        {/* Card 1: Waste Paper Consumption Share (%) */}
-        <div className="bg-white dark:bg-surface-dark border border-slate-200 dark:border-slate-700/80 rounded-3xl p-6 shadow-sm space-y-5">
-          <div className="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-4">
-            <div>
-              <h3 className="text-xs font-black text-slate-900 dark:text-white uppercase tracking-wider flex items-center gap-2">
-                <Scale className="h-4 w-4 text-primary" />
-                1. Waste Paper Consumption (%)
-              </h3>
-              <p className="text-[11px] text-slate-500 dark:text-slate-400 font-medium mt-0.5">
-                Total mix share must sum to exactly 100%
-              </p>
-            </div>
-            
-            <div className={`px-3 py-1.5 rounded-2xl text-xs font-black flex items-center gap-1.5 border transition-all ${
-              isFormula100
-                ? 'bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300 border-emerald-200 dark:border-emerald-800'
-                : 'bg-amber-50 dark:bg-amber-950/40 text-amber-700 dark:text-amber-300 border-amber-200 dark:border-amber-800'
-            }`}>
-              {!isFormula100 && <AlertCircle className="h-3.5 w-3.5" />}
-              <span>Total: {totalWastePct}% {isFormula100 ? '(Valid)' : '(Warning)'}</span>
-            </div>
-          </div>
-
-          <div className="space-y-3">
-            {Object.keys(wasteMix).map(name => (
-              <div key={name} className="flex items-center justify-between p-3 rounded-2xl bg-slate-50 dark:bg-slate-900/80 border border-slate-200/80 dark:border-slate-800">
-                <span className="text-xs font-bold text-slate-800 dark:text-slate-200">{name}</span>
-                <div className="flex items-center gap-2">
-                  <input
-                    type="number"
-                    min="0"
-                    max="100"
-                    step="1"
-                    value={wasteMix[name] !== undefined ? wasteMix[name] : ''}
-                    onChange={e => handleWasteChange(name, e.target.value)}
-                    className="w-24 px-3 py-1.5 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-xs font-mono font-bold text-right dark:text-white focus:outline-none focus:ring-2 focus:ring-primary"
-                    placeholder="0"
-                  />
-                  <span className="text-xs font-bold text-slate-400 dark:text-slate-500">%</span>
-                </div>
+        {/* Card 1: Waste Paper Consumption (%) */}
+        <div className="neumorphic-card p-6 flex flex-col justify-between space-y-5">
+          <div>
+            <div className="flex items-center justify-between border-b border-slate-100 dark:border-slate-800/80 pb-4">
+              <div>
+                <h3 className="text-xs font-black text-slate-900 dark:text-white uppercase tracking-wider flex items-center gap-2">
+                  <Scale className="h-4 w-4 text-[#6C4FE0] dark:text-purple-400" />
+                  1. Waste Paper Consumption (%)
+                </h3>
+                <p className="text-[11px] text-slate-500 dark:text-slate-400 font-medium mt-0.5">
+                  Total mix share must sum to exactly 100%
+                </p>
               </div>
-            ))}
+              
+              <div className={`px-3.5 py-1 rounded-full text-xs font-bold flex items-center gap-1.5 transition-all ${
+                isFormula100
+                  ? 'bg-[#DCFCE7] text-[#16A34A] dark:bg-emerald-950/60 dark:text-emerald-300'
+                  : 'bg-amber-100 text-amber-800 dark:bg-amber-950/60 dark:text-amber-300'
+              }`}>
+                {!isFormula100 && <AlertCircle className="h-3.5 w-3.5" />}
+                <span>Total: {totalWastePct}% {isFormula100 ? '(Valid) ✓' : '(Warning)'}</span>
+              </div>
+            </div>
+
+            {/* Waste items list with Neomorphic Pill rows and Sunken Inputs */}
+            <div className="space-y-3 pt-4">
+              {Object.keys(wasteMix).map(name => (
+                <div 
+                  key={name} 
+                  className="flex items-center justify-between p-2.5 px-4 rounded-2xl bg-white dark:bg-slate-900/60 shadow-[3px_3px_10px_rgba(163,163,196,0.12),-3px_-3px_10px_rgba(255,255,255,0.95)] dark:shadow-none"
+                >
+                  <span className="text-xs font-bold text-slate-800 dark:text-slate-100">{name}</span>
+                  <div className="flex items-center gap-2">
+                    {/* Sunken Neomorphic Capsule Input Matching 2nd Picture */}
+                    <div className="relative flex items-center bg-[#F3F2FA] dark:bg-slate-950 rounded-full px-4 py-1.5 shadow-[inset_2px_2px_5px_rgba(163,163,196,0.22),inset_-2px_-2px_5px_rgba(255,255,255,0.85)] dark:shadow-none w-28 justify-end">
+                      <input
+                        type="number"
+                        min="0"
+                        max="100"
+                        step="1"
+                        value={wasteMix[name] !== undefined ? wasteMix[name] : ''}
+                        onChange={e => handleWasteChange(name, e.target.value)}
+                        className="w-full bg-transparent border-none text-xs font-bold font-sans text-right text-slate-900 dark:text-white focus:outline-none p-0"
+                        placeholder="0"
+                      />
+                    </div>
+                    <span className="text-xs font-bold text-[#8B87A3] dark:text-slate-400 w-4 text-center">%</span>
+                  </div>
+                </div>
+              ))}
+            </div>
           </div>
         </div>
 
-        {/* Card 2: Chemical Consumption Rates (kg / Ton) */}
-        <div className="bg-white dark:bg-surface-dark border border-slate-200 dark:border-slate-700/80 rounded-3xl p-6 shadow-sm flex flex-col justify-between space-y-5">
+        {/* Card 2: Chemical Dosage Rates (kg / Ton) */}
+        <div className="neumorphic-card p-6 flex flex-col justify-between space-y-5">
           <div className="space-y-4">
-            <div className="border-b border-slate-100 dark:border-slate-800 pb-4">
+            <div className="border-b border-slate-100 dark:border-slate-800/80 pb-4">
               <h3 className="text-xs font-black text-slate-900 dark:text-white uppercase tracking-wider flex items-center gap-2">
-                <Beaker className="h-4 w-4 text-purple-600 dark:text-purple-400" />
+                <Beaker className="h-4 w-4 text-[#6C4FE0] dark:text-purple-400" />
                 2. Chemical Dosage Rates (kg / Ton of Paper)
               </h3>
               <p className="text-[11px] text-slate-500 dark:text-slate-400 font-medium mt-0.5">
@@ -386,21 +398,27 @@ export const PulpMillView: React.FC = () => {
               </p>
             </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-              {Object.keys(chemicals).map(chemName => (
-                <div key={chemName} className="p-3 rounded-2xl bg-slate-50 dark:bg-slate-900/80 border border-slate-200/80 dark:border-slate-800 flex items-center justify-between">
-                  <span className="text-xs font-bold text-slate-800 dark:text-slate-200 truncate pr-2">{chemName}</span>
+            {/* Chemical items with Sunken Neomorphic inputs */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-2">
+              {['DSR', 'WSR', 'OBA', 'Hydrogen Peroxide', 'Hypo', 'Caustic'].map(chemName => (
+                <div 
+                  key={chemName} 
+                  className="p-2.5 px-4 rounded-2xl bg-white dark:bg-slate-900/60 shadow-[3px_3px_10px_rgba(163,163,196,0.12),-3px_-3px_10px_rgba(255,255,255,0.95)] dark:shadow-none flex items-center justify-between"
+                >
+                  <span className="text-xs font-bold text-slate-800 dark:text-slate-100 truncate pr-2">{chemName}</span>
                   <div className="flex items-center gap-1.5 shrink-0">
-                    <input
-                      type="number"
-                      step="0.1"
-                      min="0"
-                      value={chemicals[chemName] !== undefined ? chemicals[chemName] : ''}
-                      onChange={e => handleChemicalChange(chemName, e.target.value)}
-                      className="w-20 px-2.5 py-1.5 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-xs font-mono font-bold text-right dark:text-white focus:outline-none focus:ring-2 focus:ring-primary"
-                      placeholder="0"
-                    />
-                    <span className="text-[10px] font-bold text-slate-400">kg/T</span>
+                    <div className="relative flex items-center bg-[#F3F2FA] dark:bg-slate-950 rounded-full px-3 py-1.5 shadow-[inset_2px_2px_5px_rgba(163,163,196,0.22),inset_-2px_-2px_5px_rgba(255,255,255,0.85)] dark:shadow-none w-20 justify-end">
+                      <input
+                        type="number"
+                        step="0.1"
+                        min="0"
+                        value={chemicals[chemName] !== undefined ? chemicals[chemName] : ''}
+                        onChange={e => handleChemicalChange(chemName, e.target.value)}
+                        className="w-full bg-transparent border-none text-xs font-bold font-sans text-right text-slate-900 dark:text-white focus:outline-none p-0"
+                        placeholder="0"
+                      />
+                    </div>
+                    <span className="text-[10px] font-bold text-[#8B87A3] dark:text-slate-400 w-7">kg/T</span>
                   </div>
                 </div>
               ))}
@@ -410,7 +428,7 @@ export const PulpMillView: React.FC = () => {
           <div className="pt-4 border-t border-slate-100 dark:border-slate-800 flex justify-end">
             <button
               type="submit"
-              className="w-full sm:w-auto px-6 py-3 bg-[#008163] hover:bg-[#006e54] text-white font-black rounded-2xl text-xs uppercase tracking-wider shadow-lg shadow-[#008163]/25 transition-all hover:scale-[1.01] active:scale-[0.99] cursor-pointer flex items-center justify-center gap-2"
+              className="btn-primary-gradient px-6 py-3 text-xs uppercase tracking-wider cursor-pointer flex items-center justify-center gap-2"
             >
               <Save className="h-4 w-4" />
               <span>Save Formula & Chemical Rates</span>
@@ -421,10 +439,10 @@ export const PulpMillView: React.FC = () => {
       </form>
 
       {/* Pulp Mill Downtime Logger Section */}
-      <div className="bg-white dark:bg-surface-dark border border-slate-200 dark:border-slate-700/80 rounded-3xl p-6 shadow-sm space-y-4">
+      <div className="neumorphic-card p-6 space-y-4">
         <div className="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-3">
           <div className="flex items-center gap-2">
-            <Clock className="h-4 w-4 text-amber-500" />
+            <Clock className="h-4 w-4 text-[#6C4FE0] dark:text-purple-400" />
             <h3 className="text-xs font-black text-slate-900 dark:text-white uppercase tracking-wider">
               Pulp Mill Downtime Logger (Date: {dateStr.split('-').reverse().join('/')})
             </h3>
@@ -438,7 +456,7 @@ export const PulpMillView: React.FC = () => {
             placeholder="Duration (Minutes)"
             value={downtimeMinutes}
             onChange={e => setDowntimeMinutes(e.target.value)}
-            className="px-3.5 py-2.5 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-2xl text-xs font-bold dark:text-white focus:ring-2 focus:ring-primary focus:outline-none font-mono"
+            className="px-4 py-2.5 neumorphic-input text-xs font-bold dark:text-white focus:outline-none"
             required
           />
           <input
@@ -446,12 +464,12 @@ export const PulpMillView: React.FC = () => {
             placeholder="Downtime Reason (e.g. Rotor belt inspection / Pump cleaning)"
             value={downtimeReason}
             onChange={e => setDowntimeReason(e.target.value)}
-            className="px-3.5 py-2.5 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-2xl text-xs font-bold dark:text-white focus:ring-2 focus:ring-primary focus:outline-none sm:col-span-2"
+            className="px-4 py-2.5 neumorphic-input text-xs font-bold dark:text-white focus:outline-none sm:col-span-2"
             required
           />
           <button
             type="submit"
-            className="px-5 py-2.5 bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 text-white font-black rounded-2xl text-xs uppercase tracking-wider shadow-md shadow-amber-500/20 cursor-pointer transition flex items-center justify-center gap-1.5"
+            className="btn-primary-gradient px-5 py-2.5 text-xs uppercase tracking-wider cursor-pointer flex items-center justify-center gap-1.5"
           >
             <Plus className="h-4 w-4" />
             <span>Record Downtime</span>
@@ -459,19 +477,27 @@ export const PulpMillView: React.FC = () => {
         </form>
 
         {/* Saved Downtimes List */}
-        <div className="space-y-2 pt-2">
+        <div className="space-y-2.5 pt-2">
           {downtimeLogs.length === 0 ? (
             <p className="text-xs text-slate-400 font-medium italic">No downtime recorded for today.</p>
           ) : (
             downtimeLogs.map(dt => (
-              <div key={dt.id} className="p-3 rounded-2xl bg-slate-50 dark:bg-slate-900/60 border border-slate-200/80 dark:border-slate-800 flex items-center justify-between text-xs">
+              <div 
+                key={dt.id} 
+                className="p-3 px-4 rounded-2xl bg-white dark:bg-slate-900/60 shadow-[3px_3px_10px_rgba(163,163,196,0.1),-3px_-3px_10px_rgba(255,255,255,0.95)] dark:shadow-none flex items-center justify-between text-xs"
+              >
                 <div className="space-y-0.5">
-                  <span className="font-bold text-slate-800 dark:text-slate-200">{dt.reason}</span>
-                  <span className="block text-[10px] text-slate-400 font-mono">{dt.timestamp}</span>
+                  <span className="font-bold text-slate-800 dark:text-slate-100">{dt.reason}</span>
+                  <span className="block text-[10px] text-slate-400 font-sans">{dt.timestamp}</span>
                 </div>
-                <span className="font-black px-3 py-1 rounded-xl bg-red-50 dark:bg-red-950/40 text-red-600 dark:text-red-400 border border-red-200 dark:border-red-800 font-mono">
-                  {dt.durationMinutes} Mins
-                </span>
+                <div className="flex items-center gap-3">
+                  <span className="font-extrabold px-3 py-1 rounded-full bg-[#FEE2E2] dark:bg-red-950/40 text-[#DC2626] dark:text-red-400 text-xs">
+                    {dt.durationMinutes} Mins
+                  </span>
+                  <button type="button" className="text-slate-400 hover:text-slate-600 dark:hover:text-white cursor-pointer">
+                    <MoreVertical className="h-4 w-4" />
+                  </button>
+                </div>
               </div>
             ))
           )}
@@ -479,11 +505,11 @@ export const PulpMillView: React.FC = () => {
       </div>
 
       {/* Saved Formulas History Table */}
-      <div className="bg-white dark:bg-surface-dark border border-slate-200 dark:border-slate-700/80 rounded-3xl p-6 shadow-sm space-y-4">
+      <div className="neumorphic-card p-6 space-y-4">
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-slate-100 dark:border-slate-800 pb-4">
           <div>
             <h3 className="text-xs font-black text-slate-900 dark:text-white uppercase tracking-wider flex items-center gap-2">
-              <Layers className="h-4 w-4 text-primary" />
+              <Layers className="h-4 w-4 text-[#6C4FE0] dark:text-purple-400" />
               Saved Pulp Formulas History
             </h3>
             <p className="text-xs text-slate-500 dark:text-slate-400 font-medium mt-0.5">
@@ -491,8 +517,8 @@ export const PulpMillView: React.FC = () => {
             </p>
           </div>
 
-          <div className="flex items-center gap-2">
-            <div className="bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-2xl p-2 flex items-center gap-2 w-full md:w-56">
+          <div className="flex items-center gap-2.5">
+            <div className="bg-[#F3F2FA] dark:bg-slate-900 rounded-full px-3 py-1.5 flex items-center gap-2 w-full md:w-56 shadow-[inset_1px_1px_3px_rgba(163,163,196,0.2),inset_-1px_-1px_3px_rgba(255,255,255,0.9)] dark:shadow-none">
               <Search className="h-4 w-4 text-slate-400 shrink-0" />
               <input
                 type="text"
@@ -512,10 +538,10 @@ export const PulpMillView: React.FC = () => {
             <button
               type="button"
               onClick={() => setSortAscending(prev => !prev)}
-              className="px-3 py-2 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 border border-slate-200/80 dark:border-slate-700 rounded-2xl text-xs font-black transition cursor-pointer flex items-center gap-1.5 shrink-0"
+              className="px-3.5 py-2 bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 rounded-full text-xs font-bold transition cursor-pointer flex items-center gap-1.5 shrink-0 shadow-[2px_2px_6px_rgba(163,163,196,0.15),-2px_-2px_6px_rgba(255,255,255,0.9)] dark:shadow-none"
               title={sortAscending ? 'Order: Ascending (Oldest First)' : 'Order: Descending (Newest First)'}
             >
-              <ArrowUpDown className="h-3.5 w-3.5 text-primary" />
+              <ArrowUpDown className="h-3.5 w-3.5 text-[#6C4FE0]" />
               <span>{sortAscending ? 'Ascending' : 'Descending'}</span>
             </button>
           </div>
@@ -523,7 +549,7 @@ export const PulpMillView: React.FC = () => {
 
         {/* Card-Based Layout for History Records */}
         {filteredFormulas.length === 0 ? (
-          <div className="py-10 text-center text-xs text-slate-400 font-medium bg-slate-50/50 dark:bg-slate-900/40 rounded-2xl border border-dashed border-slate-200 dark:border-slate-800">
+          <div className="py-10 text-center text-xs text-slate-400 font-medium bg-[#F3F2FA]/50 dark:bg-slate-900/40 rounded-2xl border border-dashed border-slate-200 dark:border-slate-800">
             No formula records match your search or date filter.
           </div>
         ) : (
@@ -539,87 +565,79 @@ export const PulpMillView: React.FC = () => {
               return (
                 <div
                   key={f.id}
-                  className="p-4 sm:p-5 bg-slate-50/60 dark:bg-slate-900/50 border border-slate-200/80 dark:border-slate-800 rounded-2xl space-y-4 hover:border-slate-300 dark:hover:border-slate-700 transition shadow-2xs"
+                  className="p-4 sm:p-5 bg-white dark:bg-slate-900/60 rounded-2xl space-y-4 shadow-[3px_3px_12px_rgba(163,163,196,0.12),-3px_-3px_12px_rgba(255,255,255,0.95)] dark:shadow-none transition"
                 >
                   {/* Card Header: Date & Indicators */}
-                  <div className="flex flex-wrap items-center justify-between gap-2 border-b border-slate-200/80 dark:border-slate-800 pb-3">
+                  <div className="flex flex-wrap items-center justify-between gap-2 border-b border-slate-100 dark:border-slate-800 pb-3">
                     <div className="flex items-center gap-2.5 flex-wrap">
                       <div className="flex items-center gap-2">
-                        <div className="p-1.5 rounded-xl bg-primary/10 text-primary dark:bg-blue-950/60 dark:text-blue-400">
-                          <Calendar className="h-4 w-4" />
-                        </div>
-                        <span className="font-mono font-black text-sm text-slate-900 dark:text-white">
+                        <Calendar className="h-4 w-4 text-[#6C4FE0] dark:text-purple-400" />
+                        <span className="font-bold text-sm text-slate-900 dark:text-white font-sans">
                           {f.date.split('-').reverse().join('/')}
                         </span>
                       </div>
 
                       {isSameAsPrev && (
-                        <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[10px] font-extrabold bg-sky-100 dark:bg-sky-950/60 text-sky-800 dark:text-sky-300 border border-sky-300/80 dark:border-sky-700/80">
-                          <Copy className="h-3 w-3 text-sky-600 dark:text-sky-400" />
+                        <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-[#E0F2FE] text-[#0284C7] dark:bg-sky-950/60 dark:text-sky-300">
+                          <Copy className="h-3 w-3" />
                           <span>Same as previous day</span>
                         </span>
                       )}
                     </div>
 
-                    <span className="px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase bg-emerald-100 dark:bg-emerald-950/40 text-emerald-800 dark:text-emerald-300 border border-emerald-300/80 dark:border-emerald-800">
-                      Active Engine
-                    </span>
+                    <div className="flex items-center gap-2">
+                      <span className="px-2.5 py-0.5 rounded-full text-[10px] font-extrabold uppercase bg-[#DCFCE7] text-[#16A34A] dark:bg-emerald-950/60 dark:text-emerald-300 tracking-wide">
+                        Active Engine
+                      </span>
+                      <button type="button" className="text-slate-400 hover:text-slate-600 dark:hover:text-white cursor-pointer">
+                        <MoreVertical className="h-4 w-4" />
+                      </button>
+                    </div>
                   </div>
 
                   {/* Card Body: Separated Sections */}
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     {/* Section 1: Waste Paper Mix */}
                     <div className="space-y-2">
-                      <div className="flex items-center justify-between">
-                        <span className="text-[10px] font-black text-slate-500 dark:text-slate-400 uppercase tracking-wider flex items-center gap-1.5">
-                          <Package className="h-3.5 w-3.5 text-blue-600 dark:text-blue-400" />
-                          Waste Paper Mix (100% Total)
-                        </span>
-                        <span className="text-[10px] font-bold text-slate-400 font-mono">
-                          {wasteEntries.reduce((sum, [_, v]) => sum + Number(v), 0)}%
-                        </span>
-                      </div>
-                      <div className="flex flex-wrap gap-1.5">
+                      <span className="text-[10px] font-black text-slate-500 dark:text-slate-400 uppercase tracking-wider block">
+                        Waste Paper Mix (100% Total)
+                      </span>
+                      <div className="flex flex-wrap gap-2">
                         {wasteEntries.length === 0 ? (
                           <span className="text-slate-400 italic text-[11px]">No waste mix logged</span>
                         ) : (
-                          wasteEntries.map(([name, val], idx) => {
-                            const badgeStyle = getWasteBadgeStyle(name, idx);
-                            return (
-                              <span
-                                key={name}
-                                className={`px-2.5 py-1 rounded-xl text-xs font-bold border flex items-center gap-1.5 shadow-2xs ${badgeStyle}`}
-                              >
-                                <span>{name}</span>
-                                <strong className="font-mono font-black text-[11px] bg-white/60 dark:bg-black/30 px-1.5 py-0.5 rounded-lg">
-                                  {val}%
-                                </strong>
-                              </span>
-                            );
-                          })
+                          wasteEntries.map(([name, val]) => (
+                            <span
+                              key={name}
+                              className="px-3 py-1 rounded-full text-xs font-bold bg-[#F3F2FA] dark:bg-slate-800 text-slate-800 dark:text-slate-200 flex items-center gap-1.5 shadow-[1px_1px_3px_rgba(163,163,196,0.15),-1px_-1px_3px_rgba(255,255,255,0.9)] dark:shadow-none"
+                            >
+                              <span className="text-[#6C4FE0] font-bold">{name}</span>
+                              <strong className="font-black text-slate-900 dark:text-white">
+                                {val}%
+                              </strong>
+                            </span>
+                          ))
                         )}
                       </div>
                     </div>
 
                     {/* Section 2: Chemical Dosage Rates */}
                     <div className="space-y-2">
-                      <div className="flex items-center justify-between">
-                        <span className="text-[10px] font-black text-slate-500 dark:text-slate-400 uppercase tracking-wider flex items-center gap-1.5">
-                          <Beaker className="h-3.5 w-3.5 text-purple-600 dark:text-purple-400" />
-                          Chemical Rates (kg/Ton)
-                        </span>
-                      </div>
-                      <div className="flex flex-wrap gap-1.5">
+                      <span className="text-[10px] font-black text-slate-500 dark:text-slate-400 uppercase tracking-wider flex items-center gap-1.5">
+                        <Beaker className="h-3.5 w-3.5 text-[#6C4FE0] dark:text-purple-400" />
+                        Chemical Rates (kg/Ton)
+                      </span>
+                      <div className="flex flex-wrap gap-2">
                         {chemEntries.length === 0 ? (
                           <span className="text-slate-400 italic text-[11px]">Standard dosage</span>
                         ) : (
                           chemEntries.map(([name, val]) => (
                             <span
                               key={name}
-                              className="px-2.5 py-1 rounded-xl text-xs font-bold bg-purple-100/80 dark:bg-purple-950/50 text-purple-800 dark:text-purple-300 border border-purple-300/80 dark:border-purple-700/80 flex items-center gap-1.5 shadow-2xs"
+                              className="px-3 py-1 rounded-full text-xs font-bold bg-[#EDE9FE] dark:bg-purple-950/50 text-[#6C4FE0] dark:text-purple-300 flex items-center gap-1.5"
                             >
                               <span>{name}</span>
-                              <strong className="font-mono font-black text-[11px] bg-white/60 dark:bg-black/30 px-1.5 py-0.5 rounded-lg">
+                              <strong className="font-black text-[#5B3DC9] dark:text-purple-200">
                                 {val} kg/T
                               </strong>
                             </span>
@@ -637,7 +655,7 @@ export const PulpMillView: React.FC = () => {
                 <button
                   type="button"
                   onClick={() => setShowAllHistory(!showAllHistory)}
-                  className="px-5 py-2.5 bg-slate-100 dark:bg-slate-800/80 hover:bg-primary/10 dark:hover:bg-blue-950/50 text-primary dark:text-blue-400 font-black text-xs rounded-2xl border border-slate-200/80 dark:border-slate-700 transition cursor-pointer inline-flex items-center gap-2 shadow-2xs"
+                  className="px-5 py-2.5 bg-white dark:bg-slate-800 text-[#6C4FE0] dark:text-purple-400 font-black text-xs rounded-full shadow-[2px_2px_6px_rgba(163,163,196,0.15),-2px_-2px_6px_rgba(255,255,255,0.9)] dark:shadow-none transition cursor-pointer inline-flex items-center gap-2"
                 >
                   <span>{showAllHistory ? 'Show Less History' : `View More History (${filteredFormulas.length - 3} more records)`}</span>
                   <ChevronDown className={`h-4 w-4 transition-transform duration-200 ${showAllHistory ? 'rotate-180' : ''}`} />

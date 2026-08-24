@@ -145,21 +145,23 @@ export const StoreView: React.FC = () => {
   return (
     <div className="space-y-6 font-sans pb-12">
       
-      {/* 1. HERO GRADIENT HEADER BANNER */}
-      <div className="bg-gradient-to-r from-blue-700 via-indigo-600 to-slate-900 rounded-3xl p-6 sm:p-8 text-white shadow-xl relative overflow-hidden">
-        <div className="absolute -top-16 -right-16 w-64 h-64 rounded-full bg-white/10 blur-xl pointer-events-none" />
-        <div className="absolute -bottom-20 -left-20 w-80 h-80 rounded-full bg-blue-400/10 blur-2xl pointer-events-none" />
-
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-6 relative z-10">
-          <div className="flex items-center gap-4">
-            <div className="p-3.5 rounded-2xl bg-white/15 backdrop-blur-md border border-white/20 text-white shadow-lg shrink-0">
-              <Warehouse className="h-8 w-8" />
+      {/* 1. CLEAN MINIMAL HEADER CARD (OPTION A) */}
+      <div className="bg-white dark:bg-[#131d38] rounded-2xl sm:rounded-3xl p-4 sm:p-5 text-slate-900 dark:text-white shadow-xs">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+          <div className="flex items-center gap-3.5">
+            <div className="p-2.5 sm:p-3 rounded-2xl bg-blue-50 dark:bg-blue-950/60 border border-blue-200/60 dark:border-blue-900/50 text-primary dark:text-blue-400 shadow-2xs shrink-0">
+              <Warehouse className="h-6 w-6 sm:h-7 sm:w-7" />
             </div>
             <div>
-              <div className="flex flex-wrap items-center gap-3">
-                <h2 className="text-2xl sm:text-3xl font-black tracking-tight">Store Spares & Inventory Control</h2>
+              <div className="flex flex-wrap items-center gap-2.5">
+                <h1 className="text-xl sm:text-2xl font-black tracking-tight font-heading text-slate-900 dark:text-white">
+                  Store Spares &amp; Inventory Control
+                </h1>
+                <span className="px-3 py-1 rounded-full bg-blue-50 dark:bg-blue-950/60 text-primary dark:text-blue-400 border border-blue-200/80 dark:border-blue-800/80 text-xs font-bold">
+                  Store Ledger
+                </span>
               </div>
-              <p className="text-xs sm:text-sm text-blue-100/90 font-medium mt-1">
+              <p className="text-xs sm:text-sm text-slate-500 dark:text-slate-400 font-medium mt-0.5">
                 Maintain stock ledger levels for engineering spares (Bearings and V-Belts).
               </p>
             </div>
@@ -169,7 +171,7 @@ export const StoreView: React.FC = () => {
 
       {/* 2. TOP METRIC SCORECARDS */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-        <div className="bg-white dark:bg-surface-dark border border-slate-200 dark:border-slate-700/80 rounded-3xl p-5 shadow-sm flex items-center gap-4">
+        <div className="bg-white dark:bg-surface-dark rounded-3xl p-5 shadow-sm flex items-center gap-4">
           <div className="p-3 rounded-2xl bg-indigo-50 dark:bg-indigo-950/40 text-indigo-600 dark:text-indigo-400 border border-indigo-200/60 dark:border-indigo-800/60">
             <Warehouse className="h-6 w-6" />
           </div>
@@ -179,7 +181,7 @@ export const StoreView: React.FC = () => {
           </div>
         </div>
 
-        <div className="bg-white dark:bg-surface-dark border border-slate-200 dark:border-slate-700/80 rounded-3xl p-5 shadow-sm flex items-center gap-4">
+        <div className="bg-white dark:bg-surface-dark rounded-3xl p-5 shadow-sm flex items-center gap-4">
           <div className="p-3 rounded-2xl bg-amber-50 dark:bg-amber-950/40 text-amber-600 dark:text-amber-400 border border-amber-200/60 dark:border-amber-800/60">
             <Disc className="h-6 w-6" />
           </div>
@@ -189,7 +191,7 @@ export const StoreView: React.FC = () => {
           </div>
         </div>
 
-        <div className="bg-white dark:bg-surface-dark border border-slate-200 dark:border-slate-700/80 rounded-3xl p-5 shadow-sm flex items-center gap-4">
+        <div className="bg-white dark:bg-surface-dark rounded-3xl p-5 shadow-sm flex items-center gap-4">
           <div className="p-3 rounded-2xl bg-emerald-50 dark:bg-emerald-950/40 text-emerald-600 dark:text-emerald-400 border border-emerald-200/60 dark:border-emerald-800/60">
             <Settings className="h-6 w-6" />
           </div>
@@ -241,10 +243,10 @@ export const StoreView: React.FC = () => {
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 items-start">
         
         {/* Left List Pane (2/3 width) */}
-        <div className="lg:col-span-2 bg-white dark:bg-surface-dark border border-slate-200 dark:border-slate-700/80 rounded-3xl p-6 shadow-sm space-y-4">
+        <div className="lg:col-span-2 neumorphic-card p-6 space-y-4">
           
           {/* Live Search Box */}
-          <div className="bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-2xl p-3 flex items-center gap-3">
+          <div className="bg-slate-50 dark:bg-slate-900 rounded-2xl p-3 flex items-center gap-3">
             <Search className="h-4 w-4 text-slate-400 shrink-0" />
             <input
               type="text"
@@ -403,7 +405,7 @@ export const StoreView: React.FC = () => {
         </div>
 
         {/* Right Form Panel (1/3 width) */}
-        <div className="bg-white dark:bg-surface-dark border border-slate-200 dark:border-slate-700/80 rounded-3xl p-6 shadow-sm space-y-4">
+        <div className="bg-white dark:bg-surface-dark rounded-3xl p-6 shadow-sm space-y-4">
           
           {/* Add Bearing Form */}
           {activeTab === 'bearings' && (
@@ -419,7 +421,7 @@ export const StoreView: React.FC = () => {
                   type="text"
                   value={bearingNo}
                   onChange={e => setBearingNo(e.target.value)}
-                  className="block w-full py-2.5 px-3.5 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-2xl text-xs font-bold focus:outline-none focus:ring-2 focus:ring-primary dark:text-white font-mono"
+                  className="block w-full py-2.5 px-3.5 bg-slate-50 dark:bg-slate-900 rounded-2xl text-xs font-bold focus:outline-none focus:ring-2 focus:ring-primary dark:text-white font-mono"
                   placeholder="e.g. 6205"
                 />
               </div>
@@ -430,7 +432,7 @@ export const StoreView: React.FC = () => {
                   type="number"
                   value={bearingPcs}
                   onChange={e => setBearingPcs(e.target.value)}
-                  className="block w-full py-2.5 px-3.5 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-2xl text-xs font-bold focus:outline-none focus:ring-2 focus:ring-primary dark:text-white"
+                  className="block w-full py-2.5 px-3.5 bg-slate-50 dark:bg-slate-900 rounded-2xl text-xs font-bold focus:outline-none focus:ring-2 focus:ring-primary dark:text-white"
                   placeholder="e.g. 10"
                 />
               </div>
@@ -441,14 +443,14 @@ export const StoreView: React.FC = () => {
                   type="text"
                   value={bearingUsage}
                   onChange={e => setBearingUsage(e.target.value)}
-                  className="block w-full py-2.5 px-3.5 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-2xl text-xs font-bold focus:outline-none focus:ring-2 focus:ring-primary dark:text-white"
+                  className="block w-full py-2.5 px-3.5 bg-slate-50 dark:bg-slate-900 rounded-2xl text-xs font-bold focus:outline-none focus:ring-2 focus:ring-primary dark:text-white"
                   placeholder="e.g. Pulp Mill Agitator"
                 />
               </div>
 
               <button
                 type="submit"
-                className="w-full bg-[#008163] hover:bg-[#006e54] text-white font-black py-3 rounded-2xl text-xs uppercase tracking-wider shadow-lg shadow-[#008163]/25 transition-all hover:scale-[1.01] active:scale-[0.99] cursor-pointer"
+                className="w-full bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white font-black py-3 rounded-2xl text-xs uppercase tracking-wider shadow-lg shadow-blue-500/25 transition-all hover:scale-[1.01] active:scale-[0.99] cursor-pointer"
               >
                 Save Bearing Spares
               </button>
@@ -469,7 +471,7 @@ export const StoreView: React.FC = () => {
                   type="text"
                   value={beltSize}
                   onChange={e => setBeltSize(e.target.value)}
-                  className="block w-full py-2.5 px-3.5 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-2xl text-xs font-bold focus:outline-none focus:ring-2 focus:ring-primary dark:text-white font-mono"
+                  className="block w-full py-2.5 px-3.5 bg-slate-50 dark:bg-slate-900 rounded-2xl text-xs font-bold focus:outline-none focus:ring-2 focus:ring-primary dark:text-white font-mono"
                   placeholder="e.g. C-96"
                 />
               </div>
@@ -496,14 +498,14 @@ export const StoreView: React.FC = () => {
                   type="number"
                   value={beltPcs}
                   onChange={e => setBeltPcs(e.target.value)}
-                  className="block w-full py-2.5 px-3.5 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-2xl text-xs font-bold focus:outline-none focus:ring-2 focus:ring-primary dark:text-white"
+                  className="block w-full py-2.5 px-3.5 bg-slate-50 dark:bg-slate-900 rounded-2xl text-xs font-bold focus:outline-none focus:ring-2 focus:ring-primary dark:text-white"
                   placeholder="e.g. 5"
                 />
               </div>
 
               <button
                 type="submit"
-                className="w-full bg-[#008163] hover:bg-[#006e54] text-white font-black py-3 rounded-2xl text-xs uppercase tracking-wider shadow-lg shadow-[#008163]/25 transition-all hover:scale-[1.01] active:scale-[0.99] cursor-pointer"
+                className="w-full bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white font-black py-3 rounded-2xl text-xs uppercase tracking-wider shadow-lg shadow-blue-500/25 transition-all hover:scale-[1.01] active:scale-[0.99] cursor-pointer"
               >
                 Save V-Belt Spares
               </button>

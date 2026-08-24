@@ -90,7 +90,7 @@ export const EtpView: React.FC = () => {
   return (
     <div className="space-y-6 font-sans">
       {/* 1. LOG DAILY CHEMICAL USAGE FORM (Top Card - Full Width) */}
-      <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl p-5 sm:p-6 shadow-xs space-y-5">
+      <div className="neumorphic-card rounded-3xl p-5 sm:p-6 space-y-5">
         <div className="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-3">
           <div className="flex items-center gap-2.5">
             <div className="p-2 rounded-xl bg-gradient-to-br from-blue-600 to-teal-600 text-white shadow-sm shadow-blue-500/30">
@@ -204,7 +204,7 @@ export const EtpView: React.FC = () => {
       </div>
 
       {/* 2. RECENT ETP LOGS (Bottom Card - Full Width) */}
-      <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl p-5 sm:p-6 shadow-xs space-y-4">
+      <div className="neumorphic-card rounded-3xl p-5 sm:p-6 space-y-4">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-100 dark:border-slate-800 pb-3">
           <div className="flex items-center gap-2">
             <List className="h-4 w-4 text-teal-500" />
@@ -293,7 +293,7 @@ export const EtpView: React.FC = () => {
                 .map(log => (
                   <div
                     key={log.id}
-                    className="p-3.5 bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700 rounded-2xl space-y-2 text-xs text-left"
+                    className="p-3.5 bg-slate-50 dark:bg-slate-800/60 rounded-2xl space-y-2 text-xs text-left"
                   >
                     <div className="flex justify-between items-center border-b border-slate-200/60 dark:border-slate-700 pb-2">
                       <span className="font-bold font-mono text-slate-900 dark:text-white">{log.date}</span>

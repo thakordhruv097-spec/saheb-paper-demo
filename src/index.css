@@ -3,22 +3,22 @@
 @variant dark (&:where(.dark, .dark *));
 
 @theme {
-  /* Corporate Saheb Blue Palette */
-  --color-primary: #0F52BA;
-  --color-primary-light: #3b82f6;
-  --color-primary-dark: #1d4ed8;
-  --color-accent: #2563eb;
+  /* Neomorphism Primary Palette */
+  --color-primary: #6C4FE0;
+  --color-primary-light: #8B6CEF;
+  --color-primary-dark: #5B3DC9;
+  --color-accent: #7C3AED;
   --color-success: #10b981;
   --color-warning: #f59e0b;
   --color-danger: #ef4444;
 
-  /* Light Mode Backgrounds - Crisp Clean Slate / Pure White */
-  --color-bg-light: #f8fafc;
-  --color-bg-gradient-start: #f1f5f9;
-  --color-bg-gradient-end: #f8fafc;
+  /* Light Mode Backgrounds - Lavender Gray Neomorphism */
+  --color-bg-light: #F3F2FA;
+  --color-bg-gradient-start: #EEEDF5;
+  --color-bg-gradient-end: #F3F2FA;
   --color-surface-light: #ffffff;
-  --color-surface-tint: #f8fafc;
-  --color-border-light: #e2e8f0;
+  --color-surface-tint: #F3F2FA;
+  --color-border-light: transparent;
 
   /* Dark Mode Backgrounds - Deep Slate & Midnight Navy */
   --color-bg-dark: #0b1329;
@@ -28,9 +28,9 @@
   --color-surface-dark-elevated: #1e293b;
   --color-border-dark: #1e293b;
 
-  /* Text Colors */
-  --color-text-light-primary: #0f172a;
-  --color-text-light-secondary: #64748b;
+  /* Text Colors - Dark navy/charcoal, not pure black */
+  --color-text-light-primary: #1E1B2E;
+  --color-text-light-secondary: #8B87A3;
   --color-text-dark-primary: #f8fafc;
   --color-text-dark-secondary: #94a3b8;
 
@@ -39,13 +39,215 @@
   --font-heading: "Plus Jakarta Sans", "Inter", sans-serif;
   --font-mono: "Inter", "Plus Jakarta Sans", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
 
-  /* Spacing & Sizing (Mobile-First) */
+  /* Spacing & Sizing (Neomorphism) */
   --spacing-touch-target: 44px;
-  --radius-card: 16px;
-  --radius-button: 9999px;
+  --radius-card: 20px;
+  --radius-button: 12px;
   --radius-input: 12px;
-  --shadow-card: 0 4px 12px rgba(15, 82, 186, 0.06);
-  --shadow-card-hover: 0 8px 24px rgba(15, 82, 186, 0.12);
+  --shadow-card: 6px 6px 16px rgba(163,163,196,0.15), -6px -6px 16px rgba(255,255,255,0.7);
+  --shadow-card-hover: 8px 8px 20px rgba(163,163,196,0.22), -6px -6px 16px rgba(255,255,255,0.8);
+}
+
+/* ==========================================================================
+   NEOMORPHISM DESIGN SYSTEM — Core Component Classes
+   Shadow formula: 6px 6px 16px rgba(163,163,196,0.15), -6px -6px 16px rgba(255,255,255,0.7)
+   ========================================================================== */
+
+/* --- Cards / Panels --- */
+.neumorphic-card {
+  background: #FFFFFF;
+  border: none;
+  border-radius: 20px;
+  box-shadow: 6px 6px 16px rgba(163,163,196,0.15), -6px -6px 16px rgba(255,255,255,0.7);
+  transition: all 0.25s ease-in-out;
+}
+
+.dark .neumorphic-card {
+  background: #11192e;
+  border: 1px solid rgba(30,41,59,0.5);
+  box-shadow: 6px 6px 18px rgba(0, 0, 0, 0.45), -4px -4px 14px rgba(255, 255, 255, 0.02);
+}
+
+.neumorphic-card-hover:hover {
+  transform: translateY(-2px);
+  box-shadow: 8px 8px 20px rgba(163,163,196,0.22), -6px -6px 16px rgba(255,255,255,0.8);
+}
+
+.dark .neumorphic-card-hover:hover {
+  box-shadow: 8px 10px 24px rgba(0, 0, 0, 0.55);
+}
+
+/* --- Inset Neomorphic Inputs --- */
+.neumorphic-input {
+  background: #F3F2FA;
+  border: none;
+  box-shadow: inset 2px 2px 5px rgba(163,163,196,0.2), inset -2px -2px 5px rgba(255,255,255,0.7);
+  border-radius: 12px;
+  transition: all 0.15s ease-in-out;
+}
+
+.dark .neumorphic-input {
+  background: #0f172a;
+  border: 1px solid #1e293b;
+  box-shadow: inset 2px 2px 6px rgba(0, 0, 0, 0.3);
+}
+
+.neumorphic-input:focus {
+  box-shadow: inset 2px 2px 5px rgba(163,163,196,0.2), inset -2px -2px 5px rgba(255,255,255,0.7), 0 0 0 3px rgba(108, 79, 224, 0.2) !important;
+  outline: none !important;
+}
+
+/* --- Primary Purple Gradient Button --- */
+.btn-primary-gradient {
+  background: linear-gradient(135deg, #6C4FE0 0%, #7C3AED 100%) !important;
+  color: #FFFFFF !important;
+  font-weight: 700;
+  border: none;
+  border-radius: 12px;
+  box-shadow: 0 4px 14px rgba(108, 79, 224, 0.3);
+  transition: all 0.2s ease-in-out;
+}
+
+.btn-primary-gradient:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 6px 20px rgba(108, 79, 224, 0.4);
+}
+
+.btn-primary-gradient:active {
+  transform: translateY(0);
+}
+
+/* --- Icon Chip Container (48px rounded square, tinted bg) --- */
+.neo-icon-chip {
+  width: 48px;
+  height: 48px;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.neo-icon-chip-sm {
+  width: 40px;
+  height: 40px;
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+/* ==========================================================================
+   GLOBAL NEOMORPHISM AUTO-UPGRADE SYSTEM
+   Automatically applies neomorphic styling to all cards, inputs, selects,
+   and table rows across every module — no per-file edits required.
+   Shadow: 6px 6px 16px rgba(163,163,196,0.15), -6px -6px 16px rgba(255,255,255,0.7)
+   ========================================================================== */
+
+/* --- Auto-upgrade: All white rounded cards get neomorphic depth --- */
+main div[class*="bg-white"][class*="rounded-2xl"],
+main div[class*="bg-white"][class*="rounded-3xl"],
+main div[class*="bg-white"][class*="rounded-xl"] {
+  box-shadow: 6px 6px 16px rgba(163,163,196,0.15), -6px -6px 16px rgba(255,255,255,0.7);
+  transition: all 0.25s ease-in-out;
+}
+
+.dark main div[class*="bg-white"][class*="rounded-2xl"],
+.dark main div[class*="bg-white"][class*="rounded-3xl"],
+.dark main div[class*="bg-white"][class*="rounded-xl"] {
+  box-shadow: 6px 6px 18px rgba(0, 0, 0, 0.45), -4px -4px 14px rgba(255, 255, 255, 0.02);
+}
+
+/* Catch bg-surface-dark cards in dark mode */
+.dark main div[class*="bg-surface-dark"][class*="rounded-2xl"],
+.dark main div[class*="bg-surface-dark"][class*="rounded-3xl"],
+.dark main div[class*="bg-surface-dark"][class*="rounded-xl"] {
+  background: #11192e !important;
+  border-color: rgba(30,41,59,0.5) !important;
+  box-shadow: 6px 6px 18px rgba(0, 0, 0, 0.45), -4px -4px 14px rgba(255, 255, 255, 0.02) !important;
+}
+
+/* --- Auto-upgrade: All standard inputs/selects → inset neomorphic shadow --- */
+main input:not([type="checkbox"]):not([type="radio"]):not([type="submit"]):not([type="button"]):not([type="hidden"]):not([class*="bg-transparent"]),
+main select:not([class*="bg-transparent"]),
+main textarea:not([class*="bg-transparent"]) {
+  background: #F3F2FA;
+  border: none;
+  box-shadow: inset 2px 2px 5px rgba(163,163,196,0.2), inset -2px -2px 5px rgba(255,255,255,0.7);
+  border-radius: 12px;
+  transition: all 0.15s ease-in-out;
+  font-family: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+}
+
+.dark main input:not([type="checkbox"]):not([type="radio"]):not([type="submit"]):not([type="button"]):not([type="hidden"]):not([class*="bg-transparent"]),
+.dark main select:not([class*="bg-transparent"]),
+.dark main textarea:not([class*="bg-transparent"]) {
+  background: #0f172a;
+  border: 1px solid #1e293b;
+  box-shadow: inset 2px 2px 6px rgba(0, 0, 0, 0.3);
+}
+
+/* Ensure transparent inputs inside custom pill containers are never overwritten by global input rules */
+main input.bg-transparent,
+main input[class*="bg-transparent"] {
+  background: transparent !important;
+  box-shadow: none !important;
+  border: none !important;
+  outline: none !important;
+  border-radius: 0 !important;
+}
+
+/* --- Auto-upgrade: Purple focus glow on all inputs --- */
+main input:focus,
+main select:focus,
+main textarea:focus {
+  box-shadow: inset 2px 2px 5px rgba(163,163,196,0.2), inset -2px -2px 5px rgba(255,255,255,0.7), 0 0 0 3px rgba(108, 79, 224, 0.2) !important;
+  outline: none !important;
+}
+
+.dark main input:focus,
+.dark main select:focus,
+.dark main textarea:focus {
+  border-color: #7C3AED !important;
+  box-shadow: inset 2px 2px 6px rgba(0, 0, 0, 0.3), 0 0 0 3px rgba(124, 58, 237, 0.25) !important;
+  outline: none !important;
+}
+
+/* --- Auto-upgrade: Table row hover effect (light purple tint) --- */
+main table tbody tr {
+  transition: background-color 0.15s ease-in-out;
+}
+
+main table tbody tr:hover {
+  background-color: rgba(108, 79, 224, 0.04) !important;
+}
+
+.dark main table tbody tr:hover {
+  background-color: rgba(108, 79, 224, 0.08) !important;
+}
+
+/* --- Auto-upgrade: Card hover lift --- */
+main .neumorphic-card:hover,
+main div[class*="bg-white"][class*="rounded-2xl"]:hover,
+main div[class*="bg-white"][class*="rounded-3xl"]:hover {
+  box-shadow: 8px 8px 20px rgba(163,163,196,0.22), -6px -6px 16px rgba(255,255,255,0.8) !important;
+}
+
+.dark main .neumorphic-card:hover,
+.dark main div[class*="bg-white"][class*="rounded-2xl"]:hover,
+.dark main div[class*="bg-white"][class*="rounded-3xl"]:hover {
+  box-shadow: 8px 10px 24px rgba(0, 0, 0, 0.55) !important;
+}
+
+/* --- Exclude printable elements from neomorphic shadows --- */
+#printable-receipt-modal *,
+#printable-label-card *,
+#printable-rm-lot-card *,
+#printable-reel-label *,
+.printable-qr-card *,
+[id^="printable-"] * {
+  box-shadow: none !important;
 }
 
 /* Systemic Fix: Ensure every numeric value, badge, and code class uses the same regular clean font */
@@ -63,7 +265,7 @@ html, body, #root {
   margin: 0;
   padding: 0;
   min-height: 100vh;
-  background-color: #f8fafc;
+  background-color: #F3F2FA;
 }
 
 html.dark, html.dark body, .dark #root {

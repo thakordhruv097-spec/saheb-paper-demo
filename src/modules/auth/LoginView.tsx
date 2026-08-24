@@ -172,7 +172,7 @@ export const LoginView: React.FC = () => {
   };
 
   return (
-    <div className="login-page-container no-scrollbar fixed inset-0 min-h-screen min-h-[100dvh] w-full bg-[#0066FF] flex items-center justify-center p-3 sm:p-5 md:p-8 relative font-sans z-50 overflow-y-auto">
+    <div className="login-page-container no-scrollbar fixed inset-0 min-h-screen min-h-[100dvh] w-full bg-gradient-to-br from-[#6C4FE0] via-[#7C3AED] to-[#5B3DC9] flex items-center justify-center p-3 sm:p-5 md:p-8 relative font-sans z-50 overflow-y-auto">
       
       {/* Background Decorative Circles */}
       <div className="absolute -top-16 -left-16 w-64 h-64 rounded-full bg-white/10 blur-sm pointer-events-none" />
@@ -181,7 +181,7 @@ export const LoginView: React.FC = () => {
       <div className="absolute -bottom-20 -right-20 w-80 h-80 rounded-full bg-sky-300/20 blur-md pointer-events-none" />
       
       {/* Main Floating White Card - Dynamic responsive scaling across screen resolutions */}
-      <div className="w-full max-w-[340px] sm:max-w-[370px] md:max-w-[410px] lg:max-w-[430px] bg-white rounded-[24px] sm:rounded-[28px] md:rounded-[32px] shadow-2xl p-4 sm:p-6 md:p-7 relative z-10 my-auto transition-all duration-300">
+      <div className="w-full max-w-[340px] sm:max-w-[370px] md:max-w-[410px] lg:max-w-[430px] bg-white rounded-[20px] sm:rounded-[24px] md:rounded-[28px] shadow-[8px_8px_20px_rgba(163,163,196,0.2),-8px_-8px_20px_rgba(255,255,255,0.8)] p-4 sm:p-6 md:p-7 relative z-10 my-auto transition-all duration-300">
         
         {/* Title & Subtitle with Official Logo */}
         <div className="flex items-center justify-between mb-3.5 sm:mb-4 md:mb-5 border-b border-slate-100 pb-2.5 sm:pb-3 md:pb-4">
@@ -211,7 +211,7 @@ export const LoginView: React.FC = () => {
                 type="text"
                 value={username}
                 onChange={e => setUsername(e.target.value)}
-                className="w-full px-4 py-2 sm:px-5 sm:py-2.5 md:px-6 md:py-3 bg-white border-2 border-[#2563EB]/80 focus:border-[#0066FF] rounded-full text-xs sm:text-sm text-slate-800 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-400/40 transition"
+                className="w-full px-4 py-2 sm:px-5 sm:py-2.5 md:px-6 md:py-3 bg-white border-2 border-[#6C4FE0]/40 focus:border-[#7C3AED] rounded-full text-xs sm:text-sm text-slate-800 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-[#6C4FE0]/30 transition"
                 placeholder="Username"
                 autoComplete="username"
               />
@@ -225,7 +225,7 @@ export const LoginView: React.FC = () => {
                   value={pin}
                   onChange={e => setPin(e.target.value)}
                   maxLength={4}
-                  className="w-full px-4 py-2 sm:px-5 sm:py-2.5 md:px-6 md:py-3 bg-white border-2 border-[#2563EB]/80 focus:border-[#0066FF] rounded-full text-xs sm:text-sm text-slate-800 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-400/40 tracking-wider transition pr-10 md:pr-12"
+                  className="w-full px-4 py-2 sm:px-5 sm:py-2.5 md:px-6 md:py-3 bg-white border-2 border-[#6C4FE0]/40 focus:border-[#7C3AED] rounded-full text-xs sm:text-sm text-slate-800 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-[#6C4FE0]/30 tracking-wider transition pr-10 md:pr-12"
                   placeholder="Password"
                   inputMode="numeric"
                   autoComplete="current-password"
@@ -255,7 +255,7 @@ export const LoginView: React.FC = () => {
             <div className="pt-1.5">
               <button
                 type="submit"
-                className="w-full bg-[#0066FF] hover:bg-blue-700 text-white font-bold py-2.5 sm:py-3 px-5 sm:px-6 rounded-full shadow-md shadow-blue-500/25 transition duration-200 text-xs sm:text-sm tracking-wide cursor-pointer"
+                className="w-full bg-gradient-to-r from-[#6C4FE0] to-[#7C3AED] hover:from-[#5B3DC9] hover:to-[#6C4FE0] text-white font-bold py-2.5 sm:py-3 px-5 sm:px-6 rounded-full shadow-md shadow-[#6C4FE0]/25 transition duration-200 text-xs sm:text-sm tracking-wide cursor-pointer"
               >
                 Login
               </button>
@@ -405,7 +405,7 @@ export const LoginView: React.FC = () => {
                   }
                 }}
                 maxLength={50}
-                className="w-full px-6 py-3.5 bg-white border-2 border-[#2563EB]/80 focus:border-[#0066FF] rounded-full text-sm text-slate-800 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-400/40 transition"
+                className="w-full px-6 py-3.5 bg-white border-2 border-[#6C4FE0]/40 focus:border-[#7C3AED] rounded-full text-sm text-slate-800 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-[#6C4FE0]/30 transition"
                 placeholder="Email or Mobile Number (10 Digits)"
                 required
               />
@@ -425,7 +425,7 @@ export const LoginView: React.FC = () => {
               </button>
               <button
                 type="submit"
-                className="flex-1 bg-[#0066FF] hover:bg-blue-700 text-white font-bold py-3 px-4 rounded-full text-xs shadow-md transition"
+                className="flex-1 bg-gradient-to-r from-[#6C4FE0] to-[#7C3AED] hover:from-[#5B3DC9] hover:to-[#6C4FE0] text-white font-bold py-3 px-4 rounded-full text-xs shadow-md transition"
               >
                 Send OTP
               </button>
@@ -482,7 +482,7 @@ export const LoginView: React.FC = () => {
               </button>
               <button
                 type="submit"
-                className="flex-1 bg-[#0066FF] hover:bg-blue-700 text-white font-bold py-3 px-4 rounded-full text-xs shadow-md transition"
+                className="flex-1 bg-gradient-to-r from-[#6C4FE0] to-[#7C3AED] hover:from-[#5B3DC9] hover:to-[#6C4FE0] text-white font-bold py-3 px-4 rounded-full text-xs shadow-md transition"
               >
                 Verify Code
               </button>
@@ -523,7 +523,7 @@ export const LoginView: React.FC = () => {
 
             <button
               type="submit"
-              className="w-full bg-[#0066FF] hover:bg-blue-700 text-white font-bold py-3.5 px-6 rounded-full shadow-lg text-xs tracking-wide transition"
+              className="w-full bg-gradient-to-r from-[#6C4FE0] to-[#7C3AED] hover:from-[#5B3DC9] hover:to-[#6C4FE0] text-white font-bold py-3.5 px-6 rounded-full shadow-lg text-xs tracking-wide transition"
             >
               Reset Password & Log In
             </button>
@@ -577,7 +577,7 @@ export const LoginView: React.FC = () => {
               </button>
               <button
                 type="submit"
-                className="flex-1 bg-[#0066FF] hover:bg-blue-700 text-white font-bold py-3 px-4 rounded-full text-xs shadow-md transition"
+                className="flex-1 bg-gradient-to-r from-[#6C4FE0] to-[#7C3AED] hover:from-[#5B3DC9] hover:to-[#6C4FE0] text-white font-bold py-3 px-4 rounded-full text-xs shadow-md transition"
               >
                 Save & Enter
               </button>

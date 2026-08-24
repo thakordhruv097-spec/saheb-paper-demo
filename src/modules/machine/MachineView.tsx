@@ -221,21 +221,23 @@ export const MachineView: React.FC = () => {
   return (
     <div className="space-y-6 font-sans pb-12">
       
-      {/* 1. HERO GRADIENT HEADER BANNER */}
-      <div className="bg-gradient-to-r from-blue-700 via-indigo-600 to-slate-900 rounded-3xl p-6 sm:p-8 text-white shadow-xl relative z-20">
-        <div className="absolute -top-16 -right-16 w-64 h-64 rounded-full bg-white/10 blur-xl pointer-events-none" />
-        <div className="absolute -bottom-20 -left-20 w-80 h-80 rounded-full bg-blue-400/10 blur-2xl pointer-events-none" />
-
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-6 relative z-10">
-          <div className="flex items-center gap-4">
-            <div className="p-3.5 rounded-2xl bg-white/15 backdrop-blur-md border border-white/20 text-white shadow-lg shrink-0">
-              <Cog className="h-8 w-8" />
+      {/* 1. CLEAN MINIMAL HEADER CARD (OPTION A) */}
+      <div className="bg-white dark:bg-[#131d38] rounded-2xl sm:rounded-3xl p-4 sm:p-5 text-slate-900 dark:text-white shadow-xs relative z-20">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+          <div className="flex items-center gap-3.5">
+            <div className="p-2.5 sm:p-3 rounded-2xl bg-blue-50 dark:bg-blue-950/60 border border-blue-200/60 dark:border-blue-900/50 text-primary dark:text-blue-400 shadow-2xs shrink-0">
+              <Cog className="h-6 w-6 sm:h-7 sm:w-7" />
             </div>
             <div>
-              <div className="flex flex-wrap items-center gap-3">
-                <h2 className="text-2xl sm:text-3xl font-black tracking-tight">{t('machine.title')}</h2>
+              <div className="flex flex-wrap items-center gap-2.5">
+                <h1 className="text-xl sm:text-2xl font-black tracking-tight font-heading text-slate-900 dark:text-white">
+                  {t('machine.title')}
+                </h1>
                 <WorkflowStepBadge stepInfo={WORKFLOW_STEPS.machine} />
               </div>
+              <p className="text-xs sm:text-sm text-slate-500 dark:text-slate-400 font-medium mt-0.5">
+                Log production parent rolls, monitor machine shifts, and manage jumbo roll output.
+              </p>
             </div>
           </div>
         </div>
@@ -246,7 +248,7 @@ export const MachineView: React.FC = () => {
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 items-start">
         
         {/* Left Side: Roll Entry Form (2/3 width) */}
-        <div className="lg:col-span-2 bg-white dark:bg-surface-dark border border-slate-200 dark:border-slate-700/80 rounded-3xl p-6 shadow-sm">
+        <div className="lg:col-span-2 neumorphic-card p-6">
           <h3 className="text-xs font-black text-slate-900 dark:text-white uppercase tracking-wider mb-5 border-b border-slate-100 dark:border-slate-800 pb-3 flex items-center gap-2">
             <Plus className="h-4 w-4 text-primary" />
             {t('machine.log_roll')}
@@ -292,7 +294,7 @@ export const MachineView: React.FC = () => {
                 <button
                   type="button"
                   onClick={() => setOpenDatePicker(prev => !prev)}
-                  className="w-full flex items-center justify-between py-2.5 px-3.5 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl text-xs font-bold text-slate-800 dark:text-white cursor-pointer hover:bg-slate-100 dark:hover:bg-slate-700 transition"
+                  className="w-full flex items-center justify-between py-2.5 px-3.5 bg-white dark:bg-slate-800 rounded-2xl text-xs font-bold text-slate-800 dark:text-white cursor-pointer hover:bg-slate-100 dark:hover:bg-slate-700 transition"
                 >
                   <span>{dateStr || 'dd-mm-yyyy'}</span>
                   <Calendar className="h-4 w-4 text-primary dark:text-blue-400" />
@@ -313,7 +315,7 @@ export const MachineView: React.FC = () => {
                 <label className="block text-[11px] font-black text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-1.5">
                   Shift
                 </label>
-                <div className="grid grid-cols-2 gap-1 p-1 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl h-[42px] items-center">
+                <div className="grid grid-cols-2 gap-1 p-1 bg-white dark:bg-slate-800 rounded-2xl h-[42px] items-center">
                   <button
                     type="button"
                     onClick={() => {
@@ -323,7 +325,7 @@ export const MachineView: React.FC = () => {
                     }}
                     className={`h-full rounded-xl text-xs transition-all duration-150 flex items-center justify-center cursor-pointer ${
                       shift === 'A'
-                        ? 'bg-primary dark:bg-blue-600 text-white shadow-xs font-black'
+                        ? 'bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 text-white shadow-xs font-black'
                         : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white font-bold'
                     }`}
                   >
@@ -338,7 +340,7 @@ export const MachineView: React.FC = () => {
                     }}
                     className={`h-full rounded-xl text-xs transition-all duration-150 flex items-center justify-center cursor-pointer ${
                       shift === 'B'
-                        ? 'bg-primary dark:bg-blue-600 text-white shadow-xs font-black'
+                        ? 'bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 text-white shadow-xs font-black'
                         : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white font-bold'
                     }`}
                   >
@@ -363,7 +365,7 @@ export const MachineView: React.FC = () => {
                     type="text"
                     value={rollNo}
                     onChange={e => setRollNo(e.target.value)}
-                    className="block w-full py-2.5 px-3.5 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-2xl text-xs font-mono font-bold focus:outline-none focus:ring-2 focus:ring-primary dark:text-white"
+                    className="block w-full py-2.5 px-3.5 bg-slate-50 dark:bg-slate-900 rounded-2xl text-xs font-mono font-bold focus:outline-none focus:ring-2 focus:ring-primary dark:text-white"
                     placeholder={autoRollNo}
                   />
                 </div>
@@ -392,7 +394,7 @@ export const MachineView: React.FC = () => {
                     step="0.01"
                     value={weightStr}
                     onChange={e => setWeightStr(e.target.value)}
-                    className="block w-full py-2.5 px-3.5 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-2xl text-xs font-bold focus:outline-none focus:ring-2 focus:ring-primary dark:text-white"
+                    className="block w-full py-2.5 px-3.5 bg-slate-50 dark:bg-slate-900 rounded-2xl text-xs font-bold focus:outline-none focus:ring-2 focus:ring-primary dark:text-white"
                     placeholder="Weight in kg"
                   />
                 </div>
@@ -405,7 +407,7 @@ export const MachineView: React.FC = () => {
                       type="number"
                       value={gsmStr}
                       onChange={e => setGsmStr(e.target.value)}
-                      className="block w-full py-2.5 px-3.5 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-2xl text-xs font-bold focus:outline-none focus:ring-2 focus:ring-primary dark:text-white"
+                      className="block w-full py-2.5 px-3.5 bg-slate-50 dark:bg-slate-900 rounded-2xl text-xs font-bold focus:outline-none focus:ring-2 focus:ring-primary dark:text-white"
                       placeholder="17"
                     />
                   </div>
@@ -417,7 +419,7 @@ export const MachineView: React.FC = () => {
                       type="number"
                       value={widthStr}
                       onChange={e => setWidthStr(e.target.value)}
-                      className="block w-full py-2.5 px-3.5 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-2xl text-xs font-bold focus:outline-none focus:ring-2 focus:ring-primary dark:text-white"
+                      className="block w-full py-2.5 px-3.5 bg-slate-50 dark:bg-slate-900 rounded-2xl text-xs font-bold focus:outline-none focus:ring-2 focus:ring-primary dark:text-white"
                       placeholder="30"
                     />
                   </div>
@@ -430,7 +432,7 @@ export const MachineView: React.FC = () => {
                       min="0"
                       value={jointStr}
                       onChange={e => setJointStr(e.target.value)}
-                      className="block w-full py-2.5 px-3.5 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-2xl text-xs font-bold focus:outline-none focus:ring-2 focus:ring-primary dark:text-white font-mono"
+                      className="block w-full py-2.5 px-3.5 bg-slate-50 dark:bg-slate-900 rounded-2xl text-xs font-bold focus:outline-none focus:ring-2 focus:ring-primary dark:text-white font-mono"
                       placeholder="0"
                     />
                   </div>
@@ -453,7 +455,7 @@ export const MachineView: React.FC = () => {
                     type="time"
                     value={startTime}
                     onChange={e => setStartTime(e.target.value)}
-                    className="block w-full py-2.5 px-3.5 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-2xl text-xs font-bold focus:outline-none focus:ring-2 focus:ring-primary dark:text-white"
+                    className="block w-full py-2.5 px-3.5 bg-slate-50 dark:bg-slate-900 rounded-2xl text-xs font-bold focus:outline-none focus:ring-2 focus:ring-primary dark:text-white"
                   />
                 </div>
                 <div>
@@ -464,7 +466,7 @@ export const MachineView: React.FC = () => {
                     type="time"
                     value={offTime}
                     onChange={e => setOffTime(e.target.value)}
-                    className="block w-full py-2.5 px-3.5 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-2xl text-xs font-bold focus:outline-none focus:ring-2 focus:ring-primary dark:text-white"
+                    className="block w-full py-2.5 px-3.5 bg-slate-50 dark:bg-slate-900 rounded-2xl text-xs font-bold focus:outline-none focus:ring-2 focus:ring-primary dark:text-white"
                   />
                 </div>
               </div>
@@ -477,7 +479,7 @@ export const MachineView: React.FC = () => {
                   rows={2}
                   value={downtimeReason}
                   onChange={e => setDowntimeReason(e.target.value)}
-                  className="block w-full py-2.5 px-3.5 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-2xl text-xs font-bold focus:outline-none focus:ring-2 focus:ring-primary dark:text-white"
+                  className="block w-full py-2.5 px-3.5 bg-slate-50 dark:bg-slate-900 rounded-2xl text-xs font-bold focus:outline-none focus:ring-2 focus:ring-primary dark:text-white"
                   placeholder="Log delays or downtime incidents here (if any)"
                 />
               </div>
@@ -485,7 +487,7 @@ export const MachineView: React.FC = () => {
 
             <button
               type="submit"
-              className="w-full bg-[#008163] hover:bg-[#006e54] text-white font-black py-3.5 rounded-2xl text-xs uppercase tracking-wider shadow-lg shadow-[#008163]/25 transition-all hover:scale-[1.01] active:scale-[0.99] cursor-pointer"
+              className="w-full bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white font-black py-3.5 rounded-2xl text-xs uppercase tracking-wider shadow-lg shadow-blue-500/25 transition-all hover:scale-[1.01] active:scale-[0.99] cursor-pointer"
             >
               Submit Machine Production Log
             </button>
@@ -493,7 +495,7 @@ export const MachineView: React.FC = () => {
         </div>
 
         {/* Right Side: Recent Logged Rolls (1/3 width) */}
-        <div className="bg-white dark:bg-surface-dark border border-slate-200 dark:border-slate-700/80 rounded-3xl p-6 shadow-sm">
+        <div className="neumorphic-card p-6">
           <h3 className="text-xs font-black text-slate-900 dark:text-white uppercase tracking-wider mb-4 border-b border-slate-100 dark:border-slate-800 pb-3 flex items-center gap-2">
             <Cog className="h-4 w-4 text-primary" />
             Recent Logged Rolls
@@ -506,7 +508,7 @@ export const MachineView: React.FC = () => {
                 value={searchRoll}
                 onChange={e => setSearchRoll(e.target.value)}
                 placeholder="Search roll no, product..."
-                className="w-full py-2 px-3 pl-8 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-2xl text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-primary dark:text-white placeholder-slate-400"
+                className="w-full py-2 px-3 pl-8 bg-slate-50 dark:bg-slate-900 rounded-2xl text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-primary dark:text-white placeholder-slate-400"
               />
               <Search className="h-3.5 w-3.5 text-slate-400 absolute left-2.5 top-2.5" />
             </div>

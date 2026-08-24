@@ -89,24 +89,24 @@ export const OperatorProfileView: React.FC<OperatorProfileViewProps> = () => {
   return (
     <div className="w-full space-y-6 font-sans pb-12">
       
-      {/* 1. HERO HEADER PROFILE BANNER */}
-      <div className="bg-gradient-to-r from-slate-900 via-blue-950 to-slate-900 border border-slate-800 rounded-3xl p-6 sm:p-8 text-white shadow-xl relative overflow-hidden">
-        <div className="absolute -top-12 -right-12 w-48 h-48 rounded-full bg-white/10 blur-xl pointer-events-none" />
-        
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-6 relative z-10">
-          <div className="flex items-center gap-4">
-            <div className="w-16 h-16 sm:w-20 sm:h-20 rounded-2xl bg-white/20 backdrop-blur-md border-2 border-white/30 text-white font-black text-2xl sm:text-3xl flex items-center justify-center shadow-lg shrink-0">
+      {/* 1. CLEAN MINIMAL HEADER CARD (OPTION A) */}
+      <div className="bg-white dark:bg-[#131d38] rounded-2xl sm:rounded-3xl p-4 sm:p-5 text-slate-900 dark:text-white shadow-xs">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+          <div className="flex items-center gap-3.5">
+            <div className="w-12 h-12 sm:w-14 sm:h-14 rounded-2xl bg-blue-50 dark:bg-blue-950/60 border border-blue-200/60 dark:border-blue-900/50 text-primary dark:text-blue-400 font-black text-lg sm:text-xl flex items-center justify-center shadow-2xs shrink-0">
               {user.displayName.substring(0, 2).toUpperCase()}
             </div>
             <div>
-              <div className="flex flex-wrap items-center gap-2">
-                <h2 className="text-2xl sm:text-3xl font-black tracking-tight">{user.displayName}</h2>
-                <span className="px-3 py-1 rounded-full bg-white/20 backdrop-blur-md text-[11px] font-sans font-extrabold tracking-wider uppercase text-white border border-white/30 shadow-xs">
-                  Role: {user.role}
+              <div className="flex flex-wrap items-center gap-2.5">
+                <h1 className="text-xl sm:text-2xl font-black tracking-tight font-heading text-slate-900 dark:text-white">
+                  {user.displayName}
+                </h1>
+                <span className="px-3 py-1 rounded-full bg-blue-50 dark:bg-blue-950/60 text-primary dark:text-blue-400 border border-blue-200/80 dark:border-blue-800/80 text-xs font-bold">
+                  {user.role}
                 </span>
               </div>
-              <p className="text-xs sm:text-sm text-blue-100/90 font-sans font-medium mt-1">
-                Username: @{user.username} • Account Status: Active
+              <p className="text-xs sm:text-sm text-slate-500 dark:text-slate-400 font-mono mt-0.5">
+                @{user.username} • Account Status: Active
               </p>
             </div>
           </div>
@@ -123,7 +123,7 @@ export const OperatorProfileView: React.FC<OperatorProfileViewProps> = () => {
 
       {/* 2. READ-ONLY PROFILE DETAILS PAGE (WHEN NOT EDITING) */}
       {!isEditing ? (
-        <div className="bg-white dark:bg-surface-dark border border-slate-200 dark:border-slate-700/80 rounded-3xl p-6 sm:p-8 shadow-sm space-y-6">
+        <div className="neumorphic-card rounded-3xl p-6 sm:p-8 shadow-sm space-y-6">
           
           <div className="flex items-center justify-between border-b border-slate-200/80 dark:border-slate-700/80 pb-4">
             <div className="flex items-center gap-2.5">
@@ -244,7 +244,7 @@ export const OperatorProfileView: React.FC<OperatorProfileViewProps> = () => {
           <div className="pt-6 border-t border-slate-200/80 dark:border-slate-700/80 flex flex-col sm:flex-row items-center justify-between gap-3">
             <button
               onClick={handleStartEdit}
-              className="w-full sm:w-auto px-8 py-3.5 rounded-2xl bg-primary hover:bg-blue-700 text-white font-extrabold text-xs uppercase tracking-wider shadow-lg shadow-primary/25 hover:shadow-primary/40 hover:scale-[1.01] active:scale-[0.99] transition-all cursor-pointer flex items-center justify-center gap-2"
+              className="w-full sm:w-auto px-8 py-3.5 rounded-2xl bg-primary hover:bg-primary-dark text-white font-extrabold text-xs uppercase tracking-wider shadow-lg shadow-primary/25 hover:shadow-primary/40 hover:scale-[1.01] active:scale-[0.99] transition-all cursor-pointer flex items-center justify-center gap-2"
             >
               <Edit3 className="h-4 w-4" />
               <span>Update My Profile Details</span>
@@ -262,7 +262,7 @@ export const OperatorProfileView: React.FC<OperatorProfileViewProps> = () => {
         </div>
       ) : (
         /* 3. INTERACTIVE PROFILE EDIT FORM (SHOWN ON EDIT CLICK) */
-        <div className="bg-white dark:bg-surface-dark border border-slate-200 dark:border-slate-700/80 rounded-3xl p-6 sm:p-8 shadow-lg space-y-6 animate-fadeIn">
+        <div className="neumorphic-card rounded-3xl p-6 sm:p-8 shadow-lg space-y-6 animate-fadeIn">
           
           <div className="flex items-center justify-between border-b border-slate-200/80 dark:border-slate-700/80 pb-4">
             <div className="flex items-center gap-2.5">
@@ -302,7 +302,7 @@ export const OperatorProfileView: React.FC<OperatorProfileViewProps> = () => {
                   type="text"
                   disabled
                   value={user.username}
-                  className="w-full px-4 py-3 bg-slate-100 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-2xl font-mono text-xs font-bold text-slate-500 cursor-not-allowed"
+                  className="w-full px-4 py-3 bg-slate-100 dark:bg-slate-900 rounded-2xl font-mono text-xs font-bold text-slate-500 cursor-not-allowed"
                 />
               </div>
 
@@ -315,7 +315,7 @@ export const OperatorProfileView: React.FC<OperatorProfileViewProps> = () => {
                   type="text"
                   disabled
                   value={user.role}
-                  className="w-full px-4 py-3 bg-slate-100 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-2xl font-mono text-xs font-bold text-slate-500 cursor-not-allowed"
+                  className="w-full px-4 py-3 bg-slate-100 dark:bg-slate-900 rounded-2xl font-mono text-xs font-bold text-slate-500 cursor-not-allowed"
                 />
               </div>
 
@@ -431,7 +431,7 @@ export const OperatorProfileView: React.FC<OperatorProfileViewProps> = () => {
               </button>
               <button
                 type="submit"
-                className="px-8 py-3 rounded-2xl bg-primary hover:bg-blue-700 text-white font-black text-xs uppercase tracking-wider shadow-lg shadow-primary/25 hover:shadow-primary/40 hover:scale-[1.01] active:scale-[0.99] transition-all flex items-center gap-2 cursor-pointer"
+                className="px-8 py-3 rounded-2xl bg-primary hover:bg-primary-dark text-white font-black text-xs uppercase tracking-wider shadow-lg shadow-primary/25 hover:shadow-primary/40 hover:scale-[1.01] active:scale-[0.99] transition-all flex items-center gap-2 cursor-pointer"
               >
                 <CheckCircle2 className="h-4 w-4" />
                 <span>Save Profile Changes</span>

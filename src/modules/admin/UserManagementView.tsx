@@ -17,33 +17,55 @@ import {
   EyeOff,
   Save,
   Check,
+  User as UserIcon,
+  AtSign,
+  Phone,
+  Lock,
+  Building2,
+  FlaskConical,
+  ShoppingCart,
+  Truck,
+  Package,
+  Info,
+  UserPlus,
+  LogOut,
 } from 'lucide-react';
 
-const MASTER_ROLES: { key: UserRole; label: string; desc: string; color: string }[] = [
-  { key: 'Admin', label: 'Admin Owner', desc: 'Full Master System Control', color: 'bg-amber-500/10 text-amber-800 dark:text-amber-300 border-amber-300/50 dark:border-amber-700/50' },
-  { key: 'PlantManager', label: 'Plant Manager', desc: 'Mill Operations & Production', color: 'bg-slate-100 text-slate-800 dark:bg-slate-800 dark:text-slate-200 border-slate-300 dark:border-slate-700' },
-  { key: 'LabOperator', label: 'Pulper (Pulp Mill)', desc: 'Pulper & Pulp Mill Operations', color: 'bg-slate-100 text-slate-800 dark:bg-slate-800 dark:text-slate-200 border-slate-300 dark:border-slate-700' },
-  { key: 'Viewer', label: 'Viewer', desc: 'Read-Only System Observer', color: 'bg-slate-100 text-slate-800 dark:bg-slate-800 dark:text-slate-200 border-slate-300 dark:border-slate-700' },
-  { key: 'Shopper', label: 'Shopper (Purchase)', desc: 'Waste Paper & Chemical Purchase', color: 'bg-slate-100 text-slate-800 dark:bg-slate-800 dark:text-slate-200 border-slate-300 dark:border-slate-700' },
-  { key: 'Dispatcher', label: 'Dispatcher', desc: 'Reel Stock & Delivery Order', color: 'bg-slate-100 text-slate-800 dark:bg-slate-800 dark:text-slate-200 border-slate-300 dark:border-slate-700' },
+interface MasterRoleItem {
+  key: UserRole;
+  label: string;
+  desc: string;
+  icon: React.ComponentType<{ className?: string }>;
+}
+
+const MASTER_ROLES: MasterRoleItem[] = [
+  { key: 'Admin', label: 'Admin Owner', desc: 'Full Master System Control', icon: Shield },
+  { key: 'PlantManager', label: 'Plant Manager', desc: 'Mill Operations & Production', icon: Building2 },
+  { key: 'LabOperator', label: 'Pulper (Pulp Mill)', desc: 'Pulper & Pulp Mill Operations', icon: FlaskConical },
+  { key: 'Viewer', label: 'Viewer', desc: 'Read-Only System Observer', icon: Eye },
+  { key: 'Shopper', label: 'Shopper (Purchase)', desc: 'Waste Paper & Chemical Purchase', icon: ShoppingCart },
+  { key: 'Dispatcher', label: 'Dispatcher', desc: 'Reel Stock & Delivery Order', icon: Truck },
+  { key: 'StoreManager', label: 'Store / Spares', desc: 'Spare Parts & Inventory', icon: Package },
 ];
 
 const ROLE_COLORS: Record<string, string> = {
-  Admin: 'bg-amber-500/10 text-amber-800 dark:text-amber-300 border-amber-300/40 dark:border-amber-700/50',
-  PlantManager: 'bg-slate-100 text-slate-700 dark:bg-slate-800/90 dark:text-slate-200 border-slate-200 dark:border-slate-700',
-  LabOperator: 'bg-slate-100 text-slate-700 dark:bg-slate-800/90 dark:text-slate-200 border-slate-200 dark:border-slate-700',
-  Viewer: 'bg-slate-100 text-slate-700 dark:bg-slate-800/90 dark:text-slate-200 border-slate-200 dark:border-slate-700',
-  Shopper: 'bg-slate-100 text-slate-700 dark:bg-slate-800/90 dark:text-slate-200 border-slate-200 dark:border-slate-700',
-  Dispatcher: 'bg-slate-100 text-slate-700 dark:bg-slate-800/90 dark:text-slate-200 border-slate-200 dark:border-slate-700',
+  Admin: 'bg-amber-50 text-amber-700 dark:bg-amber-950/40 dark:text-amber-300 border-amber-200 dark:border-amber-800',
+  PlantManager: 'bg-[#EEF2FF] text-[#4F46E5] dark:bg-indigo-950/40 dark:text-indigo-300 border-[#E0E7FF] dark:border-indigo-800',
+  LabOperator: 'bg-emerald-50 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-300 border-emerald-200 dark:border-emerald-800',
+  Viewer: 'bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300 border-slate-200 dark:border-slate-700',
+  Shopper: 'bg-sky-50 text-sky-700 dark:bg-sky-950/40 dark:text-sky-300 border-sky-200 dark:border-sky-800',
+  Dispatcher: 'bg-purple-50 text-purple-700 dark:bg-purple-950/40 dark:text-purple-300 border-purple-200 dark:border-purple-800',
+  StoreManager: 'bg-orange-50 text-orange-700 dark:bg-orange-950/40 dark:text-orange-300 border-orange-200 dark:border-orange-800',
 };
 
 const ROLE_LABELS: Record<string, string> = {
-  Admin: 'Admin',
+  Admin: 'Admin Owner',
   PlantManager: 'Plant Manager',
-  LabOperator: 'Pulper',
+  LabOperator: 'Pulper (Pulp Mill)',
   Viewer: 'Viewer',
-  Shopper: 'Shopper',
+  Shopper: 'Shopper (Purchase)',
   Dispatcher: 'Dispatcher',
+  StoreManager: 'Store / Spares',
 };
 
 export const UserManagementView: React.FC = () => {
@@ -53,15 +75,12 @@ export const UserManagementView: React.FC = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [filterRole, setFilterRole] = useState<string>('ALL');
 
-  // PIN visibility toggle state
   const [visiblePins, setVisiblePins] = useState<Record<string, boolean>>({});
 
-  // Modals state
   const [showAddModal, setShowAddModal] = useState(false);
   const [editingUser, setEditingUser] = useState<User | null>(null);
   const [deletingUser, setDeletingUser] = useState<User | null>(null);
 
-  // Form states with Multi-Role support
   const [formData, setFormData] = useState({
     username: '',
     displayName: '',
@@ -87,7 +106,7 @@ export const UserManagementView: React.FC = () => {
     setFormData(prev => {
       const exists = prev.roles.includes(roleKey);
       if (exists) {
-        if (prev.roles.length === 1) return prev; // Must keep at least 1 role
+        if (prev.roles.length === 1) return prev; 
         return { ...prev, roles: prev.roles.filter(r => r !== roleKey) };
       } else {
         return { ...prev, roles: [...prev.roles, roleKey] };
@@ -95,7 +114,6 @@ export const UserManagementView: React.FC = () => {
     });
   };
 
-  // Open Add Modal
   const handleOpenAddModal = () => {
     setFormData({
       username: '',
@@ -109,7 +127,6 @@ export const UserManagementView: React.FC = () => {
     setShowAddModal(true);
   };
 
-  // Open Edit Modal
   const handleOpenEditModal = (u: User) => {
     setEditingUser(u);
     const existingRoles = u.roles && u.roles.length > 0 ? u.roles : [u.role];
@@ -124,13 +141,12 @@ export const UserManagementView: React.FC = () => {
     setFormError('');
   };
 
-  // Save New User
   const handleCreateUserSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     setFormError('');
 
     if (!formData.username.trim() || !formData.displayName.trim() || !formData.pin.trim()) {
-      setFormError('Name, Username, and 4-Digit PIN are required');
+      setFormError('Display Name, Username, and 4-Digit PIN are required');
       return;
     }
 
@@ -140,7 +156,7 @@ export const UserManagementView: React.FC = () => {
     }
 
     if (formData.pin.length !== 4 || isNaN(Number(formData.pin))) {
-      setFormError('PIN must be exactly 4 digits');
+      setFormError('PIN must be exactly 4 numeric digits');
       return;
     }
 
@@ -164,11 +180,10 @@ export const UserManagementView: React.FC = () => {
     saveUser(newUser);
     setUsers(getUsers());
     setShowAddModal(false);
-    triggerToast(`User "${newUser.displayName}" created with ${newUser.roles?.length} role(s)!`);
+    triggerToast(`User "${newUser.displayName}" created successfully!`);
     addLog('Admin', 'User Created', `Created account @${newUser.username} with roles: ${newUser.roles?.join(', ')}`, currentUser?.displayName || 'Admin');
   };
 
-  // Save Edit User
   const handleEditUserSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!editingUser) return;
@@ -185,7 +200,7 @@ export const UserManagementView: React.FC = () => {
     }
 
     if (formData.pin.length !== 4 || isNaN(Number(formData.pin))) {
-      setFormError('PIN must be exactly 4 digits');
+      setFormError('PIN must be exactly 4 numeric digits');
       return;
     }
 
@@ -207,7 +222,6 @@ export const UserManagementView: React.FC = () => {
     addLog('Admin', 'User Updated', `Updated account @${updated.username} with roles: ${updated.roles?.join(', ')}`, currentUser?.displayName || 'Admin');
   };
 
-  // Toggle User Active Status
   const handleToggleActive = (u: User) => {
     if (u.username === currentUser?.username) {
       alert('You cannot deactivate your own Admin account!');
@@ -219,7 +233,6 @@ export const UserManagementView: React.FC = () => {
     triggerToast(`User "${u.displayName}" account ${newStatus}!`);
   };
 
-  // Delete User
   const handleConfirmDelete = () => {
     if (!deletingUser) return;
     if (deletingUser.username === currentUser?.username) {
@@ -233,7 +246,6 @@ export const UserManagementView: React.FC = () => {
     setDeletingUser(null);
   };
 
-  // Filtered Users List
   const filteredUsers = useMemo(() => {
     return users.filter(u => {
       const matchSearch =
@@ -245,21 +257,8 @@ export const UserManagementView: React.FC = () => {
     });
   }, [users, searchTerm, filterRole]);
 
-  // Counts per role
-  const roleCounts = useMemo(() => {
-    const counts: Record<string, number> = {};
-    users.forEach(u => {
-      const uRoles = u.roles || [u.role];
-      uRoles.forEach(r => {
-        counts[r] = (counts[r] || 0) + 1;
-      });
-    });
-    return counts;
-  }, [users]);
-
   return (
-    <div className="space-y-6 font-sans pb-12 text-left">
-      {/* Toast Notification */}
+    <div className="space-y-4 font-sans pb-12 text-left">
       {toastMsg && (
         <div className="fixed top-5 right-5 z-50 bg-slate-900 text-white px-4 py-3 rounded-2xl shadow-xl border border-slate-700 flex items-center gap-2 text-xs font-bold animate-in fade-in slide-in-from-top-2">
           <CheckCircle2 className="h-4 w-4 text-emerald-400" />
@@ -267,41 +266,44 @@ export const UserManagementView: React.FC = () => {
         </div>
       )}
 
-      {/* 1. TOP HEADER BAR */}
-      <div className="bg-white dark:bg-surface-dark border border-slate-200 dark:border-slate-700/80 rounded-3xl p-5 shadow-xs flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-        <div>
-          <div className="flex items-center gap-2">
-            <h2 className="text-lg font-black text-slate-900 dark:text-white tracking-tight">User Accounts & Multi-Role Access</h2>
-            <span className="px-2.5 py-0.5 rounded-full bg-primary/10 text-primary dark:text-blue-400 text-xs font-black">
-              {users.length} Active Accounts
-            </span>
+      <div className="bg-white dark:bg-[#131d38] rounded-[24px] p-5 sm:p-6 shadow-[5px_5px_16px_rgba(170,185,220,0.18),-5px_-5px_16px_rgba(255,255,255,0.9)] dark:shadow-[4px_4px_14px_rgba(0,0,0,0.35)] flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+        <div className="flex items-center gap-3.5">
+          <div className="w-12 h-12 rounded-[16px] bg-[#EEF2FF] dark:bg-indigo-950/60 shadow-[inset_1.5px_1.5px_3px_rgba(180,195,230,0.2),inset_-1.5px_-1.5px_3px_rgba(255,255,255,0.9)] dark:shadow-none flex items-center justify-center text-[#6366F1] dark:text-indigo-400 shrink-0">
+            <Users className="h-6 w-6 stroke-[2]" />
           </div>
-          <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
-            Manage employee accounts, assign 1 or multiple roles per person, and configure 4-digit security PINs
-          </p>
+          <div>
+            <div className="flex items-center gap-2">
+              <h2 className="text-lg sm:text-xl font-black text-slate-900 dark:text-white tracking-tight">
+                User Accounts &amp; Multi-Role Access
+              </h2>
+              <span className="px-2.5 py-0.5 rounded-[10px] bg-[#EEF2FF] text-[#6366F1] dark:bg-indigo-950/60 dark:text-indigo-400 text-xs font-bold shadow-[1px_1px_3px_rgba(180,195,230,0.2)]">
+                {users.length} Active
+              </span>
+            </div>
+            <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
+              Manage employee accounts, assign 1 or multiple roles per person, and configure 4-digit security PINs
+            </p>
+          </div>
         </div>
 
         <button
           onClick={handleOpenAddModal}
-          className="px-4 py-2.5 rounded-xl bg-primary hover:bg-primary-dark text-white font-black text-xs uppercase tracking-wider shadow-sm transition cursor-pointer flex items-center justify-center gap-2 shrink-0 active:scale-95"
+          className="px-5 py-3 rounded-[16px] bg-[#6366F1] hover:bg-[#4F46E5] text-white font-bold text-xs shadow-[2px_2px_8px_rgba(99,102,241,0.35)] transition cursor-pointer flex items-center justify-center gap-2 shrink-0 active:scale-95"
         >
-          <Plus className="h-4 w-4" />
+          <Plus className="h-4 w-4 stroke-[2.5]" />
           <span>Add New User</span>
         </button>
       </div>
 
-
-
-      {/* 3. SEARCH BAR */}
-      <div className="bg-white dark:bg-surface-dark border border-slate-200 dark:border-slate-700/80 rounded-2xl p-3 shadow-xs flex flex-col sm:flex-row gap-3 items-center justify-between">
-        <div className="relative w-full sm:w-96">
+      <div className="bg-white dark:bg-[#131d38] rounded-[20px] p-3 sm:p-4 shadow-[4px_4px_12px_rgba(170,185,220,0.15),-4px_-4px_12px_rgba(255,255,255,0.9)] flex flex-col sm:flex-row gap-3 items-center justify-between">
+        <div className="relative w-full sm:w-80">
           <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
           <input
             type="text"
             value={searchTerm}
             onChange={e => setSearchTerm(e.target.value)}
             placeholder="Search by name or username..."
-            className="w-full pl-10 pr-9 py-2 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-xs font-semibold text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-primary/40"
+            className="w-full pl-10 pr-9 py-2.5 bg-[#F4F7FC] dark:bg-slate-900 border-none rounded-[14px] text-xs font-semibold text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-indigo-500/40 shadow-[inset_1.5px_1.5px_3px_rgba(180,195,230,0.2)] dark:shadow-none"
           />
           {searchTerm && (
             <button 
@@ -314,33 +316,31 @@ export const UserManagementView: React.FC = () => {
           )}
         </div>
 
-        <div className="flex items-center gap-2 text-xs font-semibold text-slate-500 dark:text-slate-400 shrink-0">
+        <div className="flex items-center gap-2 text-xs font-bold text-slate-500 dark:text-slate-400 shrink-0">
           <span>Showing <strong className="text-slate-800 dark:text-white">{filteredUsers.length}</strong> of {users.length} accounts</span>
         </div>
       </div>
 
-      {/* 4. DESKTOP USER DATA TABLE */}
-      <div className="hidden md:block bg-white dark:bg-surface-dark border border-slate-200 dark:border-slate-700/80 rounded-3xl overflow-hidden shadow-sm">
+      <div className="hidden md:block bg-white dark:bg-[#131d38] rounded-[24px] overflow-hidden shadow-[5px_5px_16px_rgba(170,185,220,0.18),-5px_-5px_16px_rgba(255,255,255,0.9)] dark:shadow-[4px_4px_14px_rgba(0,0,0,0.35)]">
         <table className="w-full text-left text-xs border-collapse">
           <thead>
-            <tr className="bg-slate-50/80 dark:bg-slate-900/80 border-b border-slate-200 dark:border-slate-700 text-slate-400 uppercase tracking-wider font-extrabold text-[10px]">
+            <tr className="bg-[#F8FAFD] dark:bg-slate-900/80 border-b border-slate-100 dark:border-slate-800 text-slate-400 uppercase tracking-wider font-extrabold text-[10px]">
               <th className="py-4 px-6">User Details</th>
               <th className="py-4 px-6 text-center">Assigned Roles (Multi-Role)</th>
-              <th className="py-4 px-6">Mobile & Email</th>
+              <th className="py-4 px-6">Mobile &amp; Email</th>
               <th className="py-4 px-6">4-Digit PIN</th>
               <th className="py-4 px-6">Status</th>
               <th className="py-4 px-6 text-right">Actions</th>
             </tr>
           </thead>
-          <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
+          <tbody className="divide-y divide-slate-100 dark:divide-slate-800/80">
             {filteredUsers.map(u => {
               const assignedRoles = u.roles && u.roles.length > 0 ? u.roles : [u.role];
               return (
-                <tr key={u.username} className={`hover:bg-slate-50/60 dark:hover:bg-slate-800/40 transition ${u.active === false ? 'opacity-50' : ''}`}>
-                  {/* User Details */}
+                <tr key={u.username} className={`hover:bg-[#F8FAFD]/70 dark:hover:bg-slate-800/40 transition ${u.active === false ? 'opacity-50' : ''}`}>
                   <td className="py-4 px-6">
                     <div className="flex items-center gap-3">
-                      <div className="h-10 w-10 rounded-full bg-primary/10 flex items-center justify-center text-primary font-black text-xs shrink-0">
+                      <div className="h-10 w-10 rounded-[14px] bg-[#EEF2FF] dark:bg-indigo-950/60 flex items-center justify-center text-[#6366F1] font-black text-xs shrink-0 shadow-[1px_1px_3px_rgba(180,195,230,0.2)]">
                         {u.displayName.substring(0, 2).toUpperCase()}
                       </div>
                       <div>
@@ -350,30 +350,27 @@ export const UserManagementView: React.FC = () => {
                     </div>
                   </td>
 
-                  {/* Assigned Multi-Roles */}
                   <td className="py-4 px-6 text-center">
                     <div className="flex flex-wrap gap-1.5 justify-center items-center">
                       {assignedRoles.map(rKey => (
-                        <span key={rKey} className={`inline-flex items-center justify-center px-3 py-1 rounded-full text-[11px] font-extrabold border ${ROLE_COLORS[rKey] || 'bg-slate-100 text-slate-700'}`}>
+                        <span key={rKey} className={`inline-flex items-center justify-center px-3 py-1 rounded-[10px] text-[11px] font-bold border ${ROLE_COLORS[rKey] || 'bg-slate-100 text-slate-700'}`}>
                           {ROLE_LABELS[rKey] || rKey}
                         </span>
                       ))}
                     </div>
                   </td>
 
-                  {/* Mobile & Email */}
                   <td className="py-4 px-6 font-mono text-slate-600 dark:text-slate-300">
                     <div>{u.phone || 'No Mobile'}</div>
                     <div className="text-[10px] text-slate-400 truncate max-w-[160px]">{u.email || 'No Email'}</div>
                   </td>
 
-                  {/* 4-Digit PIN */}
                   <td className="py-4 px-6">
                     <div className="flex items-center gap-2 font-mono text-xs font-bold text-slate-800 dark:text-slate-200">
                       <span>{visiblePins[u.username] ? u.pin || '1234' : '••••'}</span>
                       <button
                         onClick={() => togglePinVisibility(u.username)}
-                        className="p-1 text-slate-400 hover:text-primary transition cursor-pointer"
+                        className="p-1 text-slate-400 hover:text-indigo-600 transition cursor-pointer"
                         title={visiblePins[u.username] ? 'Hide PIN' : 'Show PIN'}
                       >
                         {visiblePins[u.username] ? <EyeOff className="h-3.5 w-3.5" /> : <Eye className="h-3.5 w-3.5" />}
@@ -381,11 +378,10 @@ export const UserManagementView: React.FC = () => {
                     </div>
                   </td>
 
-                  {/* Account Status Toggle */}
                   <td className="py-4 px-6">
                     <button
                       onClick={() => handleToggleActive(u)}
-                      className={`inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-bold transition cursor-pointer border ${
+                      className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold transition cursor-pointer border ${
                         u.active !== false
                           ? 'bg-emerald-50 text-emerald-600 border-emerald-200 dark:bg-emerald-950/30 dark:text-emerald-400 dark:border-emerald-800'
                           : 'bg-red-50 text-red-600 border-red-200 dark:bg-red-950/30 dark:text-red-400 dark:border-red-800'
@@ -396,217 +392,260 @@ export const UserManagementView: React.FC = () => {
                     </button>
                   </td>
 
-                  {/* Direct Actions */}
                   <td className="py-4 px-6 text-right">
                     <div className="flex items-center justify-end gap-2">
                       <button
                         onClick={() => handleOpenEditModal(u)}
-                        className="px-2.5 py-1.5 text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-xl transition cursor-pointer flex items-center gap-1 text-xs font-bold"
-                        title="Edit Account & Roles"
+                        className="p-2 rounded-[10px] bg-[#F4F7FC] dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:text-[#6366F1] transition cursor-pointer shadow-xs"
+                        title="Edit Account"
                       >
-                        <Pencil className="h-3.5 w-3.5 text-primary" />
-                        <span>Edit</span>
+                        <Pencil className="h-4 w-4" />
                       </button>
-
-                      <button
-                        onClick={() => setDeletingUser(u)}
-                        className="px-2.5 py-1.5 text-red-500 hover:bg-red-50 dark:hover:bg-red-950/30 rounded-xl transition cursor-pointer flex items-center gap-1 text-xs font-bold"
-                        title="Delete User"
-                      >
-                        <Trash2 className="h-3.5 w-3.5" />
-                        <span>Delete</span>
-                      </button>
+                      {u.username !== 'admin' && (
+                        <button
+                          onClick={() => setDeletingUser(u)}
+                          className="p-2 rounded-[10px] bg-[#F4F7FC] dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:text-red-600 transition cursor-pointer shadow-xs"
+                          title="Delete Account"
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </button>
+                      )}
                     </div>
                   </td>
                 </tr>
               );
             })}
-
-            {filteredUsers.length === 0 && (
-              <tr>
-                <td colSpan={6} className="py-12 text-center text-slate-400 text-xs font-bold">
-                  No accounts found matching your search.
-                </td>
-              </tr>
-            )}
           </tbody>
         </table>
       </div>
 
-      {/* 5. MOBILE USER CARDS */}
-      <div className="block md:hidden space-y-3">
+      <div className="grid grid-cols-1 gap-3 md:hidden">
         {filteredUsers.map(u => {
           const assignedRoles = u.roles && u.roles.length > 0 ? u.roles : [u.role];
           return (
-            <div key={u.username} className={`bg-white dark:bg-surface-dark border border-slate-200 dark:border-slate-700/80 rounded-2xl p-4 shadow-xs space-y-3 ${u.active === false ? 'opacity-60' : ''}`}>
-              <div className="flex items-center justify-between gap-2">
+            <div
+              key={u.username}
+              className="bg-white dark:bg-[#131d38] rounded-[20px] p-4 shadow-[4px_4px_12px_rgba(170,185,220,0.15),-4px_-4px_12px_rgba(255,255,255,0.9)] space-y-3"
+            >
+              <div className="flex items-center justify-between">
                 <div className="flex items-center gap-3">
-                  <div className="h-9 w-9 rounded-full bg-primary/10 flex items-center justify-center text-primary font-black text-xs shrink-0">
+                  <div className="h-10 w-10 rounded-[12px] bg-[#EEF2FF] text-[#6366F1] font-black text-xs flex items-center justify-center">
                     {u.displayName.substring(0, 2).toUpperCase()}
                   </div>
                   <div>
-                    <div className="font-bold text-slate-900 dark:text-white text-xs">{u.displayName}</div>
-                    <div className="font-mono text-slate-400 text-[10px]">@{u.username}</div>
+                    <div className="font-bold text-slate-900 dark:text-white text-sm">{u.displayName}</div>
+                    <div className="font-mono text-slate-400 text-xs">@{u.username}</div>
                   </div>
                 </div>
-
-                <div className="flex flex-wrap gap-1 justify-end max-w-[150px]">
-                  {assignedRoles.map(rKey => (
-                    <span key={rKey} className={`px-2 py-0.5 rounded-full text-[9px] font-black border ${ROLE_COLORS[rKey] || 'bg-slate-100 text-slate-700'}`}>
-                      {ROLE_LABELS[rKey] || rKey}
-                    </span>
-                  ))}
-                </div>
-              </div>
-
-              <div className="grid grid-cols-2 gap-2 text-[11px] font-mono pt-2 border-t border-slate-100 dark:border-slate-800 text-slate-600 dark:text-slate-300">
-                <div>📱 {u.phone || 'No Mobile'}</div>
-                <div>🔑 PIN: {visiblePins[u.username] ? u.pin || '1234' : '••••'}</div>
-              </div>
-
-              <div className="flex items-center justify-between pt-2 border-t border-slate-100 dark:border-slate-800">
-                <button
-                  onClick={() => handleToggleActive(u)}
-                  className={`text-[10px] font-bold px-2.5 py-1 rounded-lg border ${
-                    u.active !== false ? 'bg-emerald-50 text-emerald-600 border-emerald-200' : 'bg-red-50 text-red-600 border-red-200'
-                  }`}
-                >
-                  {u.active !== false ? '✓ Active' : '✕ Inactive'}
-                </button>
 
                 <div className="flex items-center gap-2">
                   <button
                     onClick={() => handleOpenEditModal(u)}
-                    className="px-2.5 py-1.5 text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-xl transition cursor-pointer flex items-center gap-1 text-xs font-bold"
+                    className="p-1.5 rounded-lg bg-slate-100 text-slate-600"
                   >
-                    <Pencil className="h-3.5 w-3.5 text-primary" /> Edit
+                    <Pencil className="h-4 w-4" />
                   </button>
-                  <button
-                    onClick={() => setDeletingUser(u)}
-                    className="px-2.5 py-1.5 text-red-500 hover:bg-red-50 dark:hover:bg-red-950/30 rounded-xl transition cursor-pointer flex items-center gap-1 text-xs font-bold"
-                  >
-                    <Trash2 className="h-3.5 w-3.5" /> Delete
-                  </button>
+                  {u.username !== 'admin' && (
+                    <button
+                      onClick={() => setDeletingUser(u)}
+                      className="p-1.5 rounded-lg bg-slate-100 text-red-600"
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </button>
+                  )}
                 </div>
+              </div>
+
+              <div className="flex flex-wrap gap-1.5">
+                {assignedRoles.map(rKey => (
+                  <span key={rKey} className={`px-2.5 py-0.5 rounded-md text-[10px] font-bold border ${ROLE_COLORS[rKey] || 'bg-slate-100'}`}>
+                    {ROLE_LABELS[rKey] || rKey}
+                  </span>
+                ))}
               </div>
             </div>
           );
         })}
       </div>
 
-      {/* ===== 6. ADD NEW USER MODAL (MULTI-ROLE CHECKBOXES) ===== */}
       {showAddModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-xs animate-in fade-in">
-          <div className="bg-white dark:bg-slate-800 rounded-3xl max-w-lg w-full p-6 shadow-2xl space-y-4 border border-slate-200 dark:border-slate-700 animate-in zoom-in-95">
-            <div className="flex items-center justify-between border-b pb-3 dark:border-slate-700">
-              <h3 className="text-base font-black text-slate-900 dark:text-white uppercase tracking-wider flex items-center gap-2">
-                <Plus className="h-5 w-5 text-primary" /> Create New User Account
-              </h3>
-              <button onClick={() => setShowAddModal(false)} className="text-slate-400 hover:text-slate-600">
-                <X className="h-5 w-5" />
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/40 backdrop-blur-xs animate-in fade-in">
+          <div className="bg-[#F8FAFD] dark:bg-[#131d38] rounded-[28px] max-w-[540px] w-full p-6 sm:p-7 shadow-[10px_10px_30px_rgba(163,175,205,0.3),-10px_-10px_30px_rgba(255,255,255,0.95)] border border-white/60 dark:border-slate-800 space-y-5 animate-in zoom-in-95 text-left">
+            <div className="flex items-start justify-between">
+              <div className="flex items-center gap-3.5">
+                <div className="w-12 h-12 rounded-[16px] bg-white dark:bg-slate-900 shadow-[3px_3px_8px_rgba(170,185,220,0.22),-3px_-3px_8px_rgba(255,255,255,0.95)] flex items-center justify-center text-[#6366F1] dark:text-indigo-400 shrink-0">
+                  <Plus className="h-6 w-6 stroke-[2.5]" />
+                </div>
+                <div>
+                  <h3 className="text-xl font-bold text-slate-900 dark:text-white tracking-tight">
+                    Create New User Account
+                  </h3>
+                  <p className="text-xs text-slate-500 dark:text-slate-400 font-medium mt-0.5">
+                    Add a new user and assign roles to provide system access.
+                  </p>
+                </div>
+              </div>
+
+              <button
+                onClick={() => setShowAddModal(false)}
+                className="w-9 h-9 rounded-full bg-white dark:bg-slate-900 shadow-[2px_2px_6px_rgba(170,185,220,0.2),-2px_-2px_6px_rgba(255,255,255,0.9)] flex items-center justify-center text-slate-500 hover:text-slate-800 dark:hover:text-white transition cursor-pointer shrink-0"
+                aria-label="Close modal"
+              >
+                <X className="h-4.5 w-4.5 stroke-[2.2]" />
               </button>
             </div>
 
             {formError && (
-              <div className="p-3 bg-red-50 dark:bg-red-950/30 text-red-600 dark:text-red-400 text-xs font-bold rounded-xl border border-red-200">
+              <div className="p-3 bg-red-50 dark:bg-red-950/30 text-red-600 dark:text-red-400 text-xs font-bold rounded-[14px] border border-red-200">
                 {formError}
               </div>
             )}
 
             <form onSubmit={handleCreateUserSubmit} className="space-y-4">
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                <div>
-                  <label className="text-[10px] font-black text-slate-500 uppercase">Full Display Name</label>
-                  <input
-                    type="text"
-                    required
-                    value={formData.displayName}
-                    onChange={e => setFormData({ ...formData, displayName: e.target.value })}
-                    placeholder="e.g. Ramesh Kumar"
-                    className="w-full py-2.5 px-3.5 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-xs font-semibold text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-primary/40 mt-1"
-                  />
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
+                <div className="rounded-[18px] bg-white dark:bg-slate-900 p-3 shadow-[3px_3px_10px_rgba(170,185,220,0.18),-3px_-3px_10px_rgba(255,255,255,0.9)] flex items-center gap-3">
+                  <div className="w-9 h-9 rounded-[12px] bg-[#EEF2FF] dark:bg-indigo-950/60 text-[#6366F1] dark:text-indigo-400 flex items-center justify-center shrink-0">
+                    <UserIcon className="h-4.5 w-4.5" />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <label className="text-[10px] font-bold text-slate-500 dark:text-slate-400 block leading-tight">
+                      Full Display Name
+                    </label>
+                    <input
+                      type="text"
+                      required
+                      value={formData.displayName}
+                      onChange={e => setFormData({ ...formData, displayName: e.target.value })}
+                      placeholder="e.g. Ramesh Kumar"
+                      className="w-full text-xs font-semibold text-slate-900 dark:text-white placeholder-slate-400 bg-transparent border-none focus:outline-none p-0 mt-0.5"
+                    />
+                  </div>
                 </div>
 
-                <div>
-                  <label className="text-[10px] font-black text-slate-500 uppercase">Username (Login ID)</label>
-                  <input
-                    type="text"
-                    required
-                    value={formData.username}
-                    onChange={e => setFormData({ ...formData, username: e.target.value })}
-                    placeholder="e.g. ramesh_k"
-                    className="w-full py-2.5 px-3.5 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-xs font-semibold text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-primary/40 mt-1 font-mono"
-                  />
+                <div className="rounded-[18px] bg-white dark:bg-slate-900 p-3 shadow-[3px_3px_10px_rgba(170,185,220,0.18),-3px_-3px_10px_rgba(255,255,255,0.9)] flex items-center gap-3">
+                  <div className="w-9 h-9 rounded-[12px] bg-[#EEF2FF] dark:bg-indigo-950/60 text-[#6366F1] dark:text-indigo-400 flex items-center justify-center shrink-0 font-bold text-sm">
+                    <AtSign className="h-4.5 w-4.5" />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <label className="text-[10px] font-bold text-slate-500 dark:text-slate-400 block leading-tight">
+                      Username (Login ID)
+                    </label>
+                    <input
+                      type="text"
+                      required
+                      value={formData.username}
+                      onChange={e => setFormData({ ...formData, username: e.target.value })}
+                      placeholder="e.g. ramesh_k"
+                      className="w-full text-xs font-semibold text-slate-900 dark:text-white placeholder-slate-400 bg-transparent border-none focus:outline-none p-0 mt-0.5 font-mono"
+                    />
+                  </div>
+                </div>
+
+                <div className="rounded-[18px] bg-white dark:bg-slate-900 p-3 shadow-[3px_3px_10px_rgba(170,185,220,0.18),-3px_-3px_10px_rgba(255,255,255,0.9)] flex items-center gap-3">
+                  <div className="w-9 h-9 rounded-[12px] bg-[#EEF2FF] dark:bg-indigo-950/60 text-[#6366F1] dark:text-indigo-400 flex items-center justify-center shrink-0">
+                    <Phone className="h-4.5 w-4.5" />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <label className="text-[10px] font-bold text-slate-500 dark:text-slate-400 block leading-tight">
+                      Mobile Number (10 Digits)
+                    </label>
+                    <input
+                      type="text"
+                      maxLength={10}
+                      value={formData.phone}
+                      onChange={e => setFormData({ ...formData, phone: e.target.value.replace(/\D/g, '').slice(0, 10) })}
+                      placeholder="e.g. 9876543210"
+                      className="w-full text-xs font-semibold text-slate-900 dark:text-white placeholder-slate-400 bg-transparent border-none focus:outline-none p-0 mt-0.5 font-mono"
+                    />
+                  </div>
+                </div>
+
+                <div className="rounded-[18px] bg-white dark:bg-slate-900 p-3 shadow-[3px_3px_10px_rgba(170,185,220,0.18),-3px_-3px_10px_rgba(255,255,255,0.9)] flex items-center gap-3">
+                  <div className="w-9 h-9 rounded-[12px] bg-[#EEF2FF] dark:bg-indigo-950/60 text-[#6366F1] dark:text-indigo-400 flex items-center justify-center shrink-0">
+                    <Lock className="h-4.5 w-4.5" />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <label className="text-[10px] font-bold text-slate-500 dark:text-slate-400 block leading-tight">
+                      4-Digit Security PIN
+                    </label>
+                    <input
+                      type="text"
+                      maxLength={4}
+                      required
+                      value={formData.pin}
+                      onChange={e => setFormData({ ...formData, pin: e.target.value.replace(/\D/g, '').slice(0, 4) })}
+                      placeholder="e.g. 1234"
+                      className="w-full text-xs font-semibold text-slate-900 dark:text-white placeholder-slate-400 bg-transparent border-none focus:outline-none p-0 mt-0.5 font-mono tracking-wider"
+                    />
+                  </div>
                 </div>
               </div>
 
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                <div>
-                  <label className="text-[10px] font-black text-slate-500 uppercase">Mobile Number (10 Digits)</label>
-                  <input
-                    type="text"
-                    maxLength={10}
-                    value={formData.phone}
-                    onChange={e => setFormData({ ...formData, phone: e.target.value.replace(/\D/g, '').slice(0, 10) })}
-                    placeholder="e.g. 9876543210"
-                    className="w-full py-2.5 px-3.5 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-xs font-semibold text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-primary/40 mt-1 font-mono"
-                  />
+              <div className="space-y-2 pt-1">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <span className="text-sm font-bold text-slate-900 dark:text-white block leading-tight">Assign Roles</span>
+                    <span className="text-[11px] text-slate-500 dark:text-slate-400 font-normal">Select one or multiple roles</span>
+                  </div>
+                  <span className="text-xs font-bold text-[#6366F1] dark:text-indigo-400">
+                    {MASTER_ROLES.length} Roles Available
+                  </span>
                 </div>
 
-                <div>
-                  <label className="text-[10px] font-black text-slate-500 uppercase">4-Digit Security PIN</label>
-                  <input
-                    type="password"
-                    maxLength={4}
-                    required
-                    value={formData.pin}
-                    onChange={e => setFormData({ ...formData, pin: e.target.value })}
-                    placeholder="e.g. 1234"
-                    className="w-full py-2.5 px-3.5 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-xs font-semibold text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-primary/40 mt-1 font-mono tracking-widest text-center"
-                  />
-                </div>
-              </div>
-
-              {/* Multi-Role Selection Pills */}
-              <div>
-                <label className="text-[10px] font-black text-slate-500 uppercase block mb-1">
-                  Assign Roles (Select 1 or Multiple Roles)
-                </label>
-                <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+                <div className="grid grid-cols-2 sm:grid-cols-3 gap-2.5">
                   {MASTER_ROLES.map(r => {
                     const isSelected = formData.roles.includes(r.key);
+                    const RoleIcon = r.icon;
+
                     return (
                       <button
                         key={r.key}
                         type="button"
                         onClick={() => toggleFormRole(r.key)}
-                        className={`p-2.5 rounded-xl border text-left cursor-pointer transition flex items-center justify-between ${
+                        className={`p-3 rounded-[16px] text-left cursor-pointer transition-all flex items-center justify-between gap-2 select-none active:scale-95 ${
                           isSelected
-                            ? `${r.color} ring-2 ring-primary/40 scale-[1.02] shadow-xs font-black`
-                            : 'bg-slate-50 dark:bg-slate-900 border-slate-200 dark:border-slate-700 opacity-60 hover:opacity-100 text-slate-700 dark:text-slate-300'
+                            ? 'bg-[#EEF2FF] text-[#4F46E5] border border-[#6366F1]/50 shadow-[2px_2px_8px_rgba(99,102,241,0.2),-2px_-2px_8px_rgba(255,255,255,0.9)] dark:bg-indigo-950/60 dark:text-indigo-300 font-bold'
+                            : 'bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-300 shadow-[2px_2px_6px_rgba(170,185,220,0.15),-2px_-2px_6px_rgba(255,255,255,0.9)] hover:bg-[#F4F7FC] font-medium'
                         }`}
                       >
-                        <div className="text-xs font-bold truncate">{r.label}</div>
-                        {isSelected && <Check className="h-4 w-4 shrink-0" />}
+                        <div className="flex items-center gap-2 min-w-0">
+                          <RoleIcon className={`h-4 w-4 shrink-0 ${isSelected ? 'text-[#6366F1] dark:text-indigo-400' : 'text-slate-400'}`} />
+                          <span className="text-xs truncate">{r.label}</span>
+                        </div>
+                        {isSelected && (
+                          <div className="w-4 h-4 rounded-full bg-[#6366F1] text-white flex items-center justify-center shrink-0">
+                            <Check className="h-2.5 w-2.5 stroke-[3]" />
+                          </div>
+                        )}
                       </button>
                     );
                   })}
                 </div>
               </div>
 
-              <div className="flex gap-3 pt-2">
+              <div className="rounded-[16px] bg-[#EEF2FF] dark:bg-indigo-950/40 text-[#4F46E5] dark:text-indigo-300 p-3 flex items-center gap-2.5 text-xs font-medium border border-[#E0E7FF] dark:border-indigo-900/60">
+                <Info className="h-4 w-4 shrink-0 stroke-[2.2]" />
+                <span>
+                  You can edit roles and permissions anytime from the <strong className="font-bold">User Accounts</strong> section.
+                </span>
+              </div>
+
+              <div className="space-y-2.5 pt-2">
                 <button
                   type="submit"
-                  className="flex-1 py-2.5 px-4 bg-primary hover:bg-primary-dark text-white rounded-xl text-xs font-black uppercase tracking-wider shadow-sm cursor-pointer transition flex items-center justify-center gap-2"
+                  className="w-full py-3.5 px-4 bg-[#6366F1] hover:bg-[#4F46E5] text-white rounded-[16px] text-xs font-bold shadow-[0_4px_14px_rgba(99,102,241,0.35)] cursor-pointer transition flex items-center justify-center gap-2 active:scale-98"
                 >
-                  Create User Account
+                  <UserPlus className="h-4 w-4 stroke-[2.2]" />
+                  <span>Create User Account</span>
                 </button>
+
                 <button
                   type="button"
                   onClick={() => setShowAddModal(false)}
-                  className="px-4 py-2.5 border border-slate-200 dark:border-slate-700 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 rounded-xl text-xs font-bold text-slate-600 dark:text-slate-300 cursor-pointer transition"
+                  className="w-full py-3.5 px-4 bg-white dark:bg-slate-900 text-red-500 dark:text-red-400 hover:bg-red-50/50 dark:hover:bg-red-950/20 rounded-[16px] text-xs font-bold shadow-[2px_2px_8px_rgba(170,185,220,0.18),-2px_-2px_8px_rgba(255,255,255,0.95)] cursor-pointer transition flex items-center justify-center gap-2 active:scale-98"
                 >
-                  Cancel
+                  <LogOut className="h-4 w-4 stroke-[2.2]" />
+                  <span>Cancel</span>
                 </button>
               </div>
             </form>
@@ -614,92 +653,119 @@ export const UserManagementView: React.FC = () => {
         </div>
       )}
 
-      {/* ===== 7. EDIT USER MODAL (MULTI-ROLE CHECKBOXES) ===== */}
       {editingUser && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-xs animate-in fade-in">
-          <div className="bg-white dark:bg-slate-800 rounded-3xl max-w-lg w-full p-6 shadow-2xl space-y-4 border border-slate-200 dark:border-slate-700 animate-in zoom-in-95">
-            <div className="flex items-center justify-between border-b pb-3 dark:border-slate-700">
-              <div>
-                <h3 className="text-base font-black text-slate-900 dark:text-white uppercase tracking-wider flex items-center gap-2">
-                  <Pencil className="h-5 w-5 text-primary" /> Edit Account Details
-                </h3>
-                <span className="text-xs text-slate-400 font-mono">User: @{editingUser.username}</span>
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/40 backdrop-blur-xs animate-in fade-in">
+          <div className="bg-[#F8FAFD] dark:bg-[#131d38] rounded-[28px] max-w-[540px] w-full p-6 sm:p-7 shadow-[10px_10px_30px_rgba(163,175,205,0.3),-10px_-10px_30px_rgba(255,255,255,0.95)] border border-white/60 dark:border-slate-800 space-y-5 animate-in zoom-in-95 text-left">
+            <div className="flex items-start justify-between">
+              <div className="flex items-center gap-3.5">
+                <div className="w-12 h-12 rounded-[16px] bg-white dark:bg-slate-900 shadow-[3px_3px_8px_rgba(170,185,220,0.22),-3px_-3px_8px_rgba(255,255,255,0.95)] flex items-center justify-center text-[#6366F1] dark:text-indigo-400 shrink-0">
+                  <Pencil className="h-5 w-5 stroke-[2]" />
+                </div>
+                <div>
+                  <h3 className="text-xl font-bold text-slate-900 dark:text-white tracking-tight">
+                    Edit Account Details
+                  </h3>
+                  <p className="text-xs text-slate-400 font-mono mt-0.5">User: @{editingUser.username}</p>
+                </div>
               </div>
-              <button onClick={() => setEditingUser(null)} className="text-slate-400 hover:text-slate-600">
-                <X className="h-5 w-5" />
+              <button
+                onClick={() => setEditingUser(null)}
+                className="w-9 h-9 rounded-full bg-white dark:bg-slate-900 shadow-[2px_2px_6px_rgba(170,185,220,0.2),-2px_-2px_6px_rgba(255,255,255,0.9)] flex items-center justify-center text-slate-500 hover:text-slate-800 transition cursor-pointer shrink-0"
+              >
+                <X className="h-4.5 w-4.5" />
               </button>
             </div>
 
             {formError && (
-              <div className="p-3 bg-red-50 dark:bg-red-950/30 text-red-600 dark:text-red-400 text-xs font-bold rounded-xl border border-red-200">
+              <div className="p-3 bg-red-50 dark:bg-red-950/30 text-red-600 text-xs font-bold rounded-[14px] border border-red-200">
                 {formError}
               </div>
             )}
 
             <form onSubmit={handleEditUserSubmit} className="space-y-4">
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                <div>
-                  <label className="text-[10px] font-black text-slate-500 uppercase">Full Display Name</label>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
+                <div className="rounded-[18px] bg-white dark:bg-slate-900 p-3 shadow-[3px_3px_10px_rgba(170,185,220,0.18),-3px_-3px_10px_rgba(255,255,255,0.9)] flex items-center gap-3">
+                  <div className="w-9 h-9 rounded-[12px] bg-[#EEF2FF] text-[#6366F1] flex items-center justify-center shrink-0">
+                    <UserIcon className="h-4.5 w-4.5" />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <label className="text-[10px] font-bold text-slate-500 block leading-tight">Full Display Name</label>
+                    <input
+                      type="text"
+                      required
+                      value={formData.displayName}
+                      onChange={e => setFormData({ ...formData, displayName: e.target.value })}
+                      className="w-full text-xs font-semibold text-slate-900 dark:text-white bg-transparent border-none focus:outline-none p-0 mt-0.5"
+                    />
+                  </div>
+                </div>
+
+                <div className="rounded-[18px] bg-white dark:bg-slate-900 p-3 shadow-[3px_3px_10px_rgba(170,185,220,0.18),-3px_-3px_10px_rgba(255,255,255,0.9)] flex items-center gap-3">
+                  <div className="w-9 h-9 rounded-[12px] bg-[#EEF2FF] text-[#6366F1] flex items-center justify-center shrink-0">
+                    <Phone className="h-4.5 w-4.5" />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <label className="text-[10px] font-bold text-slate-500 block leading-tight">Mobile Number (10 Digits)</label>
+                    <input
+                      type="text"
+                      maxLength={10}
+                      value={formData.phone}
+                      onChange={e => setFormData({ ...formData, phone: e.target.value.replace(/\D/g, '').slice(0, 10) })}
+                      className="w-full text-xs font-semibold text-slate-900 dark:text-white bg-transparent border-none focus:outline-none p-0 mt-0.5 font-mono"
+                    />
+                  </div>
+                </div>
+              </div>
+
+              <div className="rounded-[18px] bg-white dark:bg-slate-900 p-3 shadow-[3px_3px_10px_rgba(170,185,220,0.18),-3px_-3px_10px_rgba(255,255,255,0.9)] flex items-center gap-3">
+                <div className="w-9 h-9 rounded-[12px] bg-[#EEF2FF] text-[#6366F1] flex items-center justify-center shrink-0">
+                  <Lock className="h-4.5 w-4.5" />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <label className="text-[10px] font-bold text-slate-500 block leading-tight">4-Digit Security PIN</label>
                   <input
                     type="text"
+                    maxLength={4}
                     required
-                    value={formData.displayName}
-                    onChange={e => setFormData({ ...formData, displayName: e.target.value })}
-                    className="w-full py-2.5 px-3.5 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-xs font-semibold text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-primary/40 mt-1"
-                  />
-                </div>
-
-                <div>
-                  <label className="text-[10px] font-black text-slate-500 uppercase">Mobile Number (10 Digits)</label>
-                  <input
-                    type="text"
-                    maxLength={10}
-                    value={formData.phone}
-                    onChange={e => setFormData({ ...formData, phone: e.target.value.replace(/\D/g, '').slice(0, 10) })}
-                    className="w-full py-2.5 px-3.5 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-xs font-semibold text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-primary/40 mt-1 font-mono"
+                    value={formData.pin}
+                    onChange={e => setFormData({ ...formData, pin: e.target.value.replace(/\D/g, '').slice(0, 4) })}
+                    className="w-full text-xs font-semibold text-slate-900 dark:text-white bg-transparent border-none focus:outline-none p-0 mt-0.5 font-mono tracking-wider"
                   />
                 </div>
               </div>
 
-              <div>
-                <label className="text-[10px] font-black text-slate-500 uppercase">4-Digit Security PIN</label>
-                <input
-                  type="text"
-                  maxLength={4}
-                  required
-                  value={formData.pin}
-                  onChange={e => setFormData({ ...formData, pin: e.target.value })}
-                  className="w-full py-2.5 px-3.5 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-xs font-bold text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-primary/40 mt-1 font-mono tracking-widest text-center"
-                />
-              </div>
-
-              {/* Multi-Role Selection Pills */}
-              <div>
-                <label className="text-[10px] font-black text-slate-500 uppercase block mb-1">
-                  Assigned Roles
-                </label>
+              <div className="space-y-2 pt-1">
+                <span className="text-sm font-bold text-slate-900 dark:text-white block leading-tight">Assigned Roles</span>
                 {editingUser.username === 'admin' ? (
-                  <div className="p-3 bg-red-50 dark:bg-red-950/40 border border-red-200 dark:border-red-800 rounded-xl text-red-700 dark:text-red-400 text-xs font-black flex items-center justify-between">
-                    <span>👑 System Administrator (Fixed Master Admin Account)</span>
+                  <div className="p-3 bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-800 rounded-[16px] text-amber-800 dark:text-amber-300 text-xs font-bold flex items-center justify-between">
+                    <span>👑 Fixed System Administrator Account</span>
                     <Shield className="h-4 w-4" />
                   </div>
                 ) : (
-                  <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+                  <div className="grid grid-cols-2 sm:grid-cols-3 gap-2.5">
                     {MASTER_ROLES.map(r => {
                       const isSelected = formData.roles.includes(r.key);
+                      const RoleIcon = r.icon;
                       return (
                         <button
                           key={r.key}
                           type="button"
                           onClick={() => toggleFormRole(r.key)}
-                          className={`p-2.5 rounded-xl border text-left cursor-pointer transition flex items-center justify-between ${
+                          className={`p-3 rounded-[16px] text-left cursor-pointer transition-all flex items-center justify-between gap-2 select-none active:scale-95 ${
                             isSelected
-                              ? `${r.color} ring-2 ring-primary/40 scale-[1.02] shadow-xs font-black`
-                              : 'bg-slate-50 dark:bg-slate-900 border-slate-200 dark:border-slate-700 opacity-60 hover:opacity-100 text-slate-700 dark:text-slate-300'
+                              ? 'bg-[#EEF2FF] text-[#4F46E5] border border-[#6366F1]/50 shadow-[2px_2px_8px_rgba(99,102,241,0.2),-2px_-2px_8px_rgba(255,255,255,0.9)] dark:bg-indigo-950/60 dark:text-indigo-300 font-bold'
+                              : 'bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-300 shadow-[2px_2px_6px_rgba(170,185,220,0.15),-2px_-2px_6px_rgba(255,255,255,0.9)] hover:bg-[#F4F7FC] font-medium'
                           }`}
                         >
-                          <div className="text-xs font-bold truncate">{r.label}</div>
-                          {isSelected && <Check className="h-4 w-4 shrink-0" />}
+                          <div className="flex items-center gap-2 min-w-0">
+                            <RoleIcon className={`h-4 w-4 shrink-0 ${isSelected ? 'text-[#6366F1]' : 'text-slate-400'}`} />
+                            <span className="text-xs truncate">{r.label}</span>
+                          </div>
+                          {isSelected && (
+                            <div className="w-4 h-4 rounded-full bg-[#6366F1] text-white flex items-center justify-center shrink-0">
+                              <Check className="h-2.5 w-2.5 stroke-[3]" />
+                            </div>
+                          )}
                         </button>
                       );
                     })}
@@ -707,19 +773,20 @@ export const UserManagementView: React.FC = () => {
                 )}
               </div>
 
-              <div className="flex gap-3 pt-2">
+              <div className="space-y-2.5 pt-2">
                 <button
                   type="submit"
-                  className="flex-1 py-2.5 px-4 bg-primary hover:bg-primary-dark text-white rounded-xl text-xs font-black uppercase tracking-wider shadow-sm cursor-pointer transition flex items-center justify-center gap-2"
+                  className="w-full py-3.5 px-4 bg-[#6366F1] hover:bg-[#4F46E5] text-white rounded-[16px] text-xs font-bold shadow-[0_4px_14px_rgba(99,102,241,0.35)] cursor-pointer transition flex items-center justify-center gap-2 active:scale-98"
                 >
-                  <Save className="h-4 w-4" /> Save Changes
+                  <Save className="h-4 w-4 stroke-[2.2]" />
+                  <span>Save Changes</span>
                 </button>
                 <button
                   type="button"
                   onClick={() => setEditingUser(null)}
-                  className="px-4 py-2.5 border border-slate-200 dark:border-slate-700 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 rounded-xl text-xs font-bold text-slate-600 dark:text-slate-300 cursor-pointer transition"
+                  className="w-full py-3.5 px-4 bg-white dark:bg-slate-900 text-slate-600 dark:text-slate-300 hover:bg-slate-50 rounded-[16px] text-xs font-bold shadow-[2px_2px_8px_rgba(170,185,220,0.18),-2px_-2px_8px_rgba(255,255,255,0.95)] cursor-pointer transition flex items-center justify-center gap-2"
                 >
-                  Cancel
+                  <span>Cancel</span>
                 </button>
               </div>
             </form>
@@ -727,14 +794,13 @@ export const UserManagementView: React.FC = () => {
         </div>
       )}
 
-      {/* ===== 8. DELETE CONFIRMATION MODAL ===== */}
       {deletingUser && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-xs animate-in fade-in">
-          <div className="bg-white dark:bg-slate-800 rounded-3xl max-w-sm w-full p-6 shadow-2xl space-y-4 border border-slate-200 dark:border-slate-700 text-center">
-            <div className="w-12 h-12 rounded-full bg-red-100 dark:bg-red-950/40 text-red-600 flex items-center justify-center mx-auto">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/40 backdrop-blur-xs animate-in fade-in">
+          <div className="bg-white dark:bg-[#131d38] rounded-[24px] max-w-sm w-full p-6 shadow-[10px_10px_30px_rgba(163,175,205,0.3)] space-y-4 border border-white/60 text-center">
+            <div className="w-12 h-12 rounded-[16px] bg-red-50 text-red-600 flex items-center justify-center mx-auto shadow-xs">
               <UserX className="h-6 w-6" />
             </div>
-            <h3 className="text-base font-black text-slate-900 dark:text-white">Delete User Account?</h3>
+            <h3 className="text-base font-bold text-slate-900 dark:text-white">Delete User Account?</h3>
             <p className="text-xs text-slate-500 dark:text-slate-400">
               Are you sure you want to remove <strong className="text-slate-900 dark:text-white">{deletingUser.displayName}</strong> (@{deletingUser.username})? This action cannot be undone.
             </p>
@@ -742,14 +808,14 @@ export const UserManagementView: React.FC = () => {
               <button
                 type="button"
                 onClick={handleConfirmDelete}
-                className="flex-1 py-2.5 px-4 bg-red-600 hover:bg-red-700 text-white rounded-xl text-xs font-black shadow-sm cursor-pointer transition"
+                className="flex-1 py-3 px-4 bg-red-600 hover:bg-red-700 text-white rounded-[14px] text-xs font-bold shadow-sm cursor-pointer transition active:scale-95"
               >
                 Yes, Delete
               </button>
               <button
                 type="button"
                 onClick={() => setDeletingUser(null)}
-                className="flex-1 py-2.5 px-4 border border-slate-200 dark:border-slate-700 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 rounded-xl text-xs font-bold text-slate-600 dark:text-slate-300 cursor-pointer transition"
+                className="flex-1 py-3 px-4 bg-[#F4F7FC] hover:bg-[#EDF2F9] rounded-[14px] text-xs font-bold text-slate-600 cursor-pointer transition active:scale-95"
               >
                 Cancel
               </button>

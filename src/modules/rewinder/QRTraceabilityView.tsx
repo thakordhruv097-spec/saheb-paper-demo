@@ -86,21 +86,23 @@ export const QRTraceabilityView: React.FC = () => {
   return (
     <div className="space-y-6 font-sans">
 
-      {/* Hero Banner Header */}
-      <div className="bg-gradient-to-r from-blue-700 via-indigo-600 to-slate-900 rounded-3xl p-6 sm:p-8 text-white shadow-xl relative overflow-hidden">
-        <div className="absolute -right-10 -top-10 w-64 h-64 bg-blue-500/10 rounded-full blur-3xl pointer-events-none" />
-        <div className="absolute -bottom-20 -left-20 w-80 h-80 rounded-full bg-blue-400/10 blur-2xl pointer-events-none" />
-
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-6 relative z-10">
-          <div className="flex items-center gap-4">
-            <div className="p-3.5 rounded-2xl bg-white/15 backdrop-blur-md border border-white/20 text-white shadow-lg shrink-0">
-              <QrCode className="h-8 w-8" />
+      {/* 1. CLEAN MINIMAL HEADER CARD (OPTION A) */}
+      <div className="bg-white dark:bg-[#131d38] rounded-2xl sm:rounded-3xl p-4 sm:p-5 text-slate-900 dark:text-white shadow-xs">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+          <div className="flex items-center gap-3.5">
+            <div className="p-2.5 sm:p-3 rounded-2xl bg-blue-50 dark:bg-blue-950/60 border border-blue-200/60 dark:border-blue-900/50 text-primary dark:text-blue-400 shadow-2xs shrink-0">
+              <QrCode className="h-6 w-6 sm:h-7 sm:w-7" />
             </div>
             <div>
-              <div className="flex flex-wrap items-center gap-3">
-                <h2 className="text-2xl sm:text-3xl font-black tracking-tight font-heading">QR Traceability & Audit Ledger</h2>
+              <div className="flex flex-wrap items-center gap-2.5">
+                <h1 className="text-xl sm:text-2xl font-black tracking-tight font-heading text-slate-900 dark:text-white">
+                  QR Traceability &amp; Audit Ledger
+                </h1>
+                <span className="px-3 py-1 rounded-full bg-blue-50 dark:bg-blue-950/60 text-primary dark:text-blue-400 border border-blue-200/80 dark:border-blue-800/80 text-xs font-bold">
+                  Reel History
+                </span>
               </div>
-              <p className="text-xs sm:text-sm text-blue-100/90 font-medium mt-1">
+              <p className="text-xs sm:text-sm text-slate-500 dark:text-slate-400 font-medium mt-0.5">
                 Lookup physical reel codes, raw material lot origins, and full machine production logs.
               </p>
             </div>
@@ -110,7 +112,7 @@ export const QRTraceabilityView: React.FC = () => {
 
       {/* KPI Metric Scorecards */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-        <div className="bg-white dark:bg-surface-dark border border-slate-200 dark:border-slate-700/80 rounded-3xl p-5 shadow-sm flex items-center gap-4">
+        <div className="neumorphic-card rounded-3xl p-5 shadow-sm flex items-center gap-4">
           <div className="p-3 rounded-2xl bg-indigo-50 dark:bg-indigo-950/40 text-indigo-600 dark:text-indigo-400 border border-indigo-200/60 dark:border-indigo-800/60">
             <QrCode className="h-6 w-6" />
           </div>
@@ -120,7 +122,7 @@ export const QRTraceabilityView: React.FC = () => {
           </div>
         </div>
 
-        <div className="bg-white dark:bg-surface-dark border border-slate-200 dark:border-slate-700/80 rounded-3xl p-5 shadow-sm flex items-center gap-4">
+        <div className="neumorphic-card rounded-3xl p-5 shadow-sm flex items-center gap-4">
           <div className="p-3 rounded-2xl bg-emerald-50 dark:bg-emerald-950/40 text-emerald-600 dark:text-emerald-400 border border-emerald-200/60 dark:border-emerald-800/60">
             <Warehouse className="h-6 w-6" />
           </div>
@@ -130,7 +132,7 @@ export const QRTraceabilityView: React.FC = () => {
           </div>
         </div>
 
-        <div className="bg-white dark:bg-surface-dark border border-slate-200 dark:border-slate-700/80 rounded-3xl p-5 shadow-sm flex items-center gap-4">
+        <div className="neumorphic-card rounded-3xl p-5 shadow-sm flex items-center gap-4">
           <div className="p-3 rounded-2xl bg-purple-50 dark:bg-purple-950/40 text-purple-600 dark:text-purple-400 border border-purple-200/60 dark:border-purple-800/60">
             <CheckCircle className="h-6 w-6" />
           </div>
@@ -145,7 +147,7 @@ export const QRTraceabilityView: React.FC = () => {
 
         {/* Left Side: Search Input & Quick Demo Reels */}
         <div className="space-y-4">
-          <div className="bg-white dark:bg-surface-dark border border-slate-200 dark:border-slate-700/80 rounded-3xl p-6 shadow-sm space-y-4">
+          <div className="neumorphic-card rounded-3xl p-6 shadow-sm space-y-4">
             <h3 className="text-xs font-black text-slate-900 dark:text-white uppercase tracking-wider border-b border-slate-100 dark:border-slate-800 pb-3 flex items-center gap-2">
               <Search className="h-4 w-4 text-primary" />
               Traceability Code Search
@@ -157,7 +159,7 @@ export const QRTraceabilityView: React.FC = () => {
                 type="text"
                 value={searchTerm}
                 onChange={e => setSearchTerm(e.target.value)}
-                className="flex-1 py-3 px-3.5 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-2xl text-xs font-bold focus:outline-none focus:ring-2 focus:ring-primary dark:text-white font-mono placeholder-slate-400"
+                className="flex-1 py-3 px-3.5 bg-slate-50 dark:bg-slate-900 rounded-2xl text-xs font-bold focus:outline-none focus:ring-2 focus:ring-primary dark:text-white font-mono placeholder-slate-400"
                 placeholder="Enter Code e.g. SAHEB-R-..."
               />
               <button
@@ -177,7 +179,7 @@ export const QRTraceabilityView: React.FC = () => {
           </div>
 
           {/* Quick Demo Helper Reels */}
-          <div className="bg-white dark:bg-surface-dark border border-slate-200 dark:border-slate-700/80 rounded-3xl p-6 shadow-sm space-y-3">
+          <div className="neumorphic-card rounded-3xl p-6 shadow-sm space-y-3">
             <h4 className="text-xs font-black text-slate-900 dark:text-white uppercase tracking-wider border-b border-slate-100 dark:border-slate-800 pb-2 flex items-center gap-2">
               <QrCode className="h-4 w-4 text-primary" />
               Recent Traceable Reels
@@ -218,7 +220,7 @@ export const QRTraceabilityView: React.FC = () => {
         <div className="lg:col-span-2">
           {activeLot ? (
             /* Render Raw Material Lot Details */
-            <div className="bg-white dark:bg-surface-dark border border-slate-200 dark:border-slate-700/80 rounded-3xl p-6 shadow-sm space-y-4">
+            <div className="neumorphic-card rounded-3xl p-6 shadow-sm space-y-4">
               <div className="flex justify-between items-start border-b border-slate-100 dark:border-slate-800 pb-3">
                 <div>
                   <span className="text-[10px] text-slate-400 font-black uppercase tracking-wider block">Raw Material Lot</span>
@@ -253,7 +255,7 @@ export const QRTraceabilityView: React.FC = () => {
             </div>
           ) : activeBoilerLog ? (
             /* Render Boiler Log Details */
-            <div className="bg-white dark:bg-surface-dark border border-slate-200 dark:border-slate-700/80 rounded-3xl p-6 shadow-sm space-y-4">
+            <div className="neumorphic-card rounded-3xl p-6 shadow-sm space-y-4">
               <div className="flex justify-between items-start border-b border-slate-100 dark:border-slate-800 pb-3">
                 <div>
                   <span className="text-[10px] text-slate-400 font-black uppercase tracking-wider block">Boiler Operation Log</span>
@@ -290,7 +292,7 @@ export const QRTraceabilityView: React.FC = () => {
               </div>
             </div>
           ) : !activeReel ? (
-            <div className="bg-white dark:bg-surface-dark border border-slate-200 dark:border-slate-700/80 rounded-3xl p-12 text-center text-xs text-slate-500 shadow-sm flex flex-col items-center justify-center gap-4">
+            <div className="neumorphic-card rounded-3xl p-12 text-center text-xs text-slate-500 shadow-sm flex flex-col items-center justify-center gap-4">
               <div className="p-4 rounded-3xl bg-blue-50 dark:bg-blue-950/40 text-primary dark:text-blue-400 border border-blue-200/60 dark:border-blue-800/60">
                 <QrCode className="h-10 w-10 animate-pulse" />
               </div>
@@ -300,7 +302,7 @@ export const QRTraceabilityView: React.FC = () => {
             <div className="space-y-4">
 
               {/* Main Info Card */}
-              <div className="bg-white dark:bg-surface-dark border border-slate-200 dark:border-slate-700/80 rounded-3xl p-6 shadow-sm space-y-4">
+              <div className="neumorphic-card rounded-3xl p-6 shadow-sm space-y-4">
 
                 {/* Reel Header */}
                 <div className="flex justify-between items-start border-b border-slate-100 dark:border-slate-800 pb-3">
@@ -343,7 +345,7 @@ export const QRTraceabilityView: React.FC = () => {
 
               {/* Lineage Breakdown Tabs / Cards */}
               {parentRoll && (
-                <div className="bg-white dark:bg-surface-dark border border-slate-200 dark:border-slate-700/80 rounded-3xl p-6 shadow-sm space-y-4">
+                <div className="neumorphic-card rounded-3xl p-6 shadow-sm space-y-4">
                   <h4 className="text-xs font-black text-slate-900 dark:text-white uppercase tracking-wider border-b border-slate-100 dark:border-slate-800 pb-2 flex items-center gap-2">
                     <Database className="h-4 w-4 text-indigo-500" />
                     Parent Machine Roll Origin
@@ -367,7 +369,7 @@ export const QRTraceabilityView: React.FC = () => {
 
               {/* Pulp Formula & Material Ingredients */}
               {appliedFormula && (
-                <div className="bg-white dark:bg-surface-dark border border-slate-200 dark:border-slate-700/80 rounded-3xl p-6 shadow-sm space-y-4">
+                <div className="neumorphic-card rounded-3xl p-6 shadow-sm space-y-4">
                   <h4 className="text-xs font-black text-slate-900 dark:text-white uppercase tracking-wider border-b border-slate-100 dark:border-slate-800 pb-2 flex items-center gap-2">
                     <FileText className="h-4 w-4 text-blue-500" />
                     Applied Pulp Formula Ingredients

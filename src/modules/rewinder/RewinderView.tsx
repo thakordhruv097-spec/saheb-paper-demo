@@ -503,9 +503,47 @@ export const RewinderView: React.FC = () => {
         </div>
       )}
 
-      {/* 1. TOP BANNER STAT CARDS (4 Hero Scorecards) */}
+      {/* 1. CLEAN MINIMAL HEADER CARD (OPTION A) */}
+      <div className="bg-white dark:bg-[#131d38] rounded-2xl sm:rounded-3xl p-4 sm:p-5 text-slate-900 dark:text-white shadow-xs">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+          <div className="flex items-center gap-3.5">
+            <div className="p-2.5 sm:p-3 rounded-2xl bg-blue-50 dark:bg-blue-950/60 border border-blue-200/60 dark:border-blue-900/50 text-primary dark:text-blue-400 shadow-2xs shrink-0">
+              <RotateCw className="h-6 w-6 sm:h-7 sm:w-7" />
+            </div>
+            <div>
+              <div className="flex flex-wrap items-center gap-2.5">
+                <h1 className="text-xl sm:text-2xl font-black tracking-tight font-heading text-slate-900 dark:text-white">
+                  Rewinder Production (Reels)
+                </h1>
+                <WorkflowStepBadge stepInfo={WORKFLOW_STEPS.rewinder} />
+              </div>
+              <p className="text-xs sm:text-sm text-slate-500 dark:text-slate-400 font-medium mt-0.5">
+                Cut jumbo rolls into finished reels, log broke generation, and manage batch inventory.
+              </p>
+            </div>
+          </div>
+          <div className="flex items-center gap-2 flex-wrap self-start sm:self-auto">
+            <button
+              onClick={handlePrintAllToday}
+              className="flex items-center justify-center gap-2 px-3.5 py-2.5 rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 font-bold text-xs transition cursor-pointer border border-slate-200 dark:border-slate-700 shadow-xs"
+            >
+              <Printer className="h-4 w-4 text-slate-500" />
+              <span>Print QR Labels ({reels.length})</span>
+            </button>
+            <button
+              onClick={handleOpenAddModal}
+              className="flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white font-black text-xs shadow-md shadow-indigo-500/25 transition cursor-pointer active:scale-95 shrink-0"
+            >
+              <Plus className="h-4 w-4 text-white" />
+              <span>+ Add Reel Entry</span>
+            </button>
+          </div>
+        </div>
+      </div>
+
+      {/* 2. TOP BANNER STAT CARDS (4 Hero Scorecards) */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3.5">
-        <div className="bg-white dark:bg-surface-dark border border-slate-200 dark:border-slate-700/80 rounded-3xl p-4 sm:p-5 shadow-xs flex items-center gap-3.5">
+        <div className="neumorphic-card p-4 sm:p-5 flex items-center gap-3.5">
           <div className="p-3 rounded-2xl bg-indigo-50 dark:bg-indigo-950/40 text-indigo-600 dark:text-indigo-400 border border-indigo-200/60 dark:border-indigo-800/60 shrink-0">
             <RotateCw className="h-5.5 w-5.5" />
           </div>
@@ -516,7 +554,7 @@ export const RewinderView: React.FC = () => {
           </div>
         </div>
 
-        <div className="bg-white dark:bg-surface-dark border border-slate-200 dark:border-slate-700/80 rounded-3xl p-4 sm:p-5 shadow-xs flex items-center gap-3.5">
+        <div className="neumorphic-card p-4 sm:p-5 flex items-center gap-3.5">
           <div className="p-3 rounded-2xl bg-red-50 dark:bg-red-950/40 text-red-600 dark:text-red-400 border border-red-200/60 dark:border-red-800/60 shrink-0">
             <RefreshCw className="h-5.5 w-5.5" />
           </div>
@@ -527,7 +565,7 @@ export const RewinderView: React.FC = () => {
           </div>
         </div>
 
-        <div className="bg-white dark:bg-surface-dark border border-slate-200 dark:border-slate-700/80 rounded-3xl p-4 sm:p-5 shadow-xs flex items-center gap-3.5">
+        <div className="neumorphic-card p-4 sm:p-5 flex items-center gap-3.5">
           <div className="p-3 rounded-2xl bg-emerald-50 dark:bg-emerald-950/40 text-emerald-600 dark:text-emerald-400 border border-emerald-200/60 dark:border-emerald-800/60 shrink-0">
             <PackageCheck className="h-5.5 w-5.5" />
           </div>
@@ -538,7 +576,7 @@ export const RewinderView: React.FC = () => {
           </div>
         </div>
 
-        <div className="bg-white dark:bg-surface-dark border border-slate-200 dark:border-slate-700/80 rounded-3xl p-4 sm:p-5 shadow-xs flex items-center gap-3.5">
+        <div className="neumorphic-card p-4 sm:p-5 flex items-center gap-3.5">
           <div className="p-3 rounded-2xl bg-purple-50 dark:bg-purple-950/40 text-purple-600 dark:text-purple-400 border border-purple-200/60 dark:border-purple-800/60 shrink-0">
             <Scissors className="h-5.5 w-5.5" />
           </div>
@@ -551,7 +589,7 @@ export const RewinderView: React.FC = () => {
       </div>
 
       {/* 2. MAIN REELS TABLE CARD */}
-      <div className="bg-white dark:bg-surface-dark border border-slate-200 dark:border-slate-700/80 rounded-3xl p-5 sm:p-6 shadow-sm space-y-5">
+      <div className="neumorphic-card p-5 sm:p-6 space-y-5">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-100 dark:border-slate-800 pb-4">
           <div>
             <div className="flex flex-wrap items-center gap-2.5">
@@ -574,7 +612,7 @@ export const RewinderView: React.FC = () => {
 
             <button
               onClick={handleOpenAddModal}
-              className="flex items-center justify-center gap-2 px-5 py-2.5 rounded-2xl bg-[#008163] hover:bg-[#006e54] text-white font-black text-xs shadow-md shadow-[#008163]/25 transition cursor-pointer active:scale-95 shrink-0"
+              className="flex items-center justify-center gap-2 px-5 py-2.5 rounded-2xl bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white font-black text-xs shadow-md shadow-indigo-500/25 transition cursor-pointer active:scale-95 shrink-0"
             >
               <Plus className="h-4 w-4 text-white" />
               <span>+ Add Reel Entry</span>
@@ -698,7 +736,7 @@ export const RewinderView: React.FC = () => {
         ) : (
           <div className="space-y-6">
             {groupedBatches.map(batch => (
-              <div key={batch.batchId} className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl overflow-hidden shadow-xs space-y-0">
+              <div key={batch.batchId} className="neumorphic-card rounded-3xl overflow-hidden shadow-xs space-y-0">
                 {/* Batch Header Bar */}
                 <div className="bg-slate-50/90 dark:bg-slate-800/80 p-3.5 sm:p-4 border-b border-slate-200 dark:border-slate-700/80 flex flex-wrap items-center justify-between gap-3">
                   <div className="flex flex-wrap items-center gap-3">
@@ -812,7 +850,7 @@ export const RewinderView: React.FC = () => {
           }}
         >
           <div
-            className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl max-w-3xl w-full p-6 space-y-4 shadow-2xl text-slate-900 dark:text-white animate-in fade-in zoom-in-95 duration-150 max-h-[90vh] overflow-y-auto custom-scrollbar"
+            className="neumorphic-card rounded-3xl max-w-3xl w-full p-6 space-y-4 shadow-2xl text-slate-900 dark:text-white animate-in fade-in zoom-in-95 duration-150 max-h-[90vh] overflow-y-auto custom-scrollbar"
             onClick={(e) => e.stopPropagation()}
           >
             {/* Modal Header */}
@@ -1096,7 +1134,7 @@ export const RewinderView: React.FC = () => {
                 </button>
                 <button
                   type="submit"
-                  className="px-6 py-2.5 rounded-xl font-black text-xs text-white transition cursor-pointer bg-[#008163] hover:bg-[#006e54] shadow-md shadow-[#008163]/25 active:scale-95"
+                  className="px-6 py-2.5 rounded-xl font-black text-xs text-white transition cursor-pointer bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 shadow-md shadow-indigo-500/25 active:scale-95"
                 >
                   Save Reel Entry
                 </button>
@@ -1188,7 +1226,7 @@ export const RewinderView: React.FC = () => {
               </button>
               <button
                 onClick={handlePrint}
-                className="px-5 py-2 rounded-xl bg-primary hover:bg-blue-700 text-white font-extrabold text-xs shadow-md flex items-center gap-2"
+                className="px-5 py-2 rounded-xl bg-primary hover:bg-primary-dark text-white font-extrabold text-xs shadow-md flex items-center gap-2"
               >
                 <Printer className="h-4 w-4" />
                 <span>Print Labels</span>
@@ -1231,15 +1269,15 @@ export const RewinderView: React.FC = () => {
             </div>
 
             {/* Hero Live Filter Results Card */}
-            <div className="bg-gradient-to-r from-blue-700 via-indigo-700 to-purple-800 rounded-2xl p-4 border border-blue-400/30 shadow-lg text-white space-y-1">
-              <span className="text-[10px] font-black tracking-widest text-blue-200 uppercase flex items-center gap-1.5">
+            <div className="bg-blue-50/80 dark:bg-blue-950/40 rounded-2xl p-4 border border-blue-200/80 dark:border-blue-900/50 shadow-xs text-slate-900 dark:text-white space-y-1">
+              <span className="text-[10px] font-black tracking-widest text-primary dark:text-blue-400 uppercase flex items-center gap-1.5">
                 <Layers className="h-3.5 w-3.5" /> LIVE FILTER RESULTS
               </span>
               <div className="flex items-baseline gap-3 pt-1">
-                <span className="text-2xl font-black">{filteredReels.length} <span className="text-sm font-normal text-blue-100">Reels</span></span>
-                <span className="text-slate-400">|</span>
-                <span className="text-xl font-extrabold">
-                  {filteredReels.reduce((acc, r) => acc + r.weight, 0).toLocaleString()} <span className="text-xs font-normal text-blue-100">kg ({(filteredReels.reduce((acc, r) => acc + r.weight, 0) / 1000).toFixed(2)} MT)</span>
+                <span className="text-2xl font-black text-slate-900 dark:text-white">{filteredReels.length} <span className="text-sm font-normal text-slate-500 dark:text-slate-400">Reels</span></span>
+                <span className="text-slate-300 dark:text-slate-700">|</span>
+                <span className="text-xl font-extrabold text-slate-900 dark:text-white">
+                  {filteredReels.reduce((acc, r) => acc + r.weight, 0).toLocaleString()} <span className="text-xs font-normal text-slate-500 dark:text-slate-400">kg ({(filteredReels.reduce((acc, r) => acc + r.weight, 0) / 1000).toFixed(2)} MT)</span>
                 </span>
               </div>
             </div>
@@ -1340,7 +1378,7 @@ export const RewinderView: React.FC = () => {
               <button
                 type="button"
                 onClick={() => setShowCascadingModal(false)}
-                className="flex-1 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-2xl text-xs font-black uppercase tracking-wider shadow-md transition cursor-pointer flex items-center justify-center gap-2"
+                className="flex-1 py-3 bg-blue-600 hover:bg-primary-dark text-white rounded-2xl text-xs font-black uppercase tracking-wider shadow-md transition cursor-pointer flex items-center justify-center gap-2"
               >
                 <span>APPLY &amp; VIEW ({filteredReels.length} REELS)</span>
               </button>

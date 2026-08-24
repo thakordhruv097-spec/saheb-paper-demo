@@ -843,17 +843,17 @@ export const DispatchView: React.FC<DispatchViewProps> = ({ initialTab = 'orders
       
       {/* Title / Hero Banner */}
       {!hideHeader && (
-        <div className="bg-gradient-to-r from-blue-700 via-indigo-600 to-slate-900 rounded-2xl p-4 sm:p-4.5 px-5 sm:px-6 text-white shadow-lg relative z-20">
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 relative z-10">
+        <div className="bg-white dark:bg-[#131d38] rounded-2xl sm:rounded-3xl p-4 sm:p-5 text-slate-900 dark:text-white shadow-xs relative z-20">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
             <div className="flex items-center gap-3.5">
-              <div className="p-2.5 rounded-xl bg-white/15 backdrop-blur-md border border-white/20 text-white shadow-md shrink-0">
-                <Truck className="h-6 w-6" />
+              <div className="p-2.5 sm:p-3 rounded-2xl bg-blue-50 dark:bg-blue-950/60 border border-blue-200/60 dark:border-blue-900/50 text-primary dark:text-blue-400 shadow-2xs shrink-0">
+                <Truck className="h-6 w-6 sm:h-7 sm:w-7" />
               </div>
               <div>
-                <div className="flex flex-wrap items-center gap-3">
-                  <h2 className="text-xl sm:text-2xl font-black tracking-tight font-heading">
+                <div className="flex flex-wrap items-center gap-2.5">
+                  <h1 className="text-xl sm:text-2xl font-black tracking-tight font-heading text-slate-900 dark:text-white">
                     {initialTab === 'orders' ? 'Order Bookings' : 'Dispatch Receipt'}
-                  </h2>
+                  </h1>
                   <WorkflowStepBadge
                     stepInfo={
                       initialTab === 'orders'
@@ -862,6 +862,11 @@ export const DispatchView: React.FC<DispatchViewProps> = ({ initialTab = 'orders
                     }
                   />
                 </div>
+                <p className="text-xs sm:text-sm text-slate-500 dark:text-slate-400 font-medium mt-0.5">
+                  {initialTab === 'orders'
+                    ? 'Manage pending customer purchase orders and view required quantities.'
+                    : 'Issue delivery challans, scan loading reels, and track customer shipments.'}
+                </p>
               </div>
             </div>
           </div>
@@ -956,14 +961,14 @@ export const DispatchView: React.FC<DispatchViewProps> = ({ initialTab = 'orders
       {activeTab === 'orders' && (
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 items-start">
           {/* List Section */}
-          <div className="lg:col-span-2 bg-white dark:bg-surface-dark border border-slate-200 dark:border-slate-700/80 rounded-3xl p-6 shadow-sm space-y-4">
+          <div className="lg:col-span-2 bg-white dark:bg-surface-dark rounded-3xl p-6 shadow-sm space-y-4">
             <h3 className="text-xs font-black text-slate-900 dark:text-white uppercase tracking-wider mb-4 border-b border-slate-100 dark:border-slate-800 pb-3 flex items-center gap-2">
               <FileText className="h-4 w-4 text-primary" />
               Active Orders Ledger
             </h3>
 
             {/* Search bar */}
-            <div className="bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-2xl p-3 flex items-center gap-3">
+            <div className="bg-slate-50 dark:bg-slate-900 rounded-2xl p-3 flex items-center gap-3">
               <Search className="h-4 w-4 text-slate-400 shrink-0" />
               <input
                 type="text"
@@ -1065,7 +1070,7 @@ export const DispatchView: React.FC<DispatchViewProps> = ({ initialTab = 'orders
           </div>
 
           {/* Form Section */}
-          <div className="bg-white dark:bg-surface-dark border border-slate-200 dark:border-slate-700/80 rounded-3xl p-6 shadow-sm space-y-4">
+          <div className="bg-white dark:bg-surface-dark rounded-3xl p-6 shadow-sm space-y-4">
             <h3 className="text-xs font-black text-slate-900 dark:text-white uppercase tracking-wider mb-4 border-b border-slate-100 dark:border-slate-800 pb-3 flex items-center gap-2">
               <Plus className="h-4 w-4 text-primary" />
               Register New Order
@@ -1107,7 +1112,7 @@ export const DispatchView: React.FC<DispatchViewProps> = ({ initialTab = 'orders
                   type="number"
                   value={orderQty}
                   onChange={e => setOrderQty(e.target.value)}
-                  className="block w-full py-2.5 px-3.5 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-2xl text-xs font-bold focus:outline-none focus:ring-2 focus:ring-primary dark:text-white font-mono"
+                  className="block w-full py-2.5 px-3.5 bg-slate-50 dark:bg-slate-900 rounded-2xl text-xs font-bold focus:outline-none focus:ring-2 focus:ring-primary dark:text-white font-mono"
                   placeholder="e.g. 20"
                 />
               </div>
@@ -1117,7 +1122,7 @@ export const DispatchView: React.FC<DispatchViewProps> = ({ initialTab = 'orders
                 <button
                   type="button"
                   onClick={() => setOpenOrderDuePicker(prev => !prev)}
-                  className="w-full flex items-center justify-between py-2.5 px-3.5 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-2xl text-xs font-bold text-slate-800 dark:text-white cursor-pointer hover:bg-slate-100 dark:hover:bg-slate-800 transition"
+                  className="w-full flex items-center justify-between py-2.5 px-3.5 bg-slate-50 dark:bg-slate-900 rounded-2xl text-xs font-bold text-slate-800 dark:text-white cursor-pointer hover:bg-slate-100 dark:hover:bg-slate-800 transition"
                 >
                   <span className={orderDue ? 'font-bold' : 'text-slate-400 font-normal'}>{orderDue || 'dd-mm-yyyy'}</span>
                   <Calendar className="h-4 w-4 text-primary dark:text-blue-400" />
@@ -1137,7 +1142,7 @@ export const DispatchView: React.FC<DispatchViewProps> = ({ initialTab = 'orders
 
               <button
                 type="submit"
-                className="w-full bg-[#008163] hover:bg-[#006e54] text-white font-black py-3 rounded-2xl text-xs uppercase tracking-wider shadow-lg shadow-[#008163]/25 transition-all hover:scale-[1.01] active:scale-[0.99] cursor-pointer"
+                className="w-full bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white font-black py-3 rounded-2xl text-xs uppercase tracking-wider shadow-lg shadow-blue-500/25 transition-all hover:scale-[1.01] active:scale-[0.99] cursor-pointer"
               >
                 Log Order Record
               </button>
@@ -1163,7 +1168,7 @@ export const DispatchView: React.FC<DispatchViewProps> = ({ initialTab = 'orders
         >
           
           {/* Top Challan Header & Dispatch Form (Full-Width Card) */}
-          <div className="bg-white dark:bg-surface-dark border border-slate-200 dark:border-slate-700/80 rounded-3xl p-5 sm:p-6 shadow-sm space-y-4 text-left w-full">
+          <div className="neumorphic-card p-5 sm:p-6 space-y-4 text-left w-full">
             <div className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-100 dark:border-slate-800 pb-3.5">
               <div className="flex items-center gap-2.5">
                 <div className="p-2 rounded-xl bg-blue-50 dark:bg-blue-950/60 text-blue-600 dark:text-blue-400">
@@ -1316,7 +1321,7 @@ export const DispatchView: React.FC<DispatchViewProps> = ({ initialTab = 'orders
                         }
                       }
                     }}
-                    className="w-full py-2.5 px-3 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-2xl text-xs font-bold focus:outline-none dark:text-white uppercase font-mono placeholder:normal-case placeholder:font-sans"
+                    className="w-full py-2.5 px-3 bg-slate-50 dark:bg-slate-900 rounded-2xl text-xs font-bold focus:outline-none dark:text-white uppercase font-mono placeholder:normal-case placeholder:font-sans"
                     placeholder="e.g. GJ-05-BX-4921"
                   />
                   <datalist id="dispatch-truck-suggestions">
@@ -1335,7 +1340,7 @@ export const DispatchView: React.FC<DispatchViewProps> = ({ initialTab = 'orders
                   type="text"
                   value={driverName}
                   onChange={e => setDriverName(e.target.value)}
-                  className="w-full py-2.5 px-3 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-2xl text-xs font-bold focus:outline-none dark:text-white"
+                  className="w-full py-2.5 px-3 bg-slate-50 dark:bg-slate-900 rounded-2xl text-xs font-bold focus:outline-none dark:text-white"
                   placeholder="e.g. Ramesh Patel"
                 />
               </div>
@@ -1382,7 +1387,7 @@ export const DispatchView: React.FC<DispatchViewProps> = ({ initialTab = 'orders
                 <button
                   type="button"
                   onClick={() => setOpenSlipDatePicker(prev => !prev)}
-                  className="w-full flex items-center justify-between py-2.5 px-3.5 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-2xl text-xs font-bold text-slate-800 dark:text-white cursor-pointer hover:bg-slate-100 dark:hover:bg-slate-800 transition"
+                  className="w-full flex items-center justify-between py-2.5 px-3.5 bg-slate-50 dark:bg-slate-900 rounded-2xl text-xs font-bold text-slate-800 dark:text-white cursor-pointer hover:bg-slate-100 dark:hover:bg-slate-800 transition"
                 >
                   <span className={slipDate ? 'font-mono' : 'text-slate-400 font-normal'}>{slipDate || 'dd-mm-yyyy'}</span>
                   <Calendar className="h-4 w-4 text-blue-600 dark:text-blue-400" />
@@ -1437,7 +1442,7 @@ export const DispatchView: React.FC<DispatchViewProps> = ({ initialTab = 'orders
 
                 <button
                   type="submit"
-                  className="bg-[#008163] hover:bg-[#006e54] text-white font-extrabold py-3 px-6 rounded-2xl text-xs uppercase tracking-wider shadow-lg shadow-[#008163]/25 transition cursor-pointer flex items-center justify-center gap-2"
+                  className="bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white font-extrabold py-3 px-6 rounded-2xl text-xs uppercase tracking-wider shadow-lg shadow-blue-500/25 transition cursor-pointer flex items-center justify-center gap-2"
                 >
                   <Truck className="h-4 w-4" />
                   <span>Print Gate Pass &amp; Dispatch</span>
@@ -1447,7 +1452,7 @@ export const DispatchView: React.FC<DispatchViewProps> = ({ initialTab = 'orders
           </div>
 
           {/* Reel Selection Ledger (Full Width Card) - FAST BATCH & MULTI-SELECTION ENGINE */}
-          <div className="bg-white dark:bg-surface-dark border border-slate-200 dark:border-slate-700/80 rounded-3xl p-5 sm:p-6 shadow-xs space-y-4 text-left w-full">
+          <div className="neumorphic-card p-5 sm:p-6 space-y-4 text-left w-full">
             
             {/* 1. Header with Tally, Search Bar & View Switcher */}
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 border-b border-slate-100 dark:border-slate-800 pb-3.5">
@@ -1733,7 +1738,7 @@ export const DispatchView: React.FC<DispatchViewProps> = ({ initialTab = 'orders
                       onClick={() => setReelGsmFilter(gsm)}
                       className={`px-2.5 py-0.5 rounded-full text-xs font-bold cursor-pointer transition ${
                         reelGsmFilter === gsm
-                          ? 'bg-blue-600 text-white shadow-xs'
+                          ? 'bg-primary text-white shadow-xs'
                           : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 hover:bg-slate-200'
                       }`}
                     >
@@ -2982,7 +2987,7 @@ export const DispatchView: React.FC<DispatchViewProps> = ({ initialTab = 'orders
                       onClick={() => setEditPickerGsmFilter(gsm)}
                       className={`px-2.5 py-0.5 rounded-full text-xs font-bold cursor-pointer transition ${
                         editPickerGsmFilter === gsm
-                          ? 'bg-blue-600 text-white shadow-xs'
+                          ? 'bg-primary text-white shadow-xs'
                           : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 hover:bg-slate-200'
                       }`}
                     >

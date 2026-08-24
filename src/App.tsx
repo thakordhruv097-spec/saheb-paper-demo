@@ -27,6 +27,7 @@ import { DateFilterProvider } from './context/DateFilterContext';
 
 import { OperatorProfileView } from './modules/profile/OperatorProfileView';
 import { AdminProfileView } from './modules/profile/AdminProfileView';
+import { RoleManagementView } from './modules/profile/RoleManagementView';
 import { MobileProfileView } from './modules/profile/MobileProfileView';
 import { useAuth } from './modules/auth/AuthContext';
 
@@ -34,10 +35,10 @@ function ProfileRouteWrapper({ defaultTab }: { defaultTab?: 'profile' | 'roles' 
   const { user } = useAuth();
 
   if (defaultTab === 'roles') {
-    return user?.role === 'Admin' ? <AdminProfileView defaultTab="roles" /> : <OperatorProfileView />;
+    return <RoleManagementView />;
   }
   if (defaultTab === 'users') {
-    return user?.role === 'Admin' ? <AdminProfileView defaultTab="users" /> : <OperatorProfileView />;
+    return user?.role === 'Admin' ? <UserManagementView /> : <OperatorProfileView />;
   }
 
   return (
@@ -49,7 +50,7 @@ function ProfileRouteWrapper({ defaultTab }: { defaultTab?: 'profile' | 'roles' 
 
       {/* Desktop Version: Full multi-tab dashboard layout */}
       <div className="hidden md:block w-full">
-        {user?.role === 'Admin' ? <AdminProfileView defaultTab={defaultTab} /> : <OperatorProfileView />}
+        {user?.role === 'Admin' ? <AdminProfileView /> : <OperatorProfileView />}
       </div>
     </>
   );
@@ -95,7 +96,7 @@ export default function App() {
               element={
                 <ProtectedRoute moduleName="admin_panel_audit">
                   <Layout>
-                    <ProfileRouteWrapper defaultTab="roles" />
+                    <RoleManagementView />
                   </Layout>
                 </ProtectedRoute>
               }

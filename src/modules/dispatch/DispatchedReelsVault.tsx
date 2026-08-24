@@ -178,7 +178,7 @@ export const DispatchedReelsVault: React.FC<DispatchedReelsVaultProps> = ({
 
       {/* KPI Stats Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-        <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl p-5 shadow-xs">
+        <div className="neumorphic-card rounded-3xl p-5 shadow-xs">
           <div className="flex justify-between items-center text-slate-400 mb-1">
             <span className="text-[10px] font-black uppercase tracking-wider">Dispatched Reels</span>
             <PackageCheck className="h-4 w-4 text-purple-500" />
@@ -191,7 +191,7 @@ export const DispatchedReelsVault: React.FC<DispatchedReelsVaultProps> = ({
           </span>
         </div>
 
-        <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl p-5 shadow-xs">
+        <div className="neumorphic-card rounded-3xl p-5 shadow-xs">
           <div className="flex justify-between items-center text-slate-400 mb-1">
             <span className="text-[10px] font-black uppercase tracking-wider">Dispatched Weight</span>
             <Layers className="h-4 w-4 text-emerald-500" />
@@ -204,7 +204,7 @@ export const DispatchedReelsVault: React.FC<DispatchedReelsVaultProps> = ({
           </span>
         </div>
 
-        <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl p-5 shadow-xs">
+        <div className="neumorphic-card rounded-3xl p-5 shadow-xs">
           <div className="flex justify-between items-center text-slate-400 mb-1">
             <span className="text-[10px] font-black uppercase tracking-wider">Linked Challans</span>
             <Truck className="h-4 w-4 text-blue-500" />
@@ -219,7 +219,7 @@ export const DispatchedReelsVault: React.FC<DispatchedReelsVaultProps> = ({
       </div>
 
       {/* Main Table Card */}
-      <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl p-6 shadow-sm space-y-4">
+      <div className="neumorphic-card rounded-3xl p-6 shadow-sm space-y-4">
         
         {/* Search & Filter Toolbar */}
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-3 pb-3 border-b border-slate-100 dark:border-slate-800">
@@ -230,7 +230,7 @@ export const DispatchedReelsVault: React.FC<DispatchedReelsVaultProps> = ({
               value={searchTerm}
               onChange={e => setSearchTerm(e.target.value)}
               placeholder="Search dispatched reel no, product, challan no, customer..."
-              className="w-full pl-10 pr-4 py-2.5 bg-slate-50 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 rounded-2xl text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-purple-500 dark:text-white placeholder-slate-400"
+              className="w-full pl-10 pr-4 py-2.5 bg-slate-50 dark:bg-slate-800/80 rounded-2xl text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-purple-500 dark:text-white placeholder-slate-400"
             />
             {searchTerm && (
               <button

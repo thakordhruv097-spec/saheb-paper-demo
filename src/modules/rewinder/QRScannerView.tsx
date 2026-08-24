@@ -266,7 +266,7 @@ export const QRScannerView: React.FC<QRScannerViewProps> = ({ onOpenPrintStudio 
 
       {/* 1. DUAL MODE: CAMERA SCANNER & MANUAL TYPE SEARCH */}
       {!scanResult ? (
-        <div className="w-full bg-white dark:bg-surface-dark border border-slate-200 dark:border-slate-700/80 rounded-3xl p-4 sm:p-6 shadow-xl space-y-4">
+        <div className="w-full neumorphic-card rounded-3xl p-4 sm:p-6 shadow-xl space-y-4">
           
           <div className="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-3">
             <div className="flex items-center gap-2.5">
@@ -360,7 +360,7 @@ export const QRScannerView: React.FC<QRScannerViewProps> = ({ onOpenPrintStudio 
                 value={manualCodeInput}
                 onChange={e => setManualCodeInput(e.target.value)}
                 placeholder="Type or scan barcode (e.g. RL-1048)..."
-                className="flex-1 px-4 py-3 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-2xl text-xs font-bold text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500 uppercase placeholder:normal-case font-mono"
+                className="flex-1 px-4 py-3 bg-slate-50 dark:bg-slate-900 rounded-2xl text-xs font-bold text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500 uppercase placeholder:normal-case font-mono"
               />
               <button
                 type="submit"
@@ -383,7 +383,7 @@ export const QRScannerView: React.FC<QRScannerViewProps> = ({ onOpenPrintStudio 
                     }
                   }}
                   defaultValue=""
-                  className="w-full py-2.5 px-3.5 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-2xl text-xs font-bold text-slate-700 dark:text-slate-200 focus:outline-none cursor-pointer"
+                  className="w-full py-2.5 px-3.5 bg-slate-50 dark:bg-slate-900 rounded-2xl text-xs font-bold text-slate-700 dark:text-slate-200 focus:outline-none cursor-pointer"
                 >
                   <option value="" disabled>-- Or Select Reel directly from Stock --</option>
                   {reelsList.slice(-20).reverse().map(r => (
@@ -598,7 +598,7 @@ export const QRScannerView: React.FC<QRScannerViewProps> = ({ onOpenPrintStudio 
       {/* QUICK DISPATCH MODAL POPUP */}
       {showDispatchModal && scanResult?.reel && (
         <div className="fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-          <div className="bg-white dark:bg-surface-dark border border-slate-200 dark:border-slate-700/80 rounded-3xl max-w-md w-full p-6 space-y-4 shadow-2xl animate-in zoom-in-95 duration-150">
+          <div className="bg-white dark:bg-surface-dark rounded-3xl max-w-md w-full p-6 space-y-4 shadow-2xl animate-in zoom-in-95 duration-150">
             
             <div className="flex justify-between items-center border-b border-slate-100 dark:border-slate-800 pb-3">
               <h3 className="text-sm font-black text-slate-900 dark:text-white uppercase tracking-wider flex items-center gap-2">
@@ -627,7 +627,7 @@ export const QRScannerView: React.FC<QRScannerViewProps> = ({ onOpenPrintStudio 
                 <select
                   value={dispatchParty}
                   onChange={e => setDispatchParty(e.target.value)}
-                  className="w-full py-2.5 px-3 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-2xl text-xs font-bold dark:text-white cursor-pointer"
+                  className="w-full py-2.5 px-3 bg-slate-50 dark:bg-slate-900 rounded-2xl text-xs font-bold dark:text-white cursor-pointer"
                 >
                   {parties.map(p => (
                     <option key={p.id} value={p.id}>{p.name}</option>
@@ -640,7 +640,7 @@ export const QRScannerView: React.FC<QRScannerViewProps> = ({ onOpenPrintStudio 
                 <select
                   value={dispatchVehicle}
                   onChange={e => setDispatchVehicle(e.target.value)}
-                  className="w-full py-2.5 px-3 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-2xl text-xs font-bold dark:text-white cursor-pointer"
+                  className="w-full py-2.5 px-3 bg-slate-50 dark:bg-slate-900 rounded-2xl text-xs font-bold dark:text-white cursor-pointer"
                 >
                   {vehicles.map(v => (
                     <option key={v.id} value={v.vehicleNo}>{v.vehicleNo} ({v.driverName})</option>

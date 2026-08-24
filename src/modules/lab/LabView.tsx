@@ -307,38 +307,42 @@ export const LabView: React.FC = () => {
   return (
     <div className="space-y-6 font-sans">
       
-      {/* Top Banner Header with Saheb Paper Branding */}
-      <div className="bg-white dark:bg-surface-dark border border-slate-200 dark:border-slate-700/80 rounded-3xl p-6 shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-4">
-        <div className="flex items-center gap-3">
-          <div className="p-2.5 rounded-2xl bg-gradient-to-tr from-purple-600 to-indigo-600 text-white shadow-md shadow-purple-500/20">
-            <Beaker className="w-5 h-5" />
-          </div>
-          <div>
-            <div className="flex flex-wrap items-center gap-2.5">
-              <h2 className="text-base font-black text-slate-900 dark:text-white uppercase tracking-wider font-heading">
-                {COMPANY_CONFIG.name} — Quality Control Laboratory
-              </h2>
-              <WorkflowStepBadge stepInfo={WORKFLOW_STEPS.lab} />
+      {/* 1. CLEAN MINIMAL HEADER CARD (OPTION A) */}
+      <div className="bg-white dark:bg-[#131d38] rounded-2xl sm:rounded-3xl p-4 sm:p-5 text-slate-900 dark:text-white shadow-xs">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+          <div className="flex items-center gap-3.5">
+            <div className="p-2.5 sm:p-3 rounded-2xl bg-purple-50 dark:bg-purple-950/60 border border-purple-200/60 dark:border-purple-900/50 text-purple-600 dark:text-purple-400 shadow-2xs shrink-0">
+              <Beaker className="h-6 w-6 sm:h-7 sm:w-7" />
             </div>
-            <p className="text-xs text-slate-500 dark:text-slate-400 font-medium tracking-tight">
-              Log paper test reports, 14-sample GSM profiles, tensile/tear strength & generate official COA certificates.
-            </p>
+            <div>
+              <div className="flex flex-wrap items-center gap-2.5">
+                <h1 className="text-xl sm:text-2xl font-black tracking-tight font-heading text-slate-900 dark:text-white">
+                  {COMPANY_CONFIG.name} — Quality Control Laboratory
+                </h1>
+                <WorkflowStepBadge stepInfo={WORKFLOW_STEPS.lab} />
+              </div>
+              <p className="text-xs sm:text-sm text-slate-500 dark:text-slate-400 font-medium mt-0.5">
+                Log paper test reports, 14-sample GSM profiles, tensile/tear strength & generate official COA certificates.
+              </p>
+            </div>
           </div>
-        </div>
 
-        {(user?.role === 'Admin' || user?.role === 'PlantManager' || user?.role === 'LabOperator') && (
-          <button
-            onClick={() => {
-              setSuccessMsg('');
-              setErrorMsg('');
-              setIsModalOpen(true);
-            }}
-            className="px-6 py-3 bg-[#008163] hover:bg-[#006e54] text-white font-black rounded-2xl text-xs uppercase tracking-wider shadow-lg shadow-[#008163]/25 transition-all hover:scale-[1.01] active:scale-[0.99] cursor-pointer flex items-center justify-center gap-2"
-          >
-            <Plus className="h-4 w-4" />
-            <span>Create New Paper Test Report</span>
-          </button>
-        )}
+          {(user?.role === 'Admin' || user?.role === 'PlantManager' || user?.role === 'LabOperator') && (
+            <div className="flex items-center gap-2 self-start sm:self-auto">
+              <button
+                onClick={() => {
+                  setSuccessMsg('');
+                  setErrorMsg('');
+                  setIsModalOpen(true);
+                }}
+                className="px-4 py-2.5 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white font-black rounded-xl text-xs uppercase tracking-wider shadow-md shadow-indigo-500/25 transition active:scale-95 cursor-pointer flex items-center justify-center gap-2"
+              >
+                <Plus className="h-4 w-4" />
+                <span>+ Create New Report</span>
+              </button>
+            </div>
+          )}
+        </div>
       </div>
 
       {successMsg && (
@@ -350,7 +354,7 @@ export const LabView: React.FC = () => {
 
       {/* Top Banner KPI Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-4 gap-4 sm:gap-5 w-full">
-        <div className="bg-white dark:bg-surface-dark border border-slate-200 dark:border-slate-700/80 rounded-3xl p-5 shadow-sm space-y-1">
+        <div className="neumorphic-card p-5 space-y-1">
           <div className="flex items-center justify-between">
             <span className="text-[11px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-wider">Total Reports</span>
             <div className="p-2 rounded-xl bg-purple-50 dark:bg-purple-950/40 text-purple-600 dark:text-purple-400">
@@ -363,7 +367,7 @@ export const LabView: React.FC = () => {
           <p className="text-[11px] text-slate-500 dark:text-slate-400 font-medium">Logged in Lab System</p>
         </div>
 
-        <div className="bg-white dark:bg-surface-dark border border-slate-200 dark:border-slate-700/80 rounded-3xl p-5 shadow-sm space-y-1">
+        <div className="neumorphic-card p-5 space-y-1">
           <div className="flex items-center justify-between">
             <span className="text-[11px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-wider">Avg Tested GSM</span>
             <div className="p-2 rounded-xl bg-blue-50 dark:bg-blue-950/40 text-blue-600 dark:text-blue-400">
@@ -376,7 +380,7 @@ export const LabView: React.FC = () => {
           <p className="text-[11px] text-slate-500 dark:text-slate-400 font-medium">Across all roll samples</p>
         </div>
 
-        <div className="bg-white dark:bg-surface-dark border border-slate-200 dark:border-slate-700/80 rounded-3xl p-5 shadow-sm space-y-1">
+        <div className="neumorphic-card p-5 space-y-1">
           <div className="flex items-center justify-between">
             <span className="text-[11px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-wider">Avg Moisture %</span>
             <div className="p-2 rounded-xl bg-amber-50 dark:bg-amber-950/40 text-amber-600 dark:text-amber-400">
@@ -389,7 +393,7 @@ export const LabView: React.FC = () => {
           <p className="text-[11px] text-slate-500 dark:text-slate-400 font-medium">Target range: 4% – 8%</p>
         </div>
 
-        <div className="bg-white dark:bg-surface-dark border border-slate-200 dark:border-slate-700/80 rounded-3xl p-5 shadow-sm space-y-1">
+        <div className="neumorphic-card p-5 space-y-1">
           <div className="flex items-center justify-between">
             <span className="text-[11px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-wider">Grade A Pass Ratio</span>
             <div className="p-2 rounded-xl bg-emerald-50 dark:bg-emerald-950/40 text-emerald-600 dark:text-emerald-400">
@@ -404,7 +408,7 @@ export const LabView: React.FC = () => {
       </div>
 
       {/* Main Ledger Table of Historical Lab Reports */}
-      <div className="bg-white dark:bg-surface-dark border border-slate-200 dark:border-slate-700/80 rounded-3xl p-6 shadow-sm space-y-5">
+      <div className="neumorphic-card p-6 space-y-5">
         
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-slate-100 dark:border-slate-800 pb-4">
           <div>
@@ -418,7 +422,7 @@ export const LabView: React.FC = () => {
           </div>
 
           <div className="flex items-center gap-2">
-            <div className="bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-2xl p-2 flex items-center gap-2 w-full md:w-56">
+            <div className="bg-slate-50 dark:bg-slate-900 rounded-2xl p-2 flex items-center gap-2 w-full md:w-56">
               <Search className="h-4 w-4 text-slate-400 shrink-0" />
               <input
                 type="text"
@@ -557,7 +561,7 @@ export const LabView: React.FC = () => {
           }}
         >
           <div
-            className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700/80 rounded-3xl w-full max-w-4xl shadow-2xl flex flex-col max-h-[90vh] overflow-hidden"
+            className="bg-white dark:bg-slate-900 rounded-3xl w-full max-w-4xl shadow-2xl flex flex-col max-h-[90vh] overflow-hidden"
             onClick={(e) => e.stopPropagation()}
           >
             
@@ -957,7 +961,7 @@ export const LabView: React.FC = () => {
                 </button>
                 <button
                   type="submit"
-                  className="px-6 py-3 bg-[#008163] hover:bg-[#006e54] text-white font-black rounded-2xl text-xs uppercase tracking-wider shadow-lg shadow-[#008163]/25 cursor-pointer hover:scale-[1.01] active:scale-[0.99] transition"
+                  className="px-6 py-3 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white font-black rounded-2xl text-xs uppercase tracking-wider shadow-lg shadow-blue-500/25 cursor-pointer hover:scale-[1.01] active:scale-[0.99] transition"
                 >
                   Save & Issue Paper Test Report
                 </button>

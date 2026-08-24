@@ -39,6 +39,12 @@ import {
   Calendar,
   ChevronLeft,
   ChevronRight,
+  Sliders,
+  Inbox,
+  FileText,
+  Layers,
+  MoreVertical,
+  ShoppingCart,
 } from 'lucide-react';
 
 import { useDateFilter } from '../../context/DateFilterContext';
@@ -312,56 +318,66 @@ export const DashboardView: React.FC = () => {
 
         return (
           <div className="space-y-6">
-            <div className="bg-gradient-to-r from-orange-600 via-amber-600 to-amber-500 rounded-[28px] p-6 sm:p-8 text-white shadow-xl relative overflow-hidden">
-              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 relative z-10">
-                <div>
-                  <div className="flex flex-wrap items-center gap-3">
-                    <Flame className="h-8 w-8 text-amber-200" />
-                    <h2 className="text-2xl sm:text-3xl font-extrabold tracking-tight">Boiler Operations Dashboard</h2>
-                    <span className="block md:hidden px-3 py-1 rounded-full bg-white/20 backdrop-blur-md text-[11px] font-extrabold tracking-wider text-white border border-white/30 shadow-xs shrink-0">
-                      {new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'short', day: 'numeric', year: 'numeric' })}
-                    </span>
+            {/* 1. CLEAN MINIMAL HEADER CARD (OPTION A) */}
+            <div className="neumorphic-card rounded-2xl sm:rounded-3xl p-4 sm:p-5 text-slate-900 dark:text-white">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                <div className="flex items-center gap-3.5">
+                  <div className="p-2.5 sm:p-3 rounded-2xl bg-amber-50 dark:bg-amber-950/60 border border-amber-200/60 dark:border-amber-900/50 text-amber-600 dark:text-amber-400 shadow-2xs shrink-0">
+                    <Flame className="h-6 w-6 sm:h-7 sm:w-7" />
                   </div>
-                  <p className="text-xs sm:text-sm text-amber-100 mt-1">Real-Time Boiler Shift Monitoring, Steam Generation &amp; Fuel Logs</p>
+                  <div>
+                    <div className="flex flex-wrap items-center gap-2.5">
+                      <h1 className="text-xl sm:text-2xl font-black tracking-tight font-heading text-slate-900 dark:text-white">
+                        Boiler Operations Dashboard
+                      </h1>
+                      <span className="px-3 py-1 rounded-full bg-amber-50 dark:bg-amber-950/60 text-amber-700 dark:text-amber-300 border border-amber-200/80 dark:border-amber-800/80 text-xs font-bold">
+                        {new Date().toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' })}
+                      </span>
+                    </div>
+                    <p className="text-xs sm:text-sm text-slate-500 dark:text-slate-400 font-medium mt-0.5">
+                      Real-Time Boiler Shift Monitoring, Steam Generation &amp; Fuel Logs
+                    </p>
+                  </div>
                 </div>
                 <div className="flex items-center gap-2 self-start sm:self-auto">
                   <button
                     onClick={handleRefresh}
-                    className={`p-2.5 bg-white/20 hover:bg-white/30 text-white backdrop-blur-md rounded-xl transition cursor-pointer border border-white/20 ${isRefreshing ? 'animate-spin' : ''}`}
+                    className={`p-2 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-700 rounded-xl transition cursor-pointer shadow-xs ${isRefreshing ? 'animate-spin' : ''}`}
                     title="Refresh Boiler Data"
                   >
                     <RefreshCw className="h-4 w-4" />
                   </button>
                   <button
                     onClick={() => navigate('/utilities-&-etp/boiler-operations')}
-                    className="px-4 py-2.5 bg-white text-orange-700 hover:bg-amber-50 font-bold rounded-xl text-xs shadow-md transition flex items-center gap-2 cursor-pointer"
+                    className="px-3.5 py-2 bg-primary hover:bg-primary-dark text-white font-bold rounded-xl text-xs shadow-xs transition flex items-center gap-2 cursor-pointer"
                   >
                     <Plus className="h-4 w-4" /> Log Shift Readings
                   </button>
                 </div>
               </div>
+            </div>
 
-              <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mt-6 relative z-10">
-                <div className="bg-white/10 backdrop-blur-md border border-white/20 rounded-2xl p-4">
-                  <div className="text-xs text-amber-100 font-medium">Wood / Biocoal Used Today</div>
-                  <div className="text-2xl font-black mt-1">{totalWoodToday > 0 ? `${totalWoodToday} kg` : '2,400 kg'}</div>
-                </div>
-                <div className="bg-white/10 backdrop-blur-md border border-white/20 rounded-2xl p-4">
-                  <div className="text-xs text-amber-100 font-medium">Water Consumption</div>
-                  <div className="text-2xl font-black mt-1">{totalWaterToday > 0 ? `${totalWaterToday} L` : '15,000 L'}</div>
-                </div>
-                <div className="bg-white/10 backdrop-blur-md border border-white/20 rounded-2xl p-4">
-                  <div className="text-xs text-amber-100 font-medium">Avg Steam Pressure</div>
-                  <div className="text-2xl font-black mt-1">{avgPressure} psi</div>
-                </div>
-                <div className="bg-white/10 backdrop-blur-md border border-white/20 rounded-2xl p-4">
-                  <div className="text-xs text-amber-100 font-medium">Boiler Temperature</div>
-                  <div className="text-2xl font-black mt-1">{avgTemp} °C</div>
-                </div>
+            {/* KPI METRIC CARDS */}
+            <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+              <div className="neumorphic-card rounded-2xl p-4">
+                <div className="text-xs text-slate-500 dark:text-slate-400 font-semibold">Wood / Biocoal Used Today</div>
+                <div className="text-xl sm:text-2xl font-black text-slate-900 dark:text-white mt-1">{totalWoodToday > 0 ? `${totalWoodToday} kg` : '2,400 kg'}</div>
+              </div>
+              <div className="neumorphic-card rounded-2xl p-4">
+                <div className="text-xs text-slate-500 dark:text-slate-400 font-semibold">Water Consumption</div>
+                <div className="text-xl sm:text-2xl font-black text-slate-900 dark:text-white mt-1">{totalWaterToday > 0 ? `${totalWaterToday} L` : '15,000 L'}</div>
+              </div>
+              <div className="neumorphic-card rounded-2xl p-4">
+                <div className="text-xs text-slate-500 dark:text-slate-400 font-semibold">Avg Steam Pressure</div>
+                <div className="text-xl sm:text-2xl font-black text-slate-900 dark:text-white mt-1">{avgPressure} psi</div>
+              </div>
+              <div className="neumorphic-card rounded-2xl p-4">
+                <div className="text-xs text-slate-500 dark:text-slate-400 font-semibold">Boiler Temperature</div>
+                <div className="text-xl sm:text-2xl font-black text-slate-900 dark:text-white mt-1">{avgTemp} °C</div>
               </div>
             </div>
 
-            <div className="bg-white dark:bg-surface-dark border border-slate-200 dark:border-slate-700 rounded-2xl p-6 shadow-sm flex items-center justify-between">
+            <div className="bg-white dark:bg-surface-dark rounded-2xl p-6 flex items-center justify-between">
               <div className="flex items-center gap-4">
                 <div className="p-3.5 rounded-2xl bg-orange-100 text-orange-700 dark:bg-orange-950/40 dark:text-orange-400">
                   <Flame className="h-7 w-7" />
@@ -379,7 +395,7 @@ export const DashboardView: React.FC = () => {
               </button>
             </div>
 
-            <div className="bg-white dark:bg-surface-dark border border-slate-200 dark:border-slate-700 rounded-2xl p-6 shadow-sm space-y-4">
+            <div className="bg-white dark:bg-surface-dark rounded-2xl p-6 space-y-4">
               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b pb-4 dark:border-slate-700">
                 <div className="flex items-center gap-2.5">
                   <div className="p-2 rounded-xl bg-orange-100 dark:bg-orange-950/50 text-orange-600 dark:text-orange-400">
@@ -401,7 +417,7 @@ export const DashboardView: React.FC = () => {
                 </button>
               </div>
 
-              <div className="overflow-x-auto rounded-xl border border-slate-200 dark:border-slate-700/80 shadow-xs dashboard-custom-scrollbar">
+              <div className="overflow-x-auto rounded-xl dashboard-custom-scrollbar">
                 <table className="w-full text-left text-xs border-collapse">
                   <thead>
                     <tr className="bg-slate-50 dark:bg-slate-800/80 text-slate-600 dark:text-slate-300 border-b border-slate-200 dark:border-slate-700">
@@ -472,50 +488,63 @@ export const DashboardView: React.FC = () => {
 
         return (
           <div className="space-y-6">
-            {/* HERO BANNER */}
-            <div className="bg-gradient-to-r from-blue-700 via-indigo-600 to-indigo-500 rounded-[28px] p-6 sm:p-8 text-white shadow-xl relative overflow-hidden">
-              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 relative z-10">
-                <div>
-                  <div className="flex flex-wrap items-center gap-3">
-                    <Factory className="h-8 w-8 text-blue-200" />
-                    <h2 className="text-2xl sm:text-3xl font-extrabold tracking-tight">Pulp Mill Operations Dashboard</h2>
-                    <span className="block md:hidden px-3 py-1 rounded-full bg-white/20 backdrop-blur-md text-[11px] font-extrabold tracking-wider text-white border border-white/30 shadow-xs shrink-0">
-                      {new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'short', day: 'numeric', year: 'numeric' })}
-                    </span>
+            {/* 1. CLEAN MINIMAL HEADER CARD (OPTION A) */}
+            <div className="neumorphic-card rounded-2xl sm:rounded-3xl p-4 sm:p-5 text-slate-900 dark:text-white">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                <div className="flex items-center gap-3.5">
+                  <div className="p-2.5 sm:p-3 rounded-2xl bg-blue-50 dark:bg-blue-950/60 border border-blue-200/60 dark:border-blue-900/50 text-primary dark:text-blue-400 shadow-2xs shrink-0">
+                    <Factory className="h-6 w-6 sm:h-7 sm:w-7" />
                   </div>
-                  <p className="text-xs sm:text-sm text-blue-100 mt-1">Raw Material Batching, Chemical Dosing &amp; Hydrapulper Telemetry</p>
+                  <div>
+                    <div className="flex flex-wrap items-center gap-2.5">
+                      <h1 className="text-xl sm:text-2xl font-black tracking-tight font-heading text-slate-900 dark:text-white">
+                        Pulp Mill Operations Dashboard
+                      </h1>
+                      <span className="px-3 py-1 rounded-full bg-blue-50 dark:bg-blue-950/60 text-primary dark:text-blue-400 border border-blue-200/80 dark:border-blue-800/80 text-xs font-bold">
+                        {new Date().toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' })}
+                      </span>
+                    </div>
+                    <p className="text-xs sm:text-sm text-slate-500 dark:text-slate-400 font-medium mt-0.5">
+                      Raw Material Batching, Chemical Dosing &amp; Hydrapulper Telemetry
+                    </p>
+                  </div>
                 </div>
                 <div className="flex items-center gap-2 self-start sm:self-auto">
-                  <button onClick={handleRefresh} className={`p-2.5 bg-white/20 hover:bg-white/30 text-white backdrop-blur-md rounded-xl transition cursor-pointer ${isRefreshing ? 'animate-spin' : ''}`}>
+                  <button
+                    onClick={handleRefresh}
+                    className={`p-2 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-700 rounded-xl transition cursor-pointer shadow-xs ${isRefreshing ? 'animate-spin' : ''}`}
+                    title="Refresh Pulp Mill Data"
+                  >
                     <RefreshCw className="h-4 w-4" />
                   </button>
                 </div>
               </div>
+            </div>
 
-              <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mt-6 relative z-10">
-                <div className="bg-white/10 backdrop-blur-md border border-white/20 rounded-2xl p-4">
-                  <div className="text-xs text-blue-100 font-medium">Total Raw Material Stock</div>
-                  <div className="text-2xl font-black mt-1">{totalRawMaterialStock.toLocaleString()} kg</div>
-                </div>
-                <div className="bg-white/10 backdrop-blur-md border border-white/20 rounded-2xl p-4">
-                  <div className="text-xs text-blue-100 font-medium">Waste Paper Mix</div>
-                  <div className="text-2xl font-black mt-1">{wastePaperStock.toLocaleString()} kg</div>
-                </div>
-                <div className="bg-white/10 backdrop-blur-md border border-white/20 rounded-2xl p-4">
-                  <div className="text-xs text-blue-100 font-medium">Chemical Stock</div>
-                  <div className="text-2xl font-black mt-1">{chemicalStock.toLocaleString()} kg</div>
-                </div>
-                <div className="bg-white/10 backdrop-blur-md border border-white/20 rounded-2xl p-4">
-                  <div className="text-xs text-blue-100 font-medium">Active Formulas</div>
-                  <div className="text-2xl font-black mt-1">{formulas.length} Saved</div>
-                </div>
+            {/* KPI METRIC CARDS */}
+            <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+              <div className="neumorphic-card rounded-2xl p-4">
+                <div className="text-xs text-slate-500 dark:text-slate-400 font-semibold">Total Raw Material Stock</div>
+                <div className="text-xl sm:text-2xl font-black text-slate-900 dark:text-white mt-1">{totalRawMaterialStock.toLocaleString()} kg</div>
+              </div>
+              <div className="neumorphic-card rounded-2xl p-4">
+                <div className="text-xs text-slate-500 dark:text-slate-400 font-semibold">Waste Paper Mix</div>
+                <div className="text-xl sm:text-2xl font-black text-slate-900 dark:text-white mt-1">{wastePaperStock.toLocaleString()} kg</div>
+              </div>
+              <div className="neumorphic-card rounded-2xl p-4">
+                <div className="text-xs text-slate-500 dark:text-slate-400 font-semibold">Chemical Stock</div>
+                <div className="text-xl sm:text-2xl font-black text-slate-900 dark:text-white mt-1">{chemicalStock.toLocaleString()} kg</div>
+              </div>
+              <div className="neumorphic-card rounded-2xl p-4">
+                <div className="text-xs text-slate-500 dark:text-slate-400 font-semibold">Active Formulas</div>
+                <div className="text-xl sm:text-2xl font-black text-slate-900 dark:text-white mt-1">{formulas.length} Saved</div>
               </div>
             </div>
 
 
 
             {/* RAW MATERIAL INVENTORY TABLE / CARDS FOR PULP PREPARATION */}
-            <div className="bg-white dark:bg-surface-dark border border-slate-200 dark:border-slate-700/80 rounded-3xl p-6 shadow-sm space-y-4">
+            <div className="bg-white dark:bg-surface-dark rounded-3xl p-6 space-y-4">
               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b pb-4 dark:border-slate-700">
                 <div className="flex items-center gap-3">
                   <div className="p-2.5 rounded-2xl bg-blue-50 dark:bg-blue-950/40 text-blue-600 dark:text-blue-400 border border-blue-200 dark:border-blue-800">
@@ -563,48 +592,61 @@ export const DashboardView: React.FC = () => {
 
         return (
           <div className="space-y-6">
-            {/* HERO BANNER */}
-            <div className="bg-gradient-to-r from-indigo-700 via-purple-700 to-slate-900 rounded-[28px] p-6 sm:p-8 text-white shadow-xl relative overflow-hidden">
-              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 relative z-10">
-                <div>
-                  <div className="flex flex-wrap items-center gap-3">
-                    <RotateCw className="h-8 w-8 text-purple-200" />
-                    <h2 className="text-2xl sm:text-3xl font-extrabold tracking-tight">Rewinder & Reel Conversion Dashboard</h2>
-                    <span className="block md:hidden px-3 py-1 rounded-full bg-white/20 backdrop-blur-md text-[11px] font-extrabold tracking-wider text-white border border-white/30 shadow-xs shrink-0">
-                      {new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'short', day: 'numeric', year: 'numeric' })}
-                    </span>
+            {/* 1. CLEAN MINIMAL HEADER CARD (OPTION A) */}
+            <div className="neumorphic-card rounded-2xl sm:rounded-3xl p-4 sm:p-5 text-slate-900 dark:text-white">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                <div className="flex items-center gap-3.5">
+                  <div className="p-2.5 sm:p-3 rounded-2xl bg-blue-50 dark:bg-blue-950/60 border border-blue-200/60 dark:border-blue-900/50 text-primary dark:text-blue-400 shadow-2xs shrink-0">
+                    <RotateCw className="h-6 w-6 sm:h-7 sm:w-7" />
                   </div>
-                  <p className="text-xs sm:text-sm text-purple-100 mt-1">Roll-to-Reel Cutting, Barcode Tagging &amp; Quality Traceability</p>
+                  <div>
+                    <div className="flex flex-wrap items-center gap-2.5">
+                      <h1 className="text-xl sm:text-2xl font-black tracking-tight font-heading text-slate-900 dark:text-white">
+                        Rewinder &amp; Reel Conversion Dashboard
+                      </h1>
+                      <span className="px-3 py-1 rounded-full bg-blue-50 dark:bg-blue-950/60 text-primary dark:text-blue-400 border border-blue-200/80 dark:border-blue-800/80 text-xs font-bold">
+                        {new Date().toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' })}
+                      </span>
+                    </div>
+                    <p className="text-xs sm:text-sm text-slate-500 dark:text-slate-400 font-medium mt-0.5">
+                      Roll-to-Reel Cutting, Barcode Tagging &amp; Quality Traceability
+                    </p>
+                  </div>
                 </div>
                 <div className="flex items-center gap-2 self-start sm:self-auto">
-                  <button onClick={handleRefresh} className={`p-2.5 bg-white/20 hover:bg-white/30 text-white backdrop-blur-md rounded-xl transition cursor-pointer ${isRefreshing ? 'animate-spin' : ''}`}>
+                  <button
+                    onClick={handleRefresh}
+                    className={`p-2 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-700 rounded-xl transition cursor-pointer shadow-xs ${isRefreshing ? 'animate-spin' : ''}`}
+                    title="Refresh Rewinder Data"
+                  >
                     <RefreshCw className="h-4 w-4" />
                   </button>
                 </div>
               </div>
+            </div>
 
-              <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mt-6 relative z-10">
-                <div className="bg-white/10 backdrop-blur-md border border-white/20 rounded-2xl p-4">
-                  <div className="text-xs text-purple-100 font-medium">Converted Reels Today</div>
-                  <div className="text-2xl font-black mt-1">{totalReelsConverted} reels</div>
-                </div>
-                <div className="bg-white/10 backdrop-blur-md border border-white/20 rounded-2xl p-4">
-                  <div className="text-xs text-purple-100 font-medium">Total Reel Output</div>
-                  <div className="text-2xl font-black mt-1">{totalReelsWeight.toLocaleString()} kg</div>
-                </div>
-                <div className="bg-white/10 backdrop-blur-md border border-white/20 rounded-2xl p-4">
-                  <div className="text-xs text-purple-100 font-medium">In-Stock Reels</div>
-                  <div className="text-2xl font-black mt-1">{inStockReels} reels</div>
-                </div>
-                <div className="bg-white/10 backdrop-blur-md border border-white/20 rounded-2xl p-4">
-                  <div className="text-xs text-purple-100 font-medium">Machine Status</div>
-                  <div className="text-2xl font-black mt-1 text-emerald-300">ACTIVE</div>
-                </div>
+            {/* KPI METRIC CARDS */}
+            <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+              <div className="neumorphic-card rounded-2xl p-4">
+                <div className="text-xs text-slate-500 dark:text-slate-400 font-semibold">Converted Reels Today</div>
+                <div className="text-xl sm:text-2xl font-black text-slate-900 dark:text-white mt-1">{totalReelsConverted} reels</div>
+              </div>
+              <div className="neumorphic-card rounded-2xl p-4">
+                <div className="text-xs text-slate-500 dark:text-slate-400 font-semibold">Total Reel Output</div>
+                <div className="text-xl sm:text-2xl font-black text-slate-900 dark:text-white mt-1">{totalReelsWeight.toLocaleString()} kg</div>
+              </div>
+              <div className="neumorphic-card rounded-2xl p-4">
+                <div className="text-xs text-slate-500 dark:text-slate-400 font-semibold">In-Stock Reels</div>
+                <div className="text-xl sm:text-2xl font-black text-slate-900 dark:text-white mt-1">{inStockReels} reels</div>
+              </div>
+              <div className="neumorphic-card rounded-2xl p-4">
+                <div className="text-xs text-slate-500 dark:text-slate-400 font-semibold">Machine Status</div>
+                <div className="text-xl sm:text-2xl font-black text-emerald-600 dark:text-emerald-400 mt-1">ACTIVE</div>
               </div>
             </div>
 
             {/* RECENT CONVERTED REELS TABLE */}
-            <div className="bg-white dark:bg-surface-dark border border-slate-200 dark:border-slate-700/80 rounded-3xl p-6 shadow-sm space-y-4">
+            <div className="bg-white dark:bg-surface-dark rounded-3xl p-6 space-y-4">
               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b pb-4 dark:border-slate-700">
                 <div className="flex items-center gap-3">
                   <div className="p-2.5 rounded-2xl bg-indigo-50 dark:bg-indigo-950/40 text-indigo-600 dark:text-indigo-400 border border-indigo-200 dark:border-indigo-800">
@@ -625,7 +667,7 @@ export const DashboardView: React.FC = () => {
                 </button>
               </div>
 
-              <div className="overflow-x-auto rounded-2xl border border-slate-200 dark:border-slate-700/80 shadow-xs">
+              <div className="overflow-x-auto rounded-2xl">
                 <table className="w-full text-left text-xs border-collapse font-sans">
                   <thead>
                     <tr className="bg-slate-50 dark:bg-slate-800/80 text-slate-600 dark:text-slate-300 border-b border-slate-200 dark:border-slate-700">
@@ -679,45 +721,62 @@ export const DashboardView: React.FC = () => {
 
         return (
           <div className="space-y-6">
-            <div className="bg-gradient-to-r from-blue-700 via-teal-600 to-slate-900 rounded-[28px] p-6 sm:p-8 text-white shadow-xl relative overflow-hidden">
-              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 relative z-10">
-                <div>
-                  <div className="flex flex-wrap items-center gap-3">
-                    <Cog className="h-8 w-8 text-teal-200" />
-                    <h2 className="text-2xl sm:text-3xl font-extrabold tracking-tight">Paper Machine Operations Dashboard</h2>
-                    <span className="block md:hidden px-3 py-1 rounded-full bg-white/20 backdrop-blur-md text-[11px] font-extrabold tracking-wider text-white border border-white/30 shadow-xs shrink-0">
-                      {new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'short', day: 'numeric', year: 'numeric' })}
-                    </span>
+            {/* 1. CLEAN MINIMAL HEADER CARD (OPTION A) */}
+            <div className="neumorphic-card rounded-2xl sm:rounded-3xl p-4 sm:p-5 text-slate-900 dark:text-white">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                <div className="flex items-center gap-3.5">
+                  <div className="p-2.5 sm:p-3 rounded-2xl bg-blue-50 dark:bg-blue-950/60 border border-blue-200/60 dark:border-blue-900/50 text-primary dark:text-blue-400 shadow-2xs shrink-0">
+                    <Cog className="h-6 w-6 sm:h-7 sm:w-7" />
                   </div>
-                  <p className="text-xs sm:text-sm text-teal-100 mt-1">Paper Roll Production, GSM Consistency & Quality Telemetry</p>
+                  <div>
+                    <div className="flex flex-wrap items-center gap-2.5">
+                      <h1 className="text-xl sm:text-2xl font-black tracking-tight font-heading text-slate-900 dark:text-white">
+                        Paper Machine Operations Dashboard
+                      </h1>
+                      <span className="px-3 py-1 rounded-full bg-blue-50 dark:bg-blue-950/60 text-primary dark:text-blue-400 border border-blue-200/80 dark:border-blue-800/80 text-xs font-bold">
+                        {new Date().toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' })}
+                      </span>
+                    </div>
+                    <p className="text-xs sm:text-sm text-slate-500 dark:text-slate-400 font-medium mt-0.5">
+                      Paper Roll Production, GSM Consistency &amp; Quality Telemetry
+                    </p>
+                  </div>
                 </div>
                 <div className="flex items-center gap-2 self-start sm:self-auto">
-                  <button onClick={handleRefresh} className={`p-2.5 bg-white/20 hover:bg-white/30 text-white backdrop-blur-md rounded-xl transition cursor-pointer ${isRefreshing ? 'animate-spin' : ''}`}>
+                  <button
+                    onClick={handleRefresh}
+                    className={`p-2 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-700 rounded-xl transition cursor-pointer shadow-xs ${isRefreshing ? 'animate-spin' : ''}`}
+                    title="Refresh Machine Data"
+                  >
                     <RefreshCw className="h-4 w-4" />
                   </button>
-                  <button onClick={() => navigate('/machine-production')} className="px-4 py-2.5 bg-white text-teal-900 font-bold rounded-xl text-xs shadow-md cursor-pointer">
+                  <button
+                    onClick={() => navigate('/machine-production')}
+                    className="px-3.5 py-2 bg-primary hover:bg-primary-dark text-white font-bold rounded-xl text-xs shadow-xs cursor-pointer"
+                  >
                     Open Machine Section &gt;
                   </button>
                 </div>
               </div>
+            </div>
 
-              <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mt-6 relative z-10">
-                <div className="bg-white/10 backdrop-blur-md border border-white/20 rounded-2xl p-4">
-                  <div className="text-xs text-teal-100 font-medium">Machine Output Today</div>
-                  <div className="text-2xl font-black mt-1">{totalRollsWeight.toLocaleString()} kg</div>
-                </div>
-                <div className="bg-white/10 backdrop-blur-md border border-white/20 rounded-2xl p-4">
-                  <div className="text-xs text-teal-100 font-medium">Machine Rolls Produced</div>
-                  <div className="text-2xl font-black mt-1">{inFilterRolls.length} rolls</div>
-                </div>
-                <div className="bg-white/10 backdrop-blur-md border border-white/20 rounded-2xl p-4">
-                  <div className="text-xs text-teal-100 font-medium">Paper Machine Speed</div>
-                  <div className="text-2xl font-black mt-1">450 m/min</div>
-                </div>
-                <div className="bg-white/10 backdrop-blur-md border border-white/20 rounded-2xl p-4">
-                  <div className="text-xs text-teal-100 font-medium">Machine Status</div>
-                  <div className="text-2xl font-black mt-1 text-emerald-300">ACTIVE</div>
-                </div>
+            {/* KPI METRIC CARDS */}
+            <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+              <div className="neumorphic-card rounded-2xl p-4">
+                <div className="text-xs text-slate-500 dark:text-slate-400 font-semibold">Machine Output Today</div>
+                <div className="text-xl sm:text-2xl font-black text-slate-900 dark:text-white mt-1">{totalRollsWeight.toLocaleString()} kg</div>
+              </div>
+              <div className="neumorphic-card rounded-2xl p-4">
+                <div className="text-xs text-slate-500 dark:text-slate-400 font-semibold">Machine Rolls Produced</div>
+                <div className="text-xl sm:text-2xl font-black text-slate-900 dark:text-white mt-1">{inFilterRolls.length} rolls</div>
+              </div>
+              <div className="neumorphic-card rounded-2xl p-4">
+                <div className="text-xs text-slate-500 dark:text-slate-400 font-semibold">Paper Machine Speed</div>
+                <div className="text-xl sm:text-2xl font-black text-slate-900 dark:text-white mt-1">450 m/min</div>
+              </div>
+              <div className="neumorphic-card rounded-2xl p-4">
+                <div className="text-xs text-slate-500 dark:text-slate-400 font-semibold">Machine Status</div>
+                <div className="text-xl sm:text-2xl font-black text-emerald-600 dark:text-emerald-400 mt-1">ACTIVE</div>
               </div>
             </div>
           </div>
@@ -737,48 +796,61 @@ export const DashboardView: React.FC = () => {
 
         return (
           <div className="space-y-6 font-sans">
-            {/* HERO BANNER */}
-            <div className="bg-gradient-to-r from-blue-700 via-sky-600 to-slate-900 rounded-[28px] p-6 sm:p-8 text-white shadow-xl relative overflow-hidden">
-              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 relative z-10">
-                <div>
-                  <div className="flex flex-wrap items-center gap-3">
-                    <Truck className="h-8 w-8 text-sky-200" />
-                    <h2 className="text-2xl sm:text-3xl font-extrabold tracking-tight">Finished Goods & Dispatch Dashboard</h2>
-                    <span className="block md:hidden px-3 py-1 rounded-full bg-white/20 backdrop-blur-md text-[11px] font-extrabold tracking-wider text-white border border-white/30 shadow-xs shrink-0">
-                      {new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'short', day: 'numeric', year: 'numeric' })}
-                    </span>
+            {/* 1. CLEAN MINIMAL HEADER CARD (OPTION A) */}
+            <div className="neumorphic-card rounded-2xl sm:rounded-3xl p-4 sm:p-5 text-slate-900 dark:text-white">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                <div className="flex items-center gap-3.5">
+                  <div className="p-2.5 sm:p-3 rounded-2xl bg-blue-50 dark:bg-blue-950/60 border border-blue-200/60 dark:border-blue-900/50 text-primary dark:text-blue-400 shadow-2xs shrink-0">
+                    <Truck className="h-6 w-6 sm:h-7 sm:w-7" />
                   </div>
-                  <p className="text-xs sm:text-sm text-sky-100 mt-1">Warehouse Reel Inventory, Packing Slips & Shipments</p>
+                  <div>
+                    <div className="flex flex-wrap items-center gap-2.5">
+                      <h1 className="text-xl sm:text-2xl font-black tracking-tight font-heading text-slate-900 dark:text-white">
+                        Finished Goods &amp; Dispatch Dashboard
+                      </h1>
+                      <span className="px-3 py-1 rounded-full bg-blue-50 dark:bg-blue-950/60 text-primary dark:text-blue-400 border border-blue-200/80 dark:border-blue-800/80 text-xs font-bold">
+                        {new Date().toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' })}
+                      </span>
+                    </div>
+                    <p className="text-xs sm:text-sm text-slate-500 dark:text-slate-400 font-medium mt-0.5">
+                      Warehouse Reel Inventory, Packing Slips &amp; Shipments
+                    </p>
+                  </div>
                 </div>
                 <div className="flex items-center gap-2 self-start sm:self-auto">
-                  <button onClick={handleRefresh} className={`p-2.5 bg-white/20 hover:bg-white/30 text-white backdrop-blur-md rounded-xl transition cursor-pointer ${isRefreshing ? 'animate-spin' : ''}`}>
+                  <button
+                    onClick={handleRefresh}
+                    className={`p-2 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-700 rounded-xl transition cursor-pointer shadow-xs ${isRefreshing ? 'animate-spin' : ''}`}
+                    title="Refresh Dispatch Data"
+                  >
                     <RefreshCw className="h-4 w-4" />
                   </button>
                 </div>
               </div>
+            </div>
 
-              <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mt-6 relative z-10">
-                <div className="bg-white/10 backdrop-blur-md border border-white/20 rounded-2xl p-4">
-                  <div className="text-xs text-sky-100 font-medium">Reels In Warehouse</div>
-                  <div className="text-2xl font-black mt-1">{totalInStockReels} reels</div>
-                </div>
-                <div className="bg-white/10 backdrop-blur-md border border-white/20 rounded-2xl p-4">
-                  <div className="text-xs text-sky-100 font-medium">Available Reel Stock</div>
-                  <div className="text-2xl font-black mt-1">{totalStockWeight.toLocaleString()} kg</div>
-                </div>
-                <div className="bg-white/10 backdrop-blur-md border border-white/20 rounded-2xl p-4">
-                  <div className="text-xs text-sky-100 font-medium">Pending Orders</div>
-                  <div className="text-2xl font-black mt-1 text-amber-300">{pendingOrdersList.filter(o => o.status === 'PENDING').length} orders</div>
-                </div>
-                <div className="bg-white/10 backdrop-blur-md border border-white/20 rounded-2xl p-4">
-                  <div className="text-xs text-sky-100 font-medium">Dispatched Today</div>
-                  <div className="text-2xl font-black mt-1">{dispatchedWeightToday.toLocaleString()} kg</div>
-                </div>
+            {/* KPI METRIC CARDS */}
+            <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+              <div className="neumorphic-card rounded-2xl p-4">
+                <div className="text-xs text-slate-500 dark:text-slate-400 font-semibold">Reels In Warehouse</div>
+                <div className="text-xl sm:text-2xl font-black text-slate-900 dark:text-white mt-1">{totalInStockReels} reels</div>
+              </div>
+              <div className="neumorphic-card rounded-2xl p-4">
+                <div className="text-xs text-slate-500 dark:text-slate-400 font-semibold">Available Reel Stock</div>
+                <div className="text-xl sm:text-2xl font-black text-slate-900 dark:text-white mt-1">{totalStockWeight.toLocaleString()} kg</div>
+              </div>
+              <div className="neumorphic-card rounded-2xl p-4">
+                <div className="text-xs text-slate-500 dark:text-slate-400 font-semibold">Pending Orders</div>
+                <div className="text-xl sm:text-2xl font-black text-amber-600 dark:text-amber-400 mt-1">{pendingOrdersList.filter(o => o.status === 'PENDING').length} orders</div>
+              </div>
+              <div className="neumorphic-card rounded-2xl p-4">
+                <div className="text-xs text-slate-500 dark:text-slate-400 font-semibold">Dispatched Today</div>
+                <div className="text-xl sm:text-2xl font-black text-slate-900 dark:text-white mt-1">{dispatchedWeightToday.toLocaleString()} kg</div>
               </div>
             </div>
 
             {/* RECENT DISPATCHES & INVENTORY SUMMARY */}
-            <div className="bg-white dark:bg-surface-dark border border-slate-200 dark:border-slate-700/80 rounded-3xl p-6 shadow-sm space-y-4">
+            <div className="bg-white dark:bg-surface-dark rounded-3xl p-6 space-y-4">
               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b pb-4 dark:border-slate-700">
                 <div className="flex items-center gap-3">
                   <div className="p-2.5 rounded-2xl bg-sky-50 dark:bg-sky-950/40 text-sky-600 dark:text-sky-400 border border-sky-200 dark:border-sky-800">
@@ -799,7 +871,7 @@ export const DashboardView: React.FC = () => {
                 </button>
               </div>
 
-              <div className="overflow-x-auto rounded-2xl border border-slate-200 dark:border-slate-700/80 shadow-xs">
+              <div className="overflow-x-auto rounded-2xl">
                 <table className="w-full text-left text-xs border-collapse">
                   <thead>
                     <tr className="bg-slate-50 dark:bg-slate-800/80 text-slate-600 dark:text-slate-300 border-b border-slate-200 dark:border-slate-700">
@@ -847,42 +919,56 @@ export const DashboardView: React.FC = () => {
 
         return (
           <div className="space-y-6 font-sans">
-            <div className="bg-gradient-to-r from-amber-600 via-orange-600 to-slate-900 rounded-[28px] p-6 sm:p-8 text-white shadow-xl relative overflow-hidden">
-              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 relative z-10">
-                <div>
-                  <div className="flex flex-wrap items-center gap-3">
-                    <Wrench className="h-8 w-8 text-amber-200" />
-                    <h2 className="text-2xl sm:text-3xl font-extrabold tracking-tight">Spare Parts & Store Operations Dashboard</h2>
-                    <span className="block md:hidden px-3 py-1 rounded-full bg-white/20 backdrop-blur-md text-[11px] font-extrabold tracking-wider text-white border border-white/30 shadow-xs shrink-0">
-                      {new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'short', day: 'numeric', year: 'numeric' })}
-                    </span>
+            {/* 1. CLEAN MINIMAL HEADER CARD (OPTION A) */}
+            <div className="neumorphic-card rounded-2xl sm:rounded-3xl p-4 sm:p-5 text-slate-900 dark:text-white">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                <div className="flex items-center gap-3.5">
+                  <div className="p-2.5 sm:p-3 rounded-2xl bg-blue-50 dark:bg-blue-950/60 border border-blue-200/60 dark:border-blue-900/50 text-primary dark:text-blue-400 shadow-2xs shrink-0">
+                    <Wrench className="h-6 w-6 sm:h-7 sm:w-7" />
                   </div>
-                  <p className="text-xs sm:text-sm text-amber-100 mt-1">Machine Spare Parts, Bearings & Consumables Inventory</p>
+                  <div>
+                    <div className="flex flex-wrap items-center gap-2.5">
+                      <h1 className="text-xl sm:text-2xl font-black tracking-tight font-heading text-slate-900 dark:text-white">
+                        Spare Parts &amp; Store Operations Dashboard
+                      </h1>
+                      <span className="px-3 py-1 rounded-full bg-blue-50 dark:bg-blue-950/60 text-primary dark:text-blue-400 border border-blue-200/80 dark:border-blue-800/80 text-xs font-bold">
+                        {new Date().toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' })}
+                      </span>
+                    </div>
+                    <p className="text-xs sm:text-sm text-slate-500 dark:text-slate-400 font-medium mt-0.5">
+                      Machine Spare Parts, Bearings &amp; Consumables Inventory
+                    </p>
+                  </div>
                 </div>
                 <div className="flex items-center gap-2 self-start sm:self-auto">
-                  <button onClick={handleRefresh} className={`p-2.5 bg-white/20 hover:bg-white/30 text-white backdrop-blur-md rounded-xl transition cursor-pointer ${isRefreshing ? 'animate-spin' : ''}`}>
+                  <button
+                    onClick={handleRefresh}
+                    className={`p-2 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-700 rounded-xl transition cursor-pointer shadow-xs ${isRefreshing ? 'animate-spin' : ''}`}
+                    title="Refresh Store Data"
+                  >
                     <RefreshCw className="h-4 w-4" />
                   </button>
                 </div>
               </div>
+            </div>
 
-              <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mt-6 relative z-10">
-                <div className="bg-white/10 backdrop-blur-md border border-white/20 rounded-2xl p-4">
-                  <div className="text-xs text-amber-100 font-medium">Total Store Catalog</div>
-                  <div className="text-2xl font-black mt-1">{storeItemsList.length} items</div>
-                </div>
-                <div className="bg-white/10 backdrop-blur-md border border-white/20 rounded-2xl p-4">
-                  <div className="text-xs text-amber-100 font-medium">Low Stock Warning</div>
-                  <div className="text-2xl font-black mt-1 text-red-300">{lowStockItems.length} items</div>
-                </div>
-                <div className="bg-white/10 backdrop-blur-md border border-white/20 rounded-2xl p-4">
-                  <div className="text-xs text-amber-100 font-medium">Store Health</div>
-                  <div className="text-2xl font-black mt-1 text-emerald-300">OPTIMAL</div>
-                </div>
-                <div className="bg-white/10 backdrop-blur-md border border-white/20 rounded-2xl p-4">
-                  <div className="text-xs text-amber-100 font-medium">Active Reorders</div>
-                  <div className="text-2xl font-black mt-1">3 Pending</div>
-                </div>
+            {/* KPI METRIC CARDS */}
+            <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+              <div className="neumorphic-card rounded-2xl p-4">
+                <div className="text-xs text-slate-500 dark:text-slate-400 font-semibold">Total Store Catalog</div>
+                <div className="text-xl sm:text-2xl font-black text-slate-900 dark:text-white mt-1">{storeItemsList.length} items</div>
+              </div>
+              <div className="neumorphic-card rounded-2xl p-4">
+                <div className="text-xs text-slate-500 dark:text-slate-400 font-semibold">Low Stock Warning</div>
+                <div className="text-xl sm:text-2xl font-black text-red-600 dark:text-red-400 mt-1">{lowStockItems.length} items</div>
+              </div>
+              <div className="neumorphic-card rounded-2xl p-4">
+                <div className="text-xs text-slate-500 dark:text-slate-400 font-semibold">Store Health</div>
+                <div className="text-xl sm:text-2xl font-black text-emerald-600 dark:text-emerald-400 mt-1">OPTIMAL</div>
+              </div>
+              <div className="neumorphic-card rounded-2xl p-4">
+                <div className="text-xs text-slate-500 dark:text-slate-400 font-semibold">Active Reorders</div>
+                <div className="text-xl sm:text-2xl font-black text-slate-900 dark:text-white mt-1">3 Pending</div>
               </div>
             </div>
           </div>
@@ -895,49 +981,62 @@ export const DashboardView: React.FC = () => {
 
         return (
           <div className="space-y-6 font-sans">
-            {/* HERO BANNER */}
-            <div className="bg-gradient-to-r from-teal-700 via-cyan-600 to-slate-900 rounded-[28px] p-6 sm:p-8 text-white shadow-xl relative overflow-hidden">
-              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 relative z-10">
-                <div>
-                  <div className="flex flex-wrap items-center gap-3">
-                    <Droplet className="h-8 w-8 text-cyan-200" />
-                    <h2 className="text-2xl sm:text-3xl font-extrabold tracking-tight">ETP & Water Treatment Operations Dashboard</h2>
-                    <span className="block md:hidden px-3 py-1 rounded-full bg-white/20 backdrop-blur-md text-[11px] font-extrabold tracking-wider text-white border border-white/30 shadow-xs shrink-0">
-                      {new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'short', day: 'numeric', year: 'numeric' })}
-                    </span>
+            {/* 1. CLEAN MINIMAL HEADER CARD (OPTION A) */}
+            <div className="neumorphic-card rounded-2xl sm:rounded-3xl p-4 sm:p-5 text-slate-900 dark:text-white">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                <div className="flex items-center gap-3.5">
+                  <div className="p-2.5 sm:p-3 rounded-2xl bg-blue-50 dark:bg-blue-950/60 border border-blue-200/60 dark:border-blue-900/50 text-primary dark:text-blue-400 shadow-2xs shrink-0">
+                    <Droplet className="h-6 w-6 sm:h-7 sm:w-7" />
                   </div>
-                  <p className="text-xs sm:text-sm text-cyan-100 mt-1">Effluent Water Recycling, pH & Environmental Audit</p>
+                  <div>
+                    <div className="flex flex-wrap items-center gap-2.5">
+                      <h1 className="text-xl sm:text-2xl font-black tracking-tight font-heading text-slate-900 dark:text-white">
+                        ETP &amp; Water Treatment Operations Dashboard
+                      </h1>
+                      <span className="px-3 py-1 rounded-full bg-blue-50 dark:bg-blue-950/60 text-primary dark:text-blue-400 border border-blue-200/80 dark:border-blue-800/80 text-xs font-bold">
+                        {new Date().toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' })}
+                      </span>
+                    </div>
+                    <p className="text-xs sm:text-sm text-slate-500 dark:text-slate-400 font-medium mt-0.5">
+                      Effluent Water Recycling, pH &amp; Environmental Audit
+                    </p>
+                  </div>
                 </div>
                 <div className="flex items-center gap-2 self-start sm:self-auto">
-                  <button onClick={handleRefresh} className={`p-2.5 bg-white/20 hover:bg-white/30 text-white backdrop-blur-md rounded-xl transition cursor-pointer ${isRefreshing ? 'animate-spin' : ''}`}>
+                  <button
+                    onClick={handleRefresh}
+                    className={`p-2 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-700 rounded-xl transition cursor-pointer shadow-xs ${isRefreshing ? 'animate-spin' : ''}`}
+                    title="Refresh ETP Data"
+                  >
                     <RefreshCw className="h-4 w-4" />
                   </button>
                 </div>
               </div>
+            </div>
 
-              <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mt-6 relative z-10">
-                <div className="bg-white/10 backdrop-blur-md border border-white/20 rounded-2xl p-4">
-                  <div className="text-xs text-cyan-100 font-medium">Treated Water Today</div>
-                  <div className="text-2xl font-black mt-1">1,250 KLD</div>
-                </div>
-                <div className="bg-white/10 backdrop-blur-md border border-white/20 rounded-2xl p-4">
-                  <div className="text-xs text-cyan-100 font-medium">Average pH Level</div>
-                  <div className="text-2xl font-black mt-1">7.4 pH</div>
-                </div>
-                <div className="bg-white/10 backdrop-blur-md border border-white/20 rounded-2xl p-4">
-                  <div className="text-xs text-cyan-100 font-medium">TDS Output</div>
-                  <div className="text-2xl font-black mt-1">1,120 ppm</div>
-                </div>
-                <div className="bg-white/10 backdrop-blur-md border border-white/20 rounded-2xl p-4">
-                  <div className="text-xs text-cyan-100 font-medium">Plant Compliance</div>
-                  <div className="text-2xl font-black mt-1 text-emerald-300">PASSED</div>
-                </div>
+            {/* KPI METRIC CARDS */}
+            <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+              <div className="neumorphic-card rounded-2xl p-4">
+                <div className="text-xs text-slate-500 dark:text-slate-400 font-semibold">Treated Water Today</div>
+                <div className="text-xl sm:text-2xl font-black text-slate-900 dark:text-white mt-1">1,250 KLD</div>
+              </div>
+              <div className="neumorphic-card rounded-2xl p-4">
+                <div className="text-xs text-slate-500 dark:text-slate-400 font-semibold">Average pH Level</div>
+                <div className="text-xl sm:text-2xl font-black text-slate-900 dark:text-white mt-1">7.4 pH</div>
+              </div>
+              <div className="neumorphic-card rounded-2xl p-4">
+                <div className="text-xs text-slate-500 dark:text-slate-400 font-semibold">TDS Output</div>
+                <div className="text-xl sm:text-2xl font-black text-slate-900 dark:text-white mt-1">1,120 ppm</div>
+              </div>
+              <div className="neumorphic-card rounded-2xl p-4">
+                <div className="text-xs text-slate-500 dark:text-slate-400 font-semibold">Plant Compliance</div>
+                <div className="text-xl sm:text-2xl font-black text-emerald-600 dark:text-emerald-400 mt-1">PASSED</div>
               </div>
             </div>
 
             {/* LIVE TELEMETRY WIDGETS */}
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-              <div className="bg-white dark:bg-surface-dark border border-slate-200 dark:border-slate-700/80 rounded-3xl p-5 shadow-sm space-y-3">
+              <div className="bg-white dark:bg-surface-dark rounded-3xl p-5 space-y-3">
                 <div className="flex items-center justify-between">
                   <span className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">pH Level Status</span>
                   <span className="px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800 dark:bg-emerald-950/60 dark:text-emerald-300 text-[10px] font-extrabold uppercase">NEUTRAL</span>
@@ -949,7 +1048,7 @@ export const DashboardView: React.FC = () => {
                 <p className="text-[11px] text-slate-400 font-medium">Optimal range: 6.5 pH to 8.5 pH</p>
               </div>
 
-              <div className="bg-white dark:bg-surface-dark border border-slate-200 dark:border-slate-700/80 rounded-3xl p-5 shadow-sm space-y-3">
+              <div className="bg-white dark:bg-surface-dark rounded-3xl p-5 space-y-3">
                 <div className="flex items-center justify-between">
                   <span className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">TDS (Solids)</span>
                   <span className="px-2 py-0.5 rounded-full bg-blue-100 text-blue-800 dark:bg-blue-950/60 dark:text-blue-300 text-[10px] font-extrabold uppercase">SAFE</span>
@@ -961,7 +1060,7 @@ export const DashboardView: React.FC = () => {
                 <p className="text-[11px] text-slate-400 font-medium">Below GPCB limit of 2,100 ppm</p>
               </div>
 
-              <div className="bg-white dark:bg-surface-dark border border-slate-200 dark:border-slate-700/80 rounded-3xl p-5 shadow-sm space-y-3">
+              <div className="bg-white dark:bg-surface-dark rounded-3xl p-5 space-y-3">
                 <div className="flex items-center justify-between">
                   <span className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">BOD / COD Level</span>
                   <span className="px-2 py-0.5 rounded-full bg-teal-100 text-teal-800 dark:bg-teal-950/60 dark:text-teal-300 text-[10px] font-extrabold uppercase">TREATED</span>
@@ -973,7 +1072,7 @@ export const DashboardView: React.FC = () => {
                 <p className="text-[11px] text-slate-400 font-medium">BOD &lt;30 mg/L • COD &lt;250 mg/L</p>
               </div>
 
-              <div className="bg-white dark:bg-surface-dark border border-slate-200 dark:border-slate-700/80 rounded-3xl p-5 shadow-sm space-y-3">
+              <div className="bg-white dark:bg-surface-dark rounded-3xl p-5 space-y-3">
                 <div className="flex items-center justify-between">
                   <span className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Flock Dosing</span>
                   <span className="px-2 py-0.5 rounded-full bg-cyan-100 text-cyan-800 dark:bg-cyan-950/60 dark:text-cyan-300 text-[10px] font-extrabold uppercase">DOSING</span>
@@ -987,7 +1086,7 @@ export const DashboardView: React.FC = () => {
             </div>
 
             {/* RECENT ETP TREATMENT LOGS TABLE */}
-            <div className="bg-white dark:bg-surface-dark border border-slate-200 dark:border-slate-700/80 rounded-3xl p-6 shadow-sm space-y-4">
+            <div className="bg-white dark:bg-surface-dark rounded-3xl p-6 space-y-4">
               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b pb-4 dark:border-slate-700">
                 <div className="flex items-center gap-3">
                   <div className="p-2.5 rounded-2xl bg-cyan-50 dark:bg-cyan-950/40 text-cyan-600 dark:text-cyan-400 border border-cyan-200 dark:border-cyan-800">
@@ -1008,7 +1107,7 @@ export const DashboardView: React.FC = () => {
                 </button>
               </div>
 
-              <div className="overflow-x-auto rounded-2xl border border-slate-200 dark:border-slate-700/80 shadow-xs">
+              <div className="overflow-x-auto rounded-2xl">
                 <table className="w-full text-left text-xs border-collapse font-sans">
                   <thead>
                     <tr className="bg-slate-50 dark:bg-slate-800/80 text-slate-600 dark:text-slate-300 border-b border-slate-200 dark:border-slate-700">
@@ -1089,127 +1188,132 @@ export const DashboardView: React.FC = () => {
 
         return (
           <div className="space-y-6">
-            {/* 1. HERO BLUE GRADIENT WELCOME CARD */}
-            <div className="bg-gradient-to-r from-[#0F52BA] via-[#0066FF] to-[#0284C7] rounded-[28px] p-6 sm:p-8 text-white shadow-xl relative overflow-hidden">
-              <div className="absolute -top-16 -right-16 w-64 h-64 rounded-full bg-white/10 blur-xl pointer-events-none" />
-              <div className="absolute -bottom-20 -left-20 w-80 h-80 rounded-full bg-sky-300/15 blur-2xl pointer-events-none" />
-
-              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6 relative z-10">
-                <div>
-                  <div className="flex flex-wrap items-center gap-3">
-                    <h2 className="text-2xl sm:text-3xl font-extrabold tracking-tight">
-                      Saheb Paper Mill Dashboard
-                    </h2>
-                    {/* Shift Badge in Header */}
-                    <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-500/20 backdrop-blur-md text-xs font-bold text-white border border-emerald-400/40 shadow-xs">
-                      <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
-                      {new Date().getHours() >= 8 && new Date().getHours() < 20 ? 'Shift A' : 'Shift B'} · Running
-                    </span>
-                    <span className="hidden sm:inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-white/20 dark:bg-white/10 backdrop-blur-md text-xs font-bold text-white border border-white/30 shadow-xs shrink-0">
-                      Live Telemetry
-                    </span>
+            {/* 1. CLEAN NEUMORPHIC HEADER CARD */}
+            <div className="neumorphic-card rounded-2xl sm:rounded-3xl p-4 sm:p-5 text-slate-900 dark:text-white bg-white dark:bg-slate-900 shadow-[6px_6px_20px_rgba(163,163,196,0.18),-6px_-6px_20px_rgba(255,255,255,0.85)] dark:shadow-[6px_6px_18px_rgba(0,0,0,0.45)]">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                <div className="flex items-center gap-3.5">
+                  <div className="w-12 h-12 rounded-2xl bg-white dark:bg-slate-800 flex items-center justify-center shrink-0 shadow-[3px_3px_8px_rgba(163,163,196,0.22),-3px_-3px_8px_rgba(255,255,255,0.95)] dark:shadow-[inset_1px_1px_3px_rgba(255,255,255,0.1)] text-[#6C4FE0] dark:text-purple-400">
+                    <Factory className="h-6 w-6 stroke-[2.2]" />
                   </div>
-                  <p className="text-xs sm:text-sm text-blue-100/90 font-medium mt-1">
-                    Real-time production telemetry, finished stock reserves &amp; dispatch status
-                  </p>
+                  <div>
+                    <div className="flex flex-wrap items-center gap-2.5">
+                      <h1 className="text-xl sm:text-2xl font-black tracking-tight font-heading text-slate-900 dark:text-white">
+                        Saheb Paper Mill Dashboard
+                      </h1>
+                      {/* Shift Badge (Neumorphic) */}
+                      <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-xl bg-white dark:bg-slate-800 text-xs font-bold text-emerald-600 dark:text-emerald-400 shadow-[2px_2px_6px_rgba(163,163,196,0.2),-2px_-2px_6px_rgba(255,255,255,0.9)] dark:shadow-[0_2px_6px_rgba(0,0,0,0.3)]">
+                        <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse inline-block" />
+                        {new Date().getHours() >= 8 && new Date().getHours() < 20 ? 'Shift A' : 'Shift B'} - Running
+                      </span>
+                      {/* Live Telemetry Badge (Neumorphic) */}
+                      <span className="hidden sm:inline-flex items-center gap-1.5 px-3 py-1 rounded-xl bg-white dark:bg-slate-800 text-xs font-bold text-[#6C4FE0] dark:text-purple-400 shadow-[2px_2px_6px_rgba(163,163,196,0.2),-2px_-2px_6px_rgba(255,255,255,0.9)] dark:shadow-[0_2px_6px_rgba(0,0,0,0.3)] shrink-0">
+                        <Activity className="w-3.5 h-3.5 stroke-[2.5]" />
+                        Live Telemetry
+                      </span>
+                    </div>
+                    <p className="text-xs text-slate-400 dark:text-slate-400 font-medium mt-1">
+                      Real-time production telemetry, finished stock reserves &amp; dispatch status
+                    </p>
+                  </div>
                 </div>
 
-                <div className="flex items-center gap-2 self-start sm:self-auto">
+                <div className="flex items-center gap-2.5 self-start sm:self-auto">
                   <button
                     onClick={() => navigate('/monthly-yearly-reporting')}
-                    className="px-4 py-2 bg-white/15 hover:bg-white/25 text-white backdrop-blur-md rounded-xl text-xs font-bold transition flex items-center gap-1.5 cursor-pointer border border-white/20 shadow-xs"
+                    className="px-4 py-2 bg-gradient-to-r from-[#6C4FE0] to-[#7C3AED] text-white rounded-xl text-xs font-extrabold shadow-[3px_3px_10px_rgba(108,79,224,0.35)] flex items-center gap-2 hover:opacity-95 transition cursor-pointer"
                   >
-                    <Download className="h-3.5 w-3.5" />
+                    <Download className="h-4 w-4 stroke-[2.5]" />
                     <span>Export Analytics</span>
                   </button>
                   <button
                     onClick={handleRefresh}
-                    className={`p-2.5 bg-white/15 hover:bg-white/25 text-white backdrop-blur-md rounded-xl transition cursor-pointer border border-white/20 shadow-xs ${isRefreshing ? 'animate-spin' : ''}`}
+                    className={`w-10 h-10 bg-white dark:bg-slate-800 flex items-center justify-center text-slate-600 dark:text-slate-300 hover:text-[#6C4FE0] dark:hover:text-purple-400 rounded-xl shadow-[3px_3px_8px_rgba(163,163,196,0.2),-3px_-3px_8px_rgba(255,255,255,0.9)] dark:shadow-[0_2px_6px_rgba(0,0,0,0.3)] transition cursor-pointer ${isRefreshing ? 'animate-spin' : ''}`}
                     title="Refresh & Sync Data"
                   >
-                    <RefreshCw className="h-4 w-4" />
+                    <RefreshCw className="h-4 w-4 stroke-[2.2]" />
                   </button>
                 </div>
               </div>
+            </div>
 
-              <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 relative z-10">
-                <div className="bg-white/10 backdrop-blur-md border border-white/20 rounded-2xl p-4 transition-all duration-300 hover:bg-white/20 hover:border-white/40 hover:-translate-y-1 hover:shadow-xl cursor-pointer group">
-                  <div className="flex items-center justify-between text-xs font-medium text-blue-100 group-hover:text-white transition">
-                    <span>
-                      {timeframe === 'day'
-                        ? (selectedDate === systemToday ? "Today's Output" : `Day's Output (${selectedDate.split('-').reverse().join('/')})`)
-                        : timeframe === 'week'
-                        ? "Week's Output (7D)"
-                        : timeframe === 'month'
-                        ? "Month's Output"
-                        : "Total Output"}
-                    </span>
-                    <Factory className="h-4 w-4 text-blue-200 group-hover:scale-110 transition-transform" />
-                  </div>
-                  <div className="text-xl sm:text-2xl font-black group-hover:scale-105 transition-transform origin-left mt-1">
-                    {todayProductionKg.toLocaleString()} kg
-                  </div>
-                  <div className="text-[11px] text-sky-200 font-semibold mt-1 flex items-center gap-0.5 truncate">
-                    <ArrowUpRight className="h-3 w-3 shrink-0 group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-transform" />
-                    <span>{filteredRolls.length} Rolls Produced</span>
-                  </div>
+            {/* 2. TOP KPI METRIC CARDS */}
+            <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+              <div className="neumorphic-card neumorphic-card-hover rounded-2xl p-4 sm:p-5 transition cursor-pointer group">
+                <div className="flex items-center justify-between text-xs font-medium text-slate-500 dark:text-slate-400 group-hover:text-slate-700 dark:group-hover:text-slate-200 transition">
+                  <span>
+                    {timeframe === 'day'
+                      ? (selectedDate === systemToday ? "Today's Output" : `Day's Output (${selectedDate.split('-').reverse().join('/')})`)
+                      : timeframe === 'week'
+                      ? "Week's Output (7D)"
+                      : timeframe === 'month'
+                      ? "Month's Output"
+                      : "Total Output"}
+                  </span>
+                  <Factory className="h-4 w-4 text-primary dark:text-blue-400 group-hover:scale-110 transition-transform" />
                 </div>
-
-                <div className="bg-white/10 backdrop-blur-md border border-white/20 rounded-2xl p-4 transition-all duration-300 hover:bg-white/20 hover:border-white/40 hover:-translate-y-1 hover:shadow-xl cursor-pointer group">
-                  <div className="flex items-center justify-between text-xs font-medium text-blue-100 group-hover:text-white transition">
-                    <span>Active Stock</span>
-                    <Warehouse className="h-4 w-4 text-blue-200 group-hover:scale-110 transition-transform" />
-                  </div>
-                  <div className="text-xl sm:text-2xl font-black group-hover:scale-105 transition-transform origin-left mt-1">
-                    {totalInStockReels} reels
-                  </div>
-                  <div className="text-[11px] text-sky-200 font-semibold mt-1 flex items-center gap-0.5 truncate">
-                    <CheckCircle2 className="h-3 w-3 shrink-0" />
-                    <span>Grade A &amp; B Ready</span>
-                  </div>
+                <div className="text-xl sm:text-2xl font-black text-slate-900 dark:text-white group-hover:scale-105 transition-transform origin-left mt-1">
+                  {todayProductionKg.toLocaleString()} kg
                 </div>
-
-                <div className="bg-white/10 backdrop-blur-md border border-white/20 rounded-2xl p-4 transition-all duration-300 hover:bg-white/20 hover:border-white/40 hover:-translate-y-1 hover:shadow-xl cursor-pointer group">
-                  <div className="flex items-center justify-between text-xs font-medium text-blue-100 group-hover:text-white transition">
-                    <span>
-                      {timeframe === 'day'
-                        ? (selectedDate === systemToday ? "Dispatched Today" : `Dispatched (${selectedDate.split('-').reverse().join('/')})`)
-                        : timeframe === 'week'
-                        ? "Dispatched (Week)"
-                        : timeframe === 'month'
-                        ? "Dispatched (Month)"
-                        : "Total Dispatched"}
-                    </span>
-                    <Truck className="h-4 w-4 text-blue-200 group-hover:scale-110 transition-transform" />
-                  </div>
-                  <div className="text-xl sm:text-2xl font-black group-hover:scale-105 transition-transform origin-left mt-1">
-                    {dispatchedWeightKg.toLocaleString()} kg
-                  </div>
-                  <div className="text-[11px] text-sky-200 font-semibold mt-1 flex items-center gap-0.5 truncate">
-                    <ArrowUpRight className="h-3 w-3 shrink-0 group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-transform" />
-                    <span>{reels.filter(r => r.status === 'DISPATCHED' && isDateInFilter(r.dispatchDetails?.dispatchDate || r.productionDate?.substring(0, 10) || '')).length} Reels Shipped</span>
-                  </div>
+                <div className="text-[11px] text-primary dark:text-blue-400 font-semibold mt-1 flex items-center gap-0.5 truncate">
+                  <ArrowUpRight className="h-3 w-3 shrink-0 group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-transform" />
+                  <span>{filteredRolls.length} Rolls Produced</span>
                 </div>
+              </div>
 
-                <div className="bg-white/10 backdrop-blur-md border border-white/20 rounded-2xl p-4 transition-all duration-300 hover:bg-white/20 hover:border-white/40 hover:-translate-y-1 hover:shadow-xl cursor-pointer group" title={`Production: ${todayProductionKg} kg | Broke/Wastage: ${brokeWeightKg} kg | Efficiency: ${operatingYieldPct}%`}>
-                  <div className="flex items-center justify-between text-xs font-medium text-blue-100 group-hover:text-white transition">
-                    <span>Production Efficiency</span>
-                    <CheckCircle2 className="h-4 w-4 text-blue-200 group-hover:scale-110 transition-transform" />
-                  </div>
-                  <div className="text-xl sm:text-2xl font-black group-hover:scale-105 transition-transform origin-left mt-1">
-                    {operatingYieldPct}%
-                  </div>
-                  <div className="text-[11px] text-sky-200 font-semibold mt-1 flex items-center gap-0.5 truncate">
-                    <ArrowUpRight className="h-3 w-3 shrink-0 group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-transform" />
-                    <span>{todayProductionKg > 0 ? `Broke: ${brokeWeightKg.toLocaleString()} kg` : 'Optimal Baseline'}</span>
-                  </div>
+              <div className="neumorphic-card neumorphic-card-hover rounded-2xl p-4 sm:p-5 transition cursor-pointer group">
+                <div className="flex items-center justify-between text-xs font-medium text-slate-500 dark:text-slate-400 group-hover:text-slate-700 dark:group-hover:text-slate-200 transition">
+                  <span>Active Stock</span>
+                  <Warehouse className="h-4 w-4 text-primary dark:text-blue-400 group-hover:scale-110 transition-transform" />
+                </div>
+                <div className="text-xl sm:text-2xl font-black text-slate-900 dark:text-white group-hover:scale-105 transition-transform origin-left mt-1">
+                  {totalInStockReels} reels
+                </div>
+                <div className="text-[11px] text-primary dark:text-blue-400 font-semibold mt-1 flex items-center gap-0.5 truncate">
+                  <CheckCircle2 className="h-3 w-3 shrink-0" />
+                  <span>Grade A &amp; B Ready</span>
+                </div>
+              </div>
+
+              <div className="neumorphic-card neumorphic-card-hover rounded-2xl p-4 sm:p-5 transition cursor-pointer group">
+                <div className="flex items-center justify-between text-xs font-medium text-slate-500 dark:text-slate-400 group-hover:text-slate-700 dark:group-hover:text-slate-200 transition">
+                  <span>
+                    {timeframe === 'day'
+                      ? (selectedDate === systemToday ? "Dispatched Today" : `Dispatched (${selectedDate.split('-').reverse().join('/')})`)
+                      : timeframe === 'week'
+                      ? "Dispatched (Week)"
+                      : timeframe === 'month'
+                      ? "Dispatched (Month)"
+                      : "Total Dispatched"}
+                  </span>
+                  <Truck className="h-4 w-4 text-primary dark:text-blue-400 group-hover:scale-110 transition-transform" />
+                </div>
+                <div className="text-xl sm:text-2xl font-black text-slate-900 dark:text-white group-hover:scale-105 transition-transform origin-left mt-1">
+                  {dispatchedWeightKg.toLocaleString()} kg
+                </div>
+                <div className="text-[11px] text-primary dark:text-blue-400 font-semibold mt-1 flex items-center gap-0.5 truncate">
+                  <ArrowUpRight className="h-3 w-3 shrink-0 group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-transform" />
+                  <span>{reels.filter(r => r.status === 'DISPATCHED' && isDateInFilter(r.dispatchDetails?.dispatchDate || r.productionDate?.substring(0, 10) || '')).length} Reels Shipped</span>
+                </div>
+              </div>
+
+              <div className="neumorphic-card neumorphic-card-hover rounded-2xl p-4 sm:p-5 transition cursor-pointer group" title={`Production: ${todayProductionKg} kg | Broke/Wastage: ${brokeWeightKg} kg | Efficiency: ${operatingYieldPct}%`}>
+                <div className="flex items-center justify-between text-xs font-medium text-slate-500 dark:text-slate-400 group-hover:text-slate-700 dark:group-hover:text-slate-200 transition">
+                  <span>Production Efficiency</span>
+                  <CheckCircle2 className="h-4 w-4 text-primary dark:text-blue-400 group-hover:scale-110 transition-transform" />
+                </div>
+                <div className="text-xl sm:text-2xl font-black text-slate-900 dark:text-white group-hover:scale-105 transition-transform origin-left mt-1">
+                  {operatingYieldPct}%
+                </div>
+                <div className="text-[11px] text-primary dark:text-blue-400 font-semibold mt-1 flex items-center gap-0.5 truncate">
+                  <ArrowUpRight className="h-3 w-3 shrink-0 group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-transform" />
+                  <span>{todayProductionKg > 0 ? `Broke: ${brokeWeightKg.toLocaleString()} kg` : 'Optimal Baseline'}</span>
                 </div>
               </div>
             </div>
 
             {/* 2. MIDDLE SECTION: PRODUCTION ANALYTICS & LIVE ACTIVITY STREAM */}
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 items-stretch">
-              <div className="lg:col-span-2 bg-white dark:bg-surface-dark border border-slate-200 dark:border-slate-700 rounded-2xl p-6 shadow-sm space-y-5">
+              <div className="lg:col-span-2 bg-white dark:bg-surface-dark rounded-2xl p-6 space-y-5">
                 <div className="flex items-center justify-between border-b pb-4 dark:border-slate-700">
                   <div>
                     <h3 className="text-base font-bold text-slate-900 dark:text-white">Production Performance Analytics</h3>
@@ -1223,7 +1327,7 @@ export const DashboardView: React.FC = () => {
                       onClick={() => setPeriod('month')}
                       className={`px-3.5 py-1.5 text-xs font-bold rounded-lg transition cursor-pointer ${
                         period === 'month'
-                          ? 'bg-[#0F52BA] text-white shadow-md'
+                          ? 'bg-primary text-white shadow-md'
                           : 'text-slate-700 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700'
                       }`}
                     >
@@ -1234,7 +1338,7 @@ export const DashboardView: React.FC = () => {
                       onClick={() => setPeriod('year')}
                       className={`px-3.5 py-1.5 text-xs font-bold rounded-lg transition cursor-pointer ${
                         period === 'year'
-                          ? 'bg-[#0F52BA] text-white shadow-md'
+                          ? 'bg-primary text-white shadow-md'
                           : 'text-slate-700 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700'
                       }`}
                     >
@@ -1257,7 +1361,7 @@ export const DashboardView: React.FC = () => {
                         </div>
                       </div>
                       <div className="w-full bg-slate-100 dark:bg-slate-800 h-7 rounded-lg overflow-hidden">
-                        <div className="bg-[#0F52BA] h-full rounded-lg flex items-center justify-end pr-3 transition-all duration-500 shadow-xs" style={{ width: `${item.progress}%` }}>
+                        <div className="bg-primary h-full rounded-lg flex items-center justify-end pr-3 transition-all duration-500 shadow-xs" style={{ width: `${item.progress}%` }}>
                           <span className="text-[11px] font-bold text-white">{item.progress}%</span>
                         </div>
                       </div>
@@ -1267,50 +1371,95 @@ export const DashboardView: React.FC = () => {
 
                 {/* DYNAMIC 4 MINI STAT CARDS */}
                 <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 pt-2">
-                  <div className="bg-blue-50/70 dark:bg-blue-950/30 border border-blue-100 dark:border-blue-900/40 rounded-xl p-3 text-center">
-                    <div className="text-base font-black text-[#0F52BA] dark:text-blue-400">{analyticsSummary.totalProd}</div>
-                    <div className="text-[10px] text-slate-500 dark:text-slate-400 font-semibold">Total Production</div>
+                  {/* Card 1: Total Production */}
+                  <div className="bg-white dark:bg-slate-900/80 rounded-2xl p-3 sm:p-3.5 flex items-center gap-3 shadow-[4px_4px_14px_rgba(163,163,196,0.18),-4px_-4px_14px_rgba(255,255,255,0.9)] dark:shadow-[0_4px_12px_rgba(0,0,0,0.3)] transition-all hover:translate-y-[-1px]">
+                    <div className="w-10 h-10 rounded-xl bg-[#F4F5FB] dark:bg-slate-800 flex items-center justify-center shrink-0 shadow-[2px_2px_5px_rgba(163,163,196,0.22),-2px_-2px_5px_rgba(255,255,255,0.95)] dark:shadow-[inset_1px_1px_3px_rgba(255,255,255,0.1)] text-[#6C4FE0] dark:text-purple-400">
+                      <Sliders className="w-4 h-4 stroke-[2.5]" />
+                    </div>
+                    <div className="flex flex-col min-w-0">
+                      <div className="text-sm sm:text-base font-black text-[#6C4FE0] dark:text-purple-400 tracking-tight leading-tight">
+                        {analyticsSummary.totalProd}
+                      </div>
+                      <div className="text-[11px] text-slate-400 dark:text-slate-400 font-medium whitespace-nowrap mt-0.5 leading-tight">
+                        Total Production
+                      </div>
+                    </div>
                   </div>
-                  <div className="bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700 rounded-xl p-3 text-center">
-                    <div className="text-base font-black text-slate-900 dark:text-white">{analyticsSummary.growth}</div>
-                    <div className="text-[10px] text-slate-500 dark:text-slate-400 font-semibold">Growth Rate</div>
+
+                  {/* Card 2: Vs Last Month */}
+                  <div className="bg-white dark:bg-slate-900/80 rounded-2xl p-3 sm:p-3.5 flex items-center gap-3 shadow-[4px_4px_14px_rgba(163,163,196,0.18),-4px_-4px_14px_rgba(255,255,255,0.9)] dark:shadow-[0_4px_12px_rgba(0,0,0,0.3)] transition-all hover:translate-y-[-1px]">
+                    <div className="w-10 h-10 rounded-xl bg-[#F4F5FB] dark:bg-slate-800 flex items-center justify-center shrink-0 shadow-[2px_2px_5px_rgba(163,163,196,0.22),-2px_-2px_5px_rgba(255,255,255,0.95)] dark:shadow-[inset_1px_1px_3px_rgba(255,255,255,0.1)] text-[#6C4FE0] dark:text-purple-400">
+                      <Inbox className="w-4 h-4 stroke-[2.5]" />
+                    </div>
+                    <div className="flex flex-col min-w-0">
+                      <div className="text-sm sm:text-base font-black text-slate-900 dark:text-white tracking-tight leading-tight">
+                        {analyticsSummary.growth}
+                      </div>
+                      <div className="text-[11px] text-slate-400 dark:text-slate-400 font-medium whitespace-nowrap mt-0.5 leading-tight">
+                        Vs Last Month
+                      </div>
+                    </div>
                   </div>
-                  <div className="bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700 rounded-xl p-3 text-center">
-                    <div className="text-base font-black text-slate-900 dark:text-white">{analyticsSummary.avgOutput}</div>
-                    <div className="text-[10px] text-slate-500 dark:text-slate-400 font-semibold">Avg Output</div>
+
+                  {/* Card 3: Avg Production */}
+                  <div className="bg-white dark:bg-slate-900/80 rounded-2xl p-3 sm:p-3.5 flex items-center gap-3 shadow-[4px_4px_14px_rgba(163,163,196,0.18),-4px_-4px_14px_rgba(255,255,255,0.9)] dark:shadow-[0_4px_12px_rgba(0,0,0,0.3)] transition-all hover:translate-y-[-1px]">
+                    <div className="w-10 h-10 rounded-xl bg-[#F4F5FB] dark:bg-slate-800 flex items-center justify-center shrink-0 shadow-[2px_2px_5px_rgba(163,163,196,0.22),-2px_-2px_5px_rgba(255,255,255,0.95)] dark:shadow-[inset_1px_1px_3px_rgba(255,255,255,0.1)] text-[#6C4FE0] dark:text-purple-400">
+                      <FileText className="w-4 h-4 stroke-[2.5]" />
+                    </div>
+                    <div className="flex flex-col min-w-0">
+                      <div className="text-sm sm:text-base font-black text-slate-900 dark:text-white tracking-tight leading-tight">
+                        {analyticsSummary.avgOutput}
+                      </div>
+                      <div className="text-[11px] text-slate-400 dark:text-slate-400 font-medium whitespace-nowrap mt-0.5 leading-tight">
+                        Avg Production
+                      </div>
+                    </div>
                   </div>
-                  <div className="bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700 rounded-xl p-3 text-center">
-                    <div className="text-base font-black text-slate-900 dark:text-white">{analyticsSummary.totalReels}</div>
-                    <div className="text-[10px] text-slate-500 dark:text-slate-400 font-semibold">Total Reels</div>
+
+                  {/* Card 4: Total Reels */}
+                  <div className="bg-white dark:bg-slate-900/80 rounded-2xl p-3 sm:p-3.5 flex items-center gap-3 shadow-[4px_4px_14px_rgba(163,163,196,0.18),-4px_-4px_14px_rgba(255,255,255,0.9)] dark:shadow-[0_4px_12px_rgba(0,0,0,0.3)] transition-all hover:translate-y-[-1px]">
+                    <div className="w-10 h-10 rounded-xl bg-[#F4F5FB] dark:bg-slate-800 flex items-center justify-center shrink-0 shadow-[2px_2px_5px_rgba(163,163,196,0.22),-2px_-2px_5px_rgba(255,255,255,0.95)] dark:shadow-[inset_1px_1px_3px_rgba(255,255,255,0.1)] text-[#6C4FE0] dark:text-purple-400">
+                      <Layers className="w-4 h-4 stroke-[2.5]" />
+                    </div>
+                    <div className="flex flex-col min-w-0">
+                      <div className="text-sm sm:text-base font-black text-slate-900 dark:text-white tracking-tight leading-tight">
+                        {analyticsSummary.totalReels}
+                      </div>
+                      <div className="text-[11px] text-slate-400 dark:text-slate-400 font-medium whitespace-nowrap mt-0.5 leading-tight">
+                        Total Reels
+                      </div>
+                    </div>
                   </div>
                 </div>
               </div>
 
-              <div className="bg-white dark:bg-surface-dark border border-slate-200 dark:border-slate-700 rounded-3xl p-6 shadow-lg flex flex-col space-y-5">
-                <div className="border-b pb-4 dark:border-slate-700 shrink-0">
-                  <div className="flex items-center gap-3">
-                    <div className="p-2.5 rounded-2xl bg-blue-50 dark:bg-blue-950/40 text-primary dark:text-blue-400">
-                      <Activity className="h-6 w-6" />
-                    </div>
-                    <div>
-                      <h3 className="text-base font-extrabold text-slate-900 dark:text-white">
-                        Live Activity & Audit Stream
-                      </h3>
-                      <p className="text-xs text-slate-400 mt-0.5">Real-time operator change history & operational telemetry</p>
-                    </div>
+              {/* 3. LIVE ACTIVITY & AUDIT STREAM (NEUMORPHIC SPEC) */}
+              <div className="neumorphic-card rounded-[28px] sm:rounded-3xl p-5 sm:p-6 flex flex-col space-y-4 bg-white dark:bg-slate-900 shadow-[6px_6px_20px_rgba(163,163,196,0.18),-6px_-6px_20px_rgba(255,255,255,0.85)] dark:shadow-[6px_6px_18px_rgba(0,0,0,0.45)]">
+                {/* Header with Neumorphic Icon Chip */}
+                <div className="flex items-center gap-3.5 shrink-0">
+                  <div className="w-12 h-12 rounded-2xl bg-white dark:bg-slate-800 flex items-center justify-center shrink-0 shadow-[3px_3px_8px_rgba(163,163,196,0.22),-3px_-3px_8px_rgba(255,255,255,0.95)] dark:shadow-[inset_1px_1px_3px_rgba(255,255,255,0.1)] text-[#6C4FE0] dark:text-purple-400">
+                    <Activity className="h-6 w-6 stroke-[2.5]" />
+                  </div>
+                  <div>
+                    <h3 className="text-base sm:text-lg font-black text-slate-900 dark:text-white tracking-tight">
+                      Live Activity &amp; Audit Stream
+                    </h3>
+                    <p className="text-xs text-slate-400 dark:text-slate-400 font-medium mt-0.5">
+                      Real-time operator change history &amp; operational telemetry
+                    </p>
                   </div>
                 </div>
 
-                {/* Category Filter Pills */}
-                <div className="flex flex-wrap gap-1.5 shrink-0">
+                {/* Category Filter Pills (Neumorphic) */}
+                <div className="flex flex-wrap items-center gap-2 shrink-0 pt-0.5">
                   {(['all', 'boiler', 'production', 'dispatch', 'system'] as const).map(cat => (
                     <button
                       key={cat}
                       onClick={() => setActivityCategory(cat)}
-                      className={`px-3 py-1 rounded-xl text-[11px] font-extrabold uppercase tracking-wider transition cursor-pointer ${
+                      className={`px-3.5 py-1.5 rounded-xl text-[11px] font-extrabold uppercase tracking-wider transition-all cursor-pointer ${
                         activityCategory === cat
-                          ? 'bg-slate-900 text-white dark:bg-white dark:text-slate-900 shadow-sm'
-                          : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700'
+                          ? 'bg-[#6C4FE0] text-white shadow-[0_4px_12px_rgba(108,79,224,0.35)]'
+                          : 'bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-300 shadow-[2px_2px_6px_rgba(163,163,196,0.18),-2px_-2px_6px_rgba(255,255,255,0.9)] dark:shadow-[0_2px_6px_rgba(0,0,0,0.3)] hover:text-slate-900 dark:hover:text-white'
                       }`}
                     >
                       {cat === 'all' ? 'All Activity' : cat}
@@ -1318,14 +1467,14 @@ export const DashboardView: React.FC = () => {
                   ))}
                 </div>
 
-                {/* Stream Feed - Dynamic max height based on period */}
+                {/* Stream Feed */}
                 <div
                   className="space-y-3 flex-1 min-h-0 overflow-y-auto pr-1.5 transition-all duration-300 dashboard-custom-scrollbar"
-                  style={{ maxHeight: period === 'month' ? '250px' : '440px' }}
+                  style={{ maxHeight: period === 'month' ? '280px' : '460px' }}
                 >
                   {unifiedActivityStream.length === 0 ? (
-                    <div className="py-12 px-4 text-center space-y-3 border border-dashed border-slate-200 dark:border-slate-700/80 rounded-2xl bg-slate-50/50 dark:bg-slate-900/30">
-                      <div className="w-10 h-10 rounded-2xl bg-slate-100 dark:bg-slate-800 text-slate-400 flex items-center justify-center mx-auto">
+                    <div className="py-10 px-4 text-center space-y-3 rounded-2xl bg-[#F8F8FC] dark:bg-slate-900/40 shadow-[inset_2px_2px_6px_rgba(163,163,196,0.15),inset_-2px_-2px_6px_rgba(255,255,255,0.8)]">
+                      <div className="w-10 h-10 rounded-2xl bg-white dark:bg-slate-800 text-slate-400 flex items-center justify-center mx-auto shadow-[2px_2px_6px_rgba(163,163,196,0.2),-2px_-2px_6px_rgba(255,255,255,0.9)]">
                         <Activity className="h-5 w-5" />
                       </div>
                       <div>
@@ -1334,43 +1483,84 @@ export const DashboardView: React.FC = () => {
                       </div>
                       <button
                         onClick={() => setTimeframe('all')}
-                        className="px-3.5 py-1.5 rounded-xl bg-slate-200 dark:bg-slate-800 text-xs font-bold text-slate-700 dark:text-slate-200 hover:bg-slate-300 dark:hover:bg-slate-700 transition cursor-pointer"
+                        className="px-4 py-1.5 rounded-xl bg-white dark:bg-slate-800 text-xs font-extrabold text-slate-700 dark:text-slate-200 shadow-[2px_2px_6px_rgba(163,163,196,0.2),-2px_-2px_6px_rgba(255,255,255,0.9)] hover:text-[#6C4FE0] transition cursor-pointer"
                       >
                         View All Activity
                       </button>
                     </div>
                   ) : (
-                    unifiedActivityStream.slice(0, 10).map(item => (
-                      <div key={item.id} className="flex items-start gap-3 p-3 rounded-2xl bg-slate-50/70 dark:bg-slate-800/40 hover:bg-white dark:hover:bg-slate-800 border border-slate-100 dark:border-slate-700/60 transition duration-150 group">
-                        <div className="w-9 h-9 rounded-2xl bg-primary/10 text-primary dark:text-blue-400 font-extrabold text-xs flex items-center justify-center shrink-0 border border-primary/20 group-hover:scale-105 transition-transform mt-0.5">
-                          {item.operator.substring(0, 2).toUpperCase()}
-                        </div>
+                    unifiedActivityStream.slice(0, 10).map(item => {
+                      const isDispatch = item.category === 'dispatch' || item.badgeText.includes('DISPATCH');
+                      const badgeColor = item.badgeText.includes('PROFILE')
+                        ? 'bg-purple-100/90 text-purple-700 dark:bg-purple-950/70 dark:text-purple-300'
+                        : item.badgeText.includes('DISPATCH')
+                        ? 'bg-emerald-100/90 text-emerald-700 dark:bg-emerald-950/70 dark:text-emerald-300'
+                        : item.badgeText.includes('BOILER')
+                        ? 'bg-amber-100/90 text-amber-700 dark:bg-amber-950/70 dark:text-amber-300'
+                        : item.badgeText.includes('ROLL') || item.badgeText.includes('MACHINE')
+                        ? 'bg-blue-100/90 text-blue-700 dark:bg-blue-950/70 dark:text-blue-300'
+                        : 'bg-purple-100/90 text-purple-700 dark:bg-purple-950/70 dark:text-purple-300';
 
-                        <div className="flex-1 min-w-0 space-y-1">
-                          <div className="flex flex-wrap items-center justify-between gap-1.5">
-                            <div className="flex items-center gap-2">
-                              <span className="font-extrabold text-xs text-slate-900 dark:text-white">
-                                {item.operator}
-                              </span>
-                              <span className={`px-2 py-0.5 rounded-full text-[10px] font-black ${item.badgeStyle}`}>
-                                {item.badgeText}
-                              </span>
-                            </div>
-                            <span className="text-[10px] font-mono text-slate-400 font-semibold">
-                              {item.date}
-                            </span>
+                      return (
+                        <div
+                          key={item.id}
+                          className="flex items-start gap-3.5 p-3 sm:p-3.5 rounded-2xl bg-white dark:bg-slate-800/80 shadow-[2px_2px_8px_rgba(163,163,196,0.14),-2px_-2px_8px_rgba(255,255,255,0.9)] dark:shadow-[0_2px_6px_rgba(0,0,0,0.3)] transition-all hover:shadow-[3px_3px_12px_rgba(163,163,196,0.2),-3px_-3px_12px_rgba(255,255,255,1)] group"
+                        >
+                          {/* Left Avatar / Icon Chip */}
+                          <div className="w-11 h-11 rounded-2xl sm:rounded-full bg-white dark:bg-slate-800 flex items-center justify-center shrink-0 shadow-[2px_2px_6px_rgba(163,163,196,0.22),-2px_-2px_6px_rgba(255,255,255,0.95)] dark:shadow-[inset_1px_1px_3px_rgba(255,255,255,0.1)] text-[#6C4FE0] dark:text-purple-400 font-black text-xs mt-0.5">
+                            {isDispatch ? (
+                              <ShoppingCart className="w-5 h-5 stroke-[2.2]" />
+                            ) : (
+                              item.operator.substring(0, 2).toUpperCase()
+                            )}
                           </div>
 
-                          <p className="text-xs font-bold text-slate-800 dark:text-slate-200">
-                            {item.title}
-                          </p>
-                          <p className="text-[11px] text-slate-500 dark:text-slate-400 font-mono leading-relaxed bg-white dark:bg-slate-900/60 p-2 rounded-xl border border-slate-200/50 dark:border-slate-700/50">
-                            {item.details}
-                          </p>
+                          {/* Content Column */}
+                          <div className="flex-1 min-w-0">
+                            <div className="flex items-center justify-between gap-1.5">
+                              <div className="flex items-center gap-2 min-w-0">
+                                <span className="font-extrabold text-xs text-slate-800 dark:text-slate-100 truncate">
+                                  {item.operator}
+                                </span>
+                                <span className={`px-2 py-0.5 rounded-md text-[10px] font-black tracking-wide shrink-0 ${badgeColor}`}>
+                                  {item.badgeText}
+                                </span>
+                              </div>
+                              <div className="flex items-center gap-1.5 shrink-0">
+                                <span className="text-[11px] font-medium text-slate-400 dark:text-slate-500">
+                                  {item.date}
+                                </span>
+                                <button className="text-slate-300 hover:text-slate-600 dark:text-slate-600 dark:hover:text-slate-300 p-0.5 cursor-pointer">
+                                  <MoreVertical className="w-3.5 h-3.5" />
+                                </button>
+                              </div>
+                            </div>
+
+                            <p className="text-xs font-black text-slate-900 dark:text-white mt-1 leading-snug">
+                              {item.title}
+                            </p>
+                            <p className="text-[11px] text-slate-500 dark:text-slate-400 font-medium mt-0.5 leading-snug">
+                              {item.details}
+                            </p>
+                          </div>
                         </div>
-                      </div>
-                    ))
+                      );
+                    })
                   )}
+                </div>
+
+                {/* Bottom View All Button */}
+                <div className="pt-1 flex justify-center shrink-0">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setActivityCategory('all');
+                      setTimeframe('all');
+                    }}
+                    className="px-7 py-2 rounded-xl bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-200 font-extrabold text-xs shadow-[3px_3px_8px_rgba(163,163,196,0.2),-3px_-3px_8px_rgba(255,255,255,0.9)] dark:shadow-[0_2px_6px_rgba(0,0,0,0.3)] hover:text-[#6C4FE0] hover:shadow-[4px_4px_12px_rgba(163,163,196,0.28),-4px_-4px_12px_rgba(255,255,255,1)] transition-all cursor-pointer"
+                  >
+                    View all
+                  </button>
                 </div>
               </div>
             </div>
@@ -1379,7 +1569,7 @@ export const DashboardView: React.FC = () => {
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
 
               {/* 1. Shift Output Allocation */}
-              <div className="bg-white dark:bg-surface-dark border border-slate-200 dark:border-slate-700 rounded-3xl p-6 shadow-sm space-y-4">
+              <div className="bg-white dark:bg-surface-dark rounded-3xl p-6 space-y-4">
                 <div className="flex items-center justify-between border-b pb-3 dark:border-slate-700">
                   <div className="flex items-center gap-2.5">
                     <div className="p-2 rounded-xl bg-orange-100 dark:bg-orange-950/50 text-orange-600 dark:text-orange-400">
@@ -1461,7 +1651,7 @@ export const DashboardView: React.FC = () => {
               </div>
 
               {/* 2. Raw Material & Inventory Health */}
-              <div className="bg-white dark:bg-surface-dark border border-slate-200 dark:border-slate-700 rounded-3xl p-6 shadow-sm space-y-4">
+              <div className="bg-white dark:bg-surface-dark rounded-3xl p-6 space-y-4">
                 <div className="flex items-center justify-between border-b pb-3 dark:border-slate-700">
                   <div className="flex items-center gap-2.5">
                     <div className="p-2 rounded-xl bg-emerald-100 dark:bg-emerald-950/50 text-emerald-600 dark:text-emerald-400">
@@ -1543,7 +1733,7 @@ export const DashboardView: React.FC = () => {
               </div>
 
               {/* 3. Dispatch & Client Delivery Pipeline */}
-              <div className="bg-white dark:bg-surface-dark border border-slate-200 dark:border-slate-700 rounded-3xl p-6 shadow-sm space-y-4">
+              <div className="bg-white dark:bg-surface-dark rounded-3xl p-6 space-y-4">
                 <div className="flex items-center justify-between border-b pb-3 dark:border-slate-700">
                   <div className="flex items-center gap-2.5">
                     <div className="p-2 rounded-xl bg-blue-100 dark:bg-blue-950/50 text-blue-600 dark:text-blue-400">
@@ -1595,7 +1785,7 @@ export const DashboardView: React.FC = () => {
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 pt-2">
 
               {/* Card 1: Quality Assurance & Lab QC Performance */}
-              <div className="bg-white dark:bg-surface-dark border border-slate-200 dark:border-slate-700 rounded-3xl p-6 shadow-sm space-y-4">
+              <div className="bg-white dark:bg-surface-dark rounded-3xl p-6 space-y-4">
                 <div className="flex items-center justify-between border-b pb-3 dark:border-slate-700">
                   <div className="flex items-center gap-2.5">
                     <div className="p-2 rounded-xl bg-purple-100 dark:bg-purple-950/50 text-purple-600 dark:text-purple-400">
@@ -1638,7 +1828,7 @@ export const DashboardView: React.FC = () => {
               </div>
 
               {/* Card 2: Boiler Steam & Energy Telemetry */}
-              <div className="bg-white dark:bg-surface-dark border border-slate-200 dark:border-slate-700 rounded-3xl p-6 shadow-sm space-y-4">
+              <div className="bg-white dark:bg-surface-dark rounded-3xl p-6 space-y-4">
                 <div className="flex items-center justify-between border-b pb-3 dark:border-slate-700">
                   <div className="flex items-center gap-2.5">
                     <div className="p-2 rounded-xl bg-amber-100 dark:bg-amber-950/50 text-amber-600 dark:text-amber-400">
@@ -1681,7 +1871,7 @@ export const DashboardView: React.FC = () => {
               </div>
 
               {/* Card 3: ETP Water Recycling & Environmental Health */}
-              <div className="bg-white dark:bg-surface-dark border border-slate-200 dark:border-slate-700 rounded-3xl p-6 shadow-sm space-y-4">
+              <div className="bg-white dark:bg-surface-dark rounded-3xl p-6 space-y-4">
                 <div className="flex items-center justify-between border-b pb-3 dark:border-slate-700">
                   <div className="flex items-center gap-2.5">
                     <div className="p-2 rounded-xl bg-cyan-100 dark:bg-cyan-950/50 text-cyan-600 dark:text-cyan-400">
