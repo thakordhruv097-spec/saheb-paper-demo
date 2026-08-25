@@ -535,7 +535,7 @@ export const RewinderView: React.FC = () => {
             </button>
             <button
               onClick={handleOpenAddModal}
-              className="flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white font-black text-xs shadow-md shadow-indigo-500/25 transition cursor-pointer active:scale-95 shrink-0"
+              className="btn-primary-gradient px-4 py-2.5 text-xs uppercase tracking-wider flex items-center justify-center gap-2 cursor-pointer active:scale-95 shrink-0"
             >
               <Plus className="h-4 w-4 text-white" />
               <span>+ Add Reel Entry</span>
@@ -615,7 +615,7 @@ export const RewinderView: React.FC = () => {
 
             <button
               onClick={handleOpenAddModal}
-              className="flex items-center justify-center gap-2 px-5 py-2.5 rounded-2xl bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white font-black text-xs shadow-md shadow-indigo-500/25 transition cursor-pointer active:scale-95 shrink-0"
+              className="btn-primary-gradient px-5 py-2.5 text-xs uppercase tracking-wider flex items-center justify-center gap-2 cursor-pointer active:scale-95 shrink-0"
             >
               <Plus className="h-4 w-4 text-white" />
               <span>+ Add Reel Entry</span>
@@ -655,12 +655,12 @@ export const RewinderView: React.FC = () => {
               <button
                 type="button"
                 onClick={() => setShowCascadingModal(true)}
-                className="flex items-center gap-1.5 py-2 px-3 bg-blue-50 dark:bg-blue-950/40 text-blue-600 dark:text-blue-400 hover:bg-blue-100 border border-blue-200 dark:border-blue-800 rounded-xl text-xs font-bold transition cursor-pointer shrink-0"
+                className="flex items-center gap-1.5 py-2 px-3 bg-[#EDE9FE] dark:bg-purple-950/40 text-[#6C4FE0] dark:text-purple-300 hover:bg-purple-100 border border-purple-200 dark:border-purple-800 rounded-xl text-xs font-bold transition cursor-pointer shrink-0"
               >
                 <SlidersHorizontal className="h-3.5 w-3.5" />
                 <span>Cascading Filter</span>
                 {activeCascadingFilterCount > 0 && (
-                  <span className="h-4.5 w-4.5 rounded-full bg-blue-600 text-white text-[10px] flex items-center justify-center font-black">
+                  <span className="h-4.5 w-4.5 rounded-full bg-[#6C4FE0] text-white text-[10px] flex items-center justify-center font-black">
                     {activeCascadingFilterCount}
                   </span>
                 )}
@@ -1137,7 +1137,7 @@ export const RewinderView: React.FC = () => {
                 </button>
                 <button
                   type="submit"
-                  className="px-6 py-2.5 rounded-xl font-black text-xs text-white transition cursor-pointer bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 shadow-md shadow-indigo-500/25 active:scale-95"
+                  className="btn-primary-gradient px-6 py-2.5 text-xs uppercase tracking-wider cursor-pointer active:scale-95"
                 >
                   Save Reel Entry
                 </button>
@@ -1381,7 +1381,7 @@ export const RewinderView: React.FC = () => {
               <button
                 type="button"
                 onClick={() => setShowCascadingModal(false)}
-                className="flex-1 py-3 bg-blue-600 hover:bg-primary-dark text-white rounded-2xl text-xs font-black uppercase tracking-wider shadow-md transition cursor-pointer flex items-center justify-center gap-2"
+                className="btn-primary-gradient flex-1 py-3 text-xs uppercase tracking-wider flex items-center justify-center gap-2 cursor-pointer"
               >
                 <span>APPLY &amp; VIEW ({filteredReels.length} REELS)</span>
               </button>

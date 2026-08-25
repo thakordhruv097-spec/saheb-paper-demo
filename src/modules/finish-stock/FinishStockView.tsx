@@ -438,7 +438,7 @@ export const FinishStockView: React.FC<FinishStockViewProps> = ({ hideHeader = f
             <button
               type="button"
               onClick={handleBulkApproveAllGradeA}
-              className="w-full sm:w-auto px-5 py-2.5 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white font-black text-xs uppercase tracking-wider rounded-2xl shadow-lg shadow-blue-500/25 transition cursor-pointer flex items-center justify-center gap-2"
+              className="btn-primary-gradient w-full sm:w-auto px-5 py-2.5 text-xs uppercase tracking-wider flex items-center justify-center gap-2 cursor-pointer"
             >
               <CheckSquare className="h-4 w-4" />
               <span>✨ 1-Click Approve All as Grade A</span>
@@ -1238,7 +1238,7 @@ export const FinishStockView: React.FC<FinishStockViewProps> = ({ hideHeader = f
 
               <button
                 type="submit"
-                className="w-full bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white font-black py-3 rounded-2xl text-xs uppercase tracking-wider shadow-lg shadow-blue-500/25 transition-all hover:scale-[1.01] active:scale-[0.99] cursor-pointer flex items-center justify-center gap-2"
+                className="btn-primary-gradient w-full py-3 text-xs uppercase tracking-wider cursor-pointer flex items-center justify-center gap-2"
               >
                 <Check className="h-4 w-4" />
                 <span>Submit Quality Inspection Log</span>

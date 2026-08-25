@@ -164,7 +164,7 @@ export const QRTraceabilityView: React.FC = () => {
               />
               <button
                 type="submit"
-                className="bg-gradient-to-r from-blue-600 via-indigo-600 to-blue-700 hover:from-blue-700 hover:to-indigo-700 text-white px-4 py-3 rounded-2xl transition shadow-md flex items-center justify-center cursor-pointer"
+                className="btn-primary-gradient px-4 py-3 flex items-center justify-center cursor-pointer"
               >
                 <Search className="h-4 w-4" />
               </button>
@@ -197,7 +197,7 @@ export const QRTraceabilityView: React.FC = () => {
                     }}
                     className={`px-3 py-1.5 text-[11px] rounded-xl border font-mono transition font-bold flex items-center gap-1.5 cursor-pointer ${
                       activeReel?.reelNo === r.reelNo
-                        ? 'bg-gradient-to-r from-blue-600 to-indigo-600 text-white border-transparent shadow-md'
+                        ? 'bg-gradient-to-r from-[#6C4FE0] to-[#7C3AED] text-white border-transparent shadow-md shadow-[#6C4FE0]/25'
                         : 'bg-slate-50 hover:bg-slate-100 border-slate-200 dark:bg-slate-900 dark:hover:bg-slate-800 dark:border-slate-700 text-slate-800 dark:text-slate-200'
                     }`}
                   >

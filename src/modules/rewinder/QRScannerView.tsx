@@ -364,7 +364,7 @@ export const QRScannerView: React.FC<QRScannerViewProps> = ({ onOpenPrintStudio 
               />
               <button
                 type="submit"
-                className="px-5 py-3 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white rounded-2xl text-xs font-black shadow-md transition cursor-pointer shrink-0 flex items-center gap-1.5"
+                className="btn-primary-gradient px-5 py-3 text-xs uppercase tracking-wider shrink-0 flex items-center gap-1.5 cursor-pointer"
               >
                 <Search className="h-4 w-4" />
                 <span>Search</span>
@@ -555,7 +555,7 @@ export const QRScannerView: React.FC<QRScannerViewProps> = ({ onOpenPrintStudio 
               <button
                 type="button"
                 onClick={() => onOpenPrintStudio(scanResult.reel, scanResult.code)}
-                className="w-full bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white font-black py-3 px-4 rounded-2xl text-xs uppercase tracking-wider shadow-md transition cursor-pointer flex items-center justify-center gap-2"
+                className="btn-primary-gradient w-full py-3 px-4 text-xs uppercase tracking-wider flex items-center justify-center gap-2 cursor-pointer"
               >
                 <Tag className="h-4 w-4" />
                 <span>Print Reel Barcode / QR Label</span>
@@ -650,7 +650,7 @@ export const QRScannerView: React.FC<QRScannerViewProps> = ({ onOpenPrintStudio 
 
               <button
                 type="submit"
-                className="w-full py-3 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white rounded-2xl font-black text-xs uppercase tracking-wider shadow-lg shadow-blue-500/25 transition cursor-pointer flex items-center justify-center gap-2"
+                className="btn-primary-gradient w-full py-3 text-xs uppercase tracking-wider flex items-center justify-center gap-2 cursor-pointer"
               >
                 <Check className="h-4 w-4" />
                 <span>Confirm Dispatch (Auto-Minus Stock)</span>

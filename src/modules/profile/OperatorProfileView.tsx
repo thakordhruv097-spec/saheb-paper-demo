@@ -184,15 +184,15 @@ export const OperatorProfileView: React.FC<OperatorProfileViewProps> = () => {
             </div>
 
             {/* Official Enterprise / Mill Information */}
-            <div className="p-4 rounded-2xl bg-gradient-to-br from-blue-50/60 to-indigo-50/60 dark:from-slate-900/80 dark:to-blue-950/40 border border-blue-200/80 dark:border-blue-900/50 space-y-3">
-              <div className="flex items-center justify-between border-b border-blue-200/60 dark:border-blue-800/60 pb-2">
+            <div className="p-4 rounded-2xl bg-gradient-to-br from-purple-50/60 to-indigo-50/40 dark:from-slate-900/80 dark:to-purple-950/30 border border-purple-200/80 dark:border-purple-900/50 space-y-3">
+              <div className="flex items-center justify-between border-b border-purple-200/60 dark:border-purple-800/60 pb-2">
                 <div className="flex items-center gap-2">
-                  <Building2 className="h-4 w-4 text-primary dark:text-blue-400" />
+                  <Building2 className="h-4 w-4 text-[#6C4FE0] dark:text-purple-400" />
                   <span className="text-xs font-black text-slate-900 dark:text-white uppercase tracking-wider font-heading">
                     {COMPANY_CONFIG.name}
                   </span>
                 </div>
-                <span className="px-2 py-0.5 rounded-full text-[9px] font-black uppercase tracking-wider bg-blue-100 dark:bg-blue-950 text-primary dark:text-blue-300">
+                <span className="px-2 py-0.5 rounded-full text-[9px] font-black uppercase tracking-wider bg-[#EDE9FE] dark:bg-purple-950/60 text-[#6C4FE0] dark:text-purple-300">
                   Mill Registry
                 </span>
               </div>

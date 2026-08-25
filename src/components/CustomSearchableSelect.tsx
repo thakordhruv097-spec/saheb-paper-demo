@@ -126,7 +126,7 @@ export const CustomSearchableSelect: React.FC<CustomSearchableSelectProps> = ({
                     }}
                     className={`w-full p-2.5 rounded-xl text-left flex items-center justify-between gap-2 transition cursor-pointer ${
                       isSelected
-                        ? 'bg-gradient-to-r from-blue-600 to-indigo-600 text-white font-black shadow-md'
+                        ? 'bg-gradient-to-r from-[#6C4FE0] to-[#7C3AED] text-white font-black shadow-md shadow-[#6C4FE0]/25'
                         : 'hover:bg-slate-100 dark:hover:bg-slate-800/80 text-slate-800 dark:text-slate-200'
                     }`}
                   >

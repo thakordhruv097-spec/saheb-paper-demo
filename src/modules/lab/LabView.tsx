@@ -335,7 +335,7 @@ export const LabView: React.FC = () => {
                   setErrorMsg('');
                   setIsModalOpen(true);
                 }}
-                className="px-4 py-2.5 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white font-black rounded-xl text-xs uppercase tracking-wider shadow-md shadow-indigo-500/25 transition active:scale-95 cursor-pointer flex items-center justify-center gap-2"
+                className="btn-primary-gradient px-4 py-2.5 text-xs uppercase tracking-wider cursor-pointer active:scale-95 flex items-center justify-center gap-2"
               >
                 <Plus className="h-4 w-4" />
                 <span>+ Create New Report</span>
@@ -961,7 +961,7 @@ export const LabView: React.FC = () => {
                 </button>
                 <button
                   type="submit"
-                  className="px-6 py-3 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white font-black rounded-2xl text-xs uppercase tracking-wider shadow-lg shadow-blue-500/25 cursor-pointer hover:scale-[1.01] active:scale-[0.99] transition"
+                  className="btn-primary-gradient px-6 py-3 text-xs uppercase tracking-wider cursor-pointer"
                 >
                   Save & Issue Paper Test Report
                 </button>

@@ -337,7 +337,7 @@ export const RawMaterialView: React.FC = () => {
                               }}
                               className={`w-full p-2 rounded-xl text-left flex items-center justify-between gap-2 transition cursor-pointer ${
                                 isSelected
-                                  ? 'bg-gradient-to-r from-blue-600 to-indigo-600 text-white font-black shadow-md'
+                                  ? 'bg-gradient-to-r from-[#6C4FE0] to-[#7C3AED] text-white font-black shadow-md shadow-[#6C4FE0]/20'
                                   : 'hover:bg-slate-100 dark:hover:bg-slate-800/80 text-slate-800 dark:text-slate-200'
                               }`}
                             >
@@ -418,7 +418,7 @@ export const RawMaterialView: React.FC = () => {
             <div className="flex justify-end pt-1">
               <button
                 type="submit"
-                className="w-full sm:w-auto px-8 py-3 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white font-black rounded-2xl text-xs uppercase tracking-wider shadow-lg shadow-blue-500/25 transition-all hover:scale-[1.01] active:scale-[0.99] cursor-pointer flex items-center justify-center gap-2"
+                className="btn-primary-gradient w-full sm:w-auto px-8 py-3 text-xs uppercase tracking-wider cursor-pointer flex items-center justify-center gap-2"
               >
                 <Plus className="h-4 w-4" />
                 <span>Confirm Inward</span>
@@ -448,7 +448,7 @@ export const RawMaterialView: React.FC = () => {
                 onClick={() => setSelectedCategory(tab.id)}
                 className={`px-3.5 py-1.5 rounded-xl text-xs font-black transition-all shrink-0 cursor-pointer ${
                   selectedCategory === tab.id
-                    ? 'bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 text-white shadow-md shadow-indigo-500/20 scale-[1.02]'
+                    ? 'bg-gradient-to-r from-[#6C4FE0] to-[#7C3AED] text-white shadow-md shadow-[#6C4FE0]/25 scale-[1.02]'
                     : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
                 }`}
               >
@@ -693,7 +693,7 @@ export const RawMaterialView: React.FC = () => {
 
             <button
               onClick={() => window.print()}
-              className="w-full py-3 bg-blue-600 hover:bg-blue-500 text-white font-black rounded-2xl text-xs uppercase tracking-wider cursor-pointer flex items-center justify-center gap-2 shadow-lg shadow-blue-500/20 transition active:scale-95"
+              className="btn-primary-gradient w-full py-3 text-xs uppercase tracking-wider cursor-pointer flex items-center justify-center gap-2"
             >
               <Printer className="h-4 w-4" />
               <span>PRINT BATCH BARCODE/QR</span>

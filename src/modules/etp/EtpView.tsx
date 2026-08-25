@@ -93,7 +93,7 @@ export const EtpView: React.FC = () => {
       <div className="neumorphic-card rounded-3xl p-5 sm:p-6 space-y-5">
         <div className="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-3">
           <div className="flex items-center gap-2.5">
-            <div className="p-2 rounded-xl bg-gradient-to-br from-blue-600 to-teal-600 text-white shadow-sm shadow-blue-500/30">
+            <div className="p-2 rounded-xl bg-gradient-to-br from-[#6C4FE0] to-[#7C3AED] text-white shadow-sm shadow-[#6C4FE0]/30">
               <Droplet className="h-4 w-4" />
             </div>
             <div>
@@ -194,7 +194,7 @@ export const EtpView: React.FC = () => {
           <div className="pt-2 flex justify-end">
             <button
               type="submit"
-              className="w-full sm:w-auto px-6 py-3 bg-gradient-to-r from-blue-600 via-teal-600 to-emerald-600 hover:from-blue-700 hover:via-teal-700 hover:to-emerald-700 text-white font-black text-xs uppercase tracking-wider rounded-2xl shadow-md shadow-blue-500/25 transition cursor-pointer flex items-center justify-center gap-2"
+              className="btn-primary-gradient w-full sm:w-auto px-6 py-3 text-xs uppercase tracking-wider flex items-center justify-center gap-2 cursor-pointer"
             >
               <Plus className="h-4 w-4" />
               <span>Log ETP Consumption</span>
@@ -327,7 +327,7 @@ export const EtpView: React.FC = () => {
                     <button
                       type="button"
                       onClick={() => setVisibleCount(prev => prev + 10)}
-                      className="px-4 py-2 bg-gradient-to-r from-blue-600 to-teal-600 hover:from-blue-700 hover:to-teal-700 text-white font-extrabold text-xs rounded-xl shadow-sm transition cursor-pointer flex items-center gap-1.5"
+                      className="btn-primary-gradient px-4 py-2 text-xs flex items-center gap-1.5 cursor-pointer"
                     >
                       <span>View More Logs ({filteredLogs.length - visibleCount} remaining)</span>
                       <ChevronDown className="h-4 w-4" />

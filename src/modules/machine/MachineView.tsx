@@ -266,7 +266,7 @@ export const MachineView: React.FC = () => {
                 <button
                   type="button"
                   onClick={() => navigate('/pulp-mill-operations')}
-                  className="px-3.5 py-1.5 bg-blue-600 hover:bg-blue-700 dark:bg-blue-600 dark:hover:bg-blue-500 text-white rounded-xl text-[10px] font-black uppercase tracking-wider transition shrink-0 cursor-pointer shadow-xs active:scale-95 flex items-center gap-1.5"
+                  className="px-3.5 py-1.5 bg-[#6C4FE0] hover:bg-[#5B3DC9] text-white rounded-xl text-[10px] font-black uppercase tracking-wider transition shrink-0 cursor-pointer shadow-xs active:scale-95 flex items-center gap-1.5"
                 >
                   <span>Set Today's Formula</span>
                   <span>→</span>
@@ -325,7 +325,7 @@ export const MachineView: React.FC = () => {
                     }}
                     className={`h-full rounded-xl text-xs transition-all duration-150 flex items-center justify-center cursor-pointer ${
                       shift === 'A'
-                        ? 'bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 text-white shadow-xs font-black'
+                        ? 'bg-gradient-to-r from-[#6C4FE0] to-[#7C3AED] text-white shadow-xs font-black'
                         : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white font-bold'
                     }`}
                   >
@@ -340,7 +340,7 @@ export const MachineView: React.FC = () => {
                     }}
                     className={`h-full rounded-xl text-xs transition-all duration-150 flex items-center justify-center cursor-pointer ${
                       shift === 'B'
-                        ? 'bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 text-white shadow-xs font-black'
+                        ? 'bg-gradient-to-r from-[#6C4FE0] to-[#7C3AED] text-white shadow-xs font-black'
                         : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white font-bold'
                     }`}
                   >
@@ -487,7 +487,7 @@ export const MachineView: React.FC = () => {
 
             <button
               type="submit"
-              className="w-full bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white font-black py-3.5 rounded-2xl text-xs uppercase tracking-wider shadow-lg shadow-blue-500/25 transition-all hover:scale-[1.01] active:scale-[0.99] cursor-pointer"
+              className="btn-primary-gradient w-full py-3.5 text-xs uppercase tracking-wider cursor-pointer"
             >
               Submit Machine Production Log
             </button>

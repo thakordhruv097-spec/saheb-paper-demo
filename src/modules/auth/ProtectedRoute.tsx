@@ -26,7 +26,7 @@ export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children, module
           </p>
           <button
             onClick={() => navigate('/')}
-            className="px-5 py-2.5 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-xl transition cursor-pointer shadow-md shadow-blue-600/20 active:scale-95"
+            className="btn-primary-gradient px-5 py-2.5 text-xs uppercase tracking-wider cursor-pointer"
           >
             Back to Dashboard
           </button>

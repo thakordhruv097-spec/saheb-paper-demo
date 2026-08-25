@@ -1067,7 +1067,7 @@ export const AdminMasters: React.FC = () => {
                         onClick={() => setRmCategoryTab(tab.id as any)}
                         className={`flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer whitespace-nowrap border ${
                           isActive
-                            ? 'bg-blue-600 dark:bg-blue-600 text-white border-blue-600 shadow-md shadow-blue-500/20'
+                            ? 'bg-gradient-to-r from-[#6C4FE0] to-[#7C3AED] text-white border-transparent shadow-md shadow-[#6C4FE0]/25'
                             : 'bg-slate-50 dark:bg-slate-900 text-slate-600 dark:text-slate-400 border-slate-200 dark:border-slate-800 hover:bg-slate-100 dark:hover:bg-slate-800 hover:text-slate-900 dark:hover:text-white'
                         }`}
                       >
@@ -1829,7 +1829,7 @@ export const AdminMasters: React.FC = () => {
                   </div>
                   <button
                     onClick={handleExportBackup}
-                    className="px-5 py-3 bg-gradient-to-r from-blue-600 via-indigo-600 to-blue-700 hover:from-blue-700 hover:to-indigo-700 text-white rounded-2xl text-xs font-black uppercase tracking-wider shadow-lg shadow-blue-500/25 transition-all hover:scale-[1.01] active:scale-[0.99] flex items-center gap-2 cursor-pointer"
+                    className="btn-primary-gradient px-5 py-3 text-xs uppercase tracking-wider flex items-center gap-2 cursor-pointer"
                   >
                     <Download className="h-4 w-4" />
                     <span>Download Database Backup (JSON)</span>
@@ -2047,7 +2047,7 @@ export const AdminMasters: React.FC = () => {
 
                 <button
                   type="submit"
-                  className="w-full bg-gradient-to-r from-blue-600 via-indigo-600 to-blue-700 hover:from-blue-700 hover:to-indigo-700 text-white font-black py-3 rounded-2xl text-xs uppercase tracking-wider shadow-lg shadow-blue-500/25 transition-all hover:scale-[1.01] active:scale-[0.99] cursor-pointer"
+                  className="btn-primary-gradient w-full py-3 text-xs uppercase tracking-wider cursor-pointer"
                 >
                   Create User Account
                 </button>
@@ -2120,7 +2120,7 @@ export const AdminMasters: React.FC = () => {
 
                 <button
                   type="submit"
-                  className="w-full bg-gradient-to-r from-blue-600 via-indigo-600 to-blue-700 hover:from-blue-700 hover:to-indigo-700 text-white font-black py-3 rounded-2xl text-xs uppercase tracking-wider shadow-lg shadow-blue-500/25 transition-all hover:scale-[1.01] active:scale-[0.99] cursor-pointer"
+                  className="btn-primary-gradient w-full py-3 text-xs uppercase tracking-wider cursor-pointer"
                 >
                   Add Master Product
                 </button>
@@ -2184,7 +2184,7 @@ export const AdminMasters: React.FC = () => {
 
                 <button
                   type="submit"
-                  className="w-full bg-gradient-to-r from-blue-600 via-indigo-600 to-blue-700 hover:from-blue-700 hover:to-indigo-700 text-white font-black py-3 rounded-2xl text-xs uppercase tracking-wider shadow-lg shadow-blue-500/25 transition-all hover:scale-[1.01] active:scale-[0.99] cursor-pointer"
+                  className="btn-primary-gradient w-full py-3 text-xs uppercase tracking-wider cursor-pointer"
                 >
                   Add Raw Material Master
                 </button>
@@ -2235,7 +2235,7 @@ export const AdminMasters: React.FC = () => {
 
                 <button
                   type="submit"
-                  className="w-full bg-gradient-to-r from-blue-600 via-indigo-600 to-blue-700 hover:from-blue-700 hover:to-indigo-700 text-white font-black py-3 rounded-2xl text-xs uppercase tracking-wider shadow-lg shadow-blue-500/25 transition-all hover:scale-[1.01] active:scale-[0.99] cursor-pointer"
+                  className="btn-primary-gradient w-full py-3 text-xs uppercase tracking-wider cursor-pointer"
                 >
                   Add Customer Party
                 </button>
@@ -2286,7 +2286,7 @@ export const AdminMasters: React.FC = () => {
 
                 <button
                   type="submit"
-                  className="w-full bg-gradient-to-r from-blue-600 via-indigo-600 to-blue-700 hover:from-blue-700 hover:to-indigo-700 text-white font-black py-3 rounded-2xl text-xs uppercase tracking-wider shadow-lg shadow-blue-500/25 transition-all hover:scale-[1.01] active:scale-[0.99] cursor-pointer"
+                  className="btn-primary-gradient w-full py-3 text-xs uppercase tracking-wider cursor-pointer"
                 >
                   Add Supplier Vendor
                 </button>

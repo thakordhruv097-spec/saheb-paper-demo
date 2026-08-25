@@ -226,9 +226,9 @@ export const WorkflowStepBadge: React.FC<WorkflowStepBadgeProps> = ({ stepInfo }
           </div>
 
           {/* ⭐ VIBRANT HIGHLIGHTED "WHAT THIS PAGE DOES" BOX */}
-          <div className="p-2.5 bg-gradient-to-br from-blue-50/90 via-indigo-50/70 to-purple-50/50 dark:from-blue-600/25 dark:via-indigo-600/25 dark:to-purple-600/20 rounded-xl border border-blue-200/80 dark:border-blue-400/60 shadow-2xs space-y-1">
-            <p className="text-[9px] font-black uppercase tracking-wider text-blue-700 dark:text-blue-300 flex items-center gap-1">
-              <BookOpen className="h-3 w-3 text-blue-600 dark:text-blue-400 shrink-0" />
+          <div className="p-2.5 bg-gradient-to-br from-purple-50/90 via-indigo-50/70 to-purple-50/50 dark:from-purple-950/40 dark:via-indigo-950/40 dark:to-purple-900/30 rounded-xl border border-purple-200/80 dark:border-purple-800/60 shadow-2xs space-y-1">
+            <p className="text-[9px] font-black uppercase tracking-wider text-[#6C4FE0] dark:text-purple-300 flex items-center gap-1">
+              <BookOpen className="h-3 w-3 text-[#6C4FE0] dark:text-purple-400 shrink-0" />
               <span>WHAT THIS PAGE DOES:</span>
             </p>
             <p className="text-[11px] font-bold text-slate-800 dark:text-slate-100 leading-snug">
@@ -269,7 +269,7 @@ export const WorkflowStepBadge: React.FC<WorkflowStepBadgeProps> = ({ stepInfo }
                     setIsOpen(false);
                     navigate(stepInfo.nextStep!.route);
                   }}
-                  className="flex items-center gap-1 px-3 py-1.5 rounded-lg bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white text-[11px] font-bold shadow-md shadow-blue-500/25 transition cursor-pointer shrink-0 active:scale-95"
+                  className="flex items-center gap-1 px-3 py-1.5 rounded-lg bg-gradient-to-r from-[#6C4FE0] to-[#7C3AED] hover:from-[#5B3DC9] hover:to-[#6C4FE0] text-white text-[11px] font-bold shadow-md shadow-[#6C4FE0]/25 transition cursor-pointer shrink-0 active:scale-95"
                 >
                   <span>Go</span>
                   <ArrowRight className="h-3 w-3" />

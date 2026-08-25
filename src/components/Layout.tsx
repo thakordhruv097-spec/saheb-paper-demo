@@ -980,8 +980,8 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
                     title={tab.label}
                   >
                     <div className={`w-11 h-11 rounded-full text-white flex items-center justify-center -mt-5 shadow-xl active:scale-90 transition-all ${isActive
-                      ? 'bg-gradient-to-tr from-blue-600 to-indigo-600 shadow-indigo-500/50 ring-4 ring-white dark:ring-slate-900 scale-105'
-                      : 'bg-gradient-to-tr from-blue-600 to-indigo-600 shadow-indigo-500/40 ring-4 ring-white dark:ring-slate-900 group-hover:scale-105'
+                      ? 'bg-gradient-to-tr from-[#6C4FE0] to-[#7C3AED] shadow-[#6C4FE0]/50 ring-4 ring-white dark:ring-slate-900 scale-105'
+                      : 'bg-gradient-to-tr from-[#6C4FE0] to-[#7C3AED] shadow-[#6C4FE0]/40 ring-4 ring-white dark:ring-slate-900 group-hover:scale-105'
                       }`}>
                       <Icon className="h-5 w-5" />
                     </div>

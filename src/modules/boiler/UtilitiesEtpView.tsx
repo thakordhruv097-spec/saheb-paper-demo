@@ -130,7 +130,7 @@ export const UtilitiesEtpView: React.FC<UtilitiesEtpViewProps> = ({ initialTab }
             onClick={() => handleTabChange('etp_chemicals')}
             className={`flex-1 min-w-[120px] flex items-center justify-center gap-2 px-5 py-3 rounded-xl text-xs font-extrabold transition-all duration-200 cursor-pointer ${
               activeTab === 'etp_chemicals'
-                ? 'bg-gradient-to-r from-blue-600 to-teal-600 text-white shadow-md shadow-blue-500/25 scale-[1.01]'
+                ? 'bg-gradient-to-r from-[#6C4FE0] to-[#7C3AED] text-white shadow-md shadow-[#6C4FE0]/25 scale-[1.01]'
                 : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-white/60 dark:hover:bg-slate-700/50'
             }`}
           >
