@@ -77,7 +77,7 @@ export const LabelStudioView: React.FC = () => {
   const [netWeightKg, setNetWeightKg] = useState('1200');
   const [qcStatus, setQcStatus] = useState('Grade PENDING - PASSED');
   const [prodDateTime, setProdDateTime] = useState('2026-08-16 17:00');
-  const [notesInstructions, setNotesInstructions] = useState('Standard Tissue Reel ΓÇó Wrap Sealed');
+  const [notesInstructions, setNotesInstructions] = useState('Standard Tissue Reel - Wrap Sealed');
 
   // Label Size, Print Copies, and System Mode (Test ID-only vs Old Full JSON)
   const [labelSize, setLabelSize] = useState('4" x 6" (Thermal Sticker 100x150mm)');
@@ -210,7 +210,7 @@ export const LabelStudioView: React.FC = () => {
               >
                 {reelsList.map(reel => (
                   <option key={reel.reelNo} value={reel.reelNo}>
-                    {reel.reelNo} ΓÇó {reel.product} ({reel.weight} kg)
+                    {reel.reelNo} - {reel.product} ({reel.weight} kg)
                   </option>
                 ))}
               </select>

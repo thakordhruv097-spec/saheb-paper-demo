@@ -174,7 +174,7 @@ export const PulpMillView: React.FC = () => {
     setTimeout(() => setSuccessMsg(''), 3000);
   };
 
-  const [sortAscending, setSortAscending] = useState(true);
+  const [sortAscending, setSortAscending] = useState(false);
 
   const filteredFormulas = useMemo(() => {
     let list = [...formulas];

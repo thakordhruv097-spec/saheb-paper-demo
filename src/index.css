@@ -765,3 +765,18 @@ body.login-active {
   user-select: none !important;
 }
 
+/* --- Global Custom Dropdown / Select Option Styling --- */
+select option {
+  background-color: #ffffff;
+  color: #1e1b2e;
+  font-weight: 600;
+  padding: 8px 12px;
+}
+
+.dark select option {
+  background-color: #0d1527;
+  color: #f8fafc;
+  font-weight: 600;
+}
+
+

@@ -1059,6 +1059,13 @@ export function saveFormula(formula: PulpFormula, user: string): PulpFormula {
   return formula;
 }
 
+export function deleteFormula(formulaId: string, user: string): void {
+  const formulas = getFormulas();
+  const filtered = formulas.filter(f => f.id !== formulaId);
+  setJSON(KEYS.FORMULAS, filtered);
+  addLog('Pulp Mill', 'Formula Deleted', `Formula ${formulaId} deleted.`, user);
+}
+
 // --- MACHINE PRODUCTION ---
 export function getRolls(): MachineRoll[] {
   return getJSON<MachineRoll[]>(KEYS.ROLLS, []);
