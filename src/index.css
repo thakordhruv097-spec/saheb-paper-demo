@@ -723,3 +723,32 @@ body.print-a4-labels .qr-label-card {
   background: white !important;
   border-radius: 4px !important;
 }
+
+/* Hide scrollbar for Chrome, Safari, Opera, Edge, Firefox */
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+.no-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+/* Completely Lock and Make Login View 100% Static */
+html.login-active,
+body.login-active {
+  overflow: hidden !important;
+  height: 100% !important;
+  width: 100% !important;
+  position: fixed !important;
+  inset: 0 !important;
+  touch-action: none !important;
+  overscroll-behavior: none !important;
+}
+
+.login-page-container {
+  overflow: hidden !important;
+  touch-action: none !important;
+  overscroll-behavior: none !important;
+  user-select: none !important;
+}
+

@@ -172,7 +172,7 @@ export const LoginView: React.FC = () => {
   };
 
   return (
-    <div className="login-page-container no-scrollbar fixed inset-0 min-h-screen min-h-[100dvh] w-full bg-gradient-to-br from-[#6C4FE0] via-[#7C3AED] to-[#5B3DC9] flex items-center justify-center p-3 sm:p-5 md:p-8 relative font-sans z-50 overflow-y-auto">
+    <div className="login-page-container fixed inset-0 h-screen h-[100dvh] w-screen w-full bg-gradient-to-br from-[#6C4FE0] via-[#7C3AED] to-[#5B3DC9] flex items-center justify-center p-3 sm:p-4 md:p-6 font-sans z-50 overflow-hidden select-none overscroll-none touch-none">
       
       {/* Background Decorative Circles */}
       <div className="absolute -top-16 -left-16 w-64 h-64 rounded-full bg-white/10 blur-sm pointer-events-none" />
@@ -180,11 +180,11 @@ export const LoginView: React.FC = () => {
       <div className="absolute bottom-12 left-10 w-24 h-24 rounded-full bg-white/15 blur-xs pointer-events-none" />
       <div className="absolute -bottom-20 -right-20 w-80 h-80 rounded-full bg-sky-300/20 blur-md pointer-events-none" />
       
-      {/* Main Floating White Card - Dynamic responsive scaling across screen resolutions */}
-      <div className="w-full max-w-[340px] sm:max-w-[370px] md:max-w-[410px] lg:max-w-[430px] bg-white rounded-[20px] sm:rounded-[24px] md:rounded-[28px] shadow-[8px_8px_20px_rgba(163,163,196,0.2),-8px_-8px_20px_rgba(255,255,255,0.8)] p-4 sm:p-6 md:p-7 relative z-10 my-auto transition-all duration-300">
+      {/* Main Floating White Card - Rock-solid static placement */}
+      <div className="w-full max-w-[340px] sm:max-w-[370px] md:max-w-[400px] lg:max-w-[410px] max-h-[95vh] max-h-[95dvh] overflow-y-auto no-scrollbar bg-white rounded-[20px] sm:rounded-[24px] md:rounded-[26px] shadow-[8px_8px_24px_rgba(0,0,0,0.18)] p-4 sm:p-5 md:p-6 relative z-10 my-auto">
         
         {/* Title & Subtitle with Official Logo */}
-        <div className="flex items-center justify-between mb-3.5 sm:mb-4 md:mb-5 border-b border-slate-100 pb-2.5 sm:pb-3 md:pb-4">
+        <div className="flex items-center justify-between mb-3 sm:mb-3.5 md:mb-4 border-b border-slate-100 pb-2.5 sm:pb-3">
           <div>
             <h2 className="text-lg sm:text-xl md:text-2xl font-black text-[#1E293B] tracking-tight">
               {COMPANY_CONFIG.name}
@@ -193,7 +193,7 @@ export const LoginView: React.FC = () => {
               Paper Mill Management System
             </p>
           </div>
-          <img src={`${import.meta.env.BASE_URL}logo.png`} alt={`${COMPANY_CONFIG.shortName} Logo`} className="h-8 w-8 sm:h-10 sm:w-10 md:h-11 md:w-11 object-contain rounded-xl shadow-xs border border-slate-200/80 bg-white p-0.5 shrink-0" />
+          <img src={`${import.meta.env.BASE_URL}logo.png`} alt={`${COMPANY_CONFIG.shortName} Logo`} className="h-8 w-8 sm:h-9 sm:w-9 md:h-10 md:w-10 object-contain rounded-xl shadow-xs border border-slate-200/80 bg-white p-0.5 shrink-0" />
         </div>
 
         {/* 1. Login Mode */}
