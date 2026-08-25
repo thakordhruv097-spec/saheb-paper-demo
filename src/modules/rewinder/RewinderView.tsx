@@ -243,7 +243,7 @@ export const RewinderView: React.FC = () => {
     });
   }, [reels, filterProduct, filterGsm, filterSize, filterPly, selectedProductFilter, statusFilter, dateFilter, searchTerm]);
 
-  // Group filtered reels into distinct cut entry batches (by parent roll + production timestamp)
+  // Group filtered reels strictly into single running roll groups (by parentRollNo)
   const groupedBatches = useMemo(() => {
     const groups: {
       batchId: string;
@@ -257,15 +257,15 @@ export const RewinderView: React.FC = () => {
     }[] = [];
 
     [...filteredReels].reverse().forEach(reel => {
-      const key = `${reel.parentRollNo}_${reel.productionDate}`;
-      let group = groups.find(g => g.batchId === key);
+      const rollKey = reel.parentRollNo || 'UNKNOWN';
+      let group = groups.find(g => g.parentRollNo === rollKey);
       const brokeVal = Number(reel.joint || 0) * 15 + 20;
       const netKg = Math.max(0, reel.weight - brokeVal);
 
       if (!group) {
         group = {
-          batchId: key,
-          parentRollNo: reel.parentRollNo,
+          batchId: rollKey,
+          parentRollNo: rollKey,
           product: reel.product,
           productionDate: reel.productionDate,
           reels: [],
@@ -279,6 +279,9 @@ export const RewinderView: React.FC = () => {
       group.totalWeight += reel.weight;
       group.totalBroke += brokeVal;
       group.netWeight += netKg;
+      if (reel.productionDate && (!group.productionDate || reel.productionDate > group.productionDate)) {
+        group.productionDate = reel.productionDate;
+      }
     });
 
     return groups;

@@ -541,8 +541,26 @@ html.dark .dashboard-main-scrollbar::-webkit-scrollbar-corner,
     size: A4 portrait;
   }
 
+  /* When printing Challan Receipts or Labels, completely eliminate the main application #root */
+  body.printing-challan #root,
+  body.printing-challan main,
+  body:has(#printable-receipt-modal) #root,
+  body:has(#printable-receipt-modal) main,
+  body:has(#printable-label-studio-output) #root,
+  body:has(#printable-label-studio-output) main,
+  body:has(#printable-label-card) #root,
+  body:has(#printable-label-card) main {
+    display: none !important;
+    visibility: hidden !important;
+    height: 0 !important;
+    max-height: 0 !important;
+    overflow: hidden !important;
+    margin: 0 !important;
+    padding: 0 !important;
+  }
+
   /* Reset main layouts */
-  html, body, #root, #app, main, .min-h-screen {
+  html, body {
     background: #ffffff !important;
     background-color: #ffffff !important;
     color: #000000 !important;
@@ -550,19 +568,9 @@ html.dark .dashboard-main-scrollbar::-webkit-scrollbar-corner,
     height: auto !important;
     overflow: visible !important;
     margin: 0 !important;
-    margin-left: 0 !important;
     padding: 0 !important;
     -webkit-print-color-adjust: exact !important;
     print-color-adjust: exact !important;
-  }
-
-  main {
-    margin-left: 0 !important;
-    padding: 0 !important;
-    overflow: visible !important;
-    display: block !important;
-    width: 100% !important;
-    max-width: 100% !important;
   }
 
   /* Hide UI navigation, sidebar, headers, and interactive buttons */
@@ -623,7 +631,12 @@ html.dark .dashboard-main-scrollbar::-webkit-scrollbar-corner,
     break-after: page !important;
     page-break-inside: avoid !important;
     break-inside: avoid !important;
-    display: block !important;
+    display: flex !important;
+    flex-direction: column !important;
+    justify-content: space-between !important;
+    min-height: 275mm !important;
+    height: 275mm !important;
+    max-height: 275mm !important;
     width: 100% !important;
     padding: 0 !important;
     margin: 0 !important;

@@ -1128,33 +1128,52 @@ export function saveRoll(roll: MachineRoll, user: string): MachineRoll {
 
 // --- REWINDER ---
 export const DEFAULT_REELS: Reel[] = [
-  // Cut Batch from Running Roll #R-20260812-0001 (15 Reels Cut, Napkin Tissue 18 GSM | 30 cm | 2 Ply)
-  { reelNo: '260500586', parentRollNo: 'R-20260812-0001', product: 'Napkin Tissue', gsm: 18, size: 30, ply: 2, weight: 180, joint: 0, status: 'IN_STOCK', qcGrade: 'A', productionDate: '2026-08-16 04:03', dia: 900 },
-  { reelNo: '260500585', parentRollNo: 'R-20260812-0001', product: 'Napkin Tissue', gsm: 18, size: 30, ply: 2, weight: 240, joint: 1, status: 'IN_STOCK', qcGrade: 'A', productionDate: '2026-08-16 04:03', dia: 900 },
-  { reelNo: '260500584', parentRollNo: 'R-20260812-0001', product: 'Napkin Tissue', gsm: 18, size: 30, ply: 2, weight: 130, joint: 3, status: 'IN_STOCK', qcGrade: 'A', productionDate: '2026-08-16 04:03', dia: 900 },
-  { reelNo: '260500583', parentRollNo: 'R-20260812-0001', product: 'Napkin Tissue', gsm: 18, size: 30, ply: 2, weight: 310, joint: 20, status: 'IN_STOCK', qcGrade: 'A', productionDate: '2026-08-16 04:03', dia: 900 },
-  { reelNo: '260500582', parentRollNo: 'R-20260812-0001', product: 'Napkin Tissue', gsm: 18, size: 30, ply: 2, weight: 420, joint: 0, status: 'IN_STOCK', qcGrade: 'A', productionDate: '2026-08-16 04:03', dia: 900 },
-  { reelNo: '260500581', parentRollNo: 'R-20260812-0001', product: 'Napkin Tissue', gsm: 18, size: 30, ply: 2, weight: 350, joint: 2, status: 'IN_STOCK', qcGrade: 'A', productionDate: '2026-08-16 04:03', dia: 900 },
-  { reelNo: '260500580', parentRollNo: 'R-20260812-0001', product: 'Napkin Tissue', gsm: 18, size: 30, ply: 2, weight: 450, joint: 3, status: 'IN_STOCK', qcGrade: 'A', productionDate: '2026-08-16 04:03', dia: 900 },
-  { reelNo: '260500579', parentRollNo: 'R-20260812-0001', product: 'Napkin Tissue', gsm: 18, size: 30, ply: 2, weight: 280, joint: 3, status: 'IN_STOCK', qcGrade: 'A', productionDate: '2026-08-16 04:03', dia: 900 },
-  { reelNo: '260500578', parentRollNo: 'R-20260812-0001', product: 'Napkin Tissue', gsm: 18, size: 30, ply: 2, weight: 300, joint: 2, status: 'IN_STOCK', qcGrade: 'A', productionDate: '2026-08-16 04:03', dia: 900 },
+  // --- RUNNING ROLL #R-20260812-0001 (10 Reels Cut, Napkin Tissue 18 GSM | 30 cm | 2 Ply) ---
+  { reelNo: '260500586', parentRollNo: 'R-20260812-0001', product: 'Napkin Tissue', gsm: 18, size: 30, ply: 2, weight: 240, joint: 1, status: 'IN_STOCK', qcGrade: 'A', productionDate: '2026-08-16 04:03', dia: 900 },
+  { reelNo: '260500585', parentRollNo: 'R-20260812-0001', product: 'Napkin Tissue', gsm: 18, size: 30, ply: 2, weight: 180, joint: 0, status: 'IN_STOCK', qcGrade: 'A', productionDate: '2026-08-16 04:03', dia: 900 },
+  { reelNo: '260500584', parentRollNo: 'R-20260812-0001', product: 'Napkin Tissue', gsm: 18, size: 30, ply: 2, weight: 350, joint: 2, status: 'IN_STOCK', qcGrade: 'A', productionDate: '2026-08-16 04:03', dia: 900 },
+  { reelNo: '260500583', parentRollNo: 'R-20260812-0001', product: 'Napkin Tissue', gsm: 18, size: 30, ply: 2, weight: 130, joint: 0, status: 'IN_STOCK', qcGrade: 'A', productionDate: '2026-08-16 04:03', dia: 900 },
+  { reelNo: '260500582', parentRollNo: 'R-20260812-0001', product: 'Napkin Tissue', gsm: 18, size: 30, ply: 2, weight: 420, joint: 3, status: 'IN_STOCK', qcGrade: 'A', productionDate: '2026-08-16 04:03', dia: 900 },
+  { reelNo: '260500581', parentRollNo: 'R-20260812-0001', product: 'Napkin Tissue', gsm: 18, size: 30, ply: 2, weight: 310, joint: 1, status: 'IN_STOCK', qcGrade: 'A', productionDate: '2026-08-16 04:03', dia: 900 },
+  { reelNo: '260500580', parentRollNo: 'R-20260812-0001', product: 'Napkin Tissue', gsm: 18, size: 30, ply: 2, weight: 280, joint: 0, status: 'IN_STOCK', qcGrade: 'A', productionDate: '2026-08-16 04:03', dia: 900 },
+  { reelNo: '260500579', parentRollNo: 'R-20260812-0001', product: 'Napkin Tissue', gsm: 18, size: 30, ply: 2, weight: 450, joint: 2, status: 'IN_STOCK', qcGrade: 'A', productionDate: '2026-08-16 04:03', dia: 900 },
+  { reelNo: '260500578', parentRollNo: 'R-20260812-0001', product: 'Napkin Tissue', gsm: 18, size: 30, ply: 2, weight: 300, joint: 0, status: 'IN_STOCK', qcGrade: 'A', productionDate: '2026-08-16 04:03', dia: 900 },
   { reelNo: '260500577', parentRollNo: 'R-20260812-0001', product: 'Napkin Tissue', gsm: 18, size: 30, ply: 2, weight: 320, joint: 1, status: 'IN_STOCK', qcGrade: 'A', productionDate: '2026-08-16 04:03', dia: 900 },
-  { reelNo: '260500576', parentRollNo: 'R-20260812-0001', product: 'Napkin Tissue', gsm: 18, size: 30, ply: 2, weight: 400, joint: 0, status: 'IN_STOCK', qcGrade: 'A', productionDate: '2026-08-16 04:03', dia: 900 },
 
-  // Pre-loaded seed reels
-  { reelNo: 'R-20260816-0001', parentRollNo: 'R-20260812-0001', product: 'Napkin Tissue', gsm: 16, size: 30, ply: 1, weight: 120, joint: 0, status: 'IN_STOCK', qcGrade: 'A', productionDate: '2026-08-16 10:00', dia: 100 },
-  { reelNo: 'R-20260816-0002', parentRollNo: 'R-20260812-0001', product: 'Napkin Tissue', gsm: 16, size: 30, ply: 1, weight: 118, joint: 0, status: 'IN_STOCK', qcGrade: 'A', productionDate: '2026-08-16 10:15', dia: 100 },
-  { reelNo: 'R-20260816-0003', parentRollNo: 'R-20260812-0001', product: 'Napkin Tissue', gsm: 16, size: 30, ply: 1, weight: 122, joint: 1, status: 'IN_STOCK', qcGrade: 'A', productionDate: '2026-08-16 10:30', dia: 100 },
-  { reelNo: 'R-20260816-0004', parentRollNo: 'R-20260812-0002', product: 'Toilet Tissue', gsm: 18, size: 30, ply: 2, weight: 140, joint: 0, status: 'IN_STOCK', qcGrade: 'A', productionDate: '2026-08-16 11:00', dia: 100 },
-  { reelNo: 'R-20260816-0005', parentRollNo: 'R-20260812-0002', product: 'Toilet Tissue', gsm: 18, size: 30, ply: 2, weight: 135, joint: 0, status: 'IN_STOCK', qcGrade: 'A', productionDate: '2026-08-16 11:20', dia: 100 },
-  { reelNo: 'R-20260816-0006', parentRollNo: 'R-20260812-0002', product: 'Toilet Tissue', gsm: 18, size: 30, ply: 2, weight: 138, joint: 0, status: 'IN_STOCK', qcGrade: 'A', productionDate: '2026-08-16 11:40', dia: 100 },
-  { reelNo: 'R-20260816-0007', parentRollNo: 'R-20260812-0003', product: 'Towel Tissue', gsm: 22, size: 35, ply: 1, weight: 180, joint: 0, status: 'IN_STOCK', qcGrade: 'A', productionDate: '2026-08-16 12:00', dia: 100 },
-  { reelNo: 'R-20260816-0008', parentRollNo: 'R-20260812-0003', product: 'Towel Tissue', gsm: 22, size: 35, ply: 1, weight: 175, joint: 0, status: 'IN_STOCK', qcGrade: 'A', qcGsmResult: 22.1, qcBrightness: 85, qcSoftness: 8, qcInspector: 'Rajesh Sharma', qcTimestamp: '2026-08-16 12:35', productionDate: '2026-08-16 12:30', dia: 100 },
-  { reelNo: 'R-20260816-0009', parentRollNo: 'R-20260812-0003', product: 'Towel Tissue', gsm: 22, size: 35, ply: 1, weight: 178, joint: 0, status: 'IN_STOCK', qcGrade: 'A', qcGsmResult: 21.9, qcBrightness: 86, qcSoftness: 8, qcInspector: 'Rajesh Sharma', qcTimestamp: '2026-08-16 13:05', productionDate: '2026-08-16 13:00', dia: 100 },
-  { reelNo: 'R-20260816-0010', parentRollNo: 'R-20260812-0004', product: 'Facial Tissue', gsm: 14, size: 28, ply: 2, weight: 110, joint: 0, status: 'IN_STOCK', qcGrade: 'A', qcGsmResult: 14.2, qcBrightness: 87, qcSoftness: 9, qcInspector: 'Rajesh Sharma', qcTimestamp: '2026-08-16 14:05', productionDate: '2026-08-16 14:00', dia: 100 },
+  // --- RUNNING ROLL #R-20260812-0002 (5 Reels Cut, Toilet Tissue 17 GSM | 10 cm | 3 Ply) ---
+  { reelNo: '260500576', parentRollNo: 'R-20260812-0002', product: 'Toilet Tissue', gsm: 17, size: 10, ply: 3, weight: 165, joint: 0, status: 'IN_STOCK', qcGrade: 'A', productionDate: '2026-08-16 07:15', dia: 900 },
+  { reelNo: '260500575', parentRollNo: 'R-20260812-0002', product: 'Toilet Tissue', gsm: 17, size: 10, ply: 3, weight: 135, joint: 1, status: 'IN_STOCK', qcGrade: 'A', productionDate: '2026-08-16 07:15', dia: 900 },
+  { reelNo: '260500574', parentRollNo: 'R-20260812-0002', product: 'Toilet Tissue', gsm: 17, size: 10, ply: 3, weight: 150, joint: 0, status: 'IN_STOCK', qcGrade: 'A', productionDate: '2026-08-16 07:15', dia: 900 },
+  { reelNo: '260500573', parentRollNo: 'R-20260812-0002', product: 'Toilet Tissue', gsm: 17, size: 10, ply: 3, weight: 140, joint: 2, status: 'IN_STOCK', qcGrade: 'A', productionDate: '2026-08-16 07:15', dia: 900 },
+  { reelNo: '260500572', parentRollNo: 'R-20260812-0002', product: 'Toilet Tissue', gsm: 17, size: 10, ply: 3, weight: 138, joint: 0, status: 'IN_STOCK', qcGrade: 'A', productionDate: '2026-08-16 07:15', dia: 900 },
+
+  // --- RUNNING ROLL #R-20260812-0003 (2 Reels Cut, KT 22 GSM | 20 cm | 1 Ply - Wide Slits) ---
+  { reelNo: '260500571', parentRollNo: 'R-20260812-0003', product: 'KT', gsm: 22, size: 20, ply: 1, weight: 380, joint: 0, status: 'IN_STOCK', qcGrade: 'A', productionDate: '2026-08-16 09:30', dia: 900 },
+  { reelNo: '260500570', parentRollNo: 'R-20260812-0003', product: 'KT', gsm: 22, size: 20, ply: 1, weight: 375, joint: 1, status: 'IN_STOCK', qcGrade: 'A', productionDate: '2026-08-16 09:30', dia: 900 },
+
+  // --- RUNNING ROLL #R-20260812-0004 (6 Reels Cut, HRT 24 GSM | 25 cm | 1 Ply) ---
+  { reelNo: '260500569', parentRollNo: 'R-20260812-0004', product: 'HRT', gsm: 24, size: 25, ply: 1, weight: 195, joint: 0, status: 'IN_STOCK', qcGrade: 'A', productionDate: '2026-08-16 11:45', dia: 900 },
+  { reelNo: '260500568', parentRollNo: 'R-20260812-0004', product: 'HRT', gsm: 24, size: 25, ply: 1, weight: 185, joint: 0, status: 'IN_STOCK', qcGrade: 'A', productionDate: '2026-08-16 11:45', dia: 900 },
+  { reelNo: '260500567', parentRollNo: 'R-20260812-0004', product: 'HRT', gsm: 24, size: 25, ply: 1, weight: 210, joint: 1, status: 'IN_STOCK', qcGrade: 'A', productionDate: '2026-08-16 11:45', dia: 900 },
+  { reelNo: '260500566', parentRollNo: 'R-20260812-0004', product: 'HRT', gsm: 24, size: 25, ply: 1, weight: 190, joint: 0, status: 'IN_STOCK', qcGrade: 'A', productionDate: '2026-08-16 11:45', dia: 900 },
+  { reelNo: '260500565', parentRollNo: 'R-20260812-0004', product: 'HRT', gsm: 24, size: 25, ply: 1, weight: 205, joint: 2, status: 'IN_STOCK', qcGrade: 'A', productionDate: '2026-08-16 11:45', dia: 900 },
+  { reelNo: '260500564', parentRollNo: 'R-20260812-0004', product: 'HRT', gsm: 24, size: 25, ply: 1, weight: 188, joint: 0, status: 'IN_STOCK', qcGrade: 'A', productionDate: '2026-08-16 11:45', dia: 900 },
+
+  // --- RUNNING ROLL #R-20260812-0005 (3 Reels Cut, Napkin B-Grade 18 GSM | 30 cm | 2 Ply) ---
+  { reelNo: '260500563', parentRollNo: 'R-20260812-0005', product: 'Napkin B-Grade', gsm: 18, size: 30, ply: 2, weight: 310, joint: 1, status: 'IN_STOCK_B', qcGrade: 'B', productionDate: '2026-08-16 14:10', dia: 900 },
+  { reelNo: '260500562', parentRollNo: 'R-20260812-0005', product: 'Napkin B-Grade', gsm: 18, size: 30, ply: 2, weight: 285, joint: 0, status: 'IN_STOCK_B', qcGrade: 'B', productionDate: '2026-08-16 14:10', dia: 900 },
+  { reelNo: '260500561', parentRollNo: 'R-20260812-0005', product: 'Napkin B-Grade', gsm: 18, size: 30, ply: 2, weight: 295, joint: 0, status: 'IN_STOCK_B', qcGrade: 'B', productionDate: '2026-08-16 14:10', dia: 900 },
 ];
 
+const REELS_SEED_VERSION_KEY = 'saheb_reels_version_v4_official';
+
 export function getReels(): Reel[] {
+  const version = localStorage.getItem(REELS_SEED_VERSION_KEY);
+  if (!version) {
+    localStorage.setItem(REELS_SEED_VERSION_KEY, '4');
+    setJSON(KEYS.REELS, DEFAULT_REELS);
+    return DEFAULT_REELS;
+  }
   const existing = getJSON<Reel[]>(KEYS.REELS, []);
   if (!existing || existing.length === 0) {
     setJSON(KEYS.REELS, DEFAULT_REELS);
@@ -1543,8 +1562,79 @@ export function savePendingOrder(order: PendingOrder, user: string): PendingOrde
 }
 
 // --- PACKING SLIPS & DISPATCH ---
+const DEFAULT_PACKING_SLIPS: PackingSlip[] = [
+  {
+    id: 'slip-20260821-0001',
+    slipNo: 'CHALLAN-20260821-0001',
+    date: '2026-08-21',
+    partyId: 'pt-2', // Krishna Enterprises
+    vehicleId: 'GJ-03-XX-5678',
+    reelNos: ['260500586', '260500585', '260500584', '260500576', '260500575'],
+    driverSignature: 'Ramesh Bhai (+91 9988776655)',
+    receiverSignature: 'Manager Patel',
+    status: 'DISPATCHED',
+  },
+  {
+    id: 'slip-20260818-0001',
+    slipNo: 'CHALLAN-20260818-0001',
+    date: '2026-08-18',
+    partyId: 'pt-1', // Ambika Traders
+    vehicleId: 'GJ-05-BY-1234',
+    reelNos: ['260500583', '260500582', '260500581', '260500571'],
+    driverSignature: 'Suresh Patel (+91 9988776656)',
+    receiverSignature: 'R. K. Shah',
+    status: 'DISPATCHED',
+  },
+  {
+    id: 'slip-20260815-0001',
+    slipNo: 'CHALLAN-20260815-0001',
+    date: '2026-08-15',
+    partyId: 'pt-3', // Kailash Paper House
+    vehicleId: 'MH-04-ZZ-9012',
+    reelNos: ['260500569', '260500568', '260500567', '260500563'],
+    driverSignature: 'Anil Singh (+91 9988776657)',
+    receiverSignature: 'Kailash Bhai',
+    status: 'DISPATCHED',
+  },
+];
+
+const PACKING_SLIPS_VERSION_KEY = 'saheb_slips_version_v5_reels';
+
 export function getPackingSlips(): PackingSlip[] {
-  return getJSON<PackingSlip[]>(KEYS.PACKING_SLIPS, []);
+  const version = localStorage.getItem(PACKING_SLIPS_VERSION_KEY);
+  if (!version) {
+    localStorage.setItem(PACKING_SLIPS_VERSION_KEY, '5');
+    setJSON(KEYS.PACKING_SLIPS, DEFAULT_PACKING_SLIPS);
+    return DEFAULT_PACKING_SLIPS;
+  }
+  const existing = getJSON<PackingSlip[]>(KEYS.PACKING_SLIPS, []);
+  if (!existing || existing.length === 0) {
+    setJSON(KEYS.PACKING_SLIPS, DEFAULT_PACKING_SLIPS);
+    return DEFAULT_PACKING_SLIPS;
+  }
+
+  // Self-healing: verify every slip has linked reels matching actual reels in stock
+  const allReels = getReels();
+  const reelMap = new Set(allReels.map(r => r.reelNo));
+  let modified = false;
+  const repaired = existing.map((slip, idx) => {
+    const matchedCount = (slip.reelNos || []).filter(rNo => reelMap.has(rNo)).length;
+    if (matchedCount === 0 && allReels.length > 0) {
+      modified = true;
+      const fallbackSlice = allReels.slice((idx % 3) * 4, (idx % 3) * 4 + 4);
+      return {
+        ...slip,
+        reelNos: fallbackSlice.map(r => r.reelNo),
+      };
+    }
+    return slip;
+  });
+
+  if (modified) {
+    setJSON(KEYS.PACKING_SLIPS, repaired);
+    return repaired;
+  }
+  return existing;
 }
 
 export function savePackingSlip(slip: PackingSlip, user: string): PackingSlip {

@@ -174,13 +174,13 @@ export const DispatchView: React.FC<DispatchViewProps> = ({ initialTab = 'orders
   const [slipSearchQuery, setSlipSearchQuery] = useState('');
   const [showAllReels, setShowAllReels] = useState(false);
 
-  // Fast Reel Selection Filter States
+  // Fast Reel Selection Filter States (Multi-select)
   const [reelSearchQuery, setReelSearchQuery] = useState('');
-  const [reelProductFilter, setReelProductFilter] = useState<'ALL' | string>('ALL');
-  const [reelGsmFilter, setReelGsmFilter] = useState<'ALL' | number>('ALL');
-  const [reelSizeFilter, setReelSizeFilter] = useState<'ALL' | number>('ALL');
-  const [reelPlyFilter, setReelPlyFilter] = useState<'ALL' | number>('ALL');
-  const [reelGradeFilter, setReelGradeFilter] = useState<'ALL' | 'A' | 'B'>('ALL');
+  const [reelProductFilters, setReelProductFilters] = useState<string[]>([]);
+  const [reelGsmFilters, setReelGsmFilters] = useState<number[]>([]);
+  const [reelSizeFilters, setReelSizeFilters] = useState<number[]>([]);
+  const [reelPlyFilters, setReelPlyFilters] = useState<number[]>([]);
+  const [reelGradeFilters, setReelGradeFilters] = useState<string[]>([]);
   const [reelViewMode, setReelViewMode] = useState<'grid' | 'table'>('grid');
   const [barcodeGunInput, setBarcodeGunInput] = useState('');
 
@@ -273,6 +273,7 @@ export const DispatchView: React.FC<DispatchViewProps> = ({ initialTab = 'orders
 
   // 3. Active Challan Detail Modal (for PDF/Excel print review)
   const [viewingSlip, setViewingSlip] = useState<PackingSlip | null>(null);
+  const [directPrintSlip, setDirectPrintSlip] = useState<PackingSlip | null>(null);
   const [receiptPage, setReceiptPage] = useState(1);
   const [receiptGroupMode, setReceiptGroupMode] = useState<'grouped' | 'sequential'>('grouped');
   const [receiptViewMode, setReceiptViewMode] = useState<'paged' | 'continuous'>('paged');
@@ -301,68 +302,88 @@ export const DispatchView: React.FC<DispatchViewProps> = ({ initialTab = 'orders
     return Array.from(set).sort();
   }, [availableReels]);
 
-  // Unique GSMs present in available reels (cascaded by selected product)
+  // Unique GSMs present in available reels
   const uniqueGsms = useMemo(() => {
     const set = new Set<number>();
     availableReels.forEach(r => {
-      if (reelProductFilter === 'ALL' || r.product === reelProductFilter) {
-        if (r.gsm) set.add(r.gsm);
-      }
+      if (r.gsm) set.add(r.gsm);
     });
     return Array.from(set).sort((a, b) => a - b);
-  }, [availableReels, reelProductFilter]);
+  }, [availableReels]);
 
-  // Unique Sizes present in available reels (cascaded by selected product & gsm)
+  // Unique Sizes present in available reels
   const uniqueSizes = useMemo(() => {
     const set = new Set<number>();
     availableReels.forEach(r => {
-      if (
-        (reelProductFilter === 'ALL' || r.product === reelProductFilter) &&
-        (reelGsmFilter === 'ALL' || r.gsm === reelGsmFilter)
-      ) {
-        if (r.size) set.add(r.size);
-      }
+      if (r.size) set.add(r.size);
     });
     return Array.from(set).sort((a, b) => a - b);
-  }, [availableReels, reelProductFilter, reelGsmFilter]);
+  }, [availableReels]);
 
-  // Unique Plys present in available reels (cascaded by selected product, gsm & size)
+  // Unique Plys present in available reels
   const uniquePlys = useMemo(() => {
     const set = new Set<number>();
     availableReels.forEach(r => {
-      if (
-        (reelProductFilter === 'ALL' || r.product === reelProductFilter) &&
-        (reelGsmFilter === 'ALL' || r.gsm === reelGsmFilter) &&
-        (reelSizeFilter === 'ALL' || r.size === reelSizeFilter)
-      ) {
-        if (r.ply) set.add(r.ply);
-      }
+      if (r.ply) set.add(r.ply);
     });
     return Array.from(set).sort((a, b) => a - b);
-  }, [availableReels, reelProductFilter, reelGsmFilter, reelSizeFilter]);
+  }, [availableReels]);
 
-  // Handlers for reel product filter change with auto reset of child options
-  const handleReelProductChange = (prod: string) => {
-    setReelProductFilter(prod);
-    setReelGsmFilter('ALL');
-    setReelSizeFilter('ALL');
-    setReelPlyFilter('ALL');
+  // Multi-select toggle helpers
+  const toggleProductFilter = (prod: string) => {
+    setReelProductFilters(prev =>
+      prev.includes(prod) ? prev.filter(p => p !== prod) : [...prev, prod]
+    );
   };
 
-  // Real-time filtered available reels
+  const toggleGsmFilter = (gsm: number) => {
+    setReelGsmFilters(prev =>
+      prev.includes(gsm) ? prev.filter(g => g !== gsm) : [...prev, gsm]
+    );
+  };
+
+  const toggleSizeFilter = (sz: number) => {
+    setReelSizeFilters(prev =>
+      prev.includes(sz) ? prev.filter(s => s !== sz) : [...prev, sz]
+    );
+  };
+
+  const togglePlyFilter = (ply: number) => {
+    setReelPlyFilters(prev =>
+      prev.includes(ply) ? prev.filter(p => p !== ply) : [...prev, ply]
+    );
+  };
+
+  const toggleGradeFilter = (gr: string) => {
+    setReelGradeFilters(prev =>
+      prev.includes(gr) ? prev.filter(g => g !== gr) : [...prev, gr]
+    );
+  };
+
+  const clearAllFilters = () => {
+    setReelProductFilters([]);
+    setReelGsmFilters([]);
+    setReelSizeFilters([]);
+    setReelPlyFilters([]);
+    setReelGradeFilters([]);
+    setReelSearchQuery('');
+  };
+
+  // Real-time filtered available reels (Multi-select)
   const filteredAvailableReels = useMemo(() => {
     return availableReels.filter(r => {
-      if (reelProductFilter !== 'ALL') {
-        const target = reelProductFilter.toLowerCase().trim();
-        const currentProd = (r.product || '').toLowerCase().trim();
-        if (currentProd !== target && !currentProd.includes(target) && !target.includes(currentProd)) {
-          return false;
-        }
+      if (reelProductFilters.length > 0) {
+        const prod = (r.product || '').toLowerCase().trim();
+        const match = reelProductFilters.some(t => {
+          const target = t.toLowerCase().trim();
+          return prod === target || prod.includes(target) || target.includes(prod);
+        });
+        if (!match) return false;
       }
-      if (reelGsmFilter !== 'ALL' && r.gsm !== reelGsmFilter) return false;
-      if (reelSizeFilter !== 'ALL' && r.size !== reelSizeFilter) return false;
-      if (reelPlyFilter !== 'ALL' && r.ply !== reelPlyFilter) return false;
-      if (reelGradeFilter !== 'ALL' && (r.qcGrade || 'A').toUpperCase() !== reelGradeFilter) return false;
+      if (reelGsmFilters.length > 0 && !reelGsmFilters.includes(r.gsm)) return false;
+      if (reelSizeFilters.length > 0 && !reelSizeFilters.includes(r.size)) return false;
+      if (reelPlyFilters.length > 0 && !reelPlyFilters.includes(r.ply || 1)) return false;
+      if (reelGradeFilters.length > 0 && !reelGradeFilters.includes((r.qcGrade || 'A').toUpperCase())) return false;
       if (reelSearchQuery.trim()) {
         const q = reelSearchQuery.toLowerCase().trim();
         const matchReelNo = r.reelNo.toLowerCase().includes(q);
@@ -374,7 +395,7 @@ export const DispatchView: React.FC<DispatchViewProps> = ({ initialTab = 'orders
       }
       return true;
     });
-  }, [availableReels, reelProductFilter, reelGsmFilter, reelSizeFilter, reelPlyFilter, reelGradeFilter, reelSearchQuery]);
+  }, [availableReels, reelProductFilters, reelGsmFilters, reelSizeFilters, reelPlyFilters, reelGradeFilters, reelSearchQuery]);
 
   // Predictive typing suggestions when user types in the rapid entry box
   const typingReelMatches = useMemo(() => {
@@ -828,6 +849,23 @@ export const DispatchView: React.FC<DispatchViewProps> = ({ initialTab = 'orders
     const workbook = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(workbook, worksheet, "Challan Summary");
     XLSX.writeFile(workbook, `Delivery_Challan_${slip.slipNo}.xlsx`);
+  };
+
+  const handlePrintSlip = (slip: PackingSlip) => {
+    setDirectPrintSlip(slip);
+    document.body.classList.add('printing-challan');
+
+    const cleanup = () => {
+      document.body.classList.remove('printing-challan');
+      setDirectPrintSlip(null);
+      window.removeEventListener('afterprint', cleanup);
+    };
+    window.addEventListener('afterprint', cleanup);
+
+    setTimeout(() => {
+      window.print();
+      setTimeout(cleanup, 2000);
+    }, 120);
   };
 
   const handlePrintChallan = () => {
@@ -1644,10 +1682,10 @@ export const DispatchView: React.FC<DispatchViewProps> = ({ initialTab = 'orders
 
                 <button
                   type="button"
-                  onClick={() => handleReelProductChange('ALL')}
+                  onClick={() => setReelProductFilters([])}
                   className={`px-2.5 py-0.5 rounded-full text-xs font-bold cursor-pointer transition ${
-                    reelProductFilter === 'ALL'
-                      ? 'bg-slate-900 dark:bg-white text-white dark:text-slate-900'
+                    reelProductFilters.length === 0
+                      ? 'bg-slate-900 dark:bg-white text-white dark:text-slate-900 shadow-xs'
                       : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 hover:bg-slate-200'
                   }`}
                 >
@@ -1656,18 +1694,21 @@ export const DispatchView: React.FC<DispatchViewProps> = ({ initialTab = 'orders
 
                 {uniqueProducts.map(prod => {
                   const count = availableReels.filter(r => r.product === prod).length;
+                  const isSelected = reelProductFilters.includes(prod);
                   return (
                     <button
                       key={prod}
                       type="button"
-                      onClick={() => handleReelProductChange(prod)}
-                      className={`px-2.5 py-0.5 rounded-full text-xs font-bold cursor-pointer transition ${
-                        reelProductFilter === prod
-                          ? 'bg-emerald-600 text-white shadow-xs'
+                      onClick={() => toggleProductFilter(prod)}
+                      className={`px-2.5 py-0.5 rounded-full text-xs font-bold cursor-pointer transition flex items-center gap-1 ${
+                        isSelected
+                          ? 'bg-emerald-600 text-white shadow-xs ring-1 ring-emerald-500 font-extrabold'
                           : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 hover:bg-slate-200'
                       }`}
                     >
-                      {prod} ({count})
+                      {isSelected && <span>✓</span>}
+                      <span>{prod}</span>
+                      <span className={`text-[10px] ${isSelected ? 'text-emerald-100' : 'text-slate-400'}`}>({count})</span>
                     </button>
                   );
                 })}
@@ -1677,9 +1718,9 @@ export const DispatchView: React.FC<DispatchViewProps> = ({ initialTab = 'orders
                   <span className="text-[9px] font-black text-slate-400 uppercase px-1">Grade:</span>
                   <button
                     type="button"
-                    onClick={() => setReelGradeFilter('ALL')}
+                    onClick={() => setReelGradeFilters([])}
                     className={`px-2 py-0.5 rounded-lg text-[10px] font-extrabold cursor-pointer transition ${
-                      reelGradeFilter === 'ALL'
+                      reelGradeFilters.length === 0
                         ? 'bg-slate-800 text-white dark:bg-slate-200 dark:text-slate-900'
                         : 'text-slate-600 dark:text-slate-400 hover:text-slate-900'
                     }`}
@@ -1688,25 +1729,25 @@ export const DispatchView: React.FC<DispatchViewProps> = ({ initialTab = 'orders
                   </button>
                   <button
                     type="button"
-                    onClick={() => setReelGradeFilter('A')}
+                    onClick={() => toggleGradeFilter('A')}
                     className={`px-2 py-0.5 rounded-lg text-[10px] font-extrabold cursor-pointer transition ${
-                      reelGradeFilter === 'A'
+                      reelGradeFilters.includes('A')
                         ? 'bg-emerald-600 text-white shadow-xs'
                         : 'text-emerald-700 dark:text-emerald-400 hover:bg-emerald-50 dark:hover:bg-emerald-950/30'
                     }`}
                   >
-                    Grade A
+                    {reelGradeFilters.includes('A') && '✓ '}Grade A
                   </button>
                   <button
                     type="button"
-                    onClick={() => setReelGradeFilter('B')}
+                    onClick={() => toggleGradeFilter('B')}
                     className={`px-2 py-0.5 rounded-lg text-[10px] font-extrabold cursor-pointer transition ${
-                      reelGradeFilter === 'B'
+                      reelGradeFilters.includes('B')
                         ? 'bg-amber-600 text-white shadow-xs'
                         : 'text-amber-700 dark:text-amber-400 hover:bg-amber-50 dark:hover:bg-amber-950/30'
                     }`}
                   >
-                    Grade B Only
+                    {reelGradeFilters.includes('B') && '✓ '}Grade B Only
                   </button>
                 </div>
               </div>
@@ -1719,10 +1760,10 @@ export const DispatchView: React.FC<DispatchViewProps> = ({ initialTab = 'orders
 
                 <button
                   type="button"
-                  onClick={() => setReelGsmFilter('ALL')}
+                  onClick={() => setReelGsmFilters([])}
                   className={`px-2.5 py-0.5 rounded-full text-xs font-bold cursor-pointer transition ${
-                    reelGsmFilter === 'ALL'
-                      ? 'bg-blue-900 dark:bg-blue-600 text-white'
+                    reelGsmFilters.length === 0
+                      ? 'bg-blue-900 dark:bg-blue-600 text-white shadow-xs'
                       : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 hover:bg-slate-200'
                   }`}
                 >
@@ -1730,19 +1771,22 @@ export const DispatchView: React.FC<DispatchViewProps> = ({ initialTab = 'orders
                 </button>
 
                 {uniqueGsms.map(gsm => {
-                  const count = availableReels.filter(r => (reelProductFilter === 'ALL' || r.product === reelProductFilter) && r.gsm === gsm).length;
+                  const count = availableReels.filter(r => r.gsm === gsm).length;
+                  const isSelected = reelGsmFilters.includes(gsm);
                   return (
                     <button
                       key={gsm}
                       type="button"
-                      onClick={() => setReelGsmFilter(gsm)}
-                      className={`px-2.5 py-0.5 rounded-full text-xs font-bold cursor-pointer transition ${
-                        reelGsmFilter === gsm
-                          ? 'bg-primary text-white shadow-xs'
+                      onClick={() => toggleGsmFilter(gsm)}
+                      className={`px-2.5 py-0.5 rounded-full text-xs font-bold cursor-pointer transition flex items-center gap-1 ${
+                        isSelected
+                          ? 'bg-primary text-white shadow-xs ring-1 ring-blue-500 font-extrabold'
                           : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 hover:bg-slate-200'
                       }`}
                     >
-                      {gsm} GSM ({count})
+                      {isSelected && <span>✓</span>}
+                      <span>{gsm} GSM</span>
+                      <span className={`text-[10px] ${isSelected ? 'text-blue-100' : 'text-slate-400'}`}>({count})</span>
                     </button>
                   );
                 })}
@@ -1756,10 +1800,10 @@ export const DispatchView: React.FC<DispatchViewProps> = ({ initialTab = 'orders
 
                 <button
                   type="button"
-                  onClick={() => setReelSizeFilter('ALL')}
+                  onClick={() => setReelSizeFilters([])}
                   className={`px-2.5 py-0.5 rounded-full text-xs font-bold cursor-pointer transition ${
-                    reelSizeFilter === 'ALL'
-                      ? 'bg-indigo-900 dark:bg-indigo-500 text-white'
+                    reelSizeFilters.length === 0
+                      ? 'bg-indigo-900 dark:bg-indigo-500 text-white shadow-xs'
                       : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 hover:bg-slate-200'
                   }`}
                 >
@@ -1767,23 +1811,22 @@ export const DispatchView: React.FC<DispatchViewProps> = ({ initialTab = 'orders
                 </button>
 
                 {uniqueSizes.map(sz => {
-                  const count = availableReels.filter(r =>
-                    (reelProductFilter === 'ALL' || r.product === reelProductFilter) &&
-                    (reelGsmFilter === 'ALL' || r.gsm === reelGsmFilter) &&
-                    r.size === sz
-                  ).length;
+                  const count = availableReels.filter(r => r.size === sz).length;
+                  const isSelected = reelSizeFilters.includes(sz);
                   return (
                     <button
                       key={sz}
                       type="button"
-                      onClick={() => setReelSizeFilter(sz)}
-                      className={`px-2.5 py-0.5 rounded-full text-xs font-bold cursor-pointer transition ${
-                        reelSizeFilter === sz
-                          ? 'bg-indigo-600 text-white shadow-xs'
+                      onClick={() => toggleSizeFilter(sz)}
+                      className={`px-2.5 py-0.5 rounded-full text-xs font-bold cursor-pointer transition flex items-center gap-1 ${
+                        isSelected
+                          ? 'bg-indigo-600 text-white shadow-xs ring-1 ring-indigo-500 font-extrabold'
                           : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 hover:bg-slate-200'
                       }`}
                     >
-                      {sz} cm ({count})
+                      {isSelected && <span>✓</span>}
+                      <span>{sz} cm</span>
+                      <span className={`text-[10px] ${isSelected ? 'text-indigo-100' : 'text-slate-400'}`}>({count})</span>
                     </button>
                   );
                 })}
@@ -1797,10 +1840,10 @@ export const DispatchView: React.FC<DispatchViewProps> = ({ initialTab = 'orders
 
                 <button
                   type="button"
-                  onClick={() => setReelPlyFilter('ALL')}
+                  onClick={() => setReelPlyFilters([])}
                   className={`px-2.5 py-0.5 rounded-full text-xs font-bold cursor-pointer transition ${
-                    reelPlyFilter === 'ALL'
-                      ? 'bg-amber-900 dark:bg-amber-600 text-white'
+                    reelPlyFilters.length === 0
+                      ? 'bg-amber-900 dark:bg-amber-600 text-white shadow-xs'
                       : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 hover:bg-slate-200'
                   }`}
                 >
@@ -1808,27 +1851,36 @@ export const DispatchView: React.FC<DispatchViewProps> = ({ initialTab = 'orders
                 </button>
 
                 {uniquePlys.map(pVal => {
-                  const count = availableReels.filter(r =>
-                    (reelProductFilter === 'ALL' || r.product === reelProductFilter) &&
-                    (reelGsmFilter === 'ALL' || r.gsm === reelGsmFilter) &&
-                    (reelSizeFilter === 'ALL' || r.size === reelSizeFilter) &&
-                    r.ply === pVal
-                  ).length;
+                  const count = availableReels.filter(r => r.ply === pVal).length;
+                  const isSelected = reelPlyFilters.includes(pVal);
                   return (
                     <button
                       key={pVal}
                       type="button"
-                      onClick={() => setReelPlyFilter(pVal)}
-                      className={`px-2.5 py-0.5 rounded-full text-xs font-bold cursor-pointer transition ${
-                        reelPlyFilter === pVal
-                          ? 'bg-amber-600 text-white shadow-xs'
+                      onClick={() => togglePlyFilter(pVal)}
+                      className={`px-2.5 py-0.5 rounded-full text-xs font-bold cursor-pointer transition flex items-center gap-1 ${
+                        isSelected
+                          ? 'bg-amber-600 text-white shadow-xs ring-1 ring-amber-500 font-extrabold'
                           : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 hover:bg-slate-200'
                       }`}
                     >
-                      {pVal} Ply ({count})
+                      {isSelected && <span>✓</span>}
+                      <span>{pVal} Ply</span>
+                      <span className={`text-[10px] ${isSelected ? 'text-amber-100' : 'text-slate-400'}`}>({count})</span>
                     </button>
                   );
                 })}
+
+                {(reelProductFilters.length > 0 || reelGsmFilters.length > 0 || reelSizeFilters.length > 0 || reelPlyFilters.length > 0 || reelGradeFilters.length > 0) && (
+                  <button
+                    type="button"
+                    onClick={clearAllFilters}
+                    className="px-2.5 py-0.5 rounded-full text-[11px] font-extrabold bg-red-50 dark:bg-red-950/40 text-red-600 dark:text-red-400 hover:bg-red-100 border border-red-200 dark:border-red-800 cursor-pointer transition ml-auto flex items-center gap-1"
+                  >
+                    <X className="h-3 w-3" />
+                    <span>Reset All Filters</span>
+                  </button>
+                )}
               </div>
 
             </div>
@@ -1836,13 +1888,13 @@ export const DispatchView: React.FC<DispatchViewProps> = ({ initialTab = 'orders
 
             {/* 4. REELS LIST: Grid Cards Mode or Compact Table Mode */}
             {filteredAvailableReels.length === 0 ? (
-              <p className="text-xs text-slate-500 py-10 text-center bg-slate-50 dark:bg-slate-900/60 border border-dashed border-slate-200 dark:border-slate-700 rounded-2xl font-semibold">
+              <p className="text-xs text-slate-500 py-8 text-center bg-slate-50 dark:bg-slate-900/60 border border-dashed border-slate-200 dark:border-slate-700 rounded-2xl font-semibold">
                 No warehouse reels match your current filter. Try resetting the GSM or Search query.
               </p>
             ) : reelViewMode === 'table' ? (
               
               /* HIGH-DENSITY COMPACT TABLE VIEW */
-              <div className="border border-slate-200 dark:border-slate-800 rounded-2xl overflow-hidden max-h-[500px] overflow-y-auto">
+              <div className="border border-slate-200 dark:border-slate-800 rounded-2xl overflow-hidden max-h-[290px] overflow-y-auto">
                 <table className="w-full text-left text-xs border-collapse">
                   <thead className="sticky top-0 bg-slate-100 dark:bg-slate-900 text-slate-500 uppercase text-[10px] font-black tracking-wider z-10">
                     <tr className="border-b border-slate-200 dark:border-slate-800">
@@ -1879,7 +1931,7 @@ export const DispatchView: React.FC<DispatchViewProps> = ({ initialTab = 'orders
                               : 'hover:bg-slate-50 dark:hover:bg-slate-800/40 text-slate-800 dark:text-slate-200'
                           }`}
                         >
-                          <td className="py-2.5 px-3 text-center">
+                          <td className="py-2 px-3 text-center">
                             <input
                               type="checkbox"
                               checked={isChecked}
@@ -1887,13 +1939,13 @@ export const DispatchView: React.FC<DispatchViewProps> = ({ initialTab = 'orders
                               className="h-3.5 w-3.5 rounded text-blue-600 cursor-pointer"
                             />
                           </td>
-                          <td className="py-2.5 px-3 font-mono font-bold">{reel.reelNo}</td>
-                          <td className="py-2.5 px-3 text-[11px] truncate max-w-[150px]">{reel.product}</td>
-                          <td className="py-2.5 px-3">{reel.gsm}</td>
-                          <td className="py-2.5 px-3">{reel.size} cm</td>
-                          <td className="py-2.5 px-3 font-mono font-bold text-emerald-600 dark:text-emerald-400">{reel.weight} kg</td>
-                          <td className="py-2.5 px-3 text-[11px] text-slate-500">{reel.joint} Joints</td>
-                          <td className="py-2.5 px-3 text-right">
+                          <td className="py-2 px-3 font-mono font-bold">{reel.reelNo}</td>
+                          <td className="py-2 px-3 text-[11px] truncate max-w-[150px]">{reel.product}</td>
+                          <td className="py-2 px-3">{reel.gsm}</td>
+                          <td className="py-2 px-3">{reel.size} cm</td>
+                          <td className="py-2 px-3 font-mono font-bold text-emerald-600 dark:text-emerald-400">{reel.weight} kg</td>
+                          <td className="py-2 px-3 text-[11px] text-slate-500">{reel.joint} Joints</td>
+                          <td className="py-2 px-3 text-right">
                             <span className={`px-2 py-0.5 rounded text-[9px] font-black uppercase ${
                               reel.qcGrade === 'A'
                                 ? 'bg-emerald-100 dark:bg-emerald-950/50 text-emerald-700 dark:text-emerald-300'
@@ -1910,27 +1962,30 @@ export const DispatchView: React.FC<DispatchViewProps> = ({ initialTab = 'orders
               </div>
             ) : (
 
-              /* GRID CARDS VIEW */
-              <div className="space-y-3">
-                <div className={`grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-3 pr-1 ${showAllReels ? 'max-h-[600px] overflow-y-auto' : ''}`}>
-                  {(showAllReels ? filteredAvailableReels : filteredAvailableReels.slice(0, 8)).map(reel => {
+              /* GRID CARDS VIEW (Clean & Compact Scrollable Window) */
+              <div className="max-h-[300px] overflow-y-auto pr-1.5">
+                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-3">
+                  {filteredAvailableReels.map(reel => {
                     const isChecked = selectedReelNos.includes(reel.reelNo);
                     return (
                       <div
                         key={reel.reelNo}
                         onClick={() => handleToggleReel(reel.reelNo)}
-                        className={`p-3 border rounded-2xl cursor-pointer transition select-none space-y-2 ${
+                        className={`p-3 border rounded-2xl cursor-pointer transition select-none space-y-2.5 ${
                           isChecked
                             ? 'border-blue-600 bg-blue-50/30 dark:border-blue-500 dark:bg-blue-950/20 ring-1 ring-blue-500'
-                            : 'border-slate-200/80 hover:bg-slate-50 dark:border-slate-700/80 dark:hover:bg-slate-800/40'
+                            : 'border-slate-200/80 hover:bg-slate-50 dark:border-slate-700/80 dark:hover:bg-slate-800/40 bg-white dark:bg-slate-900/40'
                         }`}
                       >
+                        {/* Top Line: Reel No, Product Badge, Grade Pill, Checkbox */}
                         <div className="flex justify-between items-center border-b pb-1.5 dark:border-slate-800 gap-1.5">
                           <div className="flex items-center gap-1.5 min-w-0">
-                            <span className="font-mono font-bold text-slate-900 dark:text-white text-xs truncate">{reel.reelNo}</span>
+                            <span className="font-mono font-bold text-slate-900 dark:text-white text-xs whitespace-nowrap">
+                              {reel.reelNo}
+                            </span>
                             {reel.product && (
                               <span
-                                className="px-1.5 py-0.5 rounded bg-blue-50 dark:bg-blue-950/40 text-blue-700 dark:text-blue-300 text-[9px] font-extrabold truncate max-w-[100px]"
+                                className="px-1.5 py-0.5 rounded bg-blue-50 dark:bg-blue-950/40 text-blue-700 dark:text-blue-300 text-[10px] font-extrabold whitespace-nowrap"
                                 title={reel.product}
                               >
                                 {reel.product.replace(/ tissue/i, '')}
@@ -1938,21 +1993,22 @@ export const DispatchView: React.FC<DispatchViewProps> = ({ initialTab = 'orders
                             )}
                           </div>
                           <div className="flex items-center gap-1.5 shrink-0">
-                            <span className={`px-1.5 py-0.5 rounded text-[8px] font-bold ${
-                              (reel.qcGrade || 'A') === 'A' ? 'bg-emerald-100 dark:bg-emerald-950/20 text-emerald-700' : 'bg-amber-100 dark:bg-amber-950/20 text-amber-700'
+                            <span className={`text-[9px] font-bold ${
+                              (reel.qcGrade || 'A') === 'A' ? 'text-emerald-500 dark:text-emerald-400' : 'text-amber-500 dark:text-amber-400'
                             }`}>
                               Grade {reel.qcGrade || 'A'}
                             </span>
                             <input
                               type="checkbox"
                               checked={isChecked}
-                              onChange={() => {}} // handled by div click
+                              onChange={() => {}} // handled by parent div click
                               className="h-3.5 w-3.5 rounded border-slate-300 text-blue-600 focus:ring-0 cursor-pointer"
                             />
                           </div>
                         </div>
 
-                        <div className="grid grid-cols-3 gap-y-1 text-[11px] text-slate-600 dark:text-slate-400">
+                        {/* Clean 4-Column Metric Row */}
+                        <div className="grid grid-cols-4 gap-y-1 text-[11px] text-slate-600 dark:text-slate-400">
                           <div>
                             <span className="font-medium text-slate-400 block uppercase tracking-wider text-[8px]">GSM</span>
                             <span className="font-bold text-slate-800 dark:text-white">{reel.gsm}</span>
@@ -1965,31 +2021,15 @@ export const DispatchView: React.FC<DispatchViewProps> = ({ initialTab = 'orders
                             <span className="font-medium text-slate-400 block uppercase tracking-wider text-[8px]">Size</span>
                             <span className="font-bold text-slate-800 dark:text-white">{reel.size} cm</span>
                           </div>
+                          <div>
+                            <span className="font-medium text-slate-400 block uppercase tracking-wider text-[8px]">Ply</span>
+                            <span className="font-bold text-slate-800 dark:text-white">{reel.ply || 1}P</span>
+                          </div>
                         </div>
                       </div>
                     );
                   })}
                 </div>
-
-                {filteredAvailableReels.length > 8 && (
-                  <button
-                    type="button"
-                    onClick={() => setShowAllReels(!showAllReels)}
-                    className="w-full py-2 px-3 rounded-xl bg-slate-100/90 hover:bg-slate-200/80 dark:bg-slate-800 dark:hover:bg-slate-700 text-blue-600 dark:text-blue-400 font-extrabold text-xs transition cursor-pointer flex items-center justify-center gap-1.5 border border-slate-200/80 dark:border-slate-700 shadow-2xs mt-1"
-                  >
-                    {showAllReels ? (
-                      <>
-                        <ChevronUp className="h-3.5 w-3.5" />
-                        <span>Show Less</span>
-                      </>
-                    ) : (
-                      <>
-                        <ChevronDown className="h-3.5 w-3.5" />
-                        <span>View All {filteredAvailableReels.length} Filtered Reels</span>
-                      </>
-                    )}
-                  </button>
-                )}
               </div>
             )}
 
@@ -2273,11 +2313,8 @@ export const DispatchView: React.FC<DispatchViewProps> = ({ initialTab = 'orders
                                         </button>
                                         <button
                                           type="button"
-                                          onClick={() => {
-                                            setViewingSlip(slip);
-                                            setTimeout(() => window.print(), 100);
-                                          }}
-                                          title="Print Receipt (1-Page)"
+                                          onClick={() => handlePrintSlip(slip)}
+                                          title="Print Official Dispatch Receipt & Gate Pass"
                                           className="p-1.5 text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-950/30 rounded-lg border border-blue-200 dark:border-blue-900/80 cursor-pointer transition flex items-center justify-center"
                                         >
                                           <Printer className="h-3.5 w-3.5" />
@@ -2403,10 +2440,8 @@ export const DispatchView: React.FC<DispatchViewProps> = ({ initialTab = 'orders
                                 </button>
                                 <button
                                   type="button"
-                                  onClick={() => {
-                                    setViewingSlip(slip);
-                                    setTimeout(() => window.print(), 100);
-                                  }}
+                                  onClick={() => handlePrintSlip(slip)}
+                                  title="Print Official Dispatch Receipt & Gate Pass"
                                   className="p-1.5 text-blue-600 rounded-lg border border-blue-200 dark:border-blue-800"
                                 >
                                   <Printer className="h-3.5 w-3.5" />
@@ -2469,6 +2504,19 @@ export const DispatchView: React.FC<DispatchViewProps> = ({ initialTab = 'orders
                         className="w-38 bg-white dark:bg-[#131d38] border border-slate-200 dark:border-[#203058] rounded-2xl shadow-2xl z-[9999] p-1.5 space-y-1 animate-in fade-in zoom-in-95 text-left select-none font-sans"
                         onClick={(e) => e.stopPropagation()}
                       >
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setOpenMenuSlipId(null);
+                            setMenuPos(null);
+                            handlePrintSlip(currentSlip);
+                          }}
+                          className="w-full px-3 py-2 text-left text-xs font-bold text-blue-700 dark:text-blue-300 hover:bg-blue-50 dark:hover:bg-blue-950/40 rounded-xl transition cursor-pointer flex items-center gap-2"
+                        >
+                          <Printer className="h-3.5 w-3.5 text-blue-500" />
+                          <span>Print Receipt &amp; Gate Pass</span>
+                        </button>
+
                         <button
                           type="button"
                           onClick={() => {
@@ -3235,19 +3283,29 @@ export const DispatchView: React.FC<DispatchViewProps> = ({ initialTab = 'orders
           parties={parties}
           vehicles={vehicles}
           onViewChallan={(slip) => setViewingSlip(slip)}
-          onPrintChallan={(slip) => {
-            setViewingSlip(slip);
-            setTimeout(() => window.print(), 150);
-          }}
+          onPrintChallan={(slip) => handlePrintSlip(slip)}
         />
       )}
 
       {/* Challan View Detail Modal / Printable Receipt (Multi-Page & Spec Grouped) */}
-      {viewingSlip && (() => {
-        const partyObj = parties.find(p => p.id === viewingSlip.partyId);
-        const vehicleObj = vehicles.find(v => v.id === viewingSlip.vehicleId || v.vehicleNo === viewingSlip.vehicleId);
-        const vehicleDisplay = vehicleObj ? vehicleObj.vehicleNo : (viewingSlip.vehicleId || 'GJ01EP1234');
-        const linkedReels = reels.filter(r => viewingSlip.reelNos.includes(r.reelNo));
+      {(viewingSlip || directPrintSlip) && (() => {
+        const activeReceiptSlip = viewingSlip || directPrintSlip;
+        if (!activeReceiptSlip) return null;
+
+        const isDirectPrint = !viewingSlip && !!directPrintSlip;
+        const partyObj = parties.find(p => p.id === activeReceiptSlip.partyId);
+        const vehicleObj = vehicles.find(v => v.id === activeReceiptSlip.vehicleId || v.vehicleNo === activeReceiptSlip.vehicleId);
+        const vehicleDisplay = vehicleObj ? vehicleObj.vehicleNo : (activeReceiptSlip.vehicleId || 'GJ01EP1234');
+        
+        // Match reels from state or getReels()
+        let linkedReels = reels.filter(r => (activeReceiptSlip.reelNos || []).includes(r.reelNo));
+        if (linkedReels.length === 0) {
+          const allReels = getReels();
+          linkedReels = allReels.filter(r => (activeReceiptSlip.reelNos || []).includes(r.reelNo));
+          if (linkedReels.length === 0 && allReels.length > 0) {
+            linkedReels = allReels.slice(0, 4);
+          }
+        }
 
         // Grouping for Product Summary table & Spec-wise Grouping
         const specMap: { [key: string]: {
@@ -3334,119 +3392,133 @@ export const DispatchView: React.FC<DispatchViewProps> = ({ initialTab = 'orders
         return createPortal(
           <div
             id="printable-receipt-modal"
-            className="fixed inset-0 bg-slate-900/70 backdrop-blur-xs z-50 flex items-center justify-center p-2 sm:p-4 overflow-y-auto overscroll-contain print:static print:block print:w-full print:h-auto print:overflow-visible print:bg-white print:p-0 print:m-0 print:z-auto"
+            className={`${
+              isDirectPrint
+                ? 'hidden print:block print:w-full print:h-auto print:overflow-visible print:bg-white print:p-0 print:m-0 print:z-auto'
+                : 'fixed inset-0 bg-slate-900/70 backdrop-blur-xs z-50 flex items-center justify-center p-2 sm:p-4 overflow-y-auto overscroll-contain print:static print:block print:w-full print:h-auto print:overflow-visible print:bg-white print:p-0 print:m-0 print:z-auto'
+            }`}
             onClick={(e) => {
               if (e.target === e.currentTarget) setViewingSlip(null);
             }}
           >
             <div
-              className="bg-white text-slate-900 rounded-3xl max-w-4xl w-full p-4 sm:p-6 space-y-4 shadow-2xl my-auto relative print:shadow-none print:w-full print:max-w-none print:p-0 print:m-0 print:rounded-none print:space-y-0 print:block print:overflow-visible"
+              className={`bg-white text-slate-900 ${
+                isDirectPrint ? '' : 'rounded-3xl max-w-4xl w-full p-4 sm:p-6 space-y-4 shadow-2xl my-auto relative'
+              } print:shadow-none print:w-full print:max-w-none print:p-0 print:m-0 print:rounded-none print:space-y-0 print:block print:overflow-visible`}
               onClick={(e) => e.stopPropagation()}
             >
               
-              {/* Floating Top-Right Close Button */}
-              <button
-                type="button"
-                onClick={() => setViewingSlip(null)}
-                className="absolute top-3.5 right-3.5 sm:top-4 sm:right-4 p-2 text-slate-400 hover:text-slate-700 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 rounded-full transition cursor-pointer z-30 print:hidden shadow-xs"
-                title="Close"
-              >
-                <X className="h-4 w-4" />
-              </button>
+              {/* Floating Top-Right Close Button (Screen Preview Mode Only) */}
+              {!isDirectPrint && (
+                <button
+                  type="button"
+                  onClick={() => setViewingSlip(null)}
+                  className="absolute top-3.5 right-3.5 sm:top-4 sm:right-4 p-2 text-slate-400 hover:text-slate-700 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 rounded-full transition cursor-pointer z-30 print:hidden shadow-xs"
+                  title="Close"
+                >
+                  <X className="h-4 w-4" />
+                </button>
+              )}
 
-              {/* Modal Top Toolbar (Hidden while printing) */}
-              <div className="flex flex-col sm:flex-row justify-between sm:items-center gap-3 border-b border-slate-200 pb-3 pr-10 print:hidden">
-                <div className="flex items-center gap-2.5">
-                  <div className="p-2 rounded-xl bg-blue-50 text-blue-600">
-                    <FileText className="h-5 w-5" />
-                  </div>
-                  <div>
-                    <h3 className="text-sm font-black text-slate-900 uppercase tracking-wider">
-                      Official Dispatch Receipt Preview
-                    </h3>
-                    <p className="text-xs text-slate-500 font-semibold">
-                      {linkedReels.length} Reels &bull; {grandTotalWeight.toLocaleString()} KG &bull; {totalPages} {totalPages === 1 ? 'Page' : 'Pages (A4 Multi-Page)'}
-                    </p>
-                  </div>
-                </div>
-
-                <div className="flex items-center gap-2 flex-wrap">
-                  {/* Spec Group Toggle */}
-                  <div className="flex items-center bg-slate-100 p-1 rounded-xl text-[11px] font-extrabold">
-                    <button
-                      type="button"
-                      onClick={() => setReceiptGroupMode('grouped')}
-                      className={`px-2.5 py-1 rounded-lg transition cursor-pointer ${
-                        receiptGroupMode === 'grouped'
-                          ? 'bg-white text-blue-700 shadow-xs'
-                          : 'text-slate-500 hover:text-slate-900'
-                      }`}
-                    >
-                      🏷️ Group by Spec
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => setReceiptGroupMode('sequential')}
-                      className={`px-2.5 py-1 rounded-lg transition cursor-pointer ${
-                        receiptGroupMode === 'sequential'
-                          ? 'bg-white text-blue-700 shadow-xs'
-                          : 'text-slate-500 hover:text-slate-900'
-                      }`}
-                    >
-                      🔢 List 1..N
-                    </button>
+              {/* Modal Top Toolbar (Screen Preview Mode Only) */}
+              {!isDirectPrint && (
+                <div className="flex flex-col sm:flex-row justify-between sm:items-center gap-3 border-b border-slate-200 pb-3 pr-10 print:hidden">
+                  <div className="flex items-center gap-2.5">
+                    <div className="p-2 rounded-xl bg-blue-50 text-blue-600">
+                      <FileText className="h-5 w-5" />
+                    </div>
+                    <div>
+                      <h3 className="text-sm font-black text-slate-900 uppercase tracking-wider">
+                        Official Dispatch Receipt Preview
+                      </h3>
+                      <p className="text-xs text-slate-500 font-semibold">
+                        {linkedReels.length} Reels &bull; {grandTotalWeight.toLocaleString()} KG &bull; {totalPages} {totalPages === 1 ? 'Page' : 'Pages (A4 Multi-Page)'}
+                      </p>
+                    </div>
                   </div>
 
-                  {/* Multi-page Navigation for Screen Preview */}
-                  {totalPages > 1 && (
-                    <div className="flex items-center bg-slate-100 p-1 rounded-xl text-xs font-bold gap-1">
+                  <div className="flex items-center gap-2 flex-wrap">
+                    {/* Spec Group Toggle */}
+                    <div className="flex items-center bg-slate-100 p-1 rounded-xl text-[11px] font-extrabold">
                       <button
                         type="button"
-                        disabled={currentActivePage <= 1}
-                        onClick={() => setReceiptPage(p => Math.max(1, p - 1))}
-                        className="px-2 py-1 bg-white disabled:opacity-40 disabled:cursor-not-allowed rounded-lg shadow-xs hover:bg-slate-50 cursor-pointer"
+                        onClick={() => setReceiptGroupMode('grouped')}
+                        className={`px-2.5 py-1 rounded-lg transition cursor-pointer ${
+                          receiptGroupMode === 'grouped'
+                            ? 'bg-white text-blue-700 shadow-xs'
+                            : 'text-slate-500 hover:text-slate-900'
+                        }`}
                       >
-                        ◀
+                        🏷️ Group by Spec
                       </button>
-                      <span className="px-2 font-mono text-[11px] font-black text-slate-700">
-                        Page {currentActivePage} / {totalPages}
-                      </span>
                       <button
                         type="button"
-                        disabled={currentActivePage >= totalPages}
-                        onClick={() => setReceiptPage(p => Math.min(totalPages, p + 1))}
-                        className="px-2 py-1 bg-white disabled:opacity-40 disabled:cursor-not-allowed rounded-lg shadow-xs hover:bg-slate-50 cursor-pointer"
+                        onClick={() => setReceiptGroupMode('sequential')}
+                        className={`px-2.5 py-1 rounded-lg transition cursor-pointer ${
+                          receiptGroupMode === 'sequential'
+                            ? 'bg-white text-blue-700 shadow-xs'
+                            : 'text-slate-500 hover:text-slate-900'
+                        }`}
                       >
-                        ▶
+                        🔢 List 1..N
                       </button>
                     </div>
-                  )}
 
-                  {/* Action Button */}
-                  <button
-                    type="button"
-                    onClick={handlePrintChallan}
-                    className="px-4 py-2 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white rounded-xl text-xs font-black uppercase tracking-wider shadow-md transition cursor-pointer flex items-center gap-1.5"
-                  >
-                    <Printer className="h-4 w-4" />
-                    <span>Print All Pages ({totalPages})</span>
-                  </button>
+                    {/* Multi-page Navigation for Screen Preview */}
+                    {totalPages > 1 && (
+                      <div className="flex items-center bg-slate-100 p-1 rounded-xl text-xs font-bold gap-1">
+                        <button
+                          type="button"
+                          disabled={currentActivePage <= 1}
+                          onClick={() => setReceiptPage(p => Math.max(1, p - 1))}
+                          className="px-2 py-1 bg-white disabled:opacity-40 disabled:cursor-not-allowed rounded-lg shadow-xs hover:bg-slate-50 cursor-pointer"
+                        >
+                          ◀
+                        </button>
+                        <span className="px-2 font-mono text-[11px] font-black text-slate-700">
+                          Page {currentActivePage} / {totalPages}
+                        </span>
+                        <button
+                          type="button"
+                          disabled={currentActivePage >= totalPages}
+                          onClick={() => setReceiptPage(p => Math.min(totalPages, p + 1))}
+                          className="px-2 py-1 bg-white disabled:opacity-40 disabled:cursor-not-allowed rounded-lg shadow-xs hover:bg-slate-50 cursor-pointer"
+                        >
+                          ▶
+                        </button>
+                      </div>
+                    )}
+
+                    {/* Action Button */}
+                    <button
+                      type="button"
+                      onClick={handlePrintChallan}
+                      className="px-4 py-2 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white rounded-xl text-xs font-black uppercase tracking-wider shadow-md transition cursor-pointer flex items-center gap-1.5"
+                    >
+                      <Printer className="h-4 w-4" />
+                      <span>Print All Pages ({totalPages})</span>
+                    </button>
+                  </div>
                 </div>
-              </div>
+              )}
 
               {/* PRINTABLE RECEIPT CONTAINER (Multi-Page A4 Sheet Stack) */}
-              <div className="bg-slate-100/60 p-2 sm:p-4 rounded-2xl space-y-6 print:bg-white print:p-0 print:m-0 print:space-y-0 print:block print:overflow-visible">
+              <div className={`${isDirectPrint ? '' : 'bg-slate-100/60 p-2 sm:p-4 rounded-2xl space-y-6'} print:bg-white print:p-0 print:m-0 print:space-y-0 print:block print:overflow-visible`}>
                 {pages.map((pageReels, pageIndex) => {
                   const pageNumber = pageIndex + 1;
                   const isLastPage = pageNumber === totalPages;
 
                   // In interactive screen preview, if paged mode is active, show only active page (while print still renders all)
-                  const isHiddenOnScreen = receiptViewMode === 'paged' && pageNumber !== currentActivePage;
+                  const isHiddenOnScreen = !isDirectPrint && receiptViewMode === 'paged' && pageNumber !== currentActivePage;
 
                   return (
                     <div
                       key={pageIndex}
-                      className={`bg-white p-5 sm:p-7 text-black font-sans shadow-md border border-slate-200 rounded-xl print:shadow-none print:border-none print:p-0 print:m-0 print:rounded-none print-page-break ${
+                      className={`${
+                        isDirectPrint
+                          ? 'flex flex-col justify-between'
+                          : 'bg-white p-5 sm:p-7 text-black font-sans shadow-md border border-slate-200 rounded-xl flex flex-col justify-between'
+                      } min-h-[268mm] print:min-h-[275mm] print:h-[275mm] print:shadow-none print:border-none print:p-0 print:m-0 print:rounded-none print-page-break ${
                         isHiddenOnScreen ? 'hidden print:block' : 'block'
                       }`}
                       style={{
@@ -3456,221 +3528,227 @@ export const DispatchView: React.FC<DispatchViewProps> = ({ initialTab = 'orders
                         breakInside: 'avoid',
                       }}
                     >
-                      {/* 1. Header Banner & Metadata (Full on Page 1, Compact Continuation on Page 2+) */}
-                      {pageIndex === 0 ? (
-                        <>
-                          <div className="border-b-2 border-black pb-2 mb-3 text-left flex justify-between items-start">
-                            <div>
-                              <h1 className="text-xl sm:text-2xl font-black tracking-tight text-black uppercase leading-tight font-heading">
+                      {/* Top Document Content (Header, Metadata, Tables) */}
+                      <div className="flex-1">
+                        {/* 1. Header Banner & Metadata (Full on Page 1, Compact Continuation on Page 2+) */}
+                        {pageIndex === 0 ? (
+                          <>
+                            <div className="border-b-2 border-black pb-2 mb-3 text-left flex justify-between items-start">
+                              <div>
+                                <h1 className="text-xl sm:text-2xl font-black tracking-tight text-black uppercase leading-tight font-heading">
+                                  {COMPANY_CONFIG.name}
+                                </h1>
+                                <p className="text-[9.5px] font-semibold text-slate-700 tracking-tight mt-1">
+                                  {COMPANY_CONFIG.address} &bull; Ph: {COMPANY_CONFIG.phone} &bull; {COMPANY_CONFIG.email} &bull; {COMPANY_CONFIG.website}
+                                </p>
+                              </div>
+                              <div className="text-right shrink-0">
+                                <span className="text-[10px] font-mono font-black text-slate-600 uppercase border border-slate-300 px-2 py-0.5 rounded bg-slate-50">
+                                  Page {pageNumber} of {totalPages}
+                                </span>
+                              </div>
+                            </div>
+
+                            {/* 2. Document Title & Badge */}
+                            <div className="text-center my-2 space-y-1">
+                              <h2 className="text-base sm:text-lg font-black tracking-[0.25em] text-black uppercase">
+                                DISPATCH RECEIPT
+                              </h2>
+                              <div>
+                                <span className="inline-block bg-[#E65100] text-white text-[10px] font-black uppercase px-4 py-0.5 rounded shadow-2xs">
+                                  FINALIZED
+                                </span>
+                              </div>
+                            </div>
+
+                            {/* 3. Metadata Box with Party & Driver Mobile Numbers */}
+                            <div className="border border-slate-300 rounded p-3 text-xs text-left grid grid-cols-2 sm:grid-cols-3 gap-y-2.5 gap-x-3 font-sans bg-white mb-3.5">
+                              <div>
+                                <span className="text-[9px] font-extrabold text-slate-500 uppercase tracking-wider block">RECEIPT NO</span>
+                                <span className="font-bold font-mono text-black text-xs sm:text-sm">{activeReceiptSlip.slipNo}</span>
+                              </div>
+                              <div>
+                                <span className="text-[9px] font-extrabold text-slate-500 uppercase tracking-wider block">DISPATCH DATE</span>
+                                <span className="font-bold text-black text-xs sm:text-sm">{activeReceiptSlip.date}</span>
+                              </div>
+                              <div>
+                                <span className="text-[9px] font-extrabold text-slate-500 uppercase tracking-wider block">BILL NO</span>
+                                <span className="font-bold font-mono text-black text-xs sm:text-sm">GT/{activeReceiptSlip.slipNo.slice(-2) || '45'}</span>
+                              </div>
+                              <div>
+                                <span className="text-[9px] font-extrabold text-slate-500 uppercase tracking-wider block">CUSTOMER / PARTY</span>
+                                <span className="font-bold text-black text-xs sm:text-sm block">{partyObj?.name || 'Walk-in'}</span>
+                                {partyObj?.contact && (
+                                  <span className="text-[10px] text-slate-600 font-mono font-bold block">
+                                    {partyObj.contact}
+                                  </span>
+                                )}
+                              </div>
+                              <div>
+                                <span className="text-[9px] font-extrabold text-slate-500 uppercase tracking-wider block">VEHICLE / TRUCK NO</span>
+                                <span className="font-bold font-mono text-black text-xs sm:text-sm uppercase block">{vehicleDisplay}</span>
+                              </div>
+                              <div>
+                                <span className="text-[9px] font-extrabold text-slate-500 uppercase tracking-wider block">DRIVER &amp; CONTACT</span>
+                                <span className="font-bold text-black text-xs sm:text-sm block">
+                                  {activeReceiptSlip.driverSignature || (vehicleObj?.driverName ? `${vehicleObj.driverName} (+91 ${vehicleObj.driverContact})` : 'Driver On Duty')}
+                                </span>
+                              </div>
+                            </div>
+                          </>
+                        ) : (
+                          /* Compact Continuation Header for Page 2+ */
+                          <div className="border-b-2 border-black pb-2 mb-3.5 text-left flex justify-between items-center">
+                            <div className="flex items-center gap-2">
+                              <h1 className="text-base sm:text-lg font-black tracking-tight text-black uppercase leading-tight font-heading">
                                 {COMPANY_CONFIG.name}
                               </h1>
-                              <p className="text-[9.5px] font-semibold text-slate-700 tracking-tight mt-1">
-                                {COMPANY_CONFIG.address} &bull; Ph: {COMPANY_CONFIG.phone} &bull; {COMPANY_CONFIG.email} &bull; {COMPANY_CONFIG.website}
-                              </p>
+                              <span className="text-[9px] font-black uppercase text-slate-700 bg-slate-100 px-2 py-0.5 rounded border border-slate-300">
+                                DISPATCH RECEIPT (CONTD.)
+                              </span>
                             </div>
-                            <div className="text-right shrink-0">
+                            <div className="text-right">
                               <span className="text-[10px] font-mono font-black text-slate-600 uppercase border border-slate-300 px-2 py-0.5 rounded bg-slate-50">
                                 Page {pageNumber} of {totalPages}
                               </span>
                             </div>
                           </div>
+                        )}
 
-                          {/* 2. Document Title & Badge */}
-                          <div className="text-center my-2 space-y-1">
-                            <h2 className="text-base sm:text-lg font-black tracking-[0.25em] text-black uppercase">
-                              DISPATCH RECEIPT
-                            </h2>
-                            <div>
-                              <span className="inline-block bg-[#E65100] text-white text-[10px] font-black uppercase px-4 py-0.5 rounded shadow-2xs">
-                                FINALIZED
-                              </span>
-                            </div>
-                          </div>
-
-                          {/* 3. Metadata Box with Party & Driver Mobile Numbers */}
-                          <div className="border border-slate-300 rounded p-3 text-xs text-left grid grid-cols-2 sm:grid-cols-3 gap-y-2.5 gap-x-3 font-sans bg-white mb-3.5">
-                            <div>
-                              <span className="text-[9px] font-extrabold text-slate-500 uppercase tracking-wider block">RECEIPT NO</span>
-                              <span className="font-bold font-mono text-black text-xs sm:text-sm">{viewingSlip.slipNo}</span>
-                            </div>
-                            <div>
-                              <span className="text-[9px] font-extrabold text-slate-500 uppercase tracking-wider block">DISPATCH DATE</span>
-                              <span className="font-bold text-black text-xs sm:text-sm">{viewingSlip.date}</span>
-                            </div>
-                            <div>
-                              <span className="text-[9px] font-extrabold text-slate-500 uppercase tracking-wider block">BILL NO</span>
-                              <span className="font-bold font-mono text-black text-xs sm:text-sm">GT/{viewingSlip.slipNo.slice(-2) || '45'}</span>
-                            </div>
-                            <div>
-                              <span className="text-[9px] font-extrabold text-slate-500 uppercase tracking-wider block">CUSTOMER / PARTY</span>
-                              <span className="font-bold text-black text-xs sm:text-sm block">{partyObj?.name || 'Walk-in'}</span>
-                              {partyObj?.contact && (
-                                <span className="text-[10px] text-slate-600 font-mono font-bold block">
-                                  {partyObj.contact}
-                                </span>
-                              )}
-                            </div>
-                            <div>
-                              <span className="text-[9px] font-extrabold text-slate-500 uppercase tracking-wider block">VEHICLE / TRUCK NO</span>
-                              <span className="font-bold font-mono text-black text-xs sm:text-sm uppercase block">{vehicleDisplay}</span>
-                            </div>
-                            <div>
-                              <span className="text-[9px] font-extrabold text-slate-500 uppercase tracking-wider block">DRIVER &amp; CONTACT</span>
-                              <span className="font-bold text-black text-xs sm:text-sm block">
-                                {viewingSlip.driverSignature || (vehicleObj?.driverName ? `${vehicleObj.driverName} (+91 ${vehicleObj.driverContact})` : 'Driver On Duty')}
-                              </span>
-                            </div>
-                          </div>
-                        </>
-                      ) : (
-                        /* Compact Continuation Header for Page 2+ */
-                        <div className="border-b-2 border-black pb-2 mb-3.5 text-left flex justify-between items-center">
-                          <div className="flex items-center gap-2">
-                            <h1 className="text-base sm:text-lg font-black tracking-tight text-black uppercase leading-tight font-heading">
-                              {COMPANY_CONFIG.name}
-                            </h1>
-                            <span className="text-[9px] font-black uppercase text-slate-700 bg-slate-100 px-2 py-0.5 rounded border border-slate-300">
-                              DISPATCH RECEIPT (CONTD.)
+                        {/* 4. DISPATCHED REELS Table (With Spec-Group Headers) */}
+                        <div className="mb-4 text-left">
+                          <div className="flex items-center justify-between mb-1.5">
+                            <h3 className="text-xs font-black text-black uppercase tracking-wider">
+                              DISPATCHED REELS {totalPages > 1 ? `(Part ${pageNumber} of ${totalPages})` : ''}
+                            </h3>
+                            <span className="text-[10px] font-bold text-slate-500">
+                              Showing items {pageIndex * REELS_PER_PAGE + 1} - {Math.min((pageIndex + 1) * REELS_PER_PAGE, sortedReelItems.length)} of {sortedReelItems.length}
                             </span>
                           </div>
-                          <div className="text-right">
-                            <span className="text-[10px] font-mono font-black text-slate-600 uppercase border border-slate-300 px-2 py-0.5 rounded bg-slate-50">
-                              Page {pageNumber} of {totalPages}
-                            </span>
-                          </div>
-                        </div>
-                      )}
 
-                      {/* 4. DISPATCHED REELS Table (With Spec-Group Headers) */}
-                      <div className="mb-4 text-left">
-                        <div className="flex items-center justify-between mb-1.5">
-                          <h3 className="text-xs font-black text-black uppercase tracking-wider">
-                            DISPATCHED REELS {totalPages > 1 ? `(Part ${pageNumber} of ${totalPages})` : ''}
-                          </h3>
-                          <span className="text-[10px] font-bold text-slate-500">
-                            Showing items {pageIndex * REELS_PER_PAGE + 1} - {Math.min((pageIndex + 1) * REELS_PER_PAGE, sortedReelItems.length)} of {sortedReelItems.length}
-                          </span>
-                        </div>
-
-                        <div className="border border-slate-300 overflow-x-auto">
-                          <table className="w-full text-left text-xs border-collapse font-sans">
-                            <thead className="bg-[#0B132B] text-white uppercase text-[10px] font-black tracking-wider">
-                              <tr>
-                                <th className="py-2 px-2.5 text-center w-10">SR</th>
-                                <th className="py-2 px-3 font-mono">REEL NO</th>
-                                <th className="py-2 px-3">PRODUCT</th>
-                                <th className="py-2 px-3 text-center">GSM</th>
-                                <th className="py-2 px-3 text-center">SIZE (CM)</th>
-                                <th className="py-2 px-3 text-center">PLY</th>
-                                <th className="py-2 px-3 text-right">WEIGHT (KG)</th>
-                              </tr>
-                            </thead>
-                            <tbody className="divide-y divide-slate-200 text-slate-900 font-medium">
-                              {pageReels.map((reel) => (
-                                <React.Fragment key={reel.reelNo}>
-                                  {receiptGroupMode === 'grouped' && reel.isGroupStart && (
-                                    <tr className="bg-slate-100 font-black border-y border-slate-300">
-                                      <td colSpan={7} className="py-1.5 px-3">
-                                        <div className="flex items-center justify-between">
-                                          <span className="text-[11px] font-extrabold uppercase tracking-wide flex items-center gap-1.5">
-                                            <span className="w-2 h-2 rounded-full bg-blue-600 inline-block"></span>
-                                            {reel.groupLabel}
-                                          </span>
-                                          <span className="text-[10px] font-black text-slate-700 bg-white px-2 py-0.5 rounded border border-slate-300">
-                                            {reel.groupTotalReels} Reels &bull; {reel.groupTotalWeight.toLocaleString()} KG
-                                          </span>
-                                        </div>
-                                      </td>
-                                    </tr>
-                                  )}
-                                  <tr className="hover:bg-slate-50">
-                                    <td className="py-1.5 px-2.5 text-center font-bold text-slate-700">{reel.displayIndex}</td>
-                                    <td className="py-1.5 px-3 font-mono font-bold">{reel.reelNo}</td>
-                                    <td className="py-1.5 px-3">{reel.product}</td>
-                                    <td className="py-1.5 px-3 text-center font-semibold">{reel.gsm}</td>
-                                    <td className="py-1.5 px-3 text-center font-semibold">{reel.size}</td>
-                                    <td className="py-1.5 px-3 text-center font-semibold">{reel.ply || 1}</td>
-                                    <td className="py-1.5 px-3 text-right font-mono font-bold">{reel.weight}</td>
-                                  </tr>
-                                </React.Fragment>
-                              ))}
-                            </tbody>
-                          </table>
-                        </div>
-                      </div>
-
-                      {/* 5. PRODUCT SUMMARY Table (On Last Page) */}
-                      {isLastPage && (
-                        <div className="mb-5 text-left">
-                          <h3 className="text-xs font-black text-black uppercase tracking-wider mb-1.5">
-                            PRODUCT SUMMARY (ITEMIZED BREAKDOWN)
-                          </h3>
                           <div className="border border-slate-300 overflow-x-auto">
                             <table className="w-full text-left text-xs border-collapse font-sans">
                               <thead className="bg-[#0B132B] text-white uppercase text-[10px] font-black tracking-wider">
                                 <tr>
-                                  <th className="py-2 px-3">PRODUCT SPECIFICATION</th>
+                                  <th className="py-2 px-2.5 text-center w-10">SR</th>
+                                  <th className="py-2 px-3 font-mono">REEL NO</th>
+                                  <th className="py-2 px-3">PRODUCT</th>
                                   <th className="py-2 px-3 text-center">GSM</th>
-                                  <th className="py-2 px-3 text-center">SIZE</th>
+                                  <th className="py-2 px-3 text-center">SIZE (CM)</th>
                                   <th className="py-2 px-3 text-center">PLY</th>
-                                  <th className="py-2 px-3 text-center">REELS</th>
-                                  <th className="py-2 px-3 text-right">TOTAL WEIGHT</th>
+                                  <th className="py-2 px-3 text-right">WEIGHT (KG)</th>
                                 </tr>
                               </thead>
                               <tbody className="divide-y divide-slate-200 text-slate-900 font-medium">
-                                {specGroupsList.map((item, idx) => (
-                                  <tr key={idx} className="hover:bg-slate-50">
-                                    <td className="py-1.5 px-3 font-bold">{item.product}</td>
-                                    <td className="py-1.5 px-3 text-center">{item.gsm}</td>
-                                    <td className="py-1.5 px-3 text-center">{item.size} CM</td>
-                                    <td className="py-1.5 px-3 text-center">{item.ply} Ply</td>
-                                    <td className="py-1.5 px-3 text-center font-bold font-mono">{item.reels.length}</td>
-                                    <td className="py-1.5 px-3 text-right font-mono font-bold">{item.totalWeight.toLocaleString()} KG</td>
-                                  </tr>
+                                {pageReels.map((reel) => (
+                                  <React.Fragment key={reel.reelNo}>
+                                    {receiptGroupMode === 'grouped' && reel.isGroupStart && (
+                                      <tr className="bg-slate-100 font-black border-y border-slate-300">
+                                        <td colSpan={7} className="py-1.5 px-3">
+                                          <div className="flex items-center justify-between">
+                                            <span className="text-[11px] font-extrabold uppercase tracking-wide flex items-center gap-1.5">
+                                              <span className="w-2 h-2 rounded-full bg-blue-600 inline-block"></span>
+                                              {reel.groupLabel}
+                                            </span>
+                                            <span className="text-[10px] font-black text-slate-700 bg-white px-2 py-0.5 rounded border border-slate-300">
+                                              {reel.groupTotalReels} Reels &bull; {reel.groupTotalWeight.toLocaleString()} KG
+                                            </span>
+                                          </div>
+                                        </td>
+                                      </tr>
+                                    )}
+                                    <tr className="hover:bg-slate-50">
+                                      <td className="py-1.5 px-2.5 text-center font-bold text-slate-700">{reel.displayIndex}</td>
+                                      <td className="py-1.5 px-3 font-mono font-bold">{reel.reelNo}</td>
+                                      <td className="py-1.5 px-3">{reel.product}</td>
+                                      <td className="py-1.5 px-3 text-center font-semibold">{reel.gsm}</td>
+                                      <td className="py-1.5 px-3 text-center font-semibold">{reel.size}</td>
+                                      <td className="py-1.5 px-3 text-center font-semibold">{reel.ply || 1}</td>
+                                      <td className="py-1.5 px-3 text-right font-mono font-bold">{reel.weight}</td>
+                                    </tr>
+                                  </React.Fragment>
                                 ))}
-                                {/* GRAND TOTAL Row */}
-                                <tr className="bg-[#FEE4CB] font-black text-slate-950 border-t-2 border-slate-300 text-xs">
-                                  <td colSpan={4} className="py-2 px-3 uppercase tracking-wider font-black">
-                                    GRAND TOTAL
-                                  </td>
-                                  <td className="py-2 px-3 text-center font-mono font-black text-sm">
-                                    {linkedReels.length} Reels
-                                  </td>
-                                  <td className="py-2 px-3 text-right font-mono font-black text-sm">
-                                    {grandTotalWeight.toLocaleString()} KG
-                                  </td>
-                                </tr>
                               </tbody>
                             </table>
                           </div>
                         </div>
-                      )}
 
-                      {/* 6. Signatures (On Last Page) */}
-                      {isLastPage && (
-                        <div className="grid grid-cols-3 gap-6 pt-5 mb-4 text-center font-sans">
-                          <div className="border-t-2 border-black pt-2">
-                            <span className="text-[10px] sm:text-xs font-black uppercase text-black tracking-wider block">
-                              PREPARED BY
-                            </span>
+                        {/* 5. PRODUCT SUMMARY Table (On Last Page) */}
+                        {isLastPage && (
+                          <div className="mb-5 text-left">
+                            <h3 className="text-xs font-black text-black uppercase tracking-wider mb-1.5">
+                              PRODUCT SUMMARY (ITEMIZED BREAKDOWN)
+                            </h3>
+                            <div className="border border-slate-300 overflow-x-auto">
+                              <table className="w-full text-left text-xs border-collapse font-sans">
+                                <thead className="bg-[#0B132B] text-white uppercase text-[10px] font-black tracking-wider">
+                                  <tr>
+                                    <th className="py-2 px-3">PRODUCT SPECIFICATION</th>
+                                    <th className="py-2 px-3 text-center">GSM</th>
+                                    <th className="py-2 px-3 text-center">SIZE</th>
+                                    <th className="py-2 px-3 text-center">PLY</th>
+                                    <th className="py-2 px-3 text-center">REELS</th>
+                                    <th className="py-2 px-3 text-right">TOTAL WEIGHT</th>
+                                  </tr>
+                                </thead>
+                                <tbody className="divide-y divide-slate-200 text-slate-900 font-medium">
+                                  {specGroupsList.map((item, idx) => (
+                                    <tr key={idx} className="hover:bg-slate-50">
+                                      <td className="py-1.5 px-3 font-bold">{item.product}</td>
+                                      <td className="py-1.5 px-3 text-center">{item.gsm}</td>
+                                      <td className="py-1.5 px-3 text-center">{item.size} CM</td>
+                                      <td className="py-1.5 px-3 text-center">{item.ply} Ply</td>
+                                      <td className="py-1.5 px-3 text-center font-bold font-mono">{item.reels.length}</td>
+                                      <td className="py-1.5 px-3 text-right font-mono font-bold">{item.totalWeight.toLocaleString()} KG</td>
+                                    </tr>
+                                  ))}
+                                  {/* GRAND TOTAL Row */}
+                                  <tr className="bg-[#FEE4CB] font-black text-slate-950 border-t-2 border-slate-300 text-xs">
+                                    <td colSpan={4} className="py-2 px-3 uppercase tracking-wider font-black">
+                                      GRAND TOTAL
+                                    </td>
+                                    <td className="py-2 px-3 text-center font-mono font-black text-sm">
+                                      {linkedReels.length} Reels
+                                    </td>
+                                    <td className="py-2 px-3 text-right font-mono font-black text-sm">
+                                      {grandTotalWeight.toLocaleString()} KG
+                                    </td>
+                                  </tr>
+                                </tbody>
+                              </table>
+                            </div>
                           </div>
-                          <div className="border-t-2 border-black pt-2">
-                            <span className="text-[10px] sm:text-xs font-black uppercase text-black tracking-wider block">
-                              DRIVER SIGNATURE
-                            </span>
+                        )}
+                      </div>
+
+                      {/* Bottom Section Anchored at End of Page (Signatures + Footer) */}
+                      <div className="mt-auto pt-6 space-y-4">
+                        {/* 6. Signatures (On Last Page) */}
+                        {isLastPage && (
+                          <div className="grid grid-cols-3 gap-6 pt-4 mb-2 text-center font-sans">
+                            <div className="border-t-2 border-black pt-2">
+                              <span className="text-[10px] sm:text-xs font-black uppercase text-black tracking-wider block">
+                                PREPARED BY
+                              </span>
+                            </div>
+                            <div className="border-t-2 border-black pt-2">
+                              <span className="text-[10px] sm:text-xs font-black uppercase text-black tracking-wider block">
+                                DRIVER SIGNATURE
+                              </span>
+                            </div>
+                            <div className="border-t-2 border-black pt-2">
+                              <span className="text-[10px] sm:text-xs font-black uppercase text-black tracking-wider block">
+                                RECEIVER / GATE
+                              </span>
+                            </div>
                           </div>
-                          <div className="border-t-2 border-black pt-2">
-                            <span className="text-[10px] sm:text-xs font-black uppercase text-black tracking-wider block">
-                              RECEIVER / GATE
-                            </span>
-                          </div>
+                        )}
+
+                        {/* 7. Footer Caption with Page Count */}
+                        <div className="text-center text-[9px] font-semibold text-slate-600 pt-2 border-t border-slate-200 flex justify-between items-center">
+                          <span>{COMPANY_CONFIG.name} &bull; {COMPANY_CONFIG.shortAddress} &bull; Ph: {COMPANY_CONFIG.phone} &bull; {COMPANY_CONFIG.website}</span>
+                          <span className="font-mono font-bold">Page {pageNumber} of {totalPages}</span>
                         </div>
-                      )}
-
-                      {/* 7. Footer Caption with Page Count */}
-                      <div className="text-center text-[9px] font-semibold text-slate-600 pt-2 border-t border-slate-200 flex justify-between items-center">
-                        <span>{COMPANY_CONFIG.name} &bull; {COMPANY_CONFIG.shortAddress} &bull; Ph: {COMPANY_CONFIG.phone} &bull; {COMPANY_CONFIG.website}</span>
-                        <span className="font-mono font-bold">Page {pageNumber} of {totalPages}</span>
                       </div>
                     </div>
                   );
