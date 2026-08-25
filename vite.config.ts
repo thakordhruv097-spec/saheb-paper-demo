@@ -5,7 +5,7 @@ import path from 'path'
 
 // https://vite.dev/config/
 export default defineConfig({
-  base: '/saheb-paper-demo/',
+  base: './',
   plugins: [react(), tailwindcss()],
   server: {
     host: true,
