@@ -488,12 +488,12 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
     <div className="min-h-screen bg-bg-light dark:bg-bg-dark text-text-light-primary dark:text-slate-100 flex flex-col transition-colors duration-200">
 
       {/* 1. Header (Common across all sizes) - Seamless background matching page without white partition bar */}
-      <header className={`sticky top-0 z-30 bg-bg-light/95 dark:bg-bg-dark/95 text-slate-900 dark:text-white backdrop-blur-md h-16 flex items-center justify-between px-4 lg:px-6 transition-all duration-300 ${user ? 'md:ml-[228px]' : ''
+      <header className={`sticky top-0 z-30 bg-bg-light/95 dark:bg-bg-dark/95 text-slate-900 dark:text-white backdrop-blur-md h-14 sm:h-16 flex items-center justify-between px-3 sm:px-4 lg:px-6 transition-all duration-300 w-full max-w-full ${user ? 'md:ml-[268px] md:w-[calc(100%-268px)]' : 'w-full'
         } ${showHeader ? 'translate-y-0 opacity-100' : '-translate-y-full opacity-0 pointer-events-none'
         }`}>
 
         {/* Left Side Logo & Back Navigation */}
-        <div className="flex items-center gap-3 shrink-0">
+        <div className="flex items-center gap-2 sm:gap-3 shrink-0 min-w-0">
           {location.pathname !== '/' ? (
             <button
               onClick={() => navigate(-1)}
@@ -508,12 +508,12 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
               {(user?.role === 'Admin' || user?.role === 'Management') && (
                 <button
                   onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-                  className="p-2 rounded-2xl bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-700 text-slate-700 dark:text-white md:hidden transition shadow-[3px_3px_8px_rgba(163,163,196,0.18),-3px_-3px_8px_rgba(255,255,255,0.95)] dark:shadow-none"
+                  className="p-2 rounded-2xl bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-700 text-slate-700 dark:text-white md:hidden transition shadow-[3px_3px_8px_rgba(163,163,196,0.18),-3px_-3px_8px_rgba(255,255,255,0.95)] dark:shadow-none shrink-0"
                 >
                   {mobileMenuOpen ? (
                     <X className="h-5 w-5" />
                   ) : (
-                    <svg className="h-5 w-5 text-primary dark:text-blue-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                    <svg className="h-5 w-5 text-[#6C4FE0] dark:text-purple-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
                       <line x1="3" y1="6" x2="21" y2="6" />
                       <line x1="3" y1="12" x2="15" y2="12" />
                       <line x1="3" y1="18" x2="9" y2="18" />
@@ -523,38 +523,27 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
               )}
 
               {/* Mobile Only Header Logo */}
-              <div className="flex md:hidden items-center gap-3 cursor-pointer group select-none" onClick={() => navigate('/')}>
-                <img src={`${import.meta.env.BASE_URL}logo.png`} alt="Saheb Paper Logo" className="h-9 w-9 object-contain rounded-xl shadow-xs border border-slate-200 dark:border-slate-700 bg-white p-0.5" />
-                <div className="block">
-                  <div className="flex items-center gap-1.5">
-                    <span className="text-sm font-black text-slate-900 dark:text-white leading-none tracking-tight">
-                      {t('login.title')}
-                    </span>
-                    <span className="px-1.5 py-0.2 rounded-full bg-blue-50 dark:bg-blue-950/60 text-primary dark:text-blue-300 text-[9px] font-extrabold uppercase border border-blue-200/60 dark:border-blue-800/60">
-                      ERP
-                    </span>
-                  </div>
-                  <p className="text-[10px] text-slate-500 dark:text-slate-400 font-medium tracking-tight mt-0.5 truncate">
-                    {t('login.subtitle')}
-                  </p>
+              <div className="flex md:hidden items-center gap-2 cursor-pointer group select-none min-w-0" onClick={() => navigate('/')}>
+                <img src={`${import.meta.env.BASE_URL}logo.png`} alt="Saheb Paper Logo" className="h-7 w-7 object-contain rounded-lg shadow-xs border border-slate-200 dark:border-slate-700 bg-white p-0.5 shrink-0" />
+                <div className="flex items-center gap-1 min-w-0">
+                  <span className="text-xs sm:text-sm font-black text-slate-900 dark:text-white leading-none tracking-tight truncate font-heading">
+                    Saheb Paper
+                  </span>
+                  <span className="px-1 py-0.2 rounded-full bg-[#EDE9FE] dark:bg-purple-950/60 text-[#6C4FE0] dark:text-purple-300 text-[8px] font-black uppercase shrink-0">
+                    ERP
+                  </span>
                 </div>
               </div>
-
-              {/* Header Shift Badge (Mobile context) */}
-              <span className="hidden xs:inline-flex md:hidden items-center gap-1.5 px-2.5 py-1 rounded-full bg-white dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300 shadow-[2px_2px_6px_rgba(163,163,196,0.15),-2px_-2px_6px_rgba(255,255,255,0.9)] dark:shadow-none text-[10px] font-black uppercase tracking-wider">
-                <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
-                {new Date().getHours() >= 8 && new Date().getHours() < 20 ? 'Shift A' : 'Shift B'} ┬╖ Running
-              </span>
             </>
           )}
         </div>
 
         {/* Right Side Header Controls - Matching exact reference image */}
-        <div className="flex items-center gap-2.5 sm:gap-3">
+        <div className="flex items-center gap-1.5 sm:gap-2.5">
 
-          {/* Date & Timeframe Filter controls - COMBINED IN ONE UNIFIED CAPSULE PILL */}
+          {/* Date & Timeframe Filter controls - Visible on Tablet/Desktop */}
           {(user?.role === 'Admin' || user?.role === 'Management') && (
-            <div className="bg-white dark:bg-[#131d38] rounded-full p-1 pl-1.5 pr-2 flex items-center gap-2 shadow-[4px_4px_14px_rgba(163,163,196,0.2),-4px_-4px_14px_rgba(255,255,255,0.95)] dark:shadow-none">
+            <div className="hidden md:flex items-center bg-white dark:bg-[#131d38] rounded-full p-1 pl-1.5 pr-2 gap-2 shadow-[4px_4px_14px_rgba(163,163,196,0.2),-4px_-4px_14px_rgba(255,255,255,0.95)] dark:shadow-none">
               {/* Timeframe Selector Sub-pill (Day / Week / Month / All) */}
               <div className="flex items-center gap-0.5">
                 {(['day', 'week', 'month', 'all'] as const).map(tf => (
@@ -689,26 +678,26 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
             )}
           </div>
 
-          {/* 5. User Profile Capsule Pill - Exact Match with Name, Role Badge, and Circle Avatar */}
+          {/* 5. User Profile Capsule Pill */}
           {user && (
             <div className="relative shrink-0">
               <div
                 onClick={toggleProfile}
-                className="bg-white dark:bg-[#131d38] rounded-full pl-3.5 pr-1.5 py-1.5 flex items-center gap-2.5 shadow-[4px_4px_12px_rgba(163,163,196,0.18),-4px_-4px_12px_rgba(255,255,255,0.95)] dark:shadow-none cursor-pointer hover:scale-[1.02] transition-all select-none"
+                className="bg-white dark:bg-[#131d38] rounded-full p-1 sm:pl-3 sm:pr-1.5 sm:py-1.5 flex items-center gap-2 shadow-[3px_3px_10px_rgba(163,163,196,0.18),-3px_-3px_10px_rgba(255,255,255,0.95)] dark:shadow-none cursor-pointer hover:scale-[1.02] transition-all select-none"
                 title="Profile Settings"
               >
-                <div className="flex flex-col items-start justify-center text-left">
+                <div className="hidden sm:flex flex-col items-start justify-center text-left">
                   <span className="text-[12px] font-black text-slate-900 dark:text-white leading-none tracking-tight whitespace-nowrap">
                     {user.displayName}
                   </span>
-                  <span className="mt-1 px-2 py-0.5 rounded-full bg-[#EDE9FE] dark:bg-purple-950/60 text-[#6C4FE0] dark:text-purple-300 text-[9px] font-black uppercase tracking-wider leading-none">
+                  <span className="mt-0.5 px-1.5 py-0.2 rounded-full bg-[#EDE9FE] dark:bg-purple-950/60 text-[#6C4FE0] dark:text-purple-300 text-[8.5px] font-black uppercase tracking-wider leading-none">
                     {user.role}
                   </span>
                 </div>
 
                 {/* Profile Circle Avatar */}
-                <div className="w-8 h-8 bg-[#5B3DC9] text-white rounded-full flex items-center justify-center shadow-xs shrink-0">
-                  <User className="h-4.5 w-4.5" />
+                <div className="w-7 h-7 sm:w-8 sm:h-8 bg-[#5B3DC9] text-white rounded-full flex items-center justify-center shadow-xs shrink-0">
+                  <User className="h-4 w-4" />
                 </div>
               </div>
 
@@ -857,11 +846,11 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
           ref={mainRef}
           onTouchStart={handleTouchStart}
           onTouchEnd={handleTouchEnd}
-          className={`flex-1 flex flex-col overflow-y-auto pb-32 md:pb-6 relative min-w-0 ${user ? 'md:ml-[268px]' : ''
+          className={`flex-1 flex flex-col overflow-y-auto overflow-x-hidden pb-32 md:pb-6 relative w-full max-w-full ${user ? 'md:ml-[268px] md:w-[calc(100%-268px)]' : 'w-full'
             } dashboard-main-scrollbar`}
         >
           {/* Actual children page content */}
-          <div className="p-2 sm:p-4 lg:p-6 flex-1 flex flex-col">{children}</div>
+          <div className="p-2.5 sm:p-4 lg:p-6 flex-1 flex flex-col w-full max-w-full overflow-x-hidden">{children}</div>
         </main>
       </div>
 
@@ -1001,12 +990,12 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
                     navigate(tab.path);
                   }}
                   className={`flex flex-col items-center justify-center flex-1 py-1 transition-all cursor-pointer ${isActive
-                    ? 'text-primary dark:text-blue-400 font-extrabold scale-105'
+                    ? 'text-[#6C4FE0] dark:text-purple-400 font-extrabold scale-105'
                     : 'text-slate-400 dark:text-slate-500 hover:text-slate-600 dark:hover:text-slate-300'
                     }`}
                   title={tab.label}
                 >
-                  <div className={`p-1 rounded-xl transition-all ${isActive ? 'bg-blue-50 dark:bg-blue-950/60 shadow-xs' : ''}`}>
+                  <div className={`p-1 rounded-xl transition-all ${isActive ? 'bg-[#EDE9FE] dark:bg-purple-950/60 shadow-xs' : ''}`}>
                     <Icon className="h-5 w-5" />
                   </div>
                   <span className="text-[10px] mt-0.5 font-bold tracking-tight">{tab.label}</span>

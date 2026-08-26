@@ -1313,21 +1313,21 @@ export const DashboardView: React.FC = () => {
 
             {/* 2. MIDDLE SECTION: PRODUCTION ANALYTICS & LIVE ACTIVITY STREAM */}
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 items-stretch">
-              <div className="lg:col-span-2 bg-white dark:bg-surface-dark rounded-2xl p-6 space-y-5">
-                <div className="flex items-center justify-between border-b pb-4 dark:border-slate-700">
+              <div className="lg:col-span-2 bg-white dark:bg-surface-dark rounded-2xl p-4 sm:p-6 space-y-5">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b pb-4 dark:border-slate-700">
                   <div>
-                    <h3 className="text-base font-bold text-slate-900 dark:text-white">Production Performance Analytics</h3>
+                    <h3 className="text-sm sm:text-base font-bold text-slate-900 dark:text-white">Production Performance Analytics</h3>
                     <p className="text-xs text-slate-400 mt-0.5">Comprehensive mill output metrics &amp; historical breakdown</p>
                   </div>
 
                   {/* DYNAMIC THIS MONTH / THIS YEAR TOGGLE BUTTONS */}
-                  <div className="flex items-center gap-1.5 bg-slate-100 dark:bg-slate-800 p-1.5 rounded-xl border border-slate-200 dark:border-slate-700">
+                  <div className="flex items-center gap-1.5 bg-slate-100 dark:bg-slate-800 p-1.5 rounded-xl border border-slate-200 dark:border-slate-700 self-start sm:self-auto">
                     <button
                       type="button"
                       onClick={() => setPeriod('month')}
                       className={`px-3.5 py-1.5 text-xs font-bold rounded-lg transition cursor-pointer ${
                         period === 'month'
-                          ? 'bg-primary text-white shadow-md'
+                          ? 'bg-[#6C4FE0] text-white shadow-md shadow-[#6C4FE0]/25'
                           : 'text-slate-700 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700'
                       }`}
                     >
@@ -1338,7 +1338,7 @@ export const DashboardView: React.FC = () => {
                       onClick={() => setPeriod('year')}
                       className={`px-3.5 py-1.5 text-xs font-bold rounded-lg transition cursor-pointer ${
                         period === 'year'
-                          ? 'bg-primary text-white shadow-md'
+                          ? 'bg-[#6C4FE0] text-white shadow-md shadow-[#6C4FE0]/25'
                           : 'text-slate-700 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700'
                       }`}
                     >
