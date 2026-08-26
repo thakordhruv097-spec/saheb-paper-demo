@@ -523,15 +523,20 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
               )}
 
               {/* Mobile Only Header Logo */}
-              <div className="flex md:hidden items-center gap-2 cursor-pointer group select-none min-w-0" onClick={() => navigate('/')}>
-                <img src={`${import.meta.env.BASE_URL}logo.png`} alt="Saheb Paper Logo" className="h-7 w-7 object-contain rounded-lg shadow-xs border border-slate-200 dark:border-slate-700 bg-white p-0.5 shrink-0" />
-                <div className="flex items-center gap-1 min-w-0">
-                  <span className="text-xs sm:text-sm font-black text-slate-900 dark:text-white leading-none tracking-tight truncate font-heading">
-                    Saheb Paper
-                  </span>
-                  <span className="px-1 py-0.2 rounded-full bg-[#EDE9FE] dark:bg-purple-950/60 text-[#6C4FE0] dark:text-purple-300 text-[8px] font-black uppercase shrink-0">
-                    ERP
-                  </span>
+              <div className="flex md:hidden items-center gap-2.5 cursor-pointer group select-none min-w-0" onClick={() => navigate('/')}>
+                <img src={`${import.meta.env.BASE_URL}logo.png`} alt="Saheb Paper Logo" className="h-8 w-8 object-contain rounded-xl shadow-xs border border-slate-200 dark:border-slate-700 bg-white p-0.5 shrink-0" />
+                <div className="min-w-0">
+                  <div className="flex items-center gap-1.5">
+                    <span className="text-xs sm:text-sm font-black text-slate-900 dark:text-white leading-none tracking-tight truncate font-heading">
+                      Saheb Paper Pvt. Ltd.
+                    </span>
+                    <span className="px-1.5 py-0.2 rounded-full bg-[#EDE9FE] dark:bg-purple-950/60 text-[#6C4FE0] dark:text-purple-300 text-[8px] font-black uppercase shrink-0">
+                      ERP
+                    </span>
+                  </div>
+                  <p className="text-[9px] text-slate-500 dark:text-slate-400 font-medium tracking-tight truncate mt-0.5">
+                    Paper Mill Management System
+                  </p>
                 </div>
               </div>
             </>
@@ -796,14 +801,14 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
             </div>
 
             {/* Sidebar Navigation Sections */}
-            <div className="flex-1 overflow-y-auto pr-0.5 select-none flex flex-col space-y-3 dashboard-custom-scrollbar py-1">
+            <div className="flex-1 overflow-y-auto pr-0.5 select-none flex flex-col space-y-3.5 dashboard-custom-scrollbar py-1">
               {sidebarSections.map((section) => (
-                <div key={section.title} className="space-y-0.5">
-                  <div className="px-2.5 pt-0.5 pb-0.5 text-[9px] font-extrabold uppercase tracking-wider text-[#6B7C96] dark:text-slate-400 font-sans">
+                <div key={section.title} className="space-y-1">
+                  <div className="px-3 pt-0.5 pb-0.5 text-[9.5px] font-extrabold uppercase tracking-wider text-[#6B7C96] dark:text-slate-400 font-sans">
                     {section.title}
                   </div>
 
-                  <div className="space-y-0.5">
+                  <div className="space-y-1">
                     {section.items.map(item => {
                       const Icon = item.icon;
                       const isActive = location.pathname === item.path || (item.id === 'dispatch_receipt' && location.pathname.startsWith('/dispatch-receipt')) || (item.id === 'utilities_etp' && (location.pathname.startsWith('/utilities-&-etp') || location.pathname.startsWith('/utilites-&-etp') || location.pathname.startsWith('/utilities-etp')));
@@ -811,25 +816,20 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
                         <button
                           key={item.id}
                           onClick={() => navigate(item.path)}
-                          className={`w-full flex items-center px-2 py-1.5 rounded-[12px] transition-all duration-150 text-left cursor-pointer group ${isActive
-                            ? 'bg-[#EDE9FE] dark:bg-purple-950/60 text-[#6C4FE0] dark:text-purple-300 font-bold shadow-[inset_1px_1px_2px_rgba(108,79,224,0.15)]'
-                            : 'text-slate-700 dark:text-slate-200 hover:bg-[#F3F2FA]/80 dark:hover:bg-slate-800/50'
+                          className={`w-full flex items-center justify-between px-3 py-2 rounded-2xl transition-all duration-150 text-left cursor-pointer group select-none ${isActive
+                            ? 'bg-gradient-to-r from-[#6C4FE0] via-[#7C3AED] to-[#5B3DC9] text-white font-bold shadow-lg shadow-[#6C4FE0]/35'
+                            : 'text-slate-700 dark:text-slate-300 hover:bg-[#F3F2FA] dark:hover:bg-slate-800/60'
                             }`}
                         >
-                          <div className="flex items-center gap-2.5 min-w-0">
-                            {isActive ? (
-                              <div className="w-7 h-7 rounded-[8px] bg-white dark:bg-[#1a264a] shadow-[1.5px_1.5px_4px_rgba(163,163,196,0.25),-1.5px_-1.5px_4px_rgba(255,255,255,0.95)] dark:shadow-none flex items-center justify-center text-[#6C4FE0] dark:text-purple-400 shrink-0">
-                                <Icon className="h-3.5 w-3.5 stroke-[2.2]" />
-                              </div>
-                            ) : (
-                              <div className="w-7 h-7 rounded-full bg-[#F3F2FA] dark:bg-slate-800 shadow-[1.5px_1.5px_4px_rgba(163,163,196,0.2),-1.5px_-1.5px_4px_rgba(255,255,255,0.95)] dark:shadow-none flex items-center justify-center text-[#6C4FE0]/80 dark:text-purple-400 shrink-0 group-hover:scale-105 transition-transform">
-                                <Icon className="h-3.5 w-3.5 stroke-[2]" />
-                              </div>
-                            )}
-                            <span className={`text-[12px] font-sans tracking-tight leading-tight truncate ${isActive ? 'font-bold text-[#6C4FE0] dark:text-purple-300' : 'font-semibold text-[#334155] dark:text-slate-300 group-hover:text-slate-900 dark:group-hover:text-white'}`}>
+                          <div className="flex items-center gap-3 min-w-0">
+                            <Icon className={`h-4.5 w-4.5 shrink-0 transition-transform ${isActive ? 'text-white stroke-[2.2]' : 'text-[#6C4FE0] dark:text-purple-400 stroke-[1.8] group-hover:scale-110'}`} />
+                            <span className={`text-[12.5px] font-sans tracking-tight leading-tight truncate ${isActive ? 'font-bold text-white' : 'font-semibold text-[#334155] dark:text-slate-300 group-hover:text-slate-900 dark:group-hover:text-white'}`}>
                               {item.label}
                             </span>
                           </div>
+                          {isActive && (
+                            <span className="w-2 h-2 rounded-full bg-white shadow-xs shrink-0 ml-1.5" />
+                          )}
                         </button>
                       );
                     })}
@@ -892,21 +892,18 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
                       navigate(item.path);
                       setMobileMenuOpen(false);
                     }}
-                    className={`flex items-center gap-3 px-3 py-2 rounded-[16px] text-left transition cursor-pointer ${isActive
-                      ? 'bg-[#EDE9FE] dark:bg-purple-950/60 text-[#6C4FE0] dark:text-purple-300 font-bold shadow-[inset_1px_1px_2px_rgba(108,79,224,0.15)]'
+                    className={`flex items-center justify-between px-3.5 py-2.5 rounded-2xl text-left transition cursor-pointer ${isActive
+                      ? 'bg-gradient-to-r from-[#6C4FE0] via-[#7C3AED] to-[#5B3DC9] text-white font-bold shadow-md shadow-[#6C4FE0]/30'
                       : 'text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800'
                       }`}
                   >
-                    {isActive ? (
-                      <div className="w-8 h-8 rounded-[12px] bg-white dark:bg-[#1a264a] shadow-[2px_2px_5px_rgba(163,163,196,0.25),-2px_-2px_5px_rgba(255,255,255,0.95)] flex items-center justify-center text-[#6C4FE0] dark:text-purple-400 shrink-0">
-                        <Icon className="h-4 w-4 stroke-[2.2]" />
-                      </div>
-                    ) : (
-                      <div className="w-8 h-8 rounded-full bg-[#F3F2FA] dark:bg-slate-800 shadow-[2px_2px_5px_rgba(163,163,196,0.2),-2px_-2px_5px_rgba(255,255,255,0.95)] flex items-center justify-center text-[#6C4FE0]/80 dark:text-purple-400 shrink-0">
-                        <Icon className="h-4 w-4 stroke-[2]" />
-                      </div>
+                    <div className="flex items-center gap-3 min-w-0">
+                      <Icon className={`h-4.5 w-4.5 shrink-0 ${isActive ? 'text-white stroke-[2.2]' : 'text-[#6C4FE0] dark:text-purple-400 stroke-[1.8]'}`} />
+                      <span className={`text-xs sm:text-sm ${isActive ? 'font-bold text-white' : 'font-semibold text-slate-700 dark:text-slate-200'}`}>{item.label}</span>
+                    </div>
+                    {isActive && (
+                      <span className="w-2 h-2 rounded-full bg-white shadow-xs shrink-0 ml-1.5" />
                     )}
-                    <span className={`text-xs sm:text-sm ${isActive ? 'font-bold text-[#6C4FE0] dark:text-purple-300' : 'font-semibold text-slate-700 dark:text-slate-200'}`}>{item.label}</span>
                   </button>
                 );
               })}

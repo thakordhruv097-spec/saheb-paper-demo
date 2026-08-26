@@ -10,7 +10,7 @@ import {
   savePackingSlip,
 } from '../../data/index';
 import type { Reel, RawMaterialLot, BoilerLog, PartyItem, VehicleItem } from '../../data/types';
-import { Html5QrcodeScanner } from 'html5-qrcode';
+import { Html5Qrcode } from 'html5-qrcode';
 import {
   Camera,
   CheckCircle,
@@ -48,7 +48,9 @@ export const QRScannerView: React.FC<QRScannerViewProps> = ({ onOpenPrintStudio 
   const [isScanning, setIsScanning] = useState(true);
   const [torchActive, setTorchActive] = useState(false);
   const [soundEnabled, setSoundEnabled] = useState(true);
-  const scannerRef = useRef<Html5QrcodeScanner | null>(null);
+  const [cameraError, setCameraError] = useState('');
+  const [isCameraActive, setIsCameraActive] = useState(false);
+  const html5QrCodeRef = useRef<Html5Qrcode | null>(null);
 
   // Manual Reel Entry Input State
   const [manualCodeInput, setManualCodeInput] = useState('');
@@ -143,39 +145,70 @@ export const QRScannerView: React.FC<QRScannerViewProps> = ({ onOpenPrintStudio 
     }
   };
 
-  // Setup live camera scanner
+  // Setup live camera scanner using direct Html5Qrcode instance
   useEffect(() => {
-    if (isScanning && !scanResult) {
-      const timer = setTimeout(() => {
-        try {
-          const scanner = new Html5QrcodeScanner(
-            'pure-camera-viewfinder',
-            { fps: 15, qrbox: { width: 250, height: 250 } },
-            false
-          );
+    let isMounted = true;
 
-          scannerRef.current = scanner;
+    const startScanner = async () => {
+      if (!isScanning || scanResult) return;
 
-          scanner.render(
-            (decodedText) => {
+      try {
+        setCameraError('');
+        if (html5QrCodeRef.current) {
+          try {
+            await html5QrCodeRef.current.stop();
+          } catch (_) {}
+          html5QrCodeRef.current = null;
+        }
+
+        const qrScanner = new Html5Qrcode('pure-camera-viewfinder');
+        html5QrCodeRef.current = qrScanner;
+
+        await qrScanner.start(
+          { facingMode: 'environment' },
+          {
+            fps: 15,
+            qrbox: { width: 250, height: 250 },
+            aspectRatio: 1.0,
+          },
+          (decodedText) => {
+            if (isMounted) {
               processScannedCode(decodedText);
               setIsScanning(false);
-              scanner.clear().catch(() => {});
-            },
-            () => {}
-          );
-        } catch (err) {
-          console.error('Failed to initialize camera scanner', err);
-        }
-      }, 200);
+              setIsCameraActive(false);
+              qrScanner.stop().catch(() => {});
+            }
+          },
+          () => {
+            // Scanning frame...
+          }
+        );
 
-      return () => {
-        clearTimeout(timer);
-        if (scannerRef.current) {
-          scannerRef.current.clear().catch(() => {});
+        if (isMounted) {
+          setIsCameraActive(true);
         }
-      };
-    }
+      } catch (err: any) {
+        console.warn('Camera scanner init error:', err);
+        if (isMounted) {
+          setIsCameraActive(false);
+          setCameraError(
+            err?.message?.includes('Permission')
+              ? 'Camera permission required. Please allow camera access.'
+              : 'Could not start camera. Tap Start Camera to activate.'
+          );
+        }
+      }
+    };
+
+    const timer = setTimeout(startScanner, 250);
+
+    return () => {
+      isMounted = false;
+      clearTimeout(timer);
+      if (html5QrCodeRef.current) {
+        html5QrCodeRef.current.stop().catch(() => {});
+      }
+    };
   }, [isScanning, scanResult]);
 
   const handleResetScanner = () => {
@@ -290,21 +323,43 @@ export const QRScannerView: React.FC<QRScannerViewProps> = ({ onOpenPrintStudio 
           <div className="relative overflow-hidden rounded-2xl bg-[#090D16] shadow-2xl border border-slate-800 min-h-[260px] sm:min-h-[300px] flex items-center justify-center">
             
             {/* HTML5 QR Code Mount */}
-            <div id="pure-camera-viewfinder" className="w-full h-full min-h-[260px] z-10" />
+            <div id="pure-camera-viewfinder" className="w-full h-full min-h-[260px] z-10 flex items-center justify-center [&_video]:w-full [&_video]:h-full [&_video]:object-cover [&_video]:rounded-2xl" />
+
+            {/* Error or Permission Retry Banner */}
+            {cameraError && !isCameraActive && (
+              <div className="absolute inset-0 z-25 flex flex-col items-center justify-center p-4 bg-slate-950/85 text-center space-y-3">
+                <Camera className="h-10 w-10 text-[#7C3AED] animate-bounce" />
+                <p className="text-xs font-semibold text-slate-300 max-w-xs">{cameraError}</p>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setCameraError('');
+                    setIsScanning(false);
+                    setTimeout(() => setIsScanning(true), 150);
+                  }}
+                  className="px-4 py-2 bg-gradient-to-r from-[#6C4FE0] to-[#7C3AED] text-white text-xs font-bold rounded-xl shadow-lg hover:opacity-95 transition cursor-pointer flex items-center gap-2"
+                >
+                  <RefreshCw className="h-3.5 w-3.5" />
+                  <span>Start Camera / Allow Access</span>
+                </button>
+              </div>
+            )}
 
             {/* Target Laser Box Overlay */}
-            <div className="absolute inset-0 pointer-events-none flex items-center justify-center z-20">
-              <div className="relative w-48 h-48 sm:w-56 sm:h-56 rounded-2xl">
-                {/* 4 Corner Markers */}
-                <div className="absolute top-0 left-0 w-6 h-6 border-t-4 border-l-4 border-sky-400 rounded-tl-xl" />
-                <div className="absolute top-0 right-0 w-6 h-6 border-t-4 border-r-4 border-sky-400 rounded-tr-xl" />
-                <div className="absolute bottom-0 left-0 w-6 h-6 border-b-4 border-l-4 border-sky-400 rounded-bl-xl" />
-                <div className="absolute bottom-0 right-0 w-6 h-6 border-b-4 border-r-4 border-sky-400 rounded-br-xl" />
+            {isCameraActive && (
+              <div className="absolute inset-0 pointer-events-none flex items-center justify-center z-20">
+                <div className="relative w-48 h-48 sm:w-56 sm:h-56 rounded-2xl">
+                  {/* 4 Corner Markers */}
+                  <div className="absolute top-0 left-0 w-6 h-6 border-t-4 border-l-4 border-sky-400 rounded-tl-xl" />
+                  <div className="absolute top-0 right-0 w-6 h-6 border-t-4 border-r-4 border-sky-400 rounded-tr-xl" />
+                  <div className="absolute bottom-0 left-0 w-6 h-6 border-b-4 border-l-4 border-sky-400 rounded-bl-xl" />
+                  <div className="absolute bottom-0 right-0 w-6 h-6 border-b-4 border-r-4 border-sky-400 rounded-br-xl" />
 
-                {/* Animated Laser Sweep Line */}
-                <div className="absolute left-2 right-2 h-0.5 bg-gradient-to-r from-transparent via-sky-400 to-transparent shadow-[0_0_12px_#38BDF8] animate-pulse" style={{ top: '50%' }} />
+                  {/* Animated Laser Sweep Line */}
+                  <div className="absolute left-2 right-2 h-0.5 bg-gradient-to-r from-transparent via-sky-400 to-transparent shadow-[0_0_12px_#38BDF8] animate-pulse" style={{ top: '50%' }} />
+                </div>
               </div>
-            </div>
+            )}
 
             {/* Viewfinder Bottom Controls Bar */}
             <div className="absolute bottom-3 left-3 right-3 flex items-center justify-between z-30 pointer-events-auto">
