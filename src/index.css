@@ -422,12 +422,12 @@ html.dashboard-active::-webkit-scrollbar {
 /* Light Mode Styles */
 .dashboard-main-scrollbar {
   scrollbar-width: thin;
-  scrollbar-color: #3b82f6 #f8fafc;
+  scrollbar-color: #6C4FE0 #f8fafc;
 }
 
 .dashboard-custom-scrollbar {
   scrollbar-width: thin;
-  scrollbar-color: #3b82f6 #f8fafc;
+  scrollbar-color: #6C4FE0 #f8fafc;
 }
 
 .dashboard-main-scrollbar::-webkit-scrollbar-track,
@@ -455,11 +455,11 @@ html.dashboard-active::-webkit-scrollbar-corner,
 body.dashboard-active::-webkit-scrollbar-thumb,
 html.dashboard-active::-webkit-scrollbar-thumb,
 .dashboard-custom-scrollbar::-webkit-scrollbar-thumb {
-  background: linear-gradient(180deg, #3b82f6 0%, #1d4ed8 100%) !important;
+  background: linear-gradient(180deg, #7C3AED 0%, #6C4FE0 100%) !important;
   border-radius: 9999px !important;
   border: 1.5px solid #f8fafc !important;
   background-clip: padding-box !important;
-  box-shadow: 0 0 6px rgba(15, 82, 186, 0.25);
+  box-shadow: 0 0 6px rgba(108, 79, 224, 0.25);
 }
 
 .dashboard-main-scrollbar::-webkit-scrollbar-thumb:hover,
@@ -467,8 +467,8 @@ html.dashboard-active::-webkit-scrollbar-thumb,
 body.dashboard-active::-webkit-scrollbar-thumb:hover,
 html.dashboard-active::-webkit-scrollbar-thumb:hover,
 .dashboard-custom-scrollbar::-webkit-scrollbar-thumb:hover {
-  background: linear-gradient(180deg, #1d4ed8 0%, #0F52BA 100%) !important;
-  box-shadow: 0 0 10px rgba(15, 82, 186, 0.4);
+  background: linear-gradient(180deg, #6C4FE0 0%, #5B3DC9 100%) !important;
+  box-shadow: 0 0 10px rgba(108, 79, 224, 0.4);
 }
 
 /* Dark Mode Styles */
@@ -476,12 +476,12 @@ html.dashboard-active::-webkit-scrollbar-thumb:hover,
 html.dark .dashboard-main-scrollbar,
 html.dark.dashboard-active {
   scrollbar-width: thin;
-  scrollbar-color: #3b82f6 #0b1329;
+  scrollbar-color: #7C3AED #0b1329;
 }
 
 .dark .dashboard-custom-scrollbar {
   scrollbar-width: thin;
-  scrollbar-color: #3b82f6 #0b1329;
+  scrollbar-color: #7C3AED #0b1329;
 }
 
 .dark .dashboard-main-scrollbar::-webkit-scrollbar-track,
@@ -515,11 +515,11 @@ html.dark .dashboard-main-scrollbar::-webkit-scrollbar-corner,
 .dark body.dashboard-active::-webkit-scrollbar-thumb,
 .dark html.dashboard-active::-webkit-scrollbar-thumb,
 .dark .dashboard-custom-scrollbar::-webkit-scrollbar-thumb {
-  background: linear-gradient(180deg, #3b82f6 0%, #1d4ed8 100%) !important;
+  background: linear-gradient(180deg, #7C3AED 0%, #6C4FE0 100%) !important;
   border-radius: 9999px !important;
   border: 1.5px solid #0b1329 !important;
   background-clip: padding-box !important;
-  box-shadow: 0 0 8px rgba(15, 82, 186, 0.35);
+  box-shadow: 0 0 8px rgba(108, 79, 224, 0.35);
 }
 
 .dark .dashboard-main-scrollbar::-webkit-scrollbar-thumb:hover,
@@ -527,8 +527,8 @@ html.dark .dashboard-main-scrollbar::-webkit-scrollbar-corner,
 .dark body.dashboard-active::-webkit-scrollbar-thumb:hover,
 .dark html.dashboard-active::-webkit-scrollbar-thumb:hover,
 .dark .dashboard-custom-scrollbar::-webkit-scrollbar-thumb:hover {
-  background: linear-gradient(180deg, #1d4ed8 0%, #0F52BA 100%) !important;
-  box-shadow: 0 0 12px rgba(15, 82, 186, 0.5);
+  background: linear-gradient(180deg, #6C4FE0 0%, #5B3DC9 100%) !important;
+  box-shadow: 0 0 12px rgba(108, 79, 224, 0.5);
 }
 
 

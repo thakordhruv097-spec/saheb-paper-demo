@@ -777,40 +777,40 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
       </header>
 
       <div className="flex flex-1 relative overflow-hidden">
-        {/* 2. Left Sidebar (Tablet/Desktop: md:flex) - Floating Compact Neomorphic Card without scrollbar */}
+        {/* 2. Left Sidebar (Tablet/Desktop: md:flex) - Floating Premium Neomorphic Card */}
         {user && (
-          <aside className="hidden md:flex flex-col fixed top-3 left-3 bottom-3 w-[210px] bg-white dark:bg-[#131d38] text-slate-800 dark:text-white z-40 select-none shadow-[8px_8px_24px_rgba(163,163,196,0.18),-8px_-8px_24px_rgba(255,255,255,0.95)] dark:shadow-[0_8px_30px_rgba(0,0,0,0.4)] rounded-[20px] overflow-hidden p-2 h-[calc(100vh-24px)] justify-between">
+          <aside className="hidden md:flex flex-col fixed top-3 left-3 bottom-3 w-[248px] bg-white dark:bg-[#131d38] text-slate-800 dark:text-white z-40 select-none shadow-[8px_8px_24px_rgba(163,163,196,0.18),-8px_-8px_24px_rgba(255,255,255,0.95)] dark:shadow-[0_8px_30px_rgba(0,0,0,0.4)] rounded-[22px] overflow-hidden p-2.5 h-[calc(100vh-24px)]">
 
             {/* Top Header Card / Pill */}
             <div
-              className="bg-white dark:bg-[#1a2544] p-1.5 rounded-xl flex items-center gap-1.5 shadow-[3px_3px_8px_rgba(163,163,196,0.12),-3px_-3px_8px_rgba(255,255,255,0.95)] dark:shadow-none mb-1 shrink-0 cursor-pointer group select-none transition-all hover:scale-[1.01]"
+              className="bg-white dark:bg-[#1a2544] p-2 rounded-2xl flex items-center gap-2 shadow-[3px_3px_8px_rgba(163,163,196,0.14),-3px_-3px_8px_rgba(255,255,255,0.95)] dark:shadow-none mb-2 shrink-0 cursor-pointer group select-none transition-all hover:scale-[1.01]"
               onClick={() => navigate('/')}
             >
               <img
                 src={`${import.meta.env.BASE_URL}logo.png`}
                 alt="Saheb Paper Logo"
-                className="h-7 w-7 object-contain rounded-lg shadow-xs border border-slate-200/80 dark:border-slate-700 bg-white p-0.5 shrink-0"
+                className="h-8 w-8 object-contain rounded-xl shadow-xs border border-slate-200/80 dark:border-slate-700 bg-white p-0.5 shrink-0"
               />
               <div className="min-w-0 flex-1">
-                <div className="flex items-center gap-1">
-                  <span className="text-[11px] font-black text-slate-900 dark:text-white leading-none tracking-tight truncate">
+                <div className="flex items-center gap-1.5">
+                  <span className="text-xs font-black text-slate-900 dark:text-white leading-none tracking-tight truncate font-heading">
                     Saheb Paper
                   </span>
-                  <span className="px-1 py-0.2 rounded-full bg-[#EDE9FE] dark:bg-purple-950/60 text-[#6C4FE0] dark:text-purple-300 text-[8px] font-extrabold uppercase shrink-0">
+                  <span className="px-1.5 py-0.2 rounded-full bg-[#EDE9FE] dark:bg-purple-950/60 text-[#6C4FE0] dark:text-purple-300 text-[8.5px] font-black uppercase shrink-0">
                     ERP
                   </span>
                 </div>
-                <p className="text-[9px] text-slate-500 dark:text-slate-400 font-medium tracking-tight truncate mt-0.5">
+                <p className="text-[9.5px] text-slate-500 dark:text-slate-400 font-medium tracking-tight truncate mt-0.5">
                   Paper Mill Management
                 </p>
               </div>
             </div>
 
-            {/* Sidebar Navigation Sections - Zero Scroll, 100% Fit */}
-            <div className="flex-1 overflow-hidden select-none flex flex-col justify-between py-0.5">
+            {/* Sidebar Navigation Sections */}
+            <div className="flex-1 overflow-y-auto pr-0.5 select-none flex flex-col space-y-3 dashboard-custom-scrollbar py-1">
               {sidebarSections.map((section) => (
                 <div key={section.title} className="space-y-0.5">
-                  <div className="px-2 pt-0 pb-0 text-[8.5px] font-extrabold uppercase tracking-wider text-[#6B7C96] dark:text-slate-400 font-sans">
+                  <div className="px-2.5 pt-0.5 pb-0.5 text-[9px] font-extrabold uppercase tracking-wider text-[#6B7C96] dark:text-slate-400 font-sans">
                     {section.title}
                   </div>
 
@@ -822,22 +822,22 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
                         <button
                           key={item.id}
                           onClick={() => navigate(item.path)}
-                          className={`w-full flex items-center px-1.5 py-1 rounded-[10px] transition-all duration-150 text-left cursor-pointer group ${isActive
+                          className={`w-full flex items-center px-2 py-1.5 rounded-[12px] transition-all duration-150 text-left cursor-pointer group ${isActive
                             ? 'bg-[#EDE9FE] dark:bg-purple-950/60 text-[#6C4FE0] dark:text-purple-300 font-bold shadow-[inset_1px_1px_2px_rgba(108,79,224,0.15)]'
                             : 'text-slate-700 dark:text-slate-200 hover:bg-[#F3F2FA]/80 dark:hover:bg-slate-800/50'
                             }`}
                         >
-                          <div className="flex items-center gap-2 min-w-0">
+                          <div className="flex items-center gap-2.5 min-w-0">
                             {isActive ? (
-                              <div className="w-6 h-6 rounded-[7px] bg-white dark:bg-[#1a264a] shadow-[1.5px_1.5px_4px_rgba(163,163,196,0.25),-1.5px_-1.5px_4px_rgba(255,255,255,0.95)] dark:shadow-none flex items-center justify-center text-[#6C4FE0] dark:text-purple-400 shrink-0">
-                                <Icon className="h-3 w-3 stroke-[2.2]" />
+                              <div className="w-7 h-7 rounded-[8px] bg-white dark:bg-[#1a264a] shadow-[1.5px_1.5px_4px_rgba(163,163,196,0.25),-1.5px_-1.5px_4px_rgba(255,255,255,0.95)] dark:shadow-none flex items-center justify-center text-[#6C4FE0] dark:text-purple-400 shrink-0">
+                                <Icon className="h-3.5 w-3.5 stroke-[2.2]" />
                               </div>
                             ) : (
-                              <div className="w-6 h-6 rounded-full bg-[#F3F2FA] dark:bg-slate-800 shadow-[1.5px_1.5px_4px_rgba(163,163,196,0.2),-1.5px_-1.5px_4px_rgba(255,255,255,0.95)] dark:shadow-none flex items-center justify-center text-[#6C4FE0]/80 dark:text-purple-400 shrink-0 group-hover:scale-105 transition-transform">
-                                <Icon className="h-3 w-3 stroke-[2]" />
+                              <div className="w-7 h-7 rounded-full bg-[#F3F2FA] dark:bg-slate-800 shadow-[1.5px_1.5px_4px_rgba(163,163,196,0.2),-1.5px_-1.5px_4px_rgba(255,255,255,0.95)] dark:shadow-none flex items-center justify-center text-[#6C4FE0]/80 dark:text-purple-400 shrink-0 group-hover:scale-105 transition-transform">
+                                <Icon className="h-3.5 w-3.5 stroke-[2]" />
                               </div>
                             )}
-                            <span className={`text-[11.5px] font-sans tracking-tight leading-tight truncate ${isActive ? 'font-bold text-[#6C4FE0] dark:text-purple-300' : 'font-semibold text-[#334155] dark:text-slate-300 group-hover:text-slate-900 dark:group-hover:text-white'}`}>
+                            <span className={`text-[12px] font-sans tracking-tight leading-tight truncate ${isActive ? 'font-bold text-[#6C4FE0] dark:text-purple-300' : 'font-semibold text-[#334155] dark:text-slate-300 group-hover:text-slate-900 dark:group-hover:text-white'}`}>
                               {item.label}
                             </span>
                           </div>
@@ -857,7 +857,7 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
           ref={mainRef}
           onTouchStart={handleTouchStart}
           onTouchEnd={handleTouchEnd}
-          className={`flex-1 flex flex-col overflow-y-auto pb-32 md:pb-6 relative min-w-0 ${user ? 'md:ml-[228px]' : ''
+          className={`flex-1 flex flex-col overflow-y-auto pb-32 md:pb-6 relative min-w-0 ${user ? 'md:ml-[268px]' : ''
             } dashboard-main-scrollbar`}
         >
           {/* Actual children page content */}
@@ -904,20 +904,20 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
                       setMobileMenuOpen(false);
                     }}
                     className={`flex items-center gap-3 px-3 py-2 rounded-[16px] text-left transition cursor-pointer ${isActive
-                      ? 'bg-[#E8F0FE] dark:bg-blue-950/60 text-[#1D4ED8] dark:text-blue-300 font-bold shadow-[inset_1px_1px_2px_rgba(180,195,230,0.15)]'
+                      ? 'bg-[#EDE9FE] dark:bg-purple-950/60 text-[#6C4FE0] dark:text-purple-300 font-bold shadow-[inset_1px_1px_2px_rgba(108,79,224,0.15)]'
                       : 'text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800'
                       }`}
                   >
                     {isActive ? (
-                      <div className="w-8 h-8 rounded-[12px] bg-white dark:bg-[#1a264a] shadow-[2px_2px_5px_rgba(180,195,230,0.25),-2px_-2px_5px_rgba(255,255,255,0.95)] flex items-center justify-center text-[#2563EB] dark:text-blue-400 shrink-0">
+                      <div className="w-8 h-8 rounded-[12px] bg-white dark:bg-[#1a264a] shadow-[2px_2px_5px_rgba(163,163,196,0.25),-2px_-2px_5px_rgba(255,255,255,0.95)] flex items-center justify-center text-[#6C4FE0] dark:text-purple-400 shrink-0">
                         <Icon className="h-4 w-4 stroke-[2.2]" />
                       </div>
                     ) : (
-                      <div className="w-8 h-8 rounded-full bg-[#F4F7FC] dark:bg-slate-800 shadow-[2px_2px_5px_rgba(170,185,220,0.25),-2px_-2px_5px_rgba(255,255,255,0.95)] flex items-center justify-center text-[#3B82F6] dark:text-blue-400 shrink-0">
+                      <div className="w-8 h-8 rounded-full bg-[#F3F2FA] dark:bg-slate-800 shadow-[2px_2px_5px_rgba(163,163,196,0.2),-2px_-2px_5px_rgba(255,255,255,0.95)] flex items-center justify-center text-[#6C4FE0]/80 dark:text-purple-400 shrink-0">
                         <Icon className="h-4 w-4 stroke-[2]" />
                       </div>
                     )}
-                    <span className={`text-xs sm:text-sm ${isActive ? 'font-bold text-[#1D4ED8] dark:text-blue-300' : 'font-semibold text-slate-700 dark:text-slate-200'}`}>{item.label}</span>
+                    <span className={`text-xs sm:text-sm ${isActive ? 'font-bold text-[#6C4FE0] dark:text-purple-300' : 'font-semibold text-slate-700 dark:text-slate-200'}`}>{item.label}</span>
                   </button>
                 );
               })}
