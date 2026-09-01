@@ -33,10 +33,12 @@ import {
 import { QRCodeSVG } from 'qrcode.react';
 import { WorkflowStepBadge, WORKFLOW_STEPS } from '../../components/WorkflowStepBadge';
 import { useBodyScrollLock } from '../../hooks/useBodyScrollLock';
+import { useDateFilter, isDateInTimeframe } from '../../context/DateFilterContext';
 
 export const RawMaterialView: React.FC = () => {
   const { user } = useAuth();
   const { t } = useTranslation();
+  const { timeframe, selectedDate } = useDateFilter();
 
   const [materials, setMaterials] = useState<RawMaterialItem[]>(() => getRawMaterials());
   const [lots, setLots] = useState<RawMaterialLot[]>(() => getRawMaterialLots());
@@ -575,6 +577,9 @@ export const RawMaterialView: React.FC = () => {
             <tbody className="divide-y divide-slate-100 dark:divide-slate-800 font-semibold">
               {(() => {
                 let filteredLots = lots;
+                if (timeframe && selectedDate) {
+                  filteredLots = filteredLots.filter(l => isDateInTimeframe(l.date, selectedDate, timeframe));
+                }
                 const lq = lotSearchQuery.toLowerCase().trim();
                 if (lq) filteredLots = filteredLots.filter(l => (l.lotNo || '').toLowerCase().includes(lq) || (l.materialName || '').toLowerCase().includes(lq) || (l.vendorName || '').toLowerCase().includes(lq));
                 if (lotDateFrom) filteredLots = filteredLots.filter(l => l.date >= lotDateFrom);

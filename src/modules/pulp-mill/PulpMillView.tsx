@@ -37,10 +37,12 @@ interface DowntimeLog {
 }
 
 import { WorkflowStepBadge, WORKFLOW_STEPS } from '../../components/WorkflowStepBadge';
+import { useDateFilter, isDateInTimeframe } from '../../context/DateFilterContext';
 
 export const PulpMillView: React.FC = () => {
   const { t } = useTranslation();
   const { user } = useAuth();
+  const { timeframe, selectedDate } = useDateFilter();
   const [showAllHistory, setShowAllHistory] = useState(false);
 
   const [formulas, setFormulas] = useState<PulpFormula[]>(() => getFormulas());
@@ -178,6 +180,10 @@ export const PulpMillView: React.FC = () => {
 
   const filteredFormulas = useMemo(() => {
     let list = [...formulas];
+    // Global Timeframe Filter (Day, Week, Month, All)
+    if (timeframe && selectedDate) {
+      list = list.filter(f => isDateInTimeframe(f.date, selectedDate, timeframe));
+    }
     // Text search
     const q = searchTerm.toLowerCase().trim();
     if (q) {
@@ -207,7 +213,7 @@ export const PulpMillView: React.FC = () => {
     });
 
     return list;
-  }, [formulas, searchTerm, historyDateFrom, historyDateTo, sortAscending]);
+  }, [formulas, searchTerm, historyDateFrom, historyDateTo, sortAscending, timeframe, selectedDate]);
 
   // Detect formulas identical to chronological previous day
   const sameAsPrevSet = useMemo(() => {

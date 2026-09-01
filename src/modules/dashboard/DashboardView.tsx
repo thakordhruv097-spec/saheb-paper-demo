@@ -45,9 +45,12 @@ import {
   Layers,
   MoreVertical,
   ShoppingCart,
+  X,
+  Search,
 } from 'lucide-react';
 
 import { useDateFilter } from '../../context/DateFilterContext';
+import { useBodyScrollLock } from '../../hooks/useBodyScrollLock';
 
 export const DashboardView: React.FC = () => {
   const { user } = useAuth();
@@ -58,6 +61,10 @@ export const DashboardView: React.FC = () => {
   const [period, setPeriod] = useState<'month' | 'year'>('month');
   const [refreshKey, setRefreshKey] = useState(0);
   const [isRefreshing, setIsRefreshing] = useState(false);
+  const [isActivityModalOpen, setIsActivityModalOpen] = useState(false);
+  const [modalSearchQuery, setModalSearchQuery] = useState('');
+
+  useBodyScrollLock(isActivityModalOpen);
 
   // Dynamically apply dashboard-active scrollbar styling only when DashboardView is mounted
   useEffect(() => {
@@ -1470,7 +1477,7 @@ export const DashboardView: React.FC = () => {
                 {/* Stream Feed */}
                 <div
                   className="space-y-3 flex-1 min-h-0 overflow-y-auto pr-1.5 transition-all duration-300 dashboard-custom-scrollbar"
-                  style={{ maxHeight: period === 'month' ? '280px' : '460px' }}
+                  style={{ maxHeight: period === 'month' ? '280px' : '360px' }}
                 >
                   {unifiedActivityStream.length === 0 ? (
                     <div className="py-10 px-4 text-center space-y-3 rounded-2xl bg-[#F8F8FC] dark:bg-slate-900/40 shadow-[inset_2px_2px_6px_rgba(163,163,196,0.15),inset_-2px_-2px_6px_rgba(255,255,255,0.8)]">
@@ -1489,7 +1496,7 @@ export const DashboardView: React.FC = () => {
                       </button>
                     </div>
                   ) : (
-                    unifiedActivityStream.slice(0, 10).map(item => {
+                    unifiedActivityStream.slice(0, 5).map(item => {
                       const isDispatch = item.category === 'dispatch' || item.badgeText.includes('DISPATCH');
                       const badgeColor = item.badgeText.includes('PROFILE')
                         ? 'bg-purple-100/90 text-purple-700 dark:bg-purple-950/70 dark:text-purple-300'
@@ -1549,21 +1556,157 @@ export const DashboardView: React.FC = () => {
                   )}
                 </div>
 
-                {/* Bottom View All Button */}
+                {/* Bottom View All Pop-Up Trigger Button */}
                 <div className="pt-1 flex justify-center shrink-0">
                   <button
                     type="button"
-                    onClick={() => {
-                      setActivityCategory('all');
-                      setTimeframe('all');
-                    }}
-                    className="px-7 py-2 rounded-xl bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-200 font-extrabold text-xs shadow-[3px_3px_8px_rgba(163,163,196,0.2),-3px_-3px_8px_rgba(255,255,255,0.9)] dark:shadow-[0_2px_6px_rgba(0,0,0,0.3)] hover:text-[#6C4FE0] hover:shadow-[4px_4px_12px_rgba(163,163,196,0.28),-4px_-4px_12px_rgba(255,255,255,1)] transition-all cursor-pointer"
+                    onClick={() => setIsActivityModalOpen(true)}
+                    className="px-7 py-2 rounded-xl bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-200 font-extrabold text-xs shadow-[3px_3px_8px_rgba(163,163,196,0.2),-3px_-3px_8px_rgba(255,255,255,0.9)] dark:shadow-[0_2px_6px_rgba(0,0,0,0.3)] hover:text-[#6C4FE0] hover:shadow-[4px_4px_12px_rgba(163,163,196,0.28),-4px_-4px_12px_rgba(255,255,255,1)] transition-all cursor-pointer flex items-center gap-1.5"
                   >
-                    View all
+                    View all ({unifiedActivityStream.length})
                   </button>
                 </div>
               </div>
             </div>
+
+            {/* Live Activity & Audit Stream Pop-Up Modal */}
+            {isActivityModalOpen && (
+              <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-md flex items-center justify-center p-3 sm:p-4 animate-in fade-in duration-200">
+                <div className="bg-white dark:bg-slate-900 rounded-3xl max-w-2xl w-full max-h-[90vh] flex flex-col shadow-2xl border border-slate-200 dark:border-slate-800 overflow-hidden">
+                  {/* Modal Header */}
+                  <div className="p-4 sm:p-5 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between gap-3 bg-slate-50/50 dark:bg-slate-900/50">
+                    <div className="flex items-center gap-3">
+                      <div className="w-10 h-10 rounded-2xl bg-white dark:bg-slate-800 flex items-center justify-center shrink-0 shadow-[2px_2px_6px_rgba(163,163,196,0.2),-2px_-2px_6px_rgba(255,255,255,0.9)] dark:shadow-none text-[#6C4FE0] dark:text-purple-400">
+                        <Activity className="h-5 w-5 stroke-[2.5]" />
+                      </div>
+                      <div>
+                        <h3 className="text-base font-black text-slate-900 dark:text-white tracking-tight">
+                          Live Activity &amp; Audit Stream
+                        </h3>
+                        <p className="text-xs text-slate-400 dark:text-slate-400 font-medium">
+                          All operator change history &amp; operational telemetry
+                        </p>
+                      </div>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => setIsActivityModalOpen(false)}
+                      className="p-2 rounded-xl text-slate-400 hover:text-slate-700 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800 transition cursor-pointer"
+                    >
+                      <X className="h-5 w-5" />
+                    </button>
+                  </div>
+
+                  {/* Modal Filter Controls & Search */}
+                  <div className="p-4 border-b border-slate-100 dark:border-slate-800 space-y-3 bg-white dark:bg-slate-900">
+                    <div className="flex items-center gap-2 bg-slate-50 dark:bg-slate-800/80 rounded-xl px-3 py-2 border border-slate-200/80 dark:border-slate-700">
+                      <Search className="h-4 w-4 text-slate-400 shrink-0" />
+                      <input
+                        type="text"
+                        value={modalSearchQuery}
+                        onChange={e => setModalSearchQuery(e.target.value)}
+                        placeholder="Search activity, operator, or details..."
+                        className="bg-transparent border-none text-xs font-semibold focus:outline-none w-full dark:text-white placeholder-slate-400"
+                      />
+                      {modalSearchQuery && (
+                        <button onClick={() => setModalSearchQuery('')} className="text-slate-400 hover:text-slate-600 dark:hover:text-white text-xs font-bold">
+                          Clear
+                        </button>
+                      )}
+                    </div>
+
+                    <div className="flex flex-wrap items-center gap-2">
+                      {(['all', 'boiler', 'production', 'dispatch', 'system'] as const).map(cat => (
+                        <button
+                          key={cat}
+                          onClick={() => setActivityCategory(cat)}
+                          className={`px-3 py-1 rounded-xl text-[11px] font-extrabold uppercase tracking-wider transition-all cursor-pointer ${
+                            activityCategory === cat
+                              ? 'bg-[#6C4FE0] text-white shadow-sm'
+                              : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white'
+                          }`}
+                        >
+                          {cat === 'all' ? 'All Activity' : cat}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* Modal Stream List Feed */}
+                  <div className="p-4 flex-1 overflow-y-auto space-y-3 dashboard-custom-scrollbar max-h-[55vh]">
+                    {(() => {
+                      let list = unifiedActivityStream;
+                      if (modalSearchQuery.trim()) {
+                        const q = modalSearchQuery.toLowerCase().trim();
+                        list = list.filter(item =>
+                          item.operator.toLowerCase().includes(q) ||
+                          item.title.toLowerCase().includes(q) ||
+                          item.details.toLowerCase().includes(q) ||
+                          item.badgeText.toLowerCase().includes(q)
+                        );
+                      }
+
+                      return list.length === 0 ? (
+                        <div className="py-12 text-center text-xs font-bold text-slate-400">
+                          No matching activity logs found.
+                        </div>
+                      ) : (
+                        list.map(item => {
+                          const isDispatch = item.category === 'dispatch' || item.badgeText.includes('DISPATCH');
+                          const badgeColor = item.badgeText.includes('PROFILE')
+                            ? 'bg-purple-100/90 text-purple-700 dark:bg-purple-950/70 dark:text-purple-300'
+                            : item.badgeText.includes('DISPATCH')
+                            ? 'bg-emerald-100/90 text-emerald-700 dark:bg-emerald-950/70 dark:text-emerald-300'
+                            : item.badgeText.includes('BOILER')
+                            ? 'bg-amber-100/90 text-amber-700 dark:bg-amber-950/70 dark:text-amber-300'
+                            : item.badgeText.includes('ROLL') || item.badgeText.includes('MACHINE')
+                            ? 'bg-blue-100/90 text-blue-700 dark:bg-blue-950/70 dark:text-blue-300'
+                            : 'bg-purple-100/90 text-purple-700 dark:bg-purple-950/70 dark:text-purple-300';
+
+                          return (
+                            <div
+                              key={item.id}
+                              className="flex items-start gap-3.5 p-3.5 rounded-2xl bg-slate-50/70 dark:bg-slate-800/60 border border-slate-100 dark:border-slate-800 transition-all hover:bg-white dark:hover:bg-slate-800 shadow-2xs"
+                            >
+                              <div className="w-10 h-10 rounded-full bg-white dark:bg-slate-800 flex items-center justify-center shrink-0 border border-slate-200/80 dark:border-slate-700 text-[#6C4FE0] dark:text-purple-400 font-black text-xs">
+                                {isDispatch ? <ShoppingCart className="w-4 h-4 stroke-[2.2]" /> : item.operator.substring(0, 2).toUpperCase()}
+                              </div>
+                              <div className="flex-1 min-w-0">
+                                <div className="flex items-center justify-between gap-1.5">
+                                  <div className="flex items-center gap-2 min-w-0">
+                                    <span className="font-extrabold text-xs text-slate-900 dark:text-white truncate">{item.operator}</span>
+                                    <span className={`px-2 py-0.5 rounded-md text-[10px] font-black tracking-wide shrink-0 ${badgeColor}`}>
+                                      {item.badgeText}
+                                    </span>
+                                  </div>
+                                  <span className="text-[11px] font-medium text-slate-400 shrink-0">{item.date}</span>
+                                </div>
+                                <p className="text-xs font-black text-slate-900 dark:text-white mt-1 leading-snug">{item.title}</p>
+                                <p className="text-[11px] text-slate-500 dark:text-slate-400 font-medium mt-0.5 leading-snug">{item.details}</p>
+                              </div>
+                            </div>
+                          );
+                        })
+                      );
+                    })()}
+                  </div>
+
+                  {/* Modal Footer */}
+                  <div className="p-4 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between bg-slate-50/50 dark:bg-slate-900/50">
+                    <span className="text-xs font-semibold text-slate-500 dark:text-slate-400">
+                      Total {unifiedActivityStream.length} activity entries
+                    </span>
+                    <button
+                      type="button"
+                      onClick={() => setIsActivityModalOpen(false)}
+                      className="px-5 py-2 rounded-xl bg-[#6C4FE0] text-white font-extrabold text-xs shadow-md hover:bg-[#5B3DC9] transition cursor-pointer"
+                    >
+                      Close
+                    </button>
+                  </div>
+                </div>
+              </div>
+            )}
 
             {/* 4. QUICK ACTIONS & COMPLEMENTARY MILL METRICS SECTION */}
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">

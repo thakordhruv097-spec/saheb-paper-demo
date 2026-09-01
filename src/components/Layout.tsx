@@ -546,69 +546,67 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
         {/* Right Side Header Controls - Matching exact reference image */}
         <div className="flex items-center gap-1.5 sm:gap-2.5">
 
-          {/* Date & Timeframe Filter controls - Visible on Tablet/Desktop */}
-          {(user?.role === 'Admin' || user?.role === 'Management') && (
-            <div className="hidden md:flex items-center bg-white dark:bg-[#131d38] rounded-full p-1 pl-1.5 pr-2 gap-2 shadow-[4px_4px_14px_rgba(163,163,196,0.2),-4px_-4px_14px_rgba(255,255,255,0.95)] dark:shadow-none">
-              {/* Timeframe Selector Sub-pill (Day / Week / Month / All) */}
-              <div className="flex items-center gap-0.5">
-                {(['day', 'week', 'month', 'all'] as const).map(tf => (
-                  <button
-                    key={tf}
-                    onClick={() => setTimeframe(tf)}
-                    className={`px-3 sm:px-3.5 py-1 text-[11px] sm:text-xs font-bold rounded-full capitalize transition-all cursor-pointer ${timeframe === tf
-                      ? 'bg-[#5B3DC9] text-white shadow-[0_2px_8px_rgba(91,61,201,0.35)]'
-                      : 'text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white'
-                      }`}
-                  >
-                    {tf === 'day' ? 'Day' : tf === 'week' ? 'Week' : tf === 'month' ? 'Month' : 'All'}
-                  </button>
-                ))}
-              </div>
-
-              {/* Date Stepper Sub-controls (< 2026-08-19 ≡ƒôà >) inside the SAME pill */}
-              <div className="flex items-center gap-0.5">
+          {/* Date & Timeframe Filter controls - Enabled for all modules & users */}
+          <div className="flex items-center bg-white dark:bg-[#131d38] rounded-full p-1 pl-1.5 pr-1.5 sm:pr-2 gap-1 sm:gap-2 shadow-[4px_4px_14px_rgba(163,163,196,0.2),-4px_-4px_14px_rgba(255,255,255,0.95)] dark:shadow-none">
+            {/* Timeframe Selector Sub-pill (Day / Week / Month / All) */}
+            <div className="flex items-center gap-0.5">
+              {(['day', 'week', 'month', 'all'] as const).map(tf => (
                 <button
-                  onClick={handlePrevDate}
-                  className="p-1 text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-white transition cursor-pointer"
-                  title="Previous Date"
+                  key={tf}
+                  onClick={() => setTimeframe(tf)}
+                  className={`px-2 sm:px-3.5 py-1 text-[10px] sm:text-xs font-bold rounded-full capitalize transition-all cursor-pointer ${timeframe === tf
+                    ? 'bg-[#5B3DC9] text-white shadow-[0_2px_8px_rgba(91,61,201,0.35)]'
+                    : 'text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white'
+                    }`}
                 >
-                  <ChevronLeft className="h-3.5 w-3.5" />
+                  {tf === 'day' ? 'Day' : tf === 'week' ? 'Week' : tf === 'month' ? 'Month' : 'All'}
                 </button>
+              ))}
+            </div>
 
-                <div className="relative" ref={headerDatePickerRef}>
-                  <div
-                    onClick={() => setIsDatePickerModalOpen(prev => !prev)}
-                    className="flex items-center bg-white dark:bg-slate-900 rounded-full px-2.5 sm:px-3 py-0.5 shadow-[inset_1px_1px_3px_rgba(163,163,196,0.2),inset_-1px_-1px_3px_rgba(255,255,255,0.9)] dark:shadow-none group cursor-pointer select-none"
-                    title="Click to select date"
-                  >
-                    <span className="text-[11px] sm:text-xs font-bold text-slate-800 dark:text-white mr-1.5 font-sans">
-                      {selectedDate}
-                    </span>
-                    <Calendar className="h-3.5 w-3.5 text-slate-500 dark:text-slate-400 group-hover:scale-110 transition-transform" />
-                  </div>
+            {/* Date Stepper Sub-controls (< 2026-08-19 📅 >) inside the SAME pill */}
+            <div className="flex items-center gap-0.5">
+              <button
+                onClick={handlePrevDate}
+                className="p-1 text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-white transition cursor-pointer"
+                title="Previous Date"
+              >
+                <ChevronLeft className="h-3.5 w-3.5" />
+              </button>
 
-                  {isDatePickerModalOpen && (
-                    <CustomDatePickerModal
-                      selectedDate={selectedDate}
-                      onSelectDate={(newDateStr) => setSelectedDate(newDateStr)}
-                      onClose={() => setIsDatePickerModalOpen(false)}
-                      align="right"
-                      triggerRef={headerDatePickerRef}
-                    />
-                  )}
+              <div className="relative" ref={headerDatePickerRef}>
+                <div
+                  onClick={() => setIsDatePickerModalOpen(prev => !prev)}
+                  className="flex items-center bg-white dark:bg-slate-900 rounded-full px-2 sm:px-3 py-0.5 shadow-[inset_1px_1px_3px_rgba(163,163,196,0.2),inset_-1px_-1px_3px_rgba(255,255,255,0.9)] dark:shadow-none group cursor-pointer select-none"
+                  title="Click to select date"
+                >
+                  <span className="text-[10px] sm:text-xs font-bold text-slate-800 dark:text-white mr-1 sm:mr-1.5 font-sans">
+                    {selectedDate}
+                  </span>
+                  <Calendar className="h-3.5 w-3.5 text-slate-500 dark:text-slate-400 group-hover:scale-110 transition-transform" />
                 </div>
 
-                <button
-                  onClick={handleNextDate}
-                  disabled={selectedDate >= systemToday}
-                  className="p-1 text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-white transition cursor-pointer disabled:opacity-30 disabled:cursor-not-allowed disabled:pointer-events-none"
-                  title="Next Date"
-                >
-                  <ChevronRight className="h-3.5 w-3.5" />
-                </button>
+                {isDatePickerModalOpen && (
+                  <CustomDatePickerModal
+                    selectedDate={selectedDate}
+                    onSelectDate={(newDateStr) => setSelectedDate(newDateStr)}
+                    onClose={() => setIsDatePickerModalOpen(false)}
+                    align="right"
+                    triggerRef={headerDatePickerRef}
+                  />
+                )}
               </div>
+
+              <button
+                onClick={handleNextDate}
+                disabled={selectedDate >= systemToday}
+                className="p-1 text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-white transition cursor-pointer disabled:opacity-30 disabled:cursor-not-allowed disabled:pointer-events-none"
+                title="Next Date"
+              >
+                <ChevronRight className="h-3.5 w-3.5" />
+              </button>
             </div>
-          )}
+          </div>
 
           {/* 3. Circular Dark/Light Mode Toggle Button */}
           <button

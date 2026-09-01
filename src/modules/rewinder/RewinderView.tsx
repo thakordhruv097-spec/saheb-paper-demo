@@ -27,10 +27,12 @@ import {
 
 import { WorkflowStepBadge, WORKFLOW_STEPS } from '../../components/WorkflowStepBadge';
 import { useBodyScrollLock } from '../../hooks/useBodyScrollLock';
+import { useDateFilter, isDateInTimeframe } from '../../context/DateFilterContext';
 
 export const RewinderView: React.FC = () => {
   const { t } = useTranslation();
   const { user } = useAuth();
+  const { timeframe, selectedDate } = useDateFilter();
 
   const [rolls] = useState<MachineRoll[]>(() => getRolls());
   const [reels, setReels] = useState<Reel[]>(() => getReels());
@@ -220,15 +222,8 @@ export const RewinderView: React.FC = () => {
         if (statusFilter === 'GRADE_A' && r.qcGrade !== 'A') return false;
         if (statusFilter === 'GRADE_B' && r.qcGrade !== 'B') return false;
       }
-      // 4. Date Filter
-      if (dateFilter === 'today') {
-        const todayStr = new Date().toISOString().substring(0, 10);
-        if (!r.productionDate.startsWith(todayStr)) return false;
-      } else if (dateFilter === '7days') {
-        const weekAgo = new Date();
-        weekAgo.setDate(weekAgo.getDate() - 7);
-        if (new Date(r.productionDate) < weekAgo) return false;
-      }
+      // 4. Date Filter (Global Timeframe: Day, Week, Month, All)
+      if (!isDateInTimeframe(r.productionDate, selectedDate, timeframe)) return false;
       // 5. Search Term
       if (searchTerm.trim()) {
         const q = searchTerm.toLowerCase();
@@ -243,7 +238,7 @@ export const RewinderView: React.FC = () => {
       }
       return true;
     });
-  }, [reels, filterProduct, filterGsm, filterSize, filterPly, selectedProductFilter, statusFilter, dateFilter, searchTerm]);
+  }, [reels, filterProduct, filterGsm, filterSize, filterPly, selectedProductFilter, statusFilter, dateFilter, searchTerm, timeframe, selectedDate]);
 
   // Group filtered reels strictly into single running roll groups (by parentRollNo)
   const groupedBatches = useMemo(() => {

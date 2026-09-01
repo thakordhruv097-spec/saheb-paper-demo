@@ -10,11 +10,13 @@ import { CustomSearchableSelect } from '../../components/CustomSearchableSelect'
 import { Cog, Plus, Info, Search, Calendar, Clock } from 'lucide-react';
 
 import { WorkflowStepBadge, WORKFLOW_STEPS } from '../../components/WorkflowStepBadge';
+import { useDateFilter, isDateInTimeframe } from '../../context/DateFilterContext';
 
 export const MachineView: React.FC = () => {
   const { t } = useTranslation();
   const { user } = useAuth();
   const navigate = useNavigate();
+  const { timeframe, selectedDate } = useDateFilter();
 
   const [rolls, setRolls] = useState<MachineRoll[]>(() => getRolls());
   const products = getProducts();
@@ -33,6 +35,10 @@ export const MachineView: React.FC = () => {
   // Filtered Rolls Memo
   const filteredRolls = useMemo(() => {
     let list = rolls;
+    // 1. Timeframe Filter (Day, Week, Month, All)
+    if (timeframe && selectedDate) {
+      list = list.filter(r => isDateInTimeframe(r.date, selectedDate, timeframe));
+    }
     if (searchRoll.trim()) {
       const term = searchRoll.toLowerCase();
       list = list.filter(r => 
@@ -47,7 +53,7 @@ export const MachineView: React.FC = () => {
     if (machShiftFilter && machShiftFilter !== 'all') list = list.filter(r => r.shift === machShiftFilter);
     if (machProductFilter && machProductFilter !== 'all') list = list.filter(r => r.product === machProductFilter);
     return list;
-  }, [rolls, searchRoll, machDateFrom, machDateTo, machShiftFilter, machProductFilter]);
+  }, [rolls, searchRoll, machDateFrom, machDateTo, machShiftFilter, machProductFilter, timeframe, selectedDate]);
 
   // Form States - load from localStorage if present
   const [dateStr, setDateStr] = useState(() => {

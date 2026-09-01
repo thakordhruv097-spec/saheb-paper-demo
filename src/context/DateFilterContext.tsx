@@ -54,6 +54,19 @@ export const getDateRangeForTimeframe = (selectedDate: string, timeframe: Timefr
   return { startStr: selectedDate, endStr: selectedDate, label: selectedDate };
 };
 
+export const isDateInTimeframe = (targetDateStr: string | undefined, selectedDate: string, timeframe: TimeframeMode): boolean => {
+  if (!targetDateStr) return false;
+  if (timeframe === 'all') return true;
+  const target = targetDateStr.substring(0, 10);
+  if (timeframe === 'day') return target === selectedDate;
+  if (timeframe === 'month') return target.startsWith(selectedDate.substring(0, 7));
+  if (timeframe === 'week') {
+    const { startStr, endStr } = getDateRangeForTimeframe(selectedDate, 'week');
+    return target >= startStr && target <= endStr;
+  }
+  return true;
+};
+
 export const DateFilterProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [timeframe, setTimeframeState] = useState<TimeframeMode>(() => {
     const saved = localStorage.getItem('saheb_selected_timeframe');
