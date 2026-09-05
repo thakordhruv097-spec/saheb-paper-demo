@@ -267,7 +267,7 @@ export const QRTraceabilityView: React.FC = () => {
                 </span>
               </div>
 
-              <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 text-xs font-semibold">
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 text-xs font-semibold">
                 <div className="p-4 bg-slate-50 dark:bg-slate-900/60 rounded-2xl border border-slate-200 dark:border-slate-800">
                   <p className="text-[10px] text-slate-400 font-black uppercase mb-1">Wood Used</p>
                   <p className="font-bold text-slate-900 dark:text-white font-mono">{activeBoilerLog.woodUsed} kg</p>
@@ -279,10 +279,6 @@ export const QRTraceabilityView: React.FC = () => {
                 <div className="p-4 bg-slate-50 dark:bg-slate-900/60 rounded-2xl border border-slate-200 dark:border-slate-800">
                   <p className="text-[10px] text-slate-400 font-black uppercase mb-1">Pressure</p>
                   <p className="font-bold text-slate-900 dark:text-white font-mono">{activeBoilerLog.pressure} psi</p>
-                </div>
-                <div className="p-4 bg-slate-50 dark:bg-slate-900/60 rounded-2xl border border-slate-200 dark:border-slate-800">
-                  <p className="text-[10px] text-slate-400 font-black uppercase mb-1">Temp</p>
-                  <p className="font-bold text-slate-900 dark:text-white font-mono">{activeBoilerLog.temperature} °C</p>
                 </div>
               </div>
 

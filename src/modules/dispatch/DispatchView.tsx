@@ -223,8 +223,12 @@ export const DispatchView: React.FC<DispatchViewProps> = ({ initialTab = 'orders
   // 1. Order Creation States
   const [selectedPartyId, setSelectedPartyId] = useState('');
   const [selectedProductId, setSelectedProductId] = useState('');
-  const [orderQty, setOrderQty] = useState('');
-  const [orderDue, setOrderDue] = useState(() => new Date().toISOString().substring(0, 10));
+  const [orderGsm, setOrderGsm] = useState('16');
+  const [orderSize, setOrderSize] = useState('30');
+  const [orderPly, setOrderPly] = useState('2');
+  const [orderTons, setOrderTons] = useState('25');
+  const [orderQty, setOrderQty] = useState('20');
+  const [orderReceiveDate, setOrderReceiveDate] = useState(() => new Date().toISOString().substring(0, 10));
   const [openOrderDuePicker, setOpenOrderDuePicker] = useState(false);
 
   // 2. Packing Slip Form States
@@ -234,8 +238,6 @@ export const DispatchView: React.FC<DispatchViewProps> = ({ initialTab = 'orders
   const [slipPartyId, setSlipPartyId] = useState('');
   const [slipVehicleId, setSlipVehicleId] = useState('');
   const [selectedReelNos, setSelectedReelNos] = useState<string[]>([]);
-  const [driverName, setDriverName] = useState('');
-  const [driverMobile, setDriverMobile] = useState('');
   const [receiverSig, setReceiverSig] = useState('');
 
   // Custom Party Selection Dropdown States
@@ -411,6 +413,26 @@ export const DispatchView: React.FC<DispatchViewProps> = ({ initialTab = 'orders
       .slice(0, 4);
   }, [barcodeGunInput, availableReels, selectedReelNos]);
 
+  // Live selected reels list and aggregated weight for Challan PDF preview
+  const selectedReelsList = useMemo(() => {
+    return availableReels.filter(r => selectedReelNos.includes(r.reelNo));
+  }, [availableReels, selectedReelNos]);
+
+  const totalSelectedWeight = useMemo(() => {
+    return selectedReelsList.reduce((sum, r) => sum + (r.weight || 0), 0);
+  }, [selectedReelsList]);
+
+  const selectedSpecSummary = useMemo(() => {
+    const map: { [k: string]: { label: string; count: number; weight: number } } = {};
+    selectedReelsList.forEach(r => {
+      const k = `${r.product || 'Tissue Paper'} • ${r.gsm} GSM • ${r.size} CM • ${r.ply || 1}P`;
+      if (!map[k]) map[k] = { label: k, count: 0, weight: 0 };
+      map[k].count += 1;
+      map[k].weight += (r.weight || 0);
+    });
+    return Object.values(map);
+  }, [selectedReelsList]);
+
   // Fast Batch Selection Actions
   const handleSelectAllFiltered = () => {
     const allNos = filteredAvailableReels.map(r => r.reelNo);
@@ -460,21 +482,32 @@ export const DispatchView: React.FC<DispatchViewProps> = ({ initialTab = 'orders
     }
   };
 
+  // Handle Product select in Order Booking
+  const handleSelectOrderProduct = (prodId: string) => {
+    setSelectedProductId(prodId);
+    const prod = products.find(p => p.id === prodId);
+    if (prod) {
+      setOrderGsm(String(prod.gsm || 16));
+      setOrderSize(String(prod.size || 30));
+      setOrderPly(String(prod.ply || 2));
+    }
+  };
+
   // Handle Order submit
   const handleOrderSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     setSuccessMsg('');
     setErrorMsg('');
 
-    if (!selectedPartyId || !selectedProductId || !orderQty || !orderDue) {
-      setErrorMsg('All order fields are required');
+    if (!selectedPartyId || !selectedProductId || (!orderQty && !orderTons) || !orderReceiveDate) {
+      setErrorMsg('Please select Customer Party, Product, Quantity and Receive Date');
       return;
     }
 
-    const qty = parseInt(orderQty);
+    const qty = parseInt(orderQty) || Math.round(((parseFloat(orderTons) || 1) * 1000) / 1200) || 1;
     const prod = products.find(p => p.id === selectedProductId);
-    if (!prod || isNaN(qty) || qty <= 0) {
-      setErrorMsg('Invalid product or quantity selection');
+    if (!prod) {
+      setErrorMsg('Invalid product selection');
       return;
     }
 
@@ -482,22 +515,24 @@ export const DispatchView: React.FC<DispatchViewProps> = ({ initialTab = 'orders
       id: `or-${Date.now()}`,
       partyId: selectedPartyId,
       productId: selectedProductId,
-      gsm: prod.gsm,
-      size: prod.size,
-      ply: prod.ply,
+      gsm: parseFloat(orderGsm) || prod.gsm,
+      size: parseFloat(orderSize) || prod.size,
+      ply: parseInt(orderPly) || prod.ply,
       qty,
-      dueDate: orderDue,
+      weightTons: parseFloat(orderTons) || parseFloat(((qty * 1200) / 1000).toFixed(2)),
+      receiveDate: orderReceiveDate,
+      dueDate: orderReceiveDate,
       status: 'PENDING',
       dispatchedQty: 0,
     };
 
     savePendingOrder(newOrder, user?.displayName || 'System');
     setOrders(getPendingOrders());
-    setSuccessMsg('Pending Order successfully registered!');
+    setSuccessMsg('Customer Order Booking successfully registered!');
     setSelectedPartyId('');
     setSelectedProductId('');
-    setOrderQty('');
-    setOrderDue('');
+    setOrderTons('25');
+    setOrderQty('20');
   };
 
   // Toggle reel selection
@@ -526,16 +561,6 @@ export const DispatchView: React.FC<DispatchViewProps> = ({ initialTab = 'orders
       setErrorMsg(`Challan number ${targetSlipNo} has already been logged.`);
       return;
     }
-    if (driverMobile.trim()) {
-      if (driverMobile.length !== 10 || !/^[6-9]\d{9}$/.test(driverMobile)) {
-        setErrorMsg('Please enter a valid 10-digit Indian Mobile Number starting with 6, 7, 8, or 9 (e.g. 9876543210).');
-        return;
-      }
-    }
-
-    const driverFormatted = driverName.trim()
-      ? (driverMobile.trim() ? `${driverName.trim()} (+91 ${driverMobile.trim()})` : driverName.trim())
-      : (driverMobile.trim() ? `Driver (+91 ${driverMobile.trim()})` : 'Driver On Duty');
 
     const newSlip: PackingSlip = {
       id: `slip-${Date.now()}`,
@@ -544,7 +569,7 @@ export const DispatchView: React.FC<DispatchViewProps> = ({ initialTab = 'orders
       partyId: slipPartyId,
       vehicleId: slipVehicleId.trim(),
       reelNos: [...selectedReelNos],
-      driverSignature: driverFormatted,
+      driverSignature: 'Gate Verified',
       receiverSignature: receiverSig.trim() || 'Gate Verified',
       status: 'DRAFT',
     };
@@ -558,8 +583,6 @@ export const DispatchView: React.FC<DispatchViewProps> = ({ initialTab = 'orders
     setSlipPartyId('');
     setSlipVehicleId('');
     setSelectedReelNos([]);
-    setDriverName('');
-    setDriverMobile('');
     setReceiverSig('');
     handleTabChange('slips_list');
   };
@@ -892,13 +915,6 @@ export const DispatchView: React.FC<DispatchViewProps> = ({ initialTab = 'orders
                   <h1 className="text-xl sm:text-2xl font-black tracking-tight font-heading text-slate-900 dark:text-white">
                     {initialTab === 'orders' ? 'Order Bookings' : 'Dispatch Receipt'}
                   </h1>
-                  <WorkflowStepBadge
-                    stepInfo={
-                      initialTab === 'orders'
-                        ? WORKFLOW_STEPS.orderBooking
-                        : WORKFLOW_STEPS.dispatchReceipt
-                    }
-                  />
                 </div>
                 <p className="text-xs sm:text-sm text-slate-500 dark:text-slate-400 font-medium mt-0.5">
                   {initialTab === 'orders'
@@ -1029,11 +1045,12 @@ export const DispatchView: React.FC<DispatchViewProps> = ({ initialTab = 'orders
                   <table className="w-full text-left text-xs border-collapse">
                     <thead>
                       <tr className="border-b border-slate-100 dark:border-slate-800 text-slate-400 uppercase text-[10px] font-black tracking-wider">
-                        <th className="py-3 px-3">Customer</th>
+                        <th className="py-3 px-3">Customer Party</th>
                         <th className="py-3 px-3">Product Specs</th>
                         <th className="py-3 px-3">Ordered Qty</th>
                         <th className="py-3 px-3">Dispatched</th>
-                        <th className="py-3 px-3">Due Date</th>
+                        <th className="py-3 px-3">Stock vs Pending</th>
+                        <th className="py-3 px-3">Receive Date</th>
                         <th className="py-3 px-3 text-right">Status</th>
                       </tr>
                     </thead>
@@ -1041,13 +1058,42 @@ export const DispatchView: React.FC<DispatchViewProps> = ({ initialTab = 'orders
                       {filteredOrders.map(order => {
                         const partyObj = parties.find(p => p.id === order.partyId);
                         const prodObj = products.find(p => p.id === order.productId);
+                        const pendingReels = Math.max(0, order.qty - order.dispatchedQty);
+                        const inStockMatching = reels.filter(
+                          r => (r.status === 'IN_STOCK' || r.status === 'QC_PASSED') &&
+                               !r.challanNo &&
+                               r.gsm === order.gsm &&
+                               r.size === order.size &&
+                               r.ply === order.ply
+                        );
+                        const hasEnoughStock = inStockMatching.length >= pendingReels;
+
                         return (
                           <tr key={order.id} className="hover:bg-blue-50/50 dark:hover:bg-slate-800/40 transition">
                             <td className="py-3 px-3 font-bold text-slate-900 dark:text-white">{partyObj?.name}</td>
-                            <td className="py-3 px-3 text-slate-700 dark:text-slate-300">{prodObj?.name} ({order.gsm}GSM | {order.size}cm)</td>
-                            <td className="py-3 px-3 font-bold text-slate-900 dark:text-white font-mono">{order.qty} reels</td>
+                            <td className="py-3 px-3 text-slate-700 dark:text-slate-300">
+                              <span className="font-extrabold">{prodObj?.name || 'Tissue Paper'}</span>
+                              <span className="text-[11px] text-slate-500 block font-mono">{order.gsm} GSM &bull; {order.size} cm &bull; {order.ply} Ply</span>
+                            </td>
+                            <td className="py-3 px-3 font-bold text-slate-900 dark:text-white font-mono">
+                              {order.weightTons ? `${order.weightTons} T` : ''} <span className="text-slate-500 font-normal">({order.qty} reels)</span>
+                            </td>
                             <td className="py-3 px-3 text-emerald-600 dark:text-emerald-400 font-bold font-mono">{order.dispatchedQty} reels</td>
-                            <td className="py-3 px-3 text-slate-500 dark:text-slate-400 font-mono text-[11px]">{order.dueDate}</td>
+                            <td className="py-3 px-3">
+                              <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-black uppercase tracking-wider ${
+                                hasEnoughStock
+                                  ? 'bg-emerald-100 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300 border border-emerald-300 dark:border-emerald-800'
+                                  : 'bg-amber-100 dark:bg-amber-950/60 text-amber-800 dark:text-amber-300 border border-amber-300 dark:border-amber-800'
+                              }`}>
+                                <span className={`h-1.5 w-1.5 rounded-full ${hasEnoughStock ? 'bg-emerald-500' : 'bg-amber-500'}`} />
+                                {hasEnoughStock
+                                  ? `Ready (${inStockMatching.length} in stock)`
+                                  : `Shortfall (${inStockMatching.length}/${pendingReels} stock)`}
+                              </span>
+                            </td>
+                            <td className="py-3 px-3 text-slate-500 dark:text-slate-400 font-mono text-[11px]">
+                              {order.receiveDate || order.dueDate}
+                            </td>
                             <td className="py-3 px-3 text-right">
                               <span className={`px-2.5 py-0.5 rounded-full text-[9px] font-black uppercase tracking-wider ${
                                 order.status === 'PENDING' ? 'bg-purple-100 dark:bg-purple-950/40 text-purple-700 dark:text-purple-300 border border-purple-200' :
@@ -1069,6 +1115,16 @@ export const DispatchView: React.FC<DispatchViewProps> = ({ initialTab = 'orders
                   {filteredOrders.map(order => {
                     const partyObj = parties.find(p => p.id === order.partyId);
                     const prodObj = products.find(p => p.id === order.productId);
+                    const pendingReels = Math.max(0, order.qty - order.dispatchedQty);
+                    const inStockMatching = reels.filter(
+                      r => (r.status === 'IN_STOCK' || r.status === 'QC_PASSED') &&
+                           !r.challanNo &&
+                           r.gsm === order.gsm &&
+                           r.size === order.size &&
+                           r.ply === order.ply
+                    );
+                    const hasEnoughStock = inStockMatching.length >= pendingReels;
+
                     return (
                       <div key={order.id} className="p-4 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl space-y-2 text-xs text-left">
                         <div className="flex justify-between items-center border-b pb-2 dark:border-slate-800">
@@ -1084,19 +1140,21 @@ export const DispatchView: React.FC<DispatchViewProps> = ({ initialTab = 'orders
                         <div className="grid grid-cols-2 gap-y-2 text-[11px] text-slate-600 dark:text-slate-400">
                           <div>
                             <span className="font-bold text-slate-400 block uppercase tracking-wider text-[9px]">Product Spec</span>
-                            <span className="font-semibold text-slate-800 dark:text-white">{prodObj?.name} ({order.gsm}GSM | {order.size}cm)</span>
+                            <span className="font-semibold text-slate-800 dark:text-white">{prodObj?.name} ({order.gsm}GSM | {order.size}cm | {order.ply}P)</span>
                           </div>
                           <div>
-                            <span className="font-bold text-slate-400 block uppercase tracking-wider text-[9px]">Ordered Quantity</span>
-                            <span className="font-bold text-slate-800 dark:text-white">{order.qty} reels</span>
+                            <span className="font-bold text-slate-400 block uppercase tracking-wider text-[9px]">Ordered Weight / Qty</span>
+                            <span className="font-bold text-slate-800 dark:text-white font-mono">{order.weightTons ? `${order.weightTons} T` : ''} ({order.qty} reels)</span>
                           </div>
                           <div>
-                            <span className="font-bold text-slate-400 block uppercase tracking-wider text-[9px]">Dispatched Quantity</span>
-                            <span className="font-bold text-emerald-600 dark:text-emerald-400">{order.dispatchedQty} reels</span>
+                            <span className="font-bold text-slate-400 block uppercase tracking-wider text-[9px]">Stock vs Pending</span>
+                            <span className={`font-bold ${hasEnoughStock ? 'text-emerald-600' : 'text-amber-600'}`}>
+                              {hasEnoughStock ? `Ready (${inStockMatching.length} stock)` : `Shortfall (${inStockMatching.length}/${pendingReels})`}
+                            </span>
                           </div>
                           <div>
-                            <span className="font-bold text-slate-400 block uppercase tracking-wider text-[9px]">Due Date</span>
-                            <span className="font-medium text-slate-800 dark:text-white">{order.dueDate}</span>
+                            <span className="font-bold text-slate-400 block uppercase tracking-wider text-[9px]">Receive Date</span>
+                            <span className="font-medium text-slate-800 dark:text-white font-mono">{order.receiveDate || order.dueDate}</span>
                           </div>
                         </div>
                       </div>
@@ -1111,7 +1169,7 @@ export const DispatchView: React.FC<DispatchViewProps> = ({ initialTab = 'orders
           <div className="bg-white dark:bg-surface-dark rounded-3xl p-6 shadow-sm space-y-4">
             <h3 className="text-xs font-black text-slate-900 dark:text-white uppercase tracking-wider mb-4 border-b border-slate-100 dark:border-slate-800 pb-3 flex items-center gap-2">
               <Plus className="h-4 w-4 text-primary" />
-              Register New Order
+              Register New Order Booking
             </h3>
 
             <form onSubmit={handleOrderSubmit} className="space-y-4">
@@ -1132,44 +1190,109 @@ export const DispatchView: React.FC<DispatchViewProps> = ({ initialTab = 'orders
 
               <div>
                 <CustomSearchableSelect
-                  label="SELECT PRODUCT SPECS"
-                  placeholder="-- Choose Product Specs --"
+                  label="SELECT PRODUCT"
+                  placeholder="-- Choose Product --"
                   value={selectedProductId}
-                  onChange={setSelectedProductId}
+                  onChange={handleSelectOrderProduct}
                   options={products.map(p => ({
                     value: p.id,
-                    label: p.name,
+                    label: `${p.name} (${p.gsm} GSM, ${p.size} cm)`,
                   }))}
                   required
                 />
               </div>
 
-              <div>
-                <label className="block text-[11px] font-black text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-1.5">Ordered Reels Count</label>
-                <input
-                  type="number"
-                  value={orderQty}
-                  onChange={e => setOrderQty(e.target.value)}
-                  className="block w-full py-2.5 px-3.5 bg-slate-50 dark:bg-slate-900 rounded-2xl text-xs font-bold focus:outline-none focus:ring-2 focus:ring-primary dark:text-white font-mono"
-                  placeholder="e.g. 20"
-                />
+              {/* Specs Grid: GSM, Size, Ply */}
+              <div className="grid grid-cols-3 gap-2.5">
+                <div>
+                  <label className="block text-[10px] font-black text-slate-500 uppercase tracking-wider mb-1">GSM</label>
+                  <input
+                    type="number"
+                    value={orderGsm}
+                    onChange={e => setOrderGsm(e.target.value)}
+                    className="w-full p-2 bg-slate-50 dark:bg-slate-900 rounded-xl text-xs font-bold font-mono dark:text-white border border-slate-200 dark:border-slate-700"
+                  />
+                </div>
+                <div>
+                  <label className="block text-[10px] font-black text-slate-500 uppercase tracking-wider mb-1">Size (cm)</label>
+                  <input
+                    type="number"
+                    value={orderSize}
+                    onChange={e => setOrderSize(e.target.value)}
+                    className="w-full p-2 bg-slate-50 dark:bg-slate-900 rounded-xl text-xs font-bold font-mono dark:text-white border border-slate-200 dark:border-slate-700"
+                  />
+                </div>
+                <div>
+                  <label className="block text-[10px] font-black text-slate-500 uppercase tracking-wider mb-1">Ply</label>
+                  <select
+                    value={orderPly}
+                    onChange={e => setOrderPly(e.target.value)}
+                    className="w-full p-2 bg-slate-50 dark:bg-slate-900 rounded-xl text-xs font-bold dark:text-white border border-slate-200 dark:border-slate-700"
+                  >
+                    <option value="1">1 Ply</option>
+                    <option value="2">2 Ply</option>
+                    <option value="3">3 Ply</option>
+                  </select>
+                </div>
               </div>
 
+              {/* Weight in Tons & Reels count */}
+              <div className="grid grid-cols-2 gap-2.5">
+                <div>
+                  <label className="block text-[10px] font-black text-slate-500 uppercase tracking-wider mb-1">Weight (Tons)</label>
+                  <input
+                    type="number"
+                    step="0.1"
+                    value={orderTons}
+                    onChange={e => {
+                      const val = e.target.value;
+                      setOrderTons(val);
+                      if (val) {
+                        setOrderQty(String(Math.round(((parseFloat(val) || 0) * 1000) / 1200)));
+                      }
+                    }}
+                    className="w-full p-2 bg-slate-50 dark:bg-slate-900 rounded-xl text-xs font-bold font-mono text-emerald-600 dark:text-emerald-400 border border-slate-200 dark:border-slate-700"
+                    placeholder="25.0"
+                  />
+                </div>
+                <div>
+                  <label className="block text-[10px] font-black text-slate-500 uppercase tracking-wider mb-1">Ordered Reels</label>
+                  <input
+                    type="number"
+                    value={orderQty}
+                    onChange={e => {
+                      const val = e.target.value;
+                      setOrderQty(val);
+                      if (val) {
+                        setOrderTons(((parseFloat(val) * 1200) / 1000).toFixed(1));
+                      }
+                    }}
+                    className="w-full p-2 bg-slate-50 dark:bg-slate-900 rounded-xl text-xs font-bold font-mono dark:text-white border border-slate-200 dark:border-slate-700"
+                    placeholder="20"
+                  />
+                </div>
+              </div>
+
+              {/* Receive Date */}
               <div className="relative">
-                <label className="block text-[11px] font-black text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-1.5">Due Date</label>
+                <label className="block text-[11px] font-black text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-1.5">
+                  Receive Date
+                </label>
                 <button
                   type="button"
                   onClick={() => setOpenOrderDuePicker(prev => !prev)}
-                  className="w-full flex items-center justify-between py-2.5 px-3.5 bg-slate-50 dark:bg-slate-900 rounded-2xl text-xs font-bold text-slate-800 dark:text-white cursor-pointer hover:bg-slate-100 dark:hover:bg-slate-800 transition"
+                  className="w-full flex items-center justify-between py-2.5 px-3.5 bg-slate-50 dark:bg-slate-900 rounded-2xl text-xs font-bold text-slate-800 dark:text-white cursor-pointer hover:bg-slate-100 dark:hover:bg-slate-800 transition border border-slate-200 dark:border-slate-700"
                 >
-                  <span className={orderDue ? 'font-bold' : 'text-slate-400 font-normal'}>{orderDue || 'dd-mm-yyyy'}</span>
+                  <span className={orderReceiveDate ? 'font-bold font-mono' : 'text-slate-400 font-normal'}>
+                    {orderReceiveDate || 'dd-mm-yyyy'}
+                  </span>
                   <Calendar className="h-4 w-4 text-primary dark:text-blue-400" />
                 </button>
                 {openOrderDuePicker && (
                   <CustomDatePickerModal
-                    selectedDate={orderDue}
+                    selectedDate={orderReceiveDate}
                     onSelectDate={(newDate) => {
-                      setOrderDue(newDate);
+                      setOrderReceiveDate(newDate);
                       setOpenOrderDuePicker(false);
                     }}
                     onClose={() => setOpenOrderDuePicker(false)}
@@ -1180,9 +1303,9 @@ export const DispatchView: React.FC<DispatchViewProps> = ({ initialTab = 'orders
 
               <button
                 type="submit"
-                className="btn-primary-gradient w-full py-3 text-xs uppercase tracking-wider cursor-pointer"
+                className="btn-primary-gradient w-full py-3 text-xs uppercase tracking-wider cursor-pointer font-black shadow-lg"
               >
-                Log Order Record
+                Book Customer Order
               </button>
             </form>
           </div>
@@ -1226,8 +1349,8 @@ export const DispatchView: React.FC<DispatchViewProps> = ({ initialTab = 'orders
               </span>
             </div>
 
-            {/* Form Fields in 5-Column Responsive Grid */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3.5">
+            {/* Form Fields in 3-Column Responsive Grid */}
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3.5">
               {/* Custom Modern Searchable Party Dropdown */}
               <div className="relative" ref={partyDropdownRef}>
                 <label className="block text-[11px] font-extrabold text-slate-700 dark:text-slate-300 mb-1.5 flex items-center justify-between">
@@ -1345,76 +1468,15 @@ export const DispatchView: React.FC<DispatchViewProps> = ({ initialTab = 'orders
                     type="text"
                     list="dispatch-truck-suggestions"
                     value={slipVehicleId}
-                    onChange={e => {
-                      const val = e.target.value;
-                      setSlipVehicleId(val);
-                      const vObj = vehicles.find(v => v.vehicleNo.toLowerCase() === val.toLowerCase() || v.id === val);
-                      if (vObj) {
-                        if (vObj.driverName && !driverName) {
-                          setDriverName(vObj.driverName);
-                        }
-                        if (vObj.driverContact && !driverMobile) {
-                          const cleanMob = vObj.driverContact.replace(/\D/g, '').slice(0, 10);
-                          setDriverMobile(cleanMob);
-                        }
-                      }
-                    }}
-                    className="w-full py-2.5 px-3 bg-slate-50 dark:bg-slate-900 rounded-2xl text-xs font-bold focus:outline-none dark:text-white uppercase font-mono placeholder:normal-case placeholder:font-sans"
+                    onChange={e => setSlipVehicleId(e.target.value)}
+                    className="w-full py-2.5 px-3 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-2xl text-xs font-bold focus:outline-none dark:text-white uppercase font-mono placeholder:normal-case placeholder:font-sans"
                     placeholder="e.g. GJ-05-BX-4921"
                   />
                   <datalist id="dispatch-truck-suggestions">
                     {vehicles.map(v => (
-                      <option key={v.id} value={v.vehicleNo}>{v.driverName ? `Driver: ${v.driverName}` : ''}</option>
+                      <option key={v.id} value={v.vehicleNo}>{v.vehicleNo}</option>
                     ))}
                   </datalist>
-                </div>
-              </div>
-
-              <div>
-                <label className="block text-[11px] font-extrabold text-slate-700 dark:text-slate-300 mb-1.5">
-                  Driver Name
-                </label>
-                <input
-                  type="text"
-                  value={driverName}
-                  onChange={e => setDriverName(e.target.value)}
-                  className="w-full py-2.5 px-3 bg-slate-50 dark:bg-slate-900 rounded-2xl text-xs font-bold focus:outline-none dark:text-white"
-                  placeholder="e.g. Ramesh Patel"
-                />
-              </div>
-
-              <div>
-                <label className="block text-[11px] font-extrabold text-slate-700 dark:text-slate-300 mb-1.5 flex items-center justify-between">
-                  <span>Driver Mobile</span>
-                  <span className={`text-[10px] font-mono font-bold ${
-                    driverMobile.length === 10
-                      ? (/^[6-9]/.test(driverMobile) ? 'text-emerald-600 dark:text-emerald-400' : 'text-red-500')
-                      : driverMobile.length > 0 ? 'text-amber-500' : 'text-slate-400'
-                  }`}>
-                    {driverMobile.length}/10
-                  </span>
-                </label>
-                <div className="relative flex items-center">
-                  <span className="absolute left-3 text-xs font-black text-slate-400 select-none">
-                    +91
-                  </span>
-                  <input
-                    type="tel"
-                    inputMode="numeric"
-                    pattern="[6-9][0-9]{9}"
-                    maxLength={10}
-                    value={driverMobile}
-                    onChange={e => {
-                      const cleanDigits = e.target.value.replace(/\D/g, '').slice(0, 10);
-                      setDriverMobile(cleanDigits);
-                    }}
-                    className={`w-full py-2.5 pl-10 pr-2.5 bg-slate-50 dark:bg-slate-900 border rounded-2xl text-xs font-bold font-mono focus:outline-none dark:text-white ${
-                      driverMobile.length === 10
-                        ? (/^[6-9]/.test(driverMobile) ? 'border-emerald-500 ring-1 ring-emerald-500/30' : 'border-red-500 ring-1 ring-red-500/30')
-                        : 'border-slate-200 dark:border-slate-700'
-                    }`}
-                    placeholder="9876543210"
-                  />
                 </div>
               </div>
 
@@ -1425,7 +1487,7 @@ export const DispatchView: React.FC<DispatchViewProps> = ({ initialTab = 'orders
                 <button
                   type="button"
                   onClick={() => setOpenSlipDatePicker(prev => !prev)}
-                  className="w-full flex items-center justify-between py-2.5 px-3.5 bg-slate-50 dark:bg-slate-900 rounded-2xl text-xs font-bold text-slate-800 dark:text-white cursor-pointer hover:bg-slate-100 dark:hover:bg-slate-800 transition"
+                  className="w-full flex items-center justify-between py-2.5 px-3.5 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-2xl text-xs font-bold text-slate-800 dark:text-white cursor-pointer hover:bg-slate-100 dark:hover:bg-slate-800 transition"
                 >
                   <span className={slipDate ? 'font-mono' : 'text-slate-400 font-normal'}>{slipDate || 'dd-mm-yyyy'}</span>
                   <Calendar className="h-4 w-4 text-blue-600 dark:text-blue-400" />
@@ -1536,34 +1598,6 @@ export const DispatchView: React.FC<DispatchViewProps> = ({ initialTab = 'orders
                     </button>
                   )}
                 </div>
-
-                {/* View Switcher: Grid vs Table */}
-                <div className="flex items-center gap-1 bg-slate-100 dark:bg-slate-900 p-1 rounded-xl shrink-0">
-                  <button
-                    type="button"
-                    onClick={() => setReelViewMode('grid')}
-                    className={`p-1.5 rounded-lg transition cursor-pointer ${
-                      reelViewMode === 'grid'
-                        ? 'bg-white dark:bg-slate-800 text-blue-600 shadow-xs'
-                        : 'text-slate-500 hover:text-slate-800 dark:hover:text-white'
-                    }`}
-                    title="Card Grid View"
-                  >
-                    <LayoutGrid className="h-3.5 w-3.5" />
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setReelViewMode('table')}
-                    className={`p-1.5 rounded-lg transition cursor-pointer ${
-                      reelViewMode === 'table'
-                        ? 'bg-white dark:bg-slate-800 text-blue-600 shadow-xs'
-                        : 'text-slate-500 hover:text-slate-800 dark:hover:text-white'
-                    }`}
-                    title="Compact High-Density Table View"
-                  >
-                    <List className="h-3.5 w-3.5" />
-                  </button>
-                </div>
               </div>
             </div>
 
@@ -1617,13 +1651,11 @@ export const DispatchView: React.FC<DispatchViewProps> = ({ initialTab = 'orders
               )}
             </div>
 
-            {/* 3. Fast Batch Selection Buttons, Product, Grade, GSM & Size Filter Chips */}
-            <div className="space-y-2 pt-1 border-t border-slate-100 dark:border-slate-800">
-              
-              {/* Row A: Quick 1-Click Batch Actions */}
+            {/* 3. Streamlined Batch Selection & Quick Actions Bar */}
+            <div className="flex flex-wrap items-center justify-between gap-2 pt-2 border-t border-slate-100 dark:border-slate-800">
               <div className="flex flex-wrap items-center gap-1.5">
                 <span className="text-[10px] font-black text-slate-400 uppercase tracking-wider mr-1">
-                  Batch Select:
+                  Quick Select:
                 </span>
                 
                 <button
@@ -1632,7 +1664,7 @@ export const DispatchView: React.FC<DispatchViewProps> = ({ initialTab = 'orders
                   className="px-2.5 py-1 rounded-lg bg-blue-50 dark:bg-blue-950/50 hover:bg-blue-100 text-blue-700 dark:text-blue-300 text-xs font-extrabold border border-blue-200 dark:border-blue-800 cursor-pointer transition flex items-center gap-1"
                 >
                   <CheckSquare className="h-3 w-3" />
-                  <span>Select All Filtered ({filteredAvailableReels.length})</span>
+                  <span>Select All ({filteredAvailableReels.length})</span>
                 </button>
 
                 <button
@@ -1666,235 +1698,35 @@ export const DispatchView: React.FC<DispatchViewProps> = ({ initialTab = 'orders
                       setSelectedReelNos([]);
                       playBeep();
                     }}
-                    className="px-2.5 py-1 rounded-lg bg-red-50 dark:bg-red-950/40 hover:bg-red-100 text-red-600 dark:text-red-400 text-xs font-extrabold border border-red-200 dark:border-red-800 cursor-pointer transition ml-auto flex items-center gap-1"
+                    className="px-2.5 py-1 rounded-lg bg-red-50 dark:bg-red-950/40 hover:bg-red-100 text-red-600 dark:text-red-400 text-xs font-extrabold border border-red-200 dark:border-red-800 cursor-pointer transition flex items-center gap-1"
                   >
                     <X className="h-3 w-3" />
-                    <span>Clear Selection</span>
+                    <span>Clear Selection ({selectedReelNos.length})</span>
                   </button>
                 )}
               </div>
 
-              {/* Row B: Product & Grade Filter Chips */}
-              <div className="flex flex-wrap items-center gap-1.5 pt-1">
-                <span className="text-[10px] font-black text-slate-400 uppercase tracking-wider mr-1">
-                  Product:
-                </span>
-
+              {reelSearchQuery && (
                 <button
                   type="button"
-                  onClick={() => setReelProductFilters([])}
-                  className={`px-2.5 py-0.5 rounded-full text-xs font-bold cursor-pointer transition ${
-                    reelProductFilters.length === 0
-                      ? 'bg-slate-900 dark:bg-white text-white dark:text-slate-900 shadow-xs'
-                      : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 hover:bg-slate-200'
-                  }`}
+                  onClick={() => setReelSearchQuery('')}
+                  className="px-2.5 py-1 rounded-lg text-xs font-bold text-slate-500 hover:text-slate-700 dark:hover:text-slate-300 cursor-pointer flex items-center gap-1"
                 >
-                  All Products ({availableReels.length})
+                  <RotateCcw className="h-3 w-3" />
+                  <span>Reset Search Filter</span>
                 </button>
-
-                {uniqueProducts.map(prod => {
-                  const count = availableReels.filter(r => r.product === prod).length;
-                  const isSelected = reelProductFilters.includes(prod);
-                  return (
-                    <button
-                      key={prod}
-                      type="button"
-                      onClick={() => toggleProductFilter(prod)}
-                      className={`px-2.5 py-0.5 rounded-full text-xs font-bold cursor-pointer transition flex items-center gap-1 ${
-                        isSelected
-                          ? 'bg-emerald-600 text-white shadow-xs ring-1 ring-emerald-500 font-extrabold'
-                          : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 hover:bg-slate-200'
-                      }`}
-                    >
-                      {isSelected && <span>✓</span>}
-                      <span>{prod}</span>
-                      <span className={`text-[10px] ${isSelected ? 'text-emerald-100' : 'text-slate-400'}`}>({count})</span>
-                    </button>
-                  );
-                })}
-
-                {/* Grade Filter Pill Group (All, Grade A, Grade B) */}
-                <div className="flex items-center gap-1 ml-auto bg-slate-100 dark:bg-slate-900 p-0.5 rounded-xl border border-slate-200 dark:border-slate-800">
-                  <span className="text-[9px] font-black text-slate-400 uppercase px-1">Grade:</span>
-                  <button
-                    type="button"
-                    onClick={() => setReelGradeFilters([])}
-                    className={`px-2 py-0.5 rounded-lg text-[10px] font-extrabold cursor-pointer transition ${
-                      reelGradeFilters.length === 0
-                        ? 'bg-slate-800 text-white dark:bg-slate-200 dark:text-slate-900'
-                        : 'text-slate-600 dark:text-slate-400 hover:text-slate-900'
-                    }`}
-                  >
-                    All
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => toggleGradeFilter('A')}
-                    className={`px-2 py-0.5 rounded-lg text-[10px] font-extrabold cursor-pointer transition ${
-                      reelGradeFilters.includes('A')
-                        ? 'bg-emerald-600 text-white shadow-xs'
-                        : 'text-emerald-700 dark:text-emerald-400 hover:bg-emerald-50 dark:hover:bg-emerald-950/30'
-                    }`}
-                  >
-                    {reelGradeFilters.includes('A') && '✓ '}Grade A
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => toggleGradeFilter('B')}
-                    className={`px-2 py-0.5 rounded-lg text-[10px] font-extrabold cursor-pointer transition ${
-                      reelGradeFilters.includes('B')
-                        ? 'bg-amber-600 text-white shadow-xs'
-                        : 'text-amber-700 dark:text-amber-400 hover:bg-amber-50 dark:hover:bg-amber-950/30'
-                    }`}
-                  >
-                    {reelGradeFilters.includes('B') && '✓ '}Grade B Only
-                  </button>
-                </div>
-              </div>
-
-              {/* Row C: GSM Filter Chips */}
-              <div className="flex flex-wrap items-center gap-1.5 pt-0.5">
-                <span className="text-[10px] font-black text-slate-400 uppercase tracking-wider mr-1">
-                  GSM:
-                </span>
-
-                <button
-                  type="button"
-                  onClick={() => setReelGsmFilters([])}
-                  className={`px-2.5 py-0.5 rounded-full text-xs font-bold cursor-pointer transition ${
-                    reelGsmFilters.length === 0
-                      ? 'bg-blue-900 dark:bg-blue-600 text-white shadow-xs'
-                      : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 hover:bg-slate-200'
-                  }`}
-                >
-                  All GSM
-                </button>
-
-                {uniqueGsms.map(gsm => {
-                  const count = availableReels.filter(r => r.gsm === gsm).length;
-                  const isSelected = reelGsmFilters.includes(gsm);
-                  return (
-                    <button
-                      key={gsm}
-                      type="button"
-                      onClick={() => toggleGsmFilter(gsm)}
-                      className={`px-2.5 py-0.5 rounded-full text-xs font-bold cursor-pointer transition flex items-center gap-1 ${
-                        isSelected
-                          ? 'bg-primary text-white shadow-xs ring-1 ring-blue-500 font-extrabold'
-                          : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 hover:bg-slate-200'
-                      }`}
-                    >
-                      {isSelected && <span>✓</span>}
-                      <span>{gsm} GSM</span>
-                      <span className={`text-[10px] ${isSelected ? 'text-blue-100' : 'text-slate-400'}`}>({count})</span>
-                    </button>
-                  );
-                })}
-              </div>
-
-              {/* Row D: Size Filter Chips */}
-              <div className="flex flex-wrap items-center gap-1.5 pt-0.5">
-                <span className="text-[10px] font-black text-slate-400 uppercase tracking-wider mr-1">
-                  Size:
-                </span>
-
-                <button
-                  type="button"
-                  onClick={() => setReelSizeFilters([])}
-                  className={`px-2.5 py-0.5 rounded-full text-xs font-bold cursor-pointer transition ${
-                    reelSizeFilters.length === 0
-                      ? 'bg-indigo-900 dark:bg-indigo-500 text-white shadow-xs'
-                      : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 hover:bg-slate-200'
-                  }`}
-                >
-                  All Sizes
-                </button>
-
-                {uniqueSizes.map(sz => {
-                  const count = availableReels.filter(r => r.size === sz).length;
-                  const isSelected = reelSizeFilters.includes(sz);
-                  return (
-                    <button
-                      key={sz}
-                      type="button"
-                      onClick={() => toggleSizeFilter(sz)}
-                      className={`px-2.5 py-0.5 rounded-full text-xs font-bold cursor-pointer transition flex items-center gap-1 ${
-                        isSelected
-                          ? 'bg-indigo-600 text-white shadow-xs ring-1 ring-indigo-500 font-extrabold'
-                          : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 hover:bg-slate-200'
-                      }`}
-                    >
-                      {isSelected && <span>✓</span>}
-                      <span>{sz} cm</span>
-                      <span className={`text-[10px] ${isSelected ? 'text-indigo-100' : 'text-slate-400'}`}>({count})</span>
-                    </button>
-                  );
-                })}
-              </div>
-
-              {/* Row E: Ply Filter Chips */}
-              <div className="flex flex-wrap items-center gap-1.5 pt-0.5">
-                <span className="text-[10px] font-black text-slate-400 uppercase tracking-wider mr-1">
-                  Ply:
-                </span>
-
-                <button
-                  type="button"
-                  onClick={() => setReelPlyFilters([])}
-                  className={`px-2.5 py-0.5 rounded-full text-xs font-bold cursor-pointer transition ${
-                    reelPlyFilters.length === 0
-                      ? 'bg-amber-900 dark:bg-amber-600 text-white shadow-xs'
-                      : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 hover:bg-slate-200'
-                  }`}
-                >
-                  All Ply
-                </button>
-
-                {uniquePlys.map(pVal => {
-                  const count = availableReels.filter(r => r.ply === pVal).length;
-                  const isSelected = reelPlyFilters.includes(pVal);
-                  return (
-                    <button
-                      key={pVal}
-                      type="button"
-                      onClick={() => togglePlyFilter(pVal)}
-                      className={`px-2.5 py-0.5 rounded-full text-xs font-bold cursor-pointer transition flex items-center gap-1 ${
-                        isSelected
-                          ? 'bg-amber-600 text-white shadow-xs ring-1 ring-amber-500 font-extrabold'
-                          : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 hover:bg-slate-200'
-                      }`}
-                    >
-                      {isSelected && <span>✓</span>}
-                      <span>{pVal} Ply</span>
-                      <span className={`text-[10px] ${isSelected ? 'text-amber-100' : 'text-slate-400'}`}>({count})</span>
-                    </button>
-                  );
-                })}
-
-                {(reelProductFilters.length > 0 || reelGsmFilters.length > 0 || reelSizeFilters.length > 0 || reelPlyFilters.length > 0 || reelGradeFilters.length > 0) && (
-                  <button
-                    type="button"
-                    onClick={clearAllFilters}
-                    className="px-2.5 py-0.5 rounded-full text-[11px] font-extrabold bg-red-50 dark:bg-red-950/40 text-red-600 dark:text-red-400 hover:bg-red-100 border border-red-200 dark:border-red-800 cursor-pointer transition ml-auto flex items-center gap-1"
-                  >
-                    <X className="h-3 w-3" />
-                    <span>Reset All Filters</span>
-                  </button>
-                )}
-              </div>
-
+              )}
             </div>
 
 
-            {/* 4. REELS LIST: Grid Cards Mode or Compact Table Mode */}
+            {/* 4. REELS LIST: High-Density Table View */}
             {filteredAvailableReels.length === 0 ? (
               <p className="text-xs text-slate-500 py-8 text-center bg-slate-50 dark:bg-slate-900/60 border border-dashed border-slate-200 dark:border-slate-700 rounded-2xl font-semibold">
-                No warehouse reels match your current filter. Try resetting the GSM or Search query.
+                No warehouse reels match your current filter. Try resetting the search query.
               </p>
-            ) : reelViewMode === 'table' ? (
-              
+            ) : (
               /* HIGH-DENSITY COMPACT TABLE VIEW */
-              <div className="border border-slate-200 dark:border-slate-800 rounded-2xl overflow-hidden max-h-[290px] overflow-y-auto">
+              <div className="border border-slate-200 dark:border-slate-800 rounded-2xl overflow-hidden max-h-[300px] overflow-y-auto">
                 <table className="w-full text-left text-xs border-collapse">
                   <thead className="sticky top-0 bg-slate-100 dark:bg-slate-900 text-slate-500 uppercase text-[10px] font-black tracking-wider z-10">
                     <tr className="border-b border-slate-200 dark:border-slate-800">
@@ -1960,80 +1792,253 @@ export const DispatchView: React.FC<DispatchViewProps> = ({ initialTab = 'orders
                   </tbody>
                 </table>
               </div>
-            ) : (
-
-              /* GRID CARDS VIEW (Clean & Compact Scrollable Window) */
-              <div className="max-h-[300px] overflow-y-auto pr-1.5">
-                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-3">
-                  {filteredAvailableReels.map(reel => {
-                    const isChecked = selectedReelNos.includes(reel.reelNo);
-                    return (
-                      <div
-                        key={reel.reelNo}
-                        onClick={() => handleToggleReel(reel.reelNo)}
-                        className={`p-3 border rounded-2xl cursor-pointer transition select-none space-y-2.5 ${
-                          isChecked
-                            ? 'border-blue-600 bg-blue-50/30 dark:border-blue-500 dark:bg-blue-950/20 ring-1 ring-blue-500'
-                            : 'border-slate-200/80 hover:bg-slate-50 dark:border-slate-700/80 dark:hover:bg-slate-800/40 bg-white dark:bg-slate-900/40'
-                        }`}
-                      >
-                        {/* Top Line: Reel No, Product Badge, Grade Pill, Checkbox */}
-                        <div className="flex justify-between items-center border-b pb-1.5 dark:border-slate-800 gap-1.5">
-                          <div className="flex items-center gap-1.5 min-w-0">
-                            <span className="font-mono font-bold text-slate-900 dark:text-white text-xs whitespace-nowrap">
-                              {reel.reelNo}
-                            </span>
-                            {reel.product && (
-                              <span
-                                className="px-1.5 py-0.5 rounded bg-blue-50 dark:bg-blue-950/40 text-blue-700 dark:text-blue-300 text-[10px] font-extrabold whitespace-nowrap"
-                                title={reel.product}
-                              >
-                                {reel.product.replace(/ tissue/i, '')}
-                              </span>
-                            )}
-                          </div>
-                          <div className="flex items-center gap-1.5 shrink-0">
-                            <span className={`text-[9px] font-bold ${
-                              (reel.qcGrade || 'A') === 'A' ? 'text-emerald-500 dark:text-emerald-400' : 'text-amber-500 dark:text-amber-400'
-                            }`}>
-                              Grade {reel.qcGrade || 'A'}
-                            </span>
-                            <input
-                              type="checkbox"
-                              checked={isChecked}
-                              onChange={() => {}} // handled by parent div click
-                              className="h-3.5 w-3.5 rounded border-slate-300 text-blue-600 focus:ring-0 cursor-pointer"
-                            />
-                          </div>
-                        </div>
-
-                        {/* Clean 4-Column Metric Row */}
-                        <div className="grid grid-cols-4 gap-y-1 text-[11px] text-slate-600 dark:text-slate-400">
-                          <div>
-                            <span className="font-medium text-slate-400 block uppercase tracking-wider text-[8px]">GSM</span>
-                            <span className="font-bold text-slate-800 dark:text-white">{reel.gsm}</span>
-                          </div>
-                          <div>
-                            <span className="font-medium text-slate-400 block uppercase tracking-wider text-[8px]">Weight</span>
-                            <span className="font-bold text-emerald-600 dark:text-emerald-400 font-mono">{reel.weight} kg</span>
-                          </div>
-                          <div>
-                            <span className="font-medium text-slate-400 block uppercase tracking-wider text-[8px]">Size</span>
-                            <span className="font-bold text-slate-800 dark:text-white">{reel.size} cm</span>
-                          </div>
-                          <div>
-                            <span className="font-medium text-slate-400 block uppercase tracking-wider text-[8px]">Ply</span>
-                            <span className="font-bold text-slate-800 dark:text-white">{reel.ply || 1}P</span>
-                          </div>
-                        </div>
-                      </div>
-                    );
-                  })}
-                </div>
-              </div>
             )}
 
           </div>
+
+          {/* 5. LIVE PRINTABLE DELIVERY CHALLAN & GATE PASS DOCUMENT PREVIEW */}
+          {selectedReelNos.length > 0 ? (
+            <div className="bg-white dark:bg-slate-900 border-2 border-slate-300 dark:border-slate-700 rounded-3xl p-5 sm:p-7 shadow-xl space-y-5 text-slate-900 dark:text-slate-100 relative overflow-hidden text-left">
+              
+              {/* Paper document top decorative gradient bar */}
+              <div className="absolute top-0 left-0 right-0 h-2 bg-gradient-to-r from-blue-600 via-indigo-600 to-emerald-500"></div>
+
+              {/* Challan Document Header */}
+              <div className="border-b-2 border-slate-200 dark:border-slate-800 pb-4 pt-1 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
+                <div>
+                  <div className="flex items-center gap-2">
+                    <Building2 className="h-5 w-5 text-blue-600 dark:text-blue-400" />
+                    <h2 className="text-base sm:text-lg font-black tracking-tight uppercase text-slate-900 dark:text-white">
+                      {COMPANY_CONFIG?.name || 'SAHEB PAPERS LLP'}
+                    </h2>
+                  </div>
+                  <p className="text-[11px] text-slate-500 dark:text-slate-400 font-medium mt-0.5">
+                    {COMPANY_CONFIG?.address || 'Survey No. 42/1, NH-8A, Morbi-Wankaner Road, Gujarat - 363642'}
+                  </p>
+                </div>
+
+                <div className="text-left sm:text-right">
+                  <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-blue-50 dark:bg-blue-950/60 border border-blue-200 dark:border-blue-800 text-blue-700 dark:text-blue-300 text-xs font-black font-mono">
+                    <FileText className="h-3.5 w-3.5" />
+                    <span>{autoSlipNo}</span>
+                  </div>
+                  <div className="text-[10px] text-slate-400 font-bold uppercase tracking-wider mt-1">
+                    DELIVERY CHALLAN &amp; GATE PASS (LIVE PREVIEW)
+                  </div>
+                </div>
+              </div>
+
+              {/* Consignee & Vehicle Information Box */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-3 p-3.5 bg-slate-50 dark:bg-slate-800/60 rounded-2xl border border-slate-200 dark:border-slate-700 text-xs font-semibold">
+                <div>
+                  <span className="text-[10px] font-black uppercase text-slate-400 tracking-wider block mb-1">
+                    Billed / Consigned To:
+                  </span>
+                  <div className="text-sm font-black text-slate-900 dark:text-white">
+                    {selectedParty ? selectedParty.name : <span className="text-amber-600 font-normal italic">Party not selected yet (Select above)</span>}
+                  </div>
+                  {selectedParty?.contact && (
+                    <div className="text-[11px] text-slate-500 mt-0.5">
+                      Contact: {selectedParty.contact}
+                    </div>
+                  )}
+                  {selectedParty?.address && (
+                    <div className="text-[11px] text-slate-500 truncate mt-0.5">
+                      {selectedParty.address}
+                    </div>
+                  )}
+                </div>
+
+                <div className="md:border-l md:border-slate-200 md:dark:border-slate-700 md:pl-4 space-y-1">
+                  <span className="text-[10px] font-black uppercase text-slate-400 tracking-wider block mb-1">
+                    Dispatch &amp; Vehicle Logistics:
+                  </span>
+                  <div className="flex items-center justify-between">
+                    <span className="text-slate-500">Vehicle / Truck No:</span>
+                    <span className="font-mono font-black text-slate-900 dark:text-white uppercase">
+                      {slipVehicleId || <span className="text-amber-600 font-normal italic">Not specified</span>}
+                    </span>
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <span className="text-slate-500">Dispatch Date:</span>
+                    <span className="font-mono font-bold text-slate-800 dark:text-slate-200">{slipDate}</span>
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <span className="text-slate-500">Gate Pass Clearance:</span>
+                    <span className="text-[10px] font-extrabold text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/40 px-2 py-0.5 rounded-md">
+                      ✓ Gate Verified
+                    </span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Itemized Selected Reels Table */}
+              <div className="space-y-2">
+                <div className="flex items-center justify-between">
+                  <h4 className="text-xs font-black uppercase tracking-wider text-slate-700 dark:text-slate-300">
+                    Loaded Reels Manifest ({selectedReelNos.length} Items)
+                  </h4>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setSelectedReelNos([]);
+                      playBeep();
+                    }}
+                    className="text-[11px] font-bold text-red-600 hover:text-red-700 dark:text-red-400 cursor-pointer flex items-center gap-1"
+                  >
+                    <Trash2 className="h-3 w-3" />
+                    <span>Clear All ({selectedReelNos.length})</span>
+                  </button>
+                </div>
+
+                <div className="border border-slate-200 dark:border-slate-700 rounded-2xl overflow-hidden max-h-[340px] overflow-y-auto">
+                  <table className="w-full text-left text-xs border-collapse">
+                    <thead className="sticky top-0 bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400 uppercase text-[10px] font-black tracking-wider z-10 border-b border-slate-200 dark:border-slate-700">
+                      <tr>
+                        <th className="py-2.5 px-3 w-10 text-center">#</th>
+                        <th className="py-2.5 px-3">Reel Number</th>
+                        <th className="py-2.5 px-3">Product Description</th>
+                        <th className="py-2.5 px-3 text-center">GSM</th>
+                        <th className="py-2.5 px-3 text-center">Size (cm)</th>
+                        <th className="py-2.5 px-3 text-center">Ply</th>
+                        <th className="py-2.5 px-3 text-center">Joints</th>
+                        <th className="py-2.5 px-3 text-right">Net Weight</th>
+                        <th className="py-2.5 px-3 text-center w-12">Remove</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-slate-100 dark:divide-slate-800 font-semibold">
+                      {selectedReelNos.map((reelNo, index) => {
+                        const r = availableReels.find(x => x.reelNo === reelNo) || reels.find(x => x.reelNo === reelNo);
+                        const weightVal = r?.weight || 0;
+                        return (
+                          <tr key={reelNo} className="hover:bg-slate-50 dark:hover:bg-slate-800/50 transition">
+                            <td className="py-2 px-3 text-center text-slate-400 font-mono text-[11px]">{index + 1}</td>
+                            <td className="py-2 px-3 font-mono font-black text-slate-900 dark:text-white">{reelNo}</td>
+                            <td className="py-2 px-3 text-[11px] text-slate-700 dark:text-slate-300">
+                              {r?.product || 'Tissue Paper'}
+                            </td>
+                            <td className="py-2 px-3 text-center font-mono">{r?.gsm || '-'}</td>
+                            <td className="py-2 px-3 text-center font-mono">{r?.size || '-'}</td>
+                            <td className="py-2 px-3 text-center font-mono">{r?.ply || 1}P</td>
+                            <td className="py-2 px-3 text-center text-[11px] text-slate-500">{r?.joint ?? 0}</td>
+                            <td className="py-2 px-3 text-right font-mono font-black text-emerald-600 dark:text-emerald-400">
+                              {weightVal.toLocaleString()} kg
+                            </td>
+                            <td className="py-2 px-3 text-center">
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  setSelectedReelNos(prev => prev.filter(no => no !== reelNo));
+                                  playBeep();
+                                }}
+                                className="p-1 rounded-lg text-slate-400 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-950/40 cursor-pointer transition"
+                                title="Remove Reel from Challan"
+                              >
+                                <X className="h-3.5 w-3.5" />
+                              </button>
+                            </td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+
+              {/* Spec Group Breakdown Chips */}
+              {selectedSpecSummary.length > 0 && (
+                <div className="flex flex-wrap items-center gap-1.5 p-3 bg-blue-50/50 dark:bg-blue-950/20 border border-blue-100 dark:border-blue-900/40 rounded-2xl">
+                  <span className="text-[10px] font-black uppercase text-blue-700 dark:text-blue-300 tracking-wider mr-1">
+                    Spec Summary:
+                  </span>
+                  {selectedSpecSummary.map(item => (
+                    <span
+                      key={item.label}
+                      className="px-2.5 py-1 rounded-xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-800 dark:text-slate-200 text-xs font-bold shadow-2xs"
+                    >
+                      {item.label} &rarr; <span className="text-primary dark:text-blue-400 font-mono font-black">{item.count} Reels</span> ({item.weight.toLocaleString()} kg)
+                    </span>
+                  ))}
+                </div>
+              )}
+
+              {/* Grand Totals & Signature Block */}
+              <div className="border-t-2 border-slate-200 dark:border-slate-800 pt-4 grid grid-cols-1 md:grid-cols-2 gap-4 items-center">
+                <div className="p-3.5 sm:p-4 bg-slate-50 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 rounded-2xl flex items-center justify-between shadow-2xs">
+                  <div>
+                    <span className="text-[10px] font-black text-slate-500 dark:text-slate-400 uppercase tracking-wider block">Total Quantity</span>
+                    <span className="text-lg sm:text-xl font-black font-mono text-slate-900 dark:text-white">
+                      {selectedReelNos.length} <span className="text-xs font-bold text-slate-500 dark:text-slate-400">Reels</span>
+                    </span>
+                  </div>
+                  <div className="h-9 w-px bg-slate-200 dark:bg-slate-700"></div>
+                  <div className="text-right">
+                    <span className="text-[10px] font-black text-slate-500 dark:text-slate-400 uppercase tracking-wider block">Total Net Weight</span>
+                    <div className="text-lg sm:text-xl font-black font-mono text-emerald-600 dark:text-emerald-400">
+                      {totalSelectedWeight.toLocaleString()} <span className="text-xs font-bold text-slate-500 dark:text-slate-400">KG</span>
+                      <span className="text-xs font-extrabold text-blue-600 dark:text-blue-400 ml-1.5">({(totalSelectedWeight / 1000).toFixed(3)} MT)</span>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-2 gap-3 text-center">
+                  <div className="border border-dashed border-slate-300 dark:border-slate-700 rounded-2xl p-2.5">
+                    <span className="text-[9px] font-bold text-slate-400 uppercase block">Driver / Gate Clearance</span>
+                    <span className="text-xs font-black text-slate-800 dark:text-slate-200 mt-1 block">Gate Verified</span>
+                  </div>
+                  <div className="border border-dashed border-slate-300 dark:border-slate-700 rounded-2xl p-2.5">
+                    <span className="text-[9px] font-bold text-slate-400 uppercase block">Authorized Signatory</span>
+                    <span className="text-xs font-black text-slate-800 dark:text-slate-200 mt-1 block">Saheb Papers LLP</span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Bottom Challan Action Toolbar */}
+              <div className="flex flex-col sm:flex-row items-center justify-between gap-3 pt-3 border-t border-slate-100 dark:border-slate-800">
+                <button
+                  type="button"
+                  onClick={() => {
+                    const tempDraftSlip: PackingSlip = {
+                      id: `DRAFT-${Date.now()}`,
+                      slipNo: autoSlipNo,
+                      date: slipDate,
+                      partyId: slipPartyId,
+                      vehicleId: slipVehicleId || 'GJ01EP1234',
+                      reelNos: selectedReelNos,
+                      driverSignature: 'Gate Verified',
+                      receiverSignature: receiverSig || 'Authorized Consignee',
+                      status: 'DRAFT',
+                      dispatchDate: slipDate,
+                    };
+                    setViewingSlip(tempDraftSlip);
+                  }}
+                  className="w-full sm:w-auto px-4 py-2.5 rounded-2xl bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-800 dark:text-white text-xs font-bold border border-slate-200 dark:border-slate-700 cursor-pointer transition flex items-center justify-center gap-1.5"
+                >
+                  <Printer className="h-4 w-4 text-blue-600 dark:text-blue-400" />
+                  <span>Full Printable PDF Preview</span>
+                </button>
+
+                <button
+                  type="submit"
+                  className="w-full sm:w-auto btn-primary-gradient py-3 px-6 text-xs uppercase tracking-wider flex items-center justify-center gap-2 cursor-pointer shadow-md"
+                >
+                  <Truck className="h-4 w-4" />
+                  <span>Confirm Dispatch &amp; Issue Gate Pass</span>
+                </button>
+              </div>
+
+            </div>
+          ) : (
+            <div className="p-8 text-center bg-slate-50 dark:bg-slate-900/40 border border-dashed border-slate-200 dark:border-slate-700 rounded-3xl space-y-2">
+              <ScanBarcode className="h-8 w-8 text-slate-400 mx-auto" />
+              <h4 className="text-xs font-black uppercase tracking-wider text-slate-700 dark:text-slate-300">
+                No Reels Selected for Challan
+              </h4>
+              <p className="text-xs text-slate-500 max-w-md mx-auto">
+                Scan reels with a barcode gun, use the QR camera, or click on reels above to add them to this delivery challan.
+              </p>
+            </div>
+          )}
 
         </form>
       )}

@@ -23,7 +23,9 @@ import {
   Layers,
   RotateCcw,
   AlertTriangle,
+  Check,
 } from 'lucide-react';
+import { COMPANY_CONFIG } from '../../config/company';
 
 import { WorkflowStepBadge, WORKFLOW_STEPS } from '../../components/WorkflowStepBadge';
 import { useBodyScrollLock } from '../../hooks/useBodyScrollLock';
@@ -41,41 +43,49 @@ export const RewinderView: React.FC = () => {
   // Filter State
   const [selectedProductFilter, setSelectedProductFilter] = useState('all');
 
-  // Helper functions for Reel No auto-increment (Paper Mill Format e.g. 260500571)
-  const parseAndIncrementReelNo = (lastNo: string): string => {
-    if (!lastNo || !lastNo.trim()) return '260500571';
-    const cleanNo = lastNo.trim();
-    if (/^\d+$/.test(cleanNo)) {
-      const num = parseInt(cleanNo, 10);
-      return String(num + 1);
-    }
-    const match = cleanNo.match(/^(.*?)(\d+)$/);
-    if (match) {
-      const prefix = match[1];
-      const numStr = match[2];
-      const nextNum = parseInt(numStr, 10) + 1;
-      const paddedNum = String(nextNum).padStart(numStr.length, '0');
-      return `${prefix}${paddedNum}`;
-    }
-    return '260500571';
-  };
-
+  // Helper functions for Reel No auto-increment (Paper Mill YYMMNNNN Format e.g. 26090001)
   const getInitialReelNo = (existingReels: Reel[], offset = 0): string => {
-    let maxNum = 260500586;
+    const now = new Date();
+    const yy = now.getFullYear().toString().slice(-2);
+    const mm = String(now.getMonth() + 1).padStart(2, '0');
+    const prefix = `${yy}${mm}`;
+
+    let maxSeq = 0;
     if (existingReels && existingReels.length > 0) {
       existingReels.forEach(r => {
         if (r && r.reelNo) {
-          const match = r.reelNo.match(/^(?:.*?)?(\d+)$/);
-          if (match) {
-            const val = parseInt(match[1], 10);
-            if (!isNaN(val) && val > maxNum) {
-              maxNum = val;
+          const clean = r.reelNo.trim();
+          if (clean.startsWith(prefix) && clean.length === 8) {
+            const seq = parseInt(clean.slice(4), 10);
+            if (!isNaN(seq) && seq > maxSeq) {
+              maxSeq = seq;
             }
+          } else if (/^\d{8}$/.test(clean)) {
+            const seq = parseInt(clean.slice(4), 10);
+            if (!isNaN(seq) && seq > maxSeq) maxSeq = seq;
           }
         }
       });
     }
-    return String(maxNum + 1 + offset);
+    const nextSeq = maxSeq + 1 + offset;
+    return `${prefix}${String(nextSeq).padStart(4, '0')}`;
+  };
+
+  const parseAndIncrementReelNo = (lastNo: string): string => {
+    if (!lastNo || !lastNo.trim()) return getInitialReelNo(getReels());
+    const clean = lastNo.trim();
+    if (/^\d{8}$/.test(clean)) {
+      const prefix = clean.slice(0, 4);
+      const seq = parseInt(clean.slice(4), 10);
+      return `${prefix}${String(seq + 1).padStart(4, '0')}`;
+    }
+    const match = clean.match(/^(.*?)(\d+)$/);
+    if (match) {
+      const p = match[1];
+      const n = parseInt(match[2], 10) + 1;
+      return `${p}${String(n).padStart(match[2].length, '0')}`;
+    }
+    return getInitialReelNo(getReels());
   };
 
   // Add Reel Modal Form State (Rudra DEMO2 style)
@@ -85,12 +95,12 @@ export const RewinderView: React.FC = () => {
     runningRollNo: 'M-001',
     runningRollNo2: 'M-002',
     runningRollNo3: 'M-003',
-    runningSize: '',
+    runningSize: '165',
     productName: masterProducts[0]?.name || 'Napkin Tissue',
     gsm: '16',
-    size: '30 cm',
-    ply: '1',
-    dia: '900',
+    size: '30',
+    ply: '2',
+    dia: '1150',
     joint: '0',
     weightKg: '',
     brokeKg: '0',
@@ -538,7 +548,6 @@ export const RewinderView: React.FC = () => {
                 <h1 className="text-xl sm:text-2xl font-black tracking-tight font-heading text-slate-900 dark:text-white">
                   Rewinder Production (Reels)
                 </h1>
-                <WorkflowStepBadge stepInfo={WORKFLOW_STEPS.rewinder} />
               </div>
               <p className="text-xs sm:text-sm text-slate-500 dark:text-slate-400 font-medium mt-0.5">
                 Cut jumbo rolls into finished reels, log broke generation, and manage batch inventory.
@@ -617,7 +626,6 @@ export const RewinderView: React.FC = () => {
           <div>
             <div className="flex flex-wrap items-center gap-2.5">
               <h3 className="text-base font-black text-slate-900 dark:text-white tracking-tight">Rewinder Reel Production Log</h3>
-              <WorkflowStepBadge stepInfo={WORKFLOW_STEPS.rewinder} />
             </div>
             <p className="text-xs text-slate-500 dark:text-slate-400 font-medium mt-0.5">
               Date: {new Date().toLocaleDateString('en-GB')} &bull; Broke automatically increases Raw Material Stock (Rule 6)
@@ -1194,7 +1202,7 @@ export const RewinderView: React.FC = () => {
                       value={reelForm.dia}
                       onChange={e => setReelForm({ ...reelForm, dia: e.target.value })}
                       className="w-full p-2.5 bg-slate-50 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white rounded-xl text-xs font-bold font-mono focus:ring-2 focus:ring-primary focus:outline-none"
-                      placeholder="900"
+                      placeholder="1150"
                     />
                   </div>
                 </div>
@@ -1284,7 +1292,7 @@ export const RewinderView: React.FC = () => {
                               const val = e.target.value;
                               setCutReels(prev => prev.map((r, i) => i === idx ? { ...r, size: val } : r));
                             }}
-                            className="w-full p-1.5 sm:p-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white rounded-lg text-xs font-bold focus:ring-1 focus:ring-primary focus:outline-none text-center"
+                            className="w-full p-1.5 sm:p-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white rounded-lg text-xs font-bold focus:ring-1 focus:ring-primary focus:outline-none text-center font-mono"
                           />
                         </div>
                       </div>
@@ -1404,16 +1412,106 @@ export const RewinderView: React.FC = () => {
               </div>
             </div>
 
-            <div className="space-y-4 py-2">
+            <div className="space-y-4 py-2" id="printable-qr-labels">
               {recentlyGenerated.map(reel => (
-                <div key={reel.reelNo} className="p-4 border dark:border-slate-700 rounded-xl flex items-center justify-between gap-4 bg-slate-50/50 dark:bg-slate-900/50">
-                  <div className="space-y-1 text-xs">
-                    <span className="font-black text-blue-600 dark:text-blue-400 text-sm block">{reel.reelNo}</span>
-                    <p className="font-bold text-slate-800 dark:text-white">{reel.product} &bull; {reel.gsm} GSM &bull; {reel.size}cm &bull; {reel.ply}P</p>
-                    <p className="text-[11px] text-slate-500 font-mono">Weight: {reel.weight} kg | Roll: #{reel.parentRollNo}</p>
+                <div
+                  key={reel.reelNo}
+                  className="qr-label-card bg-white text-slate-950 border-2 border-slate-900 rounded-2xl p-4 shadow-md text-left select-none print:m-0 print:p-3 print:border-2 print:border-black print:shadow-none print:rounded-none"
+                  style={{ fontFamily: "'Plus Jakarta Sans', sans-serif" }}
+                >
+                  {/* Header */}
+                  <div className="flex items-start justify-between border-b-2 border-slate-900 pb-1.5 mb-2">
+                    <div>
+                      <div className="text-xs font-black tracking-tight text-slate-950 uppercase leading-tight font-heading">
+                        {COMPANY_CONFIG.name}
+                      </div>
+                      <div className="text-[7.5px] font-bold text-slate-600 uppercase tracking-wider">
+                        Plant: Chandisar, Palanpur
+                      </div>
+                    </div>
+                    <div className="text-right shrink-0">
+                      <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-slate-950 text-white text-[7.5px] font-black uppercase tracking-wider">
+                        <Check className="h-2 w-2 text-emerald-400" />
+                        <span>QC PASSED</span>
+                      </span>
+                      <div className="text-[7px] font-extrabold text-slate-500 mt-0.5">ISO 9001:2015</div>
+                    </div>
                   </div>
-                  <div className="p-2 bg-white rounded-lg border shadow-2xs shrink-0">
-                    <QRCodeSVG value={JSON.stringify({ reelNo: reel.reelNo, product: reel.product, weight: reel.weight, gsm: reel.gsm })} size={64} />
+
+                  {/* QR & Reel Identity */}
+                  <div className="flex items-center gap-2.5 bg-slate-50 border border-slate-300 rounded-xl p-2 mb-2">
+                    <div className="p-1 bg-white border border-slate-900 rounded-lg shrink-0 flex items-center justify-center">
+                      <QRCodeSVG
+                        value={reel.reelNo}
+                        size={68}
+                        level="M"
+                        includeMargin={false}
+                        bgColor="#ffffff"
+                        fgColor="#000000"
+                      />
+                    </div>
+                    <div className="min-w-0 flex-1 space-y-0.5">
+                      <div className="text-[7.5px] font-black text-slate-400 uppercase tracking-widest">
+                        REEL IDENTIFIER / QR CODE
+                      </div>
+                      <div className="text-sm font-black font-mono tracking-tight text-slate-950 truncate">
+                        {reel.reelNo}
+                      </div>
+                      <div className="text-[10px] font-black text-blue-800 line-clamp-1">
+                        {reel.product}
+                      </div>
+                      <div className="text-[7.5px] font-bold text-slate-500">
+                        Roll #{reel.parentRollNo} &bull; Rewinder #2 &bull; Shift A
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* 6-Box Technical Specs Matrix */}
+                  <div className="grid grid-cols-3 gap-1 mb-2 text-center text-[9px]">
+                    <div className="p-1 bg-slate-100 border border-slate-200 rounded-lg">
+                      <span className="text-[7px] font-black text-slate-500 block uppercase">GSM</span>
+                      <span className="font-black text-slate-950 font-mono text-[10px]">{reel.gsm}</span>
+                    </div>
+                    <div className="p-1 bg-slate-100 border border-slate-200 rounded-lg">
+                      <span className="text-[7px] font-black text-slate-500 block uppercase">SIZE</span>
+                      <span className="font-black text-slate-950 font-mono text-[10px]">{reel.size} cm</span>
+                    </div>
+                    <div className="p-1 bg-slate-100 border border-slate-200 rounded-lg">
+                      <span className="text-[7px] font-black text-slate-500 block uppercase">PLY</span>
+                      <span className="font-black text-slate-950 font-mono text-[10px]">{reel.ply || 2} Ply</span>
+                    </div>
+                    <div className="p-1 bg-slate-100 border border-slate-200 rounded-lg">
+                      <span className="text-[7px] font-black text-slate-500 block uppercase">DIAMETER</span>
+                      <span className="font-black text-slate-950 font-mono text-[10px]">{reel.dia || 1150} mm</span>
+                    </div>
+                    <div className="p-1 bg-slate-100 border border-slate-200 rounded-lg">
+                      <span className="text-[7px] font-black text-slate-500 block uppercase">CORE</span>
+                      <span className="font-black text-slate-950 font-mono text-[10px]">76 mm (3")</span>
+                    </div>
+                    <div className="p-1 bg-slate-100 border border-slate-200 rounded-lg">
+                      <span className="text-[7px] font-black text-slate-500 block uppercase">JOINTS</span>
+                      <span className="font-black text-slate-950 font-mono text-[10px]">{reel.joint ?? 0} Joints</span>
+                    </div>
+                  </div>
+
+                  {/* Certified Net Weight Hero Banner */}
+                  <div className="bg-slate-950 text-white px-2.5 py-1.5 rounded-xl flex items-center justify-between mb-1.5">
+                    <div>
+                      <span className="text-[7.5px] font-black uppercase tracking-widest text-slate-400 block">
+                        CERTIFIED NET WEIGHT
+                      </span>
+                    </div>
+                    <div className="text-right">
+                      <span className="text-base font-black font-mono tracking-tight text-emerald-400">
+                        {reel.weight} <span className="text-[10px] font-normal text-white">KG</span>
+                      </span>
+                    </div>
+                  </div>
+
+                  {/* Footer metadata */}
+                  <div className="flex items-center justify-between text-[7px] font-bold text-slate-500 border-t border-slate-200 pt-1">
+                    <span>Mfg: {reel.productionDate || new Date().toISOString().substring(0, 10)}</span>
+                    <span>100% Recyclable Paper</span>
                   </div>
                 </div>
               ))}

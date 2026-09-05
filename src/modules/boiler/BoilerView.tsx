@@ -50,8 +50,7 @@ export const BoilerView: React.FC = () => {
           `${norm} shift`.includes(q) ||
           String(l.woodUsed).includes(q) ||
           String(l.waterUsed).includes(q) ||
-          String(l.pressure).includes(q) ||
-          String(l.temperature).includes(q)
+          String(l.pressure).includes(q)
         );
       });
     }
@@ -73,7 +72,6 @@ export const BoilerView: React.FC = () => {
   const [woodStr, setWoodStr] = useState('');
   const [waterStr, setWaterStr] = useState('');
   const [pressureStr, setPressureStr] = useState('');
-  const [tempStr, setTempStr] = useState('');
   const [formSuccess, setFormSuccess] = useState('');
   const [formError, setFormError] = useState('');
 
@@ -85,14 +83,13 @@ export const BoilerView: React.FC = () => {
     const wood = parseFloat(woodStr);
     const water = parseFloat(waterStr);
     const pressure = parseFloat(pressureStr);
-    const temp = parseFloat(tempStr);
 
-    if (isNaN(wood) || isNaN(water) || isNaN(pressure) || isNaN(temp)) {
+    if (isNaN(wood) || isNaN(water) || isNaN(pressure)) {
       setFormError('Please enter valid numeric values for all fields');
       return;
     }
 
-    if (wood < 0 || water < 0 || pressure < 0 || temp < 0) {
+    if (wood < 0 || water < 0 || pressure < 0) {
       setFormError('Values cannot be negative');
       return;
     }
@@ -103,7 +100,6 @@ export const BoilerView: React.FC = () => {
       woodUsed: wood,
       waterUsed: water,
       pressure,
-      temperature: temp,
       operator: user?.displayName || 'System',
       shift,
     };
@@ -116,7 +112,6 @@ export const BoilerView: React.FC = () => {
     setWoodStr('');
     setWaterStr('');
     setPressureStr('');
-    setTempStr('');
   };
 
   const totalWoodConsumed = useMemo(() => {
@@ -296,25 +291,6 @@ export const BoilerView: React.FC = () => {
                 <span className="absolute right-3 top-1/2 -translate-y-1/2 text-[11px] font-bold text-slate-400">psi</span>
               </div>
             </div>
-
-            {/* Steam Temperature */}
-            <div className="space-y-1">
-              <label className="block text-[11px] font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider flex items-center gap-1">
-                <Thermometer className="h-3.5 w-3.5 text-red-500" />
-                Steam Temp (°C)
-              </label>
-              <div className="relative">
-                <input
-                  type="number"
-                  required
-                  value={tempStr}
-                  onChange={e => setTempStr(e.target.value)}
-                  className="block w-full py-2.5 px-3 pr-10 bg-slate-50 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white font-mono text-xs font-bold rounded-xl focus:outline-none focus:ring-2 focus:ring-orange-500"
-                  placeholder="e.g. 179"
-                />
-                <span className="absolute right-3 top-1/2 -translate-y-1/2 text-[11px] font-bold text-slate-400">°C</span>
-              </div>
-            </div>
           </div>
 
           <div className="pt-2 flex justify-end">
@@ -400,14 +376,13 @@ export const BoilerView: React.FC = () => {
                     <th className="py-3 px-4">WOOD USED</th>
                     <th className="py-3 px-4">WATER USED</th>
                     <th className="py-3 px-4">PRESSURE</th>
-                    <th className="py-3 px-4">TEMP</th>
                     <th className="py-3 px-4 text-right">OPERATOR</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-100 dark:divide-slate-800 font-semibold text-slate-800 dark:text-slate-200">
                   {filteredLogs
                     .slice()
-                    .sort((a, b) => b.id.localeCompare(a.id))
+                    .sort((a, b) => (b.date || '').localeCompare(a.date || '') || b.id.localeCompare(a.id))
                     .slice(0, visibleCount)
                     .map(log => {
                       const shiftName = normalizeShift(log.shift);
@@ -436,9 +411,6 @@ export const BoilerView: React.FC = () => {
                           <td className="py-3 px-4 font-mono text-slate-800 dark:text-slate-200 font-bold">
                             {log.pressure} psi
                           </td>
-                          <td className="py-3 px-4 font-mono text-slate-800 dark:text-slate-200 font-bold">
-                            {log.temperature} °C
-                          </td>
                           <td className="py-3 px-4 text-right font-bold text-slate-700 dark:text-slate-300">
                             {log.operator}
                           </td>
@@ -453,7 +425,7 @@ export const BoilerView: React.FC = () => {
             <div className="block md:hidden space-y-2.5">
               {filteredLogs
                 .slice()
-                .sort((a, b) => b.id.localeCompare(a.id))
+                .sort((a, b) => (b.date || '').localeCompare(a.date || '') || b.id.localeCompare(a.id))
                 .slice(0, visibleCount)
                 .map(log => {
                   const shiftName = normalizeShift(log.shift);
@@ -475,7 +447,7 @@ export const BoilerView: React.FC = () => {
                         </span>
                       </div>
 
-                      <div className="grid grid-cols-2 gap-2 text-[11px]">
+                      <div className="grid grid-cols-3 gap-2 text-[11px]">
                         <div>
                           <span className="text-slate-400 block text-[9px] uppercase font-bold">Wood Used</span>
                           <span className="font-mono font-black text-orange-600 dark:text-orange-400">{log.woodUsed} kg</span>
@@ -487,10 +459,6 @@ export const BoilerView: React.FC = () => {
                         <div>
                           <span className="text-slate-400 block text-[9px] uppercase font-bold">Pressure</span>
                           <span className="font-mono font-bold text-slate-800 dark:text-slate-200">{log.pressure} psi</span>
-                        </div>
-                        <div>
-                          <span className="text-slate-400 block text-[9px] uppercase font-bold">Steam Temp</span>
-                          <span className="font-mono font-bold text-slate-800 dark:text-slate-200">{log.temperature} °C</span>
                         </div>
                       </div>
 

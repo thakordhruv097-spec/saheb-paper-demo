@@ -159,7 +159,7 @@ export const DashboardView: React.FC = () => {
         operator: b.operator || 'Boiler Incharge',
         category: 'boiler',
         title: `Logged Boiler Shift ${b.shift}`,
-        details: `Wood: ${b.woodUsed.toLocaleString()} kg | Water: ${b.waterUsed.toLocaleString()} L | Steam Pressure: ${b.pressure} psi | Temp: ${b.temperature} °C`,
+        details: `Wood: ${b.woodUsed.toLocaleString()} kg | Water: ${b.waterUsed.toLocaleString()} L | Steam Pressure: ${b.pressure} psi`,
         badgeText: `BOILER SHIFT ${b.shift}`,
         badgeStyle: 'bg-orange-100 text-orange-800 dark:bg-orange-950/60 dark:text-orange-300 border border-orange-200 dark:border-orange-800',
       });
@@ -319,9 +319,6 @@ export const DashboardView: React.FC = () => {
         const avgPressure = todayBoilerLogs.length > 0
           ? (todayBoilerLogs.reduce((sum, l) => sum + l.pressure, 0) / todayBoilerLogs.length).toFixed(1)
           : '14.5';
-        const avgTemp = todayBoilerLogs.length > 0
-          ? (todayBoilerLogs.reduce((sum, l) => sum + l.temperature, 0) / todayBoilerLogs.length).toFixed(1)
-          : '185';
 
         return (
           <div className="space-y-6">
@@ -365,7 +362,7 @@ export const DashboardView: React.FC = () => {
             </div>
 
             {/* KPI METRIC CARDS */}
-            <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
               <div className="neumorphic-card rounded-2xl p-4">
                 <div className="text-xs text-slate-500 dark:text-slate-400 font-semibold">Wood / Biocoal Used Today</div>
                 <div className="text-xl sm:text-2xl font-black text-slate-900 dark:text-white mt-1">{totalWoodToday > 0 ? `${totalWoodToday} kg` : '2,400 kg'}</div>
@@ -378,10 +375,6 @@ export const DashboardView: React.FC = () => {
                 <div className="text-xs text-slate-500 dark:text-slate-400 font-semibold">Avg Steam Pressure</div>
                 <div className="text-xl sm:text-2xl font-black text-slate-900 dark:text-white mt-1">{avgPressure} psi</div>
               </div>
-              <div className="neumorphic-card rounded-2xl p-4">
-                <div className="text-xs text-slate-500 dark:text-slate-400 font-semibold">Boiler Temperature</div>
-                <div className="text-xl sm:text-2xl font-black text-slate-900 dark:text-white mt-1">{avgTemp} °C</div>
-              </div>
             </div>
 
             <div className="bg-white dark:bg-surface-dark rounded-2xl p-6 flex items-center justify-between">
@@ -391,7 +384,7 @@ export const DashboardView: React.FC = () => {
                 </div>
                 <div>
                   <h3 className="font-bold text-base text-slate-900 dark:text-white">Boiler & Utilities Log Entry</h3>
-                  <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">Record shift wood consumption, water usage, pressure & temperature</p>
+                  <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">Record shift wood consumption, water usage, and steam pressure</p>
                 </div>
               </div>
               <button
@@ -412,7 +405,7 @@ export const DashboardView: React.FC = () => {
                     <h3 className="font-extrabold text-sm text-slate-900 dark:text-white uppercase tracking-wider">
                       Recent Boiler Shift Logs
                     </h3>
-                    <p className="text-[11px] text-slate-400 font-medium">Real-time boiler fuel, pressure & temperature telemetry</p>
+                    <p className="text-[11px] text-slate-400 font-medium">Real-time boiler fuel and pressure telemetry</p>
                   </div>
                 </div>
                 <button
@@ -433,7 +426,6 @@ export const DashboardView: React.FC = () => {
                       <th className="py-3 px-4 font-bold uppercase tracking-wider whitespace-nowrap">Wood Used (kg)</th>
                       <th className="py-3 px-4 font-bold uppercase tracking-wider whitespace-nowrap">Water Used (L)</th>
                       <th className="py-3 px-4 font-bold uppercase tracking-wider whitespace-nowrap">Pressure (psi)</th>
-                      <th className="py-3 px-4 font-bold uppercase tracking-wider whitespace-nowrap">Temp (°C)</th>
                       <th className="py-3 px-4 font-bold uppercase tracking-wider whitespace-nowrap text-right">Operator</th>
                     </tr>
                   </thead>
@@ -467,9 +459,6 @@ export const DashboardView: React.FC = () => {
                           </td>
                           <td className="py-3.5 px-4 whitespace-nowrap font-mono text-slate-700 dark:text-slate-300 font-semibold">
                             {log.pressure} <span className="text-slate-400 font-normal">psi</span>
-                          </td>
-                          <td className="py-3.5 px-4 whitespace-nowrap font-mono text-slate-700 dark:text-slate-300 font-semibold">
-                            {log.temperature} <span className="text-slate-400 font-normal">°C</span>
                           </td>
                           <td className="py-3.5 px-4 whitespace-nowrap text-right">
                             <span className="px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-200 font-semibold text-xs border border-slate-200 dark:border-slate-700 inline-block">

@@ -145,6 +145,10 @@ export const QRScannerView: React.FC<QRScannerViewProps> = ({ onOpenPrintStudio 
     }
   };
 
+  const [cameraFacingMode, setCameraFacingMode] = useState<'environment' | 'user'>('environment');
+  const [camerasList, setCamerasList] = useState<Array<{ id: string; label: string }>>([]);
+  const [selectedCameraId, setSelectedCameraId] = useState<string>('');
+
   // Setup live camera scanner using direct Html5Qrcode instance
   useEffect(() => {
     let isMounted = true;
@@ -164,8 +168,46 @@ export const QRScannerView: React.FC<QRScannerViewProps> = ({ onOpenPrintStudio 
         const qrScanner = new Html5Qrcode('pure-camera-viewfinder');
         html5QrCodeRef.current = qrScanner;
 
+        // Auto-detect and prioritize Back / Rear Camera
+        let cameraConfig: any = { facingMode: cameraFacingMode };
+        try {
+          const devices = await Html5Qrcode.getCameras();
+          if (devices && devices.length > 0) {
+            setCamerasList(devices);
+            if (cameraFacingMode === 'environment') {
+              const backCam = devices.find(d =>
+                d.label.toLowerCase().includes('back') ||
+                d.label.toLowerCase().includes('rear') ||
+                d.label.toLowerCase().includes('environment') ||
+                d.label.toLowerCase().includes('0')
+              );
+              if (backCam) {
+                cameraConfig = backCam.id;
+                setSelectedCameraId(backCam.id);
+              } else if (devices.length > 1) {
+                cameraConfig = devices[devices.length - 1].id;
+                setSelectedCameraId(devices[devices.length - 1].id);
+              } else {
+                cameraConfig = devices[0].id;
+                setSelectedCameraId(devices[0].id);
+              }
+            } else {
+              const frontCam = devices.find(d =>
+                d.label.toLowerCase().includes('front') ||
+                d.label.toLowerCase().includes('user') ||
+                d.label.toLowerCase().includes('1')
+              );
+              cameraConfig = frontCam ? frontCam.id : devices[0].id;
+              setSelectedCameraId(cameraConfig);
+            }
+          }
+        } catch (camErr) {
+          console.warn('Could not enumerate cameras, falling back to facingMode:', camErr);
+          cameraConfig = { facingMode: cameraFacingMode };
+        }
+
         await qrScanner.start(
-          { facingMode: 'environment' },
+          cameraConfig,
           {
             fps: 15,
             qrbox: { width: 250, height: 250 },
@@ -194,7 +236,7 @@ export const QRScannerView: React.FC<QRScannerViewProps> = ({ onOpenPrintStudio 
           setCameraError(
             err?.message?.includes('Permission')
               ? 'Camera permission required. Please allow camera access.'
-              : 'Could not start camera. Tap Start Camera to activate.'
+              : 'Could not start back camera. Tap Start Camera or Switch Camera.'
           );
         }
       }
@@ -209,7 +251,14 @@ export const QRScannerView: React.FC<QRScannerViewProps> = ({ onOpenPrintStudio 
         html5QrCodeRef.current.stop().catch(() => {});
       }
     };
-  }, [isScanning, scanResult]);
+  }, [isScanning, scanResult, cameraFacingMode]);
+
+  const handleToggleCameraFacing = () => {
+    const nextFacing = cameraFacingMode === 'environment' ? 'user' : 'environment';
+    setCameraFacingMode(nextFacing);
+    setToastMsg(nextFacing === 'environment' ? 'Switched to Rear (Back) Camera 📷' : 'Switched to Front Camera 🤳');
+    setTimeout(() => setToastMsg(''), 2500);
+  };
 
   const handleResetScanner = () => {
     setScanResult(null);
@@ -362,7 +411,17 @@ export const QRScannerView: React.FC<QRScannerViewProps> = ({ onOpenPrintStudio 
             )}
 
             {/* Viewfinder Bottom Controls Bar */}
-            <div className="absolute bottom-3 left-3 right-3 flex items-center justify-between z-30 pointer-events-auto">
+            <div className="absolute bottom-3 left-3 right-3 flex items-center justify-between gap-1.5 z-30 pointer-events-auto">
+              <button
+                type="button"
+                onClick={handleToggleCameraFacing}
+                className="px-2.5 sm:px-3 py-1.5 rounded-full text-[11px] font-bold backdrop-blur-md border flex items-center gap-1.5 transition cursor-pointer bg-white/20 text-white border-white/30 hover:bg-white/30 shadow-md"
+                title="Switch between Rear (Back) and Front Camera"
+              >
+                <RefreshCw className="h-3.5 w-3.5" />
+                <span>{cameraFacingMode === 'environment' ? 'Back Cam 📷' : 'Front Cam 🤳'}</span>
+              </button>
+
               <button
                 type="button"
                 onClick={() => {
@@ -370,7 +429,7 @@ export const QRScannerView: React.FC<QRScannerViewProps> = ({ onOpenPrintStudio 
                   setToastMsg(torchActive ? 'Torch Turned OFF' : 'Torch Turned ON');
                   setTimeout(() => setToastMsg(''), 2000);
                 }}
-                className={`px-3 py-1.5 rounded-full text-[11px] font-bold backdrop-blur-md border flex items-center gap-1.5 transition cursor-pointer ${
+                className={`px-2.5 sm:px-3 py-1.5 rounded-full text-[11px] font-bold backdrop-blur-md border flex items-center gap-1.5 transition cursor-pointer ${
                   torchActive
                     ? 'bg-amber-400 text-slate-900 border-amber-300'
                     : 'bg-white/15 text-white border-white/20 hover:bg-white/25'
@@ -380,15 +439,13 @@ export const QRScannerView: React.FC<QRScannerViewProps> = ({ onOpenPrintStudio 
                 <span>Torch {torchActive ? 'ON' : 'OFF'}</span>
               </button>
 
-              <span className="text-[11px] font-bold text-white/70 hidden sm:inline">Aim at Reel QR Code</span>
-
               <button
                 type="button"
                 onClick={() => {
                   setSoundEnabled(!soundEnabled);
                   if (!soundEnabled) playBeep();
                 }}
-                className={`px-3 py-1.5 rounded-full text-[11px] font-bold backdrop-blur-md border flex items-center gap-1.5 transition cursor-pointer ${
+                className={`px-2.5 sm:px-3 py-1.5 rounded-full text-[11px] font-bold backdrop-blur-md border flex items-center gap-1.5 transition cursor-pointer ${
                   soundEnabled
                     ? 'bg-sky-400 text-slate-950 border-sky-300'
                     : 'bg-white/15 text-white/70 border-white/20'

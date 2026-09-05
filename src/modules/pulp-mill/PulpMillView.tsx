@@ -1,8 +1,8 @@
 import React, { useState, useMemo, useEffect, useRef } from 'react';
 import { useAuth } from '../auth/AuthContext';
 import { useTranslation } from 'react-i18next';
-import { getFormulas, saveFormula } from '../../data/index';
-import type { PulpFormula } from '../../data/types';
+import { getFormulas, saveFormula, getRawMaterials } from '../../data/index';
+import type { PulpFormula, RawMaterialItem } from '../../data/types';
 import { CustomDatePickerModal } from '../../components/CustomDatePickerModal';
 import { DataFilterBar } from '../../components/DataFilterBar';
 import {
@@ -76,6 +76,25 @@ export const PulpMillView: React.FC = () => {
   const [successMsg, setSuccessMsg] = useState('');
   const [errorMsg, setErrorMsg] = useState('');
 
+  // Dynamic Raw Materials for Pulp Mill
+  const availableWastePapers = useMemo<string[]>(() => {
+    const allRm: RawMaterialItem[] = getRawMaterials();
+    const wasteList = allRm.filter((m: RawMaterialItem) => m.category === 'WASTE_PAPER' && m.active !== false);
+    if (wasteList.length > 0) {
+      return wasteList.map((w: RawMaterialItem) => w.name);
+    }
+    return ['Indian Tissue Waste', 'Imported Tissue Waste', 'SMK', 'Cupstock', 'Pulp Sheet', 'Broke'];
+  }, []);
+
+  const availablePulpChemicals = useMemo<string[]>(() => {
+    const allRm: RawMaterialItem[] = getRawMaterials();
+    const pulpChems = allRm.filter((m: RawMaterialItem) => m.category === 'CHEMICAL' && m.active !== false && (m.usedInModule === 'PULP_MILL' || m.usedInModule === 'GENERAL' || !m.usedInModule));
+    if (pulpChems.length > 0) {
+      return pulpChems.map((c: RawMaterialItem) => c.name);
+    }
+    return ['Hydrogen Peroxide', 'Hypo', 'Bleaching Powder', 'Caustic', 'Washing Powder', 'DSR', 'WSR', 'OBA'];
+  }, []);
+
   // 6 Waste Mix items
   const [wasteMix, setWasteMix] = useState<Record<string, number>>({
     'Indian Tissue Waste': 50,
@@ -86,7 +105,7 @@ export const PulpMillView: React.FC = () => {
     Broke: 20,
   });
 
-  // Top Chemical items
+  // Dynamic Chemical items
   const [chemicals, setChemicals] = useState<Record<string, number>>({
     DSR: 10,
     WSR: 15,
@@ -406,7 +425,7 @@ export const PulpMillView: React.FC = () => {
 
             {/* Chemical items with Sunken Neomorphic inputs */}
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-2">
-              {['DSR', 'WSR', 'OBA', 'Hydrogen Peroxide', 'Hypo', 'Caustic'].map(chemName => (
+              {availablePulpChemicals.map(chemName => (
                 <div 
                   key={chemName} 
                   className="p-2.5 px-4 rounded-2xl bg-white dark:bg-slate-900/60 shadow-[3px_3px_10px_rgba(163,163,196,0.12),-3px_-3px_10px_rgba(255,255,255,0.95)] dark:shadow-none flex items-center justify-between"

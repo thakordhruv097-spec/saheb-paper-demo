@@ -156,31 +156,31 @@ const DEFAULT_USERS: User[] = [
 
 const DEFAULT_RAW_MATERIALS: RawMaterialItem[] = [
   // Waste Paper & Pulp Raw Materials
-  { id: 'rm-1', name: 'Indian Tissue Waste', category: 'WASTE_PAPER', stock: 5000, minThreshold: 1000 },
-  { id: 'rm-2', name: 'Imported Tissue Waste', category: 'WASTE_PAPER', stock: 5000, minThreshold: 1000 },
-  { id: 'rm-3', name: 'SMK', category: 'WASTE_PAPER', stock: 5000, minThreshold: 500 },
-  { id: 'rm-4', name: 'Cupstock', category: 'WASTE_PAPER', stock: 5000, minThreshold: 500 },
-  { id: 'rm-5', name: 'Pulp Sheet', category: 'WASTE_PAPER', stock: 5000, minThreshold: 1000 },
-  { id: 'rm-7', name: 'Broke', category: 'WASTE_PAPER', stock: 5000, minThreshold: 500 },
+  { id: 'rm-1', name: 'Indian Tissue Waste', category: 'WASTE_PAPER', stock: 5000, minThreshold: 1000, usedInModule: 'PULP_MILL' },
+  { id: 'rm-2', name: 'Imported Tissue Waste', category: 'WASTE_PAPER', stock: 5000, minThreshold: 1000, usedInModule: 'PULP_MILL' },
+  { id: 'rm-3', name: 'SMK', category: 'WASTE_PAPER', stock: 5000, minThreshold: 500, usedInModule: 'PULP_MILL' },
+  { id: 'rm-4', name: 'Cupstock', category: 'WASTE_PAPER', stock: 5000, minThreshold: 500, usedInModule: 'PULP_MILL' },
+  { id: 'rm-5', name: 'Pulp Sheet', category: 'WASTE_PAPER', stock: 5000, minThreshold: 1000, usedInModule: 'PULP_MILL' },
+  { id: 'rm-7', name: 'Broke', category: 'WASTE_PAPER', stock: 5000, minThreshold: 500, usedInModule: 'PULP_MILL' },
   // Chemical
-  { id: 'rm-8', name: 'DSR', category: 'CHEMICAL', stock: 5000, minThreshold: 200 },
-  { id: 'rm-9', name: 'WSR', category: 'CHEMICAL', stock: 5000, minThreshold: 200 },
-  { id: 'rm-10', name: 'Hydrogen Peroxide', category: 'CHEMICAL', stock: 5000, minThreshold: 100 },
-  { id: 'rm-11', name: 'Hypo', category: 'CHEMICAL', stock: 5000, minThreshold: 100 },
-  { id: 'rm-12', name: 'Bleaching Powder', category: 'CHEMICAL', stock: 5000, minThreshold: 100 },
-  { id: 'rm-13', name: 'Caustic', category: 'CHEMICAL', stock: 5000, minThreshold: 100 },
-  { id: 'rm-14', name: 'OBA', category: 'CHEMICAL', stock: 5000, minThreshold: 50 },
-  { id: 'rm-15', name: 'M Violet', category: 'CHEMICAL', stock: 5000, minThreshold: 10 },
-  { id: 'rm-16', name: 'Washing Powder', category: 'CHEMICAL', stock: 5000, minThreshold: 50 },
-  { id: 'rm-17', name: 'Deformer', category: 'CHEMICAL', stock: 5000, minThreshold: 50 },
-  { id: 'rm-18', name: 'PEO', category: 'CHEMICAL', stock: 5000, minThreshold: 50 },
-  { id: 'rm-19', name: 'HCL', category: 'CHEMICAL', stock: 5000, minThreshold: 100 },
-  { id: 'rm-20', name: 'MG Release', category: 'CHEMICAL', stock: 5000, minThreshold: 50 },
-  { id: 'rm-21', name: 'MG Coating', category: 'CHEMICAL', stock: 5000, minThreshold: 50 },
-  { id: 'rm-22', name: 'RO Chemical', category: 'CHEMICAL', stock: 5000, minThreshold: 50 },
+  { id: 'rm-8', name: 'DSR', category: 'CHEMICAL', stock: 5000, minThreshold: 200, usedInModule: 'MACHINE_PRODUCTION' },
+  { id: 'rm-9', name: 'WSR', category: 'CHEMICAL', stock: 5000, minThreshold: 200, usedInModule: 'MACHINE_PRODUCTION' },
+  { id: 'rm-10', name: 'Hydrogen Peroxide', category: 'CHEMICAL', stock: 5000, minThreshold: 100, usedInModule: 'PULP_MILL' },
+  { id: 'rm-11', name: 'Hypo', category: 'CHEMICAL', stock: 5000, minThreshold: 100, usedInModule: 'PULP_MILL' },
+  { id: 'rm-12', name: 'Bleaching Powder', category: 'CHEMICAL', stock: 5000, minThreshold: 100, usedInModule: 'PULP_MILL' },
+  { id: 'rm-13', name: 'Caustic', category: 'CHEMICAL', stock: 5000, minThreshold: 100, usedInModule: 'PULP_MILL' },
+  { id: 'rm-14', name: 'OBA', category: 'CHEMICAL', stock: 5000, minThreshold: 50, usedInModule: 'MACHINE_PRODUCTION' },
+  { id: 'rm-15', name: 'M Violet', category: 'CHEMICAL', stock: 5000, minThreshold: 10, usedInModule: 'MACHINE_PRODUCTION' },
+  { id: 'rm-16', name: 'Washing Powder', category: 'CHEMICAL', stock: 5000, minThreshold: 50, usedInModule: 'PULP_MILL' },
+  { id: 'rm-17', name: 'Deformer', category: 'CHEMICAL', stock: 5000, minThreshold: 50, usedInModule: 'MACHINE_PRODUCTION' },
+  { id: 'rm-18', name: 'PEO', category: 'CHEMICAL', stock: 5000, minThreshold: 50, usedInModule: 'MACHINE_PRODUCTION' },
+  { id: 'rm-19', name: 'HCL', category: 'CHEMICAL', stock: 5000, minThreshold: 100, usedInModule: 'UTILITIES_ETP' },
+  { id: 'rm-20', name: 'MG Release', category: 'CHEMICAL', stock: 5000, minThreshold: 50, usedInModule: 'MACHINE_PRODUCTION' },
+  { id: 'rm-21', name: 'MG Coating', category: 'CHEMICAL', stock: 5000, minThreshold: 50, usedInModule: 'MACHINE_PRODUCTION' },
+  { id: 'rm-22', name: 'RO Chemical', category: 'CHEMICAL', stock: 5000, minThreshold: 50, usedInModule: 'UTILITIES_ETP' },
   // Firewood
-  { id: 'rm-23', name: 'Wood', category: 'FIREWOOD', stock: 5000, minThreshold: 2000 },
-  { id: 'rm-24', name: 'Biocoal', category: 'FIREWOOD', stock: 5000, minThreshold: 2000 },
+  { id: 'rm-23', name: 'Wood', category: 'FIREWOOD', stock: 5000, minThreshold: 2000, usedInModule: 'UTILITIES_ETP' },
+  { id: 'rm-24', name: 'Biocoal', category: 'FIREWOOD', stock: 5000, minThreshold: 2000, usedInModule: 'UTILITIES_ETP' },
 ];
 
 const DEFAULT_PRODUCTS: ProductItem[] = [
@@ -212,12 +212,12 @@ const DEFAULT_VEHICLES: VehicleItem[] = [
 ];
 
 const DEFAULT_STORE_ITEMS: StoreItem[] = [
-  { id: 'st-1', type: 'BEARING', name: '6205', pcs: 15, usageArea: 'Pulp Mill Agitator' },
-  { id: 'st-2', type: 'BEARING', name: '6309', pcs: 8, usageArea: 'Machine Dryer' },
-  { id: 'st-3', type: 'BEARING', name: '22220', pcs: 4, usageArea: 'Rewinder Shaft' },
-  { id: 'st-4', type: 'V_BELT', name: 'C-96', pcs: 12, group: 'C' },
-  { id: 'st-5', type: 'V_BELT', name: 'B-72', pcs: 20, group: 'B' },
-  { id: 'st-6', type: 'V_BELT', name: 'A-48', pcs: 15, group: 'A' },
+  { id: 'st-1', type: 'BEARING', name: '6205', pcs: 15, usageArea: 'Pulp Mill Agitator', minStock: 5, remarks: 'SKF Deep Groove' },
+  { id: 'st-2', type: 'BEARING', name: '6309', pcs: 8, usageArea: 'Machine Dryer', minStock: 4, remarks: 'FAG High Temp' },
+  { id: 'st-3', type: 'BEARING', name: '22220', pcs: 4, usageArea: 'Rewinder Shaft', minStock: 2, remarks: 'Spherical Roller' },
+  { id: 'st-4', type: 'V_BELT', name: 'C-96', pcs: 12, targetMachine: 'Vacuum Pump Drive', minStock: 4, remarks: 'Fenner Heavy Duty' },
+  { id: 'st-5', type: 'V_BELT', name: 'B-72', pcs: 20, targetMachine: 'Pulp Chest Agitator', minStock: 6, remarks: 'Raw Edge Cogged' },
+  { id: 'st-6', type: 'V_BELT', name: 'A-48', pcs: 15, targetMachine: 'Hydrapulper Motor', minStock: 5, remarks: 'Standard Anti-static' },
 ];
 
 const DEFAULT_PENDING_ORDERS: PendingOrder[] = [
@@ -1396,7 +1396,7 @@ export function saveBoilerLog(log: BoilerLog, user: string): BoilerLog {
   addLog(
     'Boiler',
     'Boiler Shift Logged',
-    `Boiler entry: wood used ${log.woodUsed}kg, water used ${log.waterUsed}L, temp ${log.temperature}°C, pressure ${log.pressure}psi`,
+    `Boiler entry: wood used ${log.woodUsed}kg, water used ${log.waterUsed}L, pressure ${log.pressure}psi`,
     user
   );
   return log;

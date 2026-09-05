@@ -68,6 +68,7 @@ export const PrintLabelModal: React.FC<PrintLabelModalProps> = ({
         gsm: String(reel.gsm || '16.0'),
         size: String(reel.size || '30.0'),
         ply: `${reel.ply || 2} Ply`,
+        joint: `${reel.joint ?? 0} Joints`,
         weight: String(reel.weight || '1,200'),
         dia: `${reel.dia || 1150} mm`,
         core: '76 mm (3")',
@@ -76,7 +77,7 @@ export const PrintLabelModal: React.FC<PrintLabelModalProps> = ({
         shift: 'Shift A',
         machine: 'Rewinder #2',
         operator: 'Operator Desk',
-        notes: 'Handle with care · Keep dry',
+        notes: 'Handle with care · Keep dry · 100% Recyclable',
         customKey1: 'Batch No',
         customVal1: 'BATCH-2026-AUG',
         customKey2: 'Bay Location',
@@ -93,6 +94,7 @@ export const PrintLabelModal: React.FC<PrintLabelModalProps> = ({
       gsm: '16.0',
       size: '30.0 cm',
       ply: '2 Ply',
+      joint: '0 Joints',
       weight: '1,310',
       dia: '1150 mm',
       core: '76 mm (3")',
@@ -137,6 +139,7 @@ export const PrintLabelModal: React.FC<PrintLabelModalProps> = ({
         gsm: String(found.gsm),
         size: String(found.size),
         ply: `${found.ply || 2} Ply`,
+        joint: `${found.joint ?? 0} Joints`,
         weight: String(found.weight),
         dia: `${found.dia || 1150} mm`,
         grade: `Grade ${found.qcGrade || 'A'} - PASSED`,
@@ -372,6 +375,36 @@ export const PrintLabelModal: React.FC<PrintLabelModalProps> = ({
               </div>
             </div>
 
+            <div className="grid grid-cols-3 gap-2.5">
+              <div>
+                <label className="block text-[10px] font-extrabold text-slate-500 uppercase mb-1">Ply Count</label>
+                <input
+                  type="text"
+                  value={formData.ply}
+                  onChange={e => setFormData({ ...formData, ply: e.target.value })}
+                  className="w-full p-2 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-xs font-bold dark:text-white font-mono"
+                />
+              </div>
+              <div>
+                <label className="block text-[10px] font-extrabold text-slate-500 uppercase mb-1">Joints</label>
+                <input
+                  type="text"
+                  value={formData.joint || '0 Joints'}
+                  onChange={e => setFormData({ ...formData, joint: e.target.value })}
+                  className="w-full p-2 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-xs font-bold dark:text-white font-mono"
+                />
+              </div>
+              <div>
+                <label className="block text-[10px] font-extrabold text-slate-500 uppercase mb-1">Reel Diameter</label>
+                <input
+                  type="text"
+                  value={formData.dia || '1150 mm'}
+                  onChange={e => setFormData({ ...formData, dia: e.target.value })}
+                  className="w-full p-2 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-xs font-bold dark:text-white font-mono"
+                />
+              </div>
+            </div>
+
             <div className="grid grid-cols-2 gap-2.5">
               <div>
                 <label className="block text-[10px] font-extrabold text-slate-500 uppercase mb-1">QC Clearance Status</label>
@@ -444,95 +477,130 @@ export const PrintLabelModal: React.FC<PrintLabelModalProps> = ({
           <div className="lg:col-span-5 flex flex-col items-center">
             <div className="text-[11px] font-black text-slate-400 uppercase tracking-wider mb-2 flex items-center gap-1">
               <span>Live Sticker Preview</span>
-              <span className="text-[10px] text-blue-500">({labelSize === '4x6' ? '4x6 inch Thermal' : '3x2 inch'})</span>
+              <span className="text-[10px] text-blue-500 font-bold">({labelSize === '4x6' ? '4x6 inch Thermal' : '3x2 inch'})</span>
             </div>
 
             {/* THE PRINTABLE LABEL CONTAINER */}
             <div
               ref={printAreaRef}
               id="printable-reel-label"
-              className="w-full bg-white text-slate-950 border-2 border-slate-900 rounded-xl p-4 shadow-xl text-left select-none print:m-0 print:p-4 print:border-2 print:border-black"
+              className="w-full bg-white text-slate-950 border-2 border-slate-900 rounded-2xl p-4 sm:p-5 shadow-2xl text-left select-none print:m-0 print:p-4 print:border-2 print:border-black print:shadow-none print:rounded-none"
               style={{
                 fontFamily: "'Plus Jakarta Sans', sans-serif",
-                maxWidth: '380px',
+                maxWidth: '400px',
               }}
             >
-              {/* Header */}
-              <div className="flex items-center justify-between border-b-2 border-slate-900 pb-2 mb-2">
+              {/* Top Header: Company Brand & Quality Badge */}
+              <div className="flex items-start justify-between border-b-2 border-slate-900 pb-2 mb-2.5">
                 <div>
-                  <div className="text-xs font-black tracking-tight text-slate-950 uppercase">
+                  <div className="text-xs font-black tracking-tight text-slate-950 uppercase leading-tight font-heading">
                     {formData.title}
                   </div>
-                  <div className="text-[9px] font-semibold text-slate-600">
-                    {formData.subtitle}
+                  <div className="text-[8px] font-bold text-slate-600 mt-0.5 uppercase tracking-wider">
+                    {formData.subtitle || 'Manufacturers of High Quality Tissue Paper'}
                   </div>
                 </div>
-                <div className="px-2 py-0.5 rounded bg-slate-950 text-white text-[8px] font-black uppercase tracking-wider">
-                  {formData.grade}
+                <div className="text-right shrink-0">
+                  <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-slate-950 text-white text-[8px] font-black uppercase tracking-wider">
+                    <Check className="h-2.5 w-2.5 text-emerald-400" />
+                    <span>{formData.grade || 'QC PASSED'}</span>
+                  </span>
+                  <div className="text-[7.5px] font-extrabold text-slate-500 mt-0.5">ISO 9001:2015</div>
                 </div>
               </div>
 
-              {/* QR Code & Code Section */}
-              <div className="flex items-center gap-3 border-b-2 border-slate-900 pb-3 mb-2">
-                <div className="p-1.5 bg-white border border-slate-300 rounded-lg shrink-0 shadow-2xs">
+              {/* QR Code & Reel Code Section */}
+              <div className="flex items-center gap-3 bg-slate-50 border border-slate-300 rounded-xl p-2.5 mb-2.5">
+                <div className="p-1 bg-white border border-slate-900 rounded-lg shrink-0 shadow-2xs flex items-center justify-center">
                   <QRCodeSVG
                     value={formData.qrValue || formData.code}
                     size={84}
-                    level="H"
+                    level="M"
                     includeMargin={false}
+                    bgColor="#ffffff"
+                    fgColor="#000000"
                   />
                 </div>
-                <div className="min-w-0 flex-1">
-                  <div className="text-[9px] font-bold text-slate-500 uppercase tracking-wider">
-                    IDENTIFIER / BARCODE
+                <div className="min-w-0 flex-1 space-y-0.5">
+                  <div className="text-[8px] font-black text-slate-400 uppercase tracking-widest">
+                    REEL IDENTIFIER / QR CODE
                   </div>
                   <div className="text-base font-black font-mono tracking-tight text-slate-950 truncate">
                     {formData.code}
                   </div>
-                  <div className="text-[10px] font-extrabold text-blue-700 mt-1 line-clamp-2">
+                  <div className="text-[11px] font-black text-blue-800 line-clamp-1">
                     {formData.product}
+                  </div>
+                  <div className="flex items-center gap-1.5 text-[8px] font-bold text-slate-500 pt-0.5">
+                    <span>{formData.machine || 'Rewinder #2'}</span>
+                    <span>&bull;</span>
+                    <span>{formData.shift || 'Shift A'}</span>
                   </div>
                 </div>
               </div>
 
-              {/* Specs Grid */}
-              <div className="grid grid-cols-3 gap-1.5 border-b-2 border-slate-900 pb-2 mb-2 text-[10px]">
-                <div className="p-1 bg-slate-100 rounded">
-                  <span className="text-[8px] font-bold text-slate-500 block uppercase">GSM</span>
-                  <span className="font-black text-slate-950">{formData.gsm}</span>
+              {/* 6-Box Technical Specs Matrix */}
+              <div className="grid grid-cols-3 gap-1.5 mb-2.5 text-center text-[10px]">
+                <div className="p-1.5 bg-slate-100/90 border border-slate-200 rounded-lg">
+                  <span className="text-[7.5px] font-black text-slate-500 block uppercase tracking-wider">GSM</span>
+                  <span className="font-black text-slate-950 font-mono text-[11px]">{formData.gsm}</span>
                 </div>
-                <div className="p-1 bg-slate-100 rounded">
-                  <span className="text-[8px] font-bold text-slate-500 block uppercase">SIZE</span>
-                  <span className="font-black text-slate-950">{formData.size}</span>
+                <div className="p-1.5 bg-slate-100/90 border border-slate-200 rounded-lg">
+                  <span className="text-[7.5px] font-black text-slate-500 block uppercase tracking-wider">SIZE</span>
+                  <span className="font-black text-slate-950 font-mono text-[11px]">{formData.size}</span>
                 </div>
-                <div className="p-1 bg-slate-100 rounded">
-                  <span className="text-[8px] font-bold text-slate-500 block uppercase">PLY</span>
-                  <span className="font-black text-slate-950">{formData.ply}</span>
+                <div className="p-1.5 bg-slate-100/90 border border-slate-200 rounded-lg">
+                  <span className="text-[7.5px] font-black text-slate-500 block uppercase tracking-wider">PLY</span>
+                  <span className="font-black text-slate-950 font-mono text-[11px]">{formData.ply}</span>
+                </div>
+                <div className="p-1.5 bg-slate-100/90 border border-slate-200 rounded-lg">
+                  <span className="text-[7.5px] font-black text-slate-500 block uppercase tracking-wider">DIAMETER</span>
+                  <span className="font-black text-slate-950 font-mono text-[11px]">{formData.dia || '1150 mm'}</span>
+                </div>
+                <div className="p-1.5 bg-slate-100/90 border border-slate-200 rounded-lg">
+                  <span className="text-[7.5px] font-black text-slate-500 block uppercase tracking-wider">CORE</span>
+                  <span className="font-black text-slate-950 font-mono text-[11px]">{formData.core || '76 mm'}</span>
+                </div>
+                <div className="p-1.5 bg-slate-100/90 border border-slate-200 rounded-lg">
+                  <span className="text-[7.5px] font-black text-slate-500 block uppercase tracking-wider">JOINTS</span>
+                  <span className="font-black text-slate-950 font-mono text-[11px]">{formData.joint || '0 (Seamless)'}</span>
                 </div>
               </div>
 
-              {/* Net Weight Display (High Contrast Hero) */}
-              <div className="bg-slate-950 text-white p-2 rounded-lg flex items-center justify-between mb-2">
-                <span className="text-[9px] font-black uppercase tracking-wider text-slate-300">
-                  NET WEIGHT
-                </span>
-                <span className="text-base font-black font-mono tracking-tight text-emerald-400">
-                  {formData.weight} KG
-                </span>
+              {/* High Contrast Hero Weight Banner */}
+              <div className="bg-slate-950 text-white px-3 py-2 rounded-xl flex items-center justify-between mb-2">
+                <div>
+                  <span className="text-[8px] font-black uppercase tracking-widest text-slate-400 block">
+                    CERTIFIED NET WEIGHT
+                  </span>
+                  <span className="text-[9px] font-bold text-slate-300">
+                    Gross / Tare Verified
+                  </span>
+                </div>
+                <div className="text-right">
+                  <span className="text-lg font-black font-mono tracking-tight text-emerald-400">
+                    {formData.weight} <span className="text-xs font-normal text-white">KG</span>
+                  </span>
+                </div>
               </div>
 
-              {/* Manufacturing & Plant Info */}
-              <div className="flex items-center justify-between text-[8px] font-bold text-slate-600 border-t border-slate-300 pt-1">
-                <span>Date: {formData.date}</span>
-                <span>{formData.shift}</span>
-                <span>{formData.machine}</span>
+              {/* Manufacturing & Packaging Info */}
+              <div className="flex items-center justify-between text-[8px] font-bold text-slate-600 bg-slate-50 border border-slate-200 rounded-lg px-2.5 py-1 mb-2">
+                <span>Mfg: <strong className="text-slate-900 font-mono">{formData.date}</strong></span>
+                <span>Operator: <strong className="text-slate-900">{formData.operator || 'Plant Staff'}</strong></span>
+                <span className="text-emerald-700">Wrapped &amp; Sealed</span>
               </div>
 
-              {/* Physical Product Label Bottom Structure: Address, Phone, Email, Website */}
-              <div className="border-t border-slate-200 mt-1 pt-1 text-center text-[7.5px] leading-tight text-slate-600">
-                <div className="font-extrabold text-slate-900">{COMPANY_CONFIG.name}</div>
+              {/* Notes / Directives */}
+              <div className="text-[7.5px] font-extrabold text-slate-500 text-center uppercase tracking-wider py-0.5 border-t border-slate-200">
+                <span>{formData.notes || 'Handle With Care · Keep Dry · 100% Recyclable Paper'}</span>
+              </div>
+
+              {/* Footer Company Identity */}
+              <div className="border-t-2 border-slate-900 mt-1 pt-1 text-center text-[7px] leading-tight text-slate-600">
+                <div className="font-extrabold text-slate-950 uppercase">{COMPANY_CONFIG.name}</div>
                 <div>{COMPANY_CONFIG.address}</div>
-                <div className="font-semibold text-slate-700">Ph: {COMPANY_CONFIG.phone} &bull; {COMPANY_CONFIG.email} &bull; {COMPANY_CONFIG.website}</div>
+                <div className="font-bold text-slate-700">Ph: {COMPANY_CONFIG.phone} &bull; {COMPANY_CONFIG.email} &bull; {COMPANY_CONFIG.website}</div>
               </div>
             </div>
 

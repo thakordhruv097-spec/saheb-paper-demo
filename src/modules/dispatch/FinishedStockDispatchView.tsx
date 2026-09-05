@@ -55,7 +55,6 @@ export const FinishedStockDispatchView: React.FC = () => {
                 <h1 className="text-xl sm:text-2xl font-black tracking-tight font-heading text-slate-900 dark:text-white truncate">
                   Stock Categorization
                 </h1>
-                <WorkflowStepBadge stepInfo={WORKFLOW_STEPS.finishedStock} />
               </div>
               <p className="text-xs sm:text-sm text-slate-500 dark:text-slate-400 font-medium mt-0.5">
                 Grade A / B stock categorization, warehouse vault &amp; label printing.

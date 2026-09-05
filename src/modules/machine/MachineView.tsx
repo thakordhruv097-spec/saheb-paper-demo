@@ -76,6 +76,7 @@ export const MachineView: React.FC = () => {
   const [gsmStr, setGsmStr] = useState(() => localStorage.getItem('draft_roll_gsm') || '');
   const [widthStr, setWidthStr] = useState(() => localStorage.getItem('draft_roll_width') || '30');
   const [jointStr, setJointStr] = useState(() => localStorage.getItem('draft_roll_joint') || '0');
+  const [diaStr, setDiaStr] = useState(() => localStorage.getItem('draft_roll_dia') || '1150');
   const [shift, setShift] = useState<'A' | 'B'>(() => (localStorage.getItem('draft_roll_shift') as 'A' | 'B') || 'A');
   const [startTime, setStartTime] = useState(() => localStorage.getItem('draft_roll_start_time') || '08:00');
   const [offTime, setOffTime] = useState(() => localStorage.getItem('draft_roll_off_time') || '16:00');
@@ -90,11 +91,12 @@ export const MachineView: React.FC = () => {
     localStorage.setItem('draft_roll_gsm', gsmStr);
     localStorage.setItem('draft_roll_width', widthStr);
     localStorage.setItem('draft_roll_joint', jointStr);
+    localStorage.setItem('draft_roll_dia', diaStr);
     localStorage.setItem('draft_roll_shift', shift);
     localStorage.setItem('draft_roll_start_time', startTime);
     localStorage.setItem('draft_roll_off_time', offTime);
     localStorage.setItem('draft_roll_downtime', downtimeReason);
-  }, [dateStr, rollNo, selectedProductId, weightStr, gsmStr, widthStr, jointStr, shift, startTime, offTime, downtimeReason]);
+  }, [dateStr, rollNo, selectedProductId, weightStr, gsmStr, widthStr, jointStr, diaStr, shift, startTime, offTime, downtimeReason]);
 
   const clearDraft = () => {
     localStorage.removeItem('draft_roll_date');
@@ -104,10 +106,25 @@ export const MachineView: React.FC = () => {
     localStorage.removeItem('draft_roll_gsm');
     localStorage.removeItem('draft_roll_width');
     localStorage.removeItem('draft_roll_joint');
+    localStorage.removeItem('draft_roll_dia');
     localStorage.removeItem('draft_roll_shift');
     localStorage.removeItem('draft_roll_start_time');
     localStorage.removeItem('draft_roll_off_time');
     localStorage.removeItem('draft_roll_downtime');
+  };
+
+  // Helper for working time calculation in minutes
+  const calculateWorkingMinutes = (start: string, off: string): number => {
+    if (!start || !off) return 0;
+    const [sH, sM] = start.split(':').map(Number);
+    const [oH, oM] = off.split(':').map(Number);
+    if (isNaN(sH) || isNaN(sM) || isNaN(oH) || isNaN(oM)) return 0;
+    let startMin = sH * 60 + sM;
+    let offMin = oH * 60 + oM;
+    if (offMin < startMin) {
+      offMin += 24 * 60; // Overnight
+    }
+    return Math.max(0, offMin - startMin);
   };
 
   // Filter products for machine production (all Grade A products)
@@ -194,10 +211,12 @@ export const MachineView: React.FC = () => {
       weight,
       gsm,
       width,
+      dia: parseFloat(diaStr) || 1150,
       joint: parseInt(jointStr) || 0,
       shift,
       startTime,
       offTime,
+      workingMinutes: calculateWorkingMinutes(startTime, offTime),
       downtimeReason,
       date: dateStr,
       formulaId: formula.id,
@@ -239,7 +258,6 @@ export const MachineView: React.FC = () => {
                 <h1 className="text-xl sm:text-2xl font-black tracking-tight font-heading text-slate-900 dark:text-white">
                   {t('machine.title')}
                 </h1>
-                <WorkflowStepBadge stepInfo={WORKFLOW_STEPS.machine} />
               </div>
               <p className="text-xs sm:text-sm text-slate-500 dark:text-slate-400 font-medium mt-0.5">
                 Log production parent rolls, monitor machine shifts, and manage jumbo roll output.
@@ -404,7 +422,7 @@ export const MachineView: React.FC = () => {
                     placeholder="Weight in kg"
                   />
                 </div>
-                <div className="grid grid-cols-3 gap-2">
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
                   <div>
                     <label className="block text-[11px] font-black text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-1.5">
                       GSM
@@ -427,6 +445,18 @@ export const MachineView: React.FC = () => {
                       onChange={e => setWidthStr(e.target.value)}
                       className="block w-full py-2.5 px-3.5 bg-slate-50 dark:bg-slate-900 rounded-2xl text-xs font-bold focus:outline-none focus:ring-2 focus:ring-primary dark:text-white"
                       placeholder="30"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-[11px] font-black text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-1.5">
+                      Dia (mm)
+                    </label>
+                    <input
+                      type="number"
+                      value={diaStr}
+                      onChange={e => setDiaStr(e.target.value)}
+                      className="block w-full py-2.5 px-3.5 bg-slate-50 dark:bg-slate-900 rounded-2xl text-xs font-bold font-mono focus:outline-none focus:ring-2 focus:ring-primary dark:text-white"
+                      placeholder="1150"
                     />
                   </div>
                   <div>
@@ -476,6 +506,24 @@ export const MachineView: React.FC = () => {
                   />
                 </div>
               </div>
+
+              {/* Working Time Live Calculation Badge */}
+              {(() => {
+                const mins = calculateWorkingMinutes(startTime, offTime);
+                const hrs = Math.floor(mins / 60);
+                const remMins = mins % 60;
+                return (
+                  <div className="p-3 rounded-2xl bg-blue-50/70 dark:bg-blue-950/30 border border-blue-200/80 dark:border-blue-900/40 flex items-center justify-between text-xs font-bold">
+                    <span className="text-slate-600 dark:text-slate-400 flex items-center gap-1.5">
+                      <Clock className="h-4 w-4 text-primary dark:text-blue-400" />
+                      Calculated Working Time:
+                    </span>
+                    <span className="text-primary dark:text-blue-400 font-mono font-black text-sm">
+                      {mins} mins <span className="text-xs font-normal text-slate-500">({hrs}h {String(remMins).padStart(2, '0')}m)</span>
+                    </span>
+                  </div>
+                );
+              })()}
 
               <div>
                 <label className="block text-[11px] font-black text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-1.5">
@@ -572,6 +620,16 @@ export const MachineView: React.FC = () => {
                     <div>
                       <span className="text-slate-400 uppercase text-[9px] block">Roll Size</span>
                       <span className="font-bold text-slate-800 dark:text-slate-200 block">{r.width} cm</span>
+                    </div>
+                    <div>
+                      <span className="text-slate-400 uppercase text-[9px] block">Dia</span>
+                      <span className="font-bold text-slate-800 dark:text-slate-200 block font-mono">{r.dia || 1150} mm</span>
+                    </div>
+                    <div>
+                      <span className="text-slate-400 uppercase text-[9px] block">Working Time</span>
+                      <span className="font-bold text-primary dark:text-blue-400 block font-mono">
+                        {r.workingMinutes ?? calculateWorkingMinutes(r.startTime, r.offTime)} mins
+                      </span>
                     </div>
                     <div>
                       <span className="text-slate-400 uppercase text-[9px] block">Joints</span>

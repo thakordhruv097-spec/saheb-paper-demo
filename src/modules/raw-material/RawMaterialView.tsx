@@ -183,7 +183,6 @@ export const RawMaterialView: React.FC = () => {
                 <h1 className="text-xl sm:text-2xl font-black tracking-tight font-heading text-slate-900 dark:text-white">
                   Raw Material Stock Inventory
                 </h1>
-                <WorkflowStepBadge stepInfo={WORKFLOW_STEPS.rawMaterial} />
               </div>
               <p className="text-xs sm:text-sm text-slate-500 dark:text-slate-400 font-medium mt-0.5">
                 Monitor waste paper, chemicals, firewood stocks &amp; log purchase inward arrivals.
@@ -479,7 +478,7 @@ export const RawMaterialView: React.FC = () => {
                 <th className="py-3 px-3">Material Item</th>
                 <th className="py-3 px-3">Category</th>
                 <th className="py-3 px-3">Available Stock</th>
-                <th className="py-3 px-3">Min Reorder Level</th>
+                <th className="py-3 px-3">Minimum Stock (kg)</th>
                 <th className="py-3 px-3 text-right">Status</th>
               </tr>
             </thead>

@@ -30,6 +30,7 @@ import type {
   ProductItem,
   RawMaterialItem,
   RawMaterialCategory,
+  ChemicalModuleLocation,
   PartyItem,
   VendorItem,
   VehicleItem,
@@ -323,7 +324,7 @@ export const AdminMasters: React.FC = () => {
       triggerToast(`Product "${data.name}" updated`, 'product', prevData);
     } else if (type === 'raw_material') {
       if (!data.name || data.minThreshold === undefined) {
-        alert("Material Name and Reorder Level are required");
+        alert("Material Name and Minimum Stock are required");
         return;
       }
       const prevData = rawMaterials.find(m => m.id === data.id);
@@ -331,6 +332,7 @@ export const AdminMasters: React.FC = () => {
         ...data,
         stock: parseFloat(data.stock) || 0,
         minThreshold: parseFloat(data.minThreshold) || 0,
+        usedInModule: data.usedInModule || 'GENERAL',
       });
       setRawMaterials(getRawMaterials());
       triggerToast(`Raw Material "${data.name}" updated`, 'raw_material', prevData);
@@ -522,7 +524,7 @@ export const AdminMasters: React.FC = () => {
     setErrorMsg('');
 
     if (!rmName.trim() || !rmReorderLevel) {
-      setErrorMsg('Material Name and Reorder Level are required');
+      setErrorMsg('Material Name and Minimum Stock are required');
       return;
     }
 
@@ -1089,8 +1091,9 @@ export const AdminMasters: React.FC = () => {
                       <tr className="border-b border-slate-100 dark:border-slate-800 text-slate-400 uppercase text-[10px] font-black tracking-wider">
                         <th className="py-3 px-3">Name</th>
                         <th className="py-3 px-3">Category</th>
+                        <th className="py-3 px-3">Used In Module</th>
                         <th className="py-3 px-3">Current Stock (kg)</th>
-                        <th className="py-3 px-3">Reorder Level (kg)</th>
+                        <th className="py-3 px-3">Minimum Stock (kg)</th>
                         <th className="py-3 px-3">Status</th>
                         <th className="py-3 px-3 text-right">Actions</th>
                       </tr>
@@ -1098,7 +1101,7 @@ export const AdminMasters: React.FC = () => {
                     <tbody className="divide-y divide-slate-100 dark:divide-slate-800 font-semibold">
                       {filteredRawMaterials.length === 0 ? (
                         <tr>
-                          <td colSpan={6} className="py-8 text-center text-xs text-slate-400 font-medium">
+                          <td colSpan={7} className="py-8 text-center text-xs text-slate-400 font-medium">
                             No raw materials match your selected category or search.
                           </td>
                         </tr>
@@ -1113,6 +1116,13 @@ export const AdminMasters: React.FC = () => {
                               ? { label: 'Chemical', color: 'bg-purple-100/90 dark:bg-purple-950/60 text-purple-800 dark:text-purple-300 border-purple-300/80 dark:border-purple-700/80' }
                               : { label: 'Firewood', color: 'bg-emerald-100/90 dark:bg-emerald-950/60 text-emerald-800 dark:text-emerald-300 border-emerald-300/80 dark:border-emerald-700/80' };
 
+                          const moduleBadge =
+                            rm.usedInModule === 'PULP_MILL' ? { label: '🏭 Pulp Mill', color: 'bg-cyan-50 dark:bg-cyan-950/50 text-cyan-700 dark:text-cyan-300 border-cyan-200 dark:border-cyan-800' } :
+                            rm.usedInModule === 'MACHINE_PRODUCTION' ? { label: '⚙️ Machine', color: 'bg-indigo-50 dark:bg-indigo-950/50 text-indigo-700 dark:text-indigo-300 border-indigo-200 dark:border-indigo-800' } :
+                            rm.usedInModule === 'UTILITIES_ETP' ? { label: '💧 Utilities & ETP', color: 'bg-teal-50 dark:bg-teal-950/50 text-teal-700 dark:text-teal-300 border-teal-200 dark:border-teal-800' } :
+                            rm.usedInModule === 'LAB_QC' ? { label: '🔬 Lab QC', color: 'bg-rose-50 dark:bg-rose-950/50 text-rose-700 dark:text-rose-300 border-rose-200 dark:border-rose-800' } :
+                            { label: '🌐 General / All', color: 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 border-slate-200 dark:border-slate-700' };
+
                           return (
                             <tr key={rm.id} className="hover:bg-blue-50/50 dark:hover:bg-slate-800/40 transition">
                               <td className="py-3.5 px-3 font-bold text-slate-900 dark:text-white">
@@ -1121,6 +1131,11 @@ export const AdminMasters: React.FC = () => {
                               <td className="py-3.5 px-3">
                                 <span className={`px-2.5 py-1 rounded-full text-[10px] font-extrabold whitespace-nowrap inline-flex items-center tracking-wide border shadow-2xs ${catConfig.color}`}>
                                   {catConfig.label}
+                                </span>
+                              </td>
+                              <td className="py-3.5 px-3">
+                                <span className={`px-2.5 py-0.5 rounded-full text-[10px] font-bold whitespace-nowrap inline-flex items-center border ${moduleBadge.color}`}>
+                                  {moduleBadge.label}
                                 </span>
                               </td>
                               <td className="py-3.5 px-3 font-mono font-bold text-slate-900 dark:text-white">
@@ -1224,10 +1239,18 @@ export const AdminMasters: React.FC = () => {
                             <span className="px-2.5 py-0.5 rounded-full text-[9px] font-extrabold whitespace-nowrap bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-700">
                               {catLabel}
                             </span>
+                            {rm.usedInModule && (
+                              <span className="px-2 py-0.5 rounded-full text-[8.5px] font-bold whitespace-nowrap bg-purple-50 dark:bg-purple-950/50 text-purple-700 dark:text-purple-300 border border-purple-200 dark:border-purple-800">
+                                {rm.usedInModule === 'PULP_MILL' ? '🏭 Pulp Mill' :
+                                 rm.usedInModule === 'MACHINE_PRODUCTION' ? '⚙️ Machine' :
+                                 rm.usedInModule === 'UTILITIES_ETP' ? '💧 ETP' :
+                                 rm.usedInModule === 'LAB_QC' ? '🔬 Lab' : '🌐 General'}
+                              </span>
+                            )}
                           </div>
                           <div className="flex items-center gap-3 text-[11px] text-slate-500 dark:text-slate-400 font-mono">
                             <span>Stock: <strong className="text-slate-800 dark:text-slate-200">{rm.stock} kg</strong></span>
-                            <span>Reorder: <strong className="text-slate-800 dark:text-slate-200">{rm.minThreshold} kg</strong></span>
+                            <span>Min Stock: <strong className="text-slate-800 dark:text-slate-200">{rm.minThreshold} kg</strong></span>
                           </div>
                         </div>
                       <div className={`inline-block text-left ${openMenuFor === rm.id ? 'relative z-50' : 'relative'}`}>
@@ -2161,7 +2184,7 @@ export const AdminMasters: React.FC = () => {
                 </div>
 
                 <div>
-                  <label className="block text-[11px] font-black text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-1.5">Reorder Level (kg)</label>
+                  <label className="block text-[11px] font-black text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-1.5">Minimum Stock (kg)</label>
                   <input
                     type="number"
                     value={rmReorderLevel}
@@ -2396,6 +2419,20 @@ export const AdminMasters: React.FC = () => {
                       <option value="FIREWOOD">Firewood</option>
                     </select>
                   </div>
+                  <div>
+                    <label className="block text-[11px] font-semibold text-text-light-secondary dark:text-slate-300 uppercase mb-1">Used In Module / Process Location</label>
+                    <select
+                      value={editingItem.data.usedInModule || 'GENERAL'}
+                      onChange={e => setEditingItem({ ...editingItem, data: { ...editingItem.data, usedInModule: e.target.value as ChemicalModuleLocation } })}
+                      className="block w-full py-1.5 px-3 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-md text-xs dark:text-white focus:ring-1 focus:ring-primary focus:outline-none"
+                    >
+                      <option value="PULP_MILL">🏭 Pulp Mill (De-inking / Bleaching / Pulper)</option>
+                      <option value="MACHINE_PRODUCTION">⚙️ Machine Production (Wet End / Sizing / Dyes)</option>
+                      <option value="UTILITIES_ETP">💧 Utilities &amp; ETP (Effluent / Water Treatment / Boiler)</option>
+                      <option value="LAB_QC">🔬 Lab Quality Control</option>
+                      <option value="GENERAL">🌐 General / All Modules</option>
+                    </select>
+                  </div>
                   <div className="grid grid-cols-2 gap-2">
                     <div>
                       <label className="block text-[11px] font-semibold text-text-light-secondary dark:text-slate-300 uppercase mb-1">Current Stock (kg)</label>
@@ -2408,7 +2445,7 @@ export const AdminMasters: React.FC = () => {
                       />
                     </div>
                     <div>
-                      <label className="block text-[11px] font-semibold text-text-light-secondary dark:text-slate-300 uppercase mb-1">Reorder Level (kg)</label>
+                      <label className="block text-[11px] font-semibold text-text-light-secondary dark:text-slate-300 uppercase mb-1">Minimum Stock (kg)</label>
                       <input
                         type="number"
                         required
@@ -2612,13 +2649,22 @@ export const AdminMasters: React.FC = () => {
                     <span className="block text-[10px] uppercase font-bold text-slate-400 mb-0.5">Category</span>
                     <span className="font-semibold text-slate-800 dark:text-slate-200">{viewingItem.data.category.replace('_', ' ')}</span>
                   </div>
+                  <div>
+                    <span className="block text-[10px] uppercase font-bold text-slate-400 mb-0.5">Used In Module</span>
+                    <span className="font-semibold text-slate-800 dark:text-slate-200">
+                      {viewingItem.data.usedInModule === 'PULP_MILL' ? '🏭 Pulp Mill' :
+                       viewingItem.data.usedInModule === 'MACHINE_PRODUCTION' ? '⚙️ Machine Production' :
+                       viewingItem.data.usedInModule === 'UTILITIES_ETP' ? '💧 Utilities & ETP' :
+                       viewingItem.data.usedInModule === 'LAB_QC' ? '🔬 Lab QC' : '🌐 General / All Modules'}
+                    </span>
+                  </div>
                   <div className="grid grid-cols-2 gap-4 pt-2 border-t dark:border-slate-700">
                     <div>
                       <span className="block text-[10px] uppercase font-bold text-slate-400 mb-0.5">Current Stock</span>
                       <span className="font-semibold text-slate-800 dark:text-slate-200 font-mono">{viewingItem.data.stock} kg</span>
                     </div>
                     <div>
-                      <span className="block text-[10px] uppercase font-bold text-slate-400 mb-0.5">Reorder Threshold</span>
+                      <span className="block text-[10px] uppercase font-bold text-slate-400 mb-0.5">Minimum Stock</span>
                       <span className="font-semibold text-slate-800 dark:text-slate-200 font-mono">{viewingItem.data.minThreshold} kg</span>
                     </div>
                   </div>

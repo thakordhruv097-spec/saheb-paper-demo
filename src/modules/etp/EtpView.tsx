@@ -73,7 +73,7 @@ export const EtpView: React.FC = () => {
     }
 
     const newLog: EtpLog = {
-      id: `etp-${Date.now()}`,
+      id: `etp-${dateStr.replace(/-/g, '')}-${Date.now().toString().slice(-4)}`,
       date: dateStr,
       flockLiq,
       flockMaster,
@@ -262,7 +262,7 @@ export const EtpView: React.FC = () => {
                 <tbody className="divide-y divide-slate-100 dark:divide-slate-800 font-semibold text-slate-800 dark:text-slate-200">
                   {filteredLogs
                     .slice()
-                    .sort((a, b) => b.id.localeCompare(a.id))
+                    .sort((a, b) => (b.date || '').localeCompare(a.date || '') || b.id.localeCompare(a.id))
                     .slice(0, visibleCount)
                     .map(log => (
                       <tr key={log.id} className="hover:bg-slate-50/80 dark:hover:bg-slate-800/50 transition">
@@ -288,7 +288,7 @@ export const EtpView: React.FC = () => {
             <div className="block md:hidden space-y-2.5">
               {filteredLogs
                 .slice()
-                .sort((a, b) => b.id.localeCompare(a.id))
+                .sort((a, b) => (b.date || '').localeCompare(a.date || '') || b.id.localeCompare(a.id))
                 .slice(0, visibleCount)
                 .map(log => (
                   <div

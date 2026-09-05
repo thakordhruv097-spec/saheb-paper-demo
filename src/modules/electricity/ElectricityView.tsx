@@ -66,7 +66,7 @@ export const ElectricityView: React.FC = () => {
     const finalDate = dateStr || new Date().toISOString().substring(0, 10);
 
     const newLog: ElectricityLog = {
-      id: `elec-${Date.now()}`,
+      id: `elec-${finalDate.replace(/-/g, '')}-${Date.now().toString().slice(-4)}`,
       date: finalDate,
       units,
       operator: user?.displayName || 'System',
@@ -240,7 +240,7 @@ export const ElectricityView: React.FC = () => {
                 <tbody className="divide-y divide-slate-100 dark:divide-slate-800 font-semibold text-slate-800 dark:text-slate-200">
                   {filteredLogs
                     .slice()
-                    .sort((a, b) => b.id.localeCompare(a.id))
+                    .sort((a, b) => (b.date || '').localeCompare(a.date || '') || b.id.localeCompare(a.id))
                     .slice(0, visibleCount)
                     .map(log => {
                       const prodTons = getProductionTonsForDate(log.date);
@@ -277,7 +277,7 @@ export const ElectricityView: React.FC = () => {
             <div className="block md:hidden space-y-2.5">
               {filteredLogs
                 .slice()
-                .sort((a, b) => b.id.localeCompare(a.id))
+                .sort((a, b) => (b.date || '').localeCompare(a.date || '') || b.id.localeCompare(a.id))
                 .slice(0, visibleCount)
                 .map(log => {
                   const prodTons = getProductionTonsForDate(log.date);

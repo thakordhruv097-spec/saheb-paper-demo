@@ -60,6 +60,13 @@ export type RawMaterialCategory =
   | 'CHEMICAL'
   | 'FIREWOOD';
 
+export type ChemicalModuleLocation =
+  | 'PULP_MILL'
+  | 'MACHINE_PRODUCTION'
+  | 'UTILITIES_ETP'
+  | 'LAB_QC'
+  | 'GENERAL';
+
 export interface RawMaterialItem {
   id: string;
   name: string;
@@ -67,6 +74,7 @@ export interface RawMaterialItem {
   stock: number; // in kg
   minThreshold: number; // in kg
   active?: boolean;
+  usedInModule?: ChemicalModuleLocation; // Target Module where this material/chemical is used
 }
 
 export interface ProductItem {
@@ -114,10 +122,12 @@ export interface MachineRoll {
   weight: number; // in kg
   gsm: number;
   width: number; // in mm or cm
+  dia?: number; // Roll Diameter in mm
   joint?: number; // number of joints
   shift: 'A' | 'B';
   startTime: string;
   offTime: string;
+  workingMinutes?: number; // Total working time in minutes
   downtimeReason: string;
   date: string; // YYYY-MM-DD
   formulaId: string; // references PulpFormula.id
@@ -179,7 +189,7 @@ export interface BoilerLog {
   woodUsed: number; // kg
   waterUsed: number; // liters
   pressure: number; // psi
-  temperature: number; // °C
+  temperature?: number; // °C (optional)
   operator: string;
   shift: 'Day' | 'Night' | 'A' | 'B' | string;
 }
@@ -207,6 +217,8 @@ export interface PendingOrder {
   size: number;
   ply: number;
   qty: number; // reels required
+  weightTons?: number; // order weight in Tons
+  receiveDate?: string; // Order Receive Date (YYYY-MM-DD)
   dueDate: string; // YYYY-MM-DD
   status: 'PENDING' | 'PARTIAL' | 'COMPLETED';
   dispatchedQty: number;
@@ -231,8 +243,11 @@ export interface StoreItem {
   type: 'BEARING' | 'V_BELT';
   name: string; // Bearing number or V-belt size
   pcs: number;
-  group?: string; // V-belt group (A, B, C etc)
+  group?: string; // Optional legacy group
   usageArea?: string; // Bearing usage area
+  targetMachine?: string; // Target Machine / Location
+  minStock?: number; // Minimum stock threshold / target
+  remarks?: string; // Remarks / Specifications
 }
 
 export interface RawMaterialLot {

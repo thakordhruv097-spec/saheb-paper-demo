@@ -3,7 +3,6 @@ import { useAuth } from '../auth/AuthContext';
 import { useTranslation } from 'react-i18next';
 import { getStoreItems, saveStoreItem, adjustStoreItemStock } from '../../data/index';
 import type { StoreItem } from '../../data/types';
-import { CustomSearchableSelect } from '../../components/CustomSearchableSelect';
 import { Settings, Plus, Minus, Warehouse, Disc, Search, ListFilter } from 'lucide-react';
 
 export const StoreView: React.FC = () => {
@@ -25,7 +24,9 @@ export const StoreView: React.FC = () => {
   // 2. Add V-Belt States
   const [beltSize, setBeltSize] = useState('');
   const [beltPcs, setBeltPcs] = useState('');
-  const [beltGroup, setBeltGroup] = useState('C');
+  const [beltTarget, setBeltTarget] = useState('');
+  const [beltMinStock, setBeltMinStock] = useState('5');
+  const [beltRemarks, setBeltRemarks] = useState('');
 
   // Stock adjustment modal states
   const [adjustingItem, setAdjustingItem] = useState<StoreItem | null>(null);
@@ -53,6 +54,7 @@ export const StoreView: React.FC = () => {
       name: bearingNo,
       pcs,
       usageArea: bearingUsage,
+      minStock: 4,
     };
 
     saveStoreItem(newItem, user?.displayName || 'System');
@@ -68,8 +70,8 @@ export const StoreView: React.FC = () => {
     setSuccessMsg('');
     setErrorMsg('');
 
-    if (!beltSize || !beltPcs || !beltGroup) {
-      setErrorMsg('All V-Belt fields are required');
+    if (!beltSize.trim() || !beltPcs.trim()) {
+      setErrorMsg('V-Belt size code and pieces are required');
       return;
     }
 
@@ -79,12 +81,16 @@ export const StoreView: React.FC = () => {
       return;
     }
 
+    const minStock = parseInt(beltMinStock);
+
     const newItem: StoreItem = {
       id: `st-${Date.now()}`,
       type: 'V_BELT',
-      name: beltSize,
+      name: beltSize.trim(),
       pcs,
-      group: beltGroup,
+      targetMachine: beltTarget.trim() || 'General Plant Machine',
+      minStock: !isNaN(minStock) && minStock >= 0 ? minStock : 5,
+      remarks: beltRemarks.trim() || '-',
     };
 
     saveStoreItem(newItem, user?.displayName || 'System');
@@ -92,6 +98,9 @@ export const StoreView: React.FC = () => {
     setSuccessMsg('V-Belt added successfully to store ledger!');
     setBeltSize('');
     setBeltPcs('');
+    setBeltTarget('');
+    setBeltMinStock('5');
+    setBeltRemarks('');
   };
 
   const handleAdjustStock = (e: React.FormEvent) => {
@@ -122,7 +131,8 @@ export const StoreView: React.FC = () => {
     const q = storeSearchQuery.toLowerCase().trim();
     return list.filter(item => 
       item.name.toLowerCase().includes(q) ||
-      (item.usageArea && item.usageArea.toLowerCase().includes(q))
+      (item.usageArea && item.usageArea.toLowerCase().includes(q)) ||
+      (item.remarks && item.remarks.toLowerCase().includes(q))
     );
   }, [items, storeSearchQuery]);
 
@@ -132,7 +142,9 @@ export const StoreView: React.FC = () => {
     const q = storeSearchQuery.toLowerCase().trim();
     return list.filter(item => 
       item.name.toLowerCase().includes(q) ||
-      (item.group && item.group.toLowerCase().includes(q))
+      (item.targetMachine && item.targetMachine.toLowerCase().includes(q)) ||
+      (item.remarks && item.remarks.toLowerCase().includes(q)) ||
+      (item.usageArea && item.usageArea.toLowerCase().includes(q))
     );
   }, [items, storeSearchQuery]);
 
@@ -140,7 +152,7 @@ export const StoreView: React.FC = () => {
   const vbeltsList = useMemo(() => items.filter(i => i.type === 'V_BELT'), [items]);
   const totalBearingsStock = useMemo(() => bearingsList.reduce((acc, b) => acc + b.pcs, 0), [bearingsList]);
   const totalVbeltsStock = useMemo(() => vbeltsList.reduce((acc, v) => acc + v.pcs, 0), [vbeltsList]);
-  const lowStockSparesCount = useMemo(() => items.filter(i => i.pcs <= 5).length, [items]);
+  const lowStockSparesCount = useMemo(() => items.filter(i => i.pcs <= (i.minStock || 5)).length, [items]);
 
   return (
     <div className="space-y-6 font-sans pb-12">
@@ -252,7 +264,7 @@ export const StoreView: React.FC = () => {
               type="text"
               value={storeSearchQuery}
               onChange={e => setStoreSearchQuery(e.target.value)}
-              placeholder={`Search ${activeTab === 'bearings' ? 'bearings by number or usage area' : 'V-Belts by size or group'}...`}
+              placeholder={`Search ${activeTab === 'bearings' ? 'bearings by number or usage area' : 'V-Belts by size, machine, or remarks'}...`}
               className="bg-transparent border-none text-xs font-semibold focus:outline-none w-full dark:text-white placeholder-slate-400"
             />
             <div className="p-1.5 rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-500 shrink-0">
@@ -339,8 +351,10 @@ export const StoreView: React.FC = () => {
                   <thead>
                     <tr className="border-b border-slate-100 dark:border-slate-800 text-slate-400 uppercase text-[10px] font-black tracking-wider">
                       <th className="py-3 px-3">V-Belt Size</th>
-                      <th className="py-3 px-3">Belt Group</th>
                       <th className="py-3 px-3">Pcs In Stock</th>
+                      <th className="py-3 px-3">Target Machine / Location</th>
+                      <th className="py-3 px-3">Min Target Stock</th>
+                      <th className="py-3 px-3">Remarks</th>
                       <th className="py-3 px-3 text-right">Actions</th>
                     </tr>
                   </thead>
@@ -349,11 +363,23 @@ export const StoreView: React.FC = () => {
                       <tr key={item.id} className="hover:bg-blue-50/50 dark:hover:bg-slate-800/40 transition">
                         <td className="py-3 px-3 font-bold text-slate-900 dark:text-white font-mono">{item.name}</td>
                         <td className="py-3 px-3">
-                          <span className="px-2.5 py-0.5 rounded-full bg-slate-100 dark:bg-slate-800 font-black text-[10px] uppercase text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-700">
-                            Group {item.group}
+                          <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-black ${
+                            item.pcs <= (item.minStock || 5)
+                              ? 'bg-red-100 dark:bg-red-950/60 text-red-700 dark:text-red-300 border border-red-200 dark:border-red-800'
+                              : 'text-slate-800 dark:text-slate-200'
+                          }`}>
+                            {item.pcs} pcs
                           </span>
                         </td>
-                        <td className="py-3 px-3 font-bold text-slate-800 dark:text-slate-200">{item.pcs} pcs</td>
+                        <td className="py-3 px-3 text-slate-700 dark:text-slate-300 font-medium">
+                          {item.targetMachine || item.usageArea || 'General Plant'}
+                        </td>
+                        <td className="py-3 px-3 text-slate-500 dark:text-slate-400 font-mono">
+                          {item.minStock || 5} pcs
+                        </td>
+                        <td className="py-3 px-3 text-slate-600 dark:text-slate-400 text-[11px] italic">
+                          {item.remarks || '-'}
+                        </td>
                         <td className="py-3 px-3 text-right">
                           <button
                             onClick={() => setAdjustingItem(item)}
@@ -374,8 +400,12 @@ export const StoreView: React.FC = () => {
                   <div key={item.id} className="p-4 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl space-y-2 text-xs text-left">
                     <div className="flex justify-between items-center border-b pb-2 dark:border-slate-800">
                       <span className="font-black font-mono text-slate-900 dark:text-white">{item.name}</span>
-                      <span className="px-2.5 py-0.5 rounded-full bg-slate-200 dark:bg-slate-800 text-[10px] font-black uppercase text-slate-700 dark:text-slate-300">
-                        Group {item.group}
+                      <span className={`px-2.5 py-0.5 rounded-full text-[10px] font-black ${
+                        item.pcs <= (item.minStock || 5)
+                          ? 'bg-red-100 dark:bg-red-950/60 text-red-700 dark:text-red-300'
+                          : 'bg-blue-100 dark:bg-blue-950/60 text-primary dark:text-blue-400'
+                      }`}>
+                        {item.pcs} pcs
                       </span>
                     </div>
                     <div className="grid grid-cols-2 gap-y-2 text-[11px] text-slate-600 dark:text-slate-400">
@@ -384,9 +414,19 @@ export const StoreView: React.FC = () => {
                         <span className="font-bold text-slate-900 dark:text-white font-mono">{item.name}</span>
                       </div>
                       <div>
-                        <span className="font-black text-slate-400 block uppercase tracking-wider text-[9px]">Quantity</span>
-                        <span className="font-bold text-slate-900 dark:text-white">{item.pcs} pcs</span>
+                        <span className="font-black text-slate-400 block uppercase tracking-wider text-[9px]">Min Target Stock</span>
+                        <span className="font-bold text-slate-900 dark:text-white">{item.minStock || 5} pcs</span>
                       </div>
+                      <div className="col-span-2">
+                        <span className="font-black text-slate-400 block uppercase tracking-wider text-[9px]">Target Machine / Location</span>
+                        <span className="font-bold text-slate-800 dark:text-white">{item.targetMachine || item.usageArea || 'General Plant'}</span>
+                      </div>
+                      {item.remarks && (
+                        <div className="col-span-2">
+                          <span className="font-black text-slate-400 block uppercase tracking-wider text-[9px]">Remarks</span>
+                          <span className="text-slate-600 dark:text-slate-300 italic">{item.remarks}</span>
+                        </div>
+                      )}
                     </div>
                     <div className="pt-2 border-t dark:border-slate-800 flex justify-end">
                       <button
@@ -423,6 +463,7 @@ export const StoreView: React.FC = () => {
                   onChange={e => setBearingNo(e.target.value)}
                   className="block w-full py-2.5 px-3.5 bg-slate-50 dark:bg-slate-900 rounded-2xl text-xs font-bold focus:outline-none focus:ring-2 focus:ring-primary dark:text-white font-mono"
                   placeholder="e.g. 6205"
+                  required
                 />
               </div>
 
@@ -430,10 +471,12 @@ export const StoreView: React.FC = () => {
                 <label className="block text-[11px] font-black text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-1.5">Pieces In Stock</label>
                 <input
                   type="number"
+                  min="0"
                   value={bearingPcs}
                   onChange={e => setBearingPcs(e.target.value)}
                   className="block w-full py-2.5 px-3.5 bg-slate-50 dark:bg-slate-900 rounded-2xl text-xs font-bold focus:outline-none focus:ring-2 focus:ring-primary dark:text-white"
                   placeholder="e.g. 10"
+                  required
                 />
               </div>
 
@@ -445,6 +488,7 @@ export const StoreView: React.FC = () => {
                   onChange={e => setBearingUsage(e.target.value)}
                   className="block w-full py-2.5 px-3.5 bg-slate-50 dark:bg-slate-900 rounded-2xl text-xs font-bold focus:outline-none focus:ring-2 focus:ring-primary dark:text-white"
                   placeholder="e.g. Pulp Mill Agitator"
+                  required
                 />
               </div>
 
@@ -472,22 +516,7 @@ export const StoreView: React.FC = () => {
                   value={beltSize}
                   onChange={e => setBeltSize(e.target.value)}
                   className="block w-full py-2.5 px-3.5 bg-slate-50 dark:bg-slate-900 rounded-2xl text-xs font-bold focus:outline-none focus:ring-2 focus:ring-primary dark:text-white font-mono"
-                  placeholder="e.g. C-96"
-                />
-              </div>
-
-              <div>
-                <CustomSearchableSelect
-                  label="BELT GROUP SECTION"
-                  placeholder="Select Group Section..."
-                  value={beltGroup}
-                  onChange={setBeltGroup}
-                  options={[
-                    { value: 'A', label: 'Group A Section', badge: 'Section A' },
-                    { value: 'B', label: 'Group B Section', badge: 'Section B' },
-                    { value: 'C', label: 'Group C Section', badge: 'Section C' },
-                    { value: 'D', label: 'Group D Section', badge: 'Section D' },
-                  ]}
+                  placeholder="e.g. C-96, B-72, A-48"
                   required
                 />
               </div>
@@ -496,10 +525,46 @@ export const StoreView: React.FC = () => {
                 <label className="block text-[11px] font-black text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-1.5">Pieces In Stock</label>
                 <input
                   type="number"
+                  min="0"
                   value={beltPcs}
                   onChange={e => setBeltPcs(e.target.value)}
                   className="block w-full py-2.5 px-3.5 bg-slate-50 dark:bg-slate-900 rounded-2xl text-xs font-bold focus:outline-none focus:ring-2 focus:ring-primary dark:text-white"
                   placeholder="e.g. 5"
+                  required
+                />
+              </div>
+
+              <div>
+                <label className="block text-[11px] font-black text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-1.5">Target Machine / Location</label>
+                <input
+                  type="text"
+                  value={beltTarget}
+                  onChange={e => setBeltTarget(e.target.value)}
+                  className="block w-full py-2.5 px-3.5 bg-slate-50 dark:bg-slate-900 rounded-2xl text-xs font-bold focus:outline-none focus:ring-2 focus:ring-primary dark:text-white"
+                  placeholder="e.g. Vacuum Pump Drive, Rewinder"
+                />
+              </div>
+
+              <div>
+                <label className="block text-[11px] font-black text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-1.5">Min Stock Target</label>
+                <input
+                  type="number"
+                  min="1"
+                  value={beltMinStock}
+                  onChange={e => setBeltMinStock(e.target.value)}
+                  className="block w-full py-2.5 px-3.5 bg-slate-50 dark:bg-slate-900 rounded-2xl text-xs font-bold focus:outline-none focus:ring-2 focus:ring-primary dark:text-white"
+                  placeholder="e.g. 5"
+                />
+              </div>
+
+              <div>
+                <label className="block text-[11px] font-black text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-1.5">Remarks / Specifications</label>
+                <input
+                  type="text"
+                  value={beltRemarks}
+                  onChange={e => setBeltRemarks(e.target.value)}
+                  className="block w-full py-2.5 px-3.5 bg-slate-50 dark:bg-slate-900 rounded-2xl text-xs font-bold focus:outline-none focus:ring-2 focus:ring-primary dark:text-white"
+                  placeholder="e.g. Fenner Raw Edge Cogged, Supplier Ref"
                 />
               </div>
 

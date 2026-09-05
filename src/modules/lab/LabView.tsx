@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { useAuth } from '../auth/AuthContext';
 import { useTranslation } from 'react-i18next';
 import { getLabReports, saveLabReport, deleteLabReport, getRolls } from '../../data/index';
@@ -109,6 +109,15 @@ export const LabView: React.FC = () => {
 
     return { avg, max, min, range };
   }, [gsmSamples]);
+
+  // Auto-calculate Bulk (Formula: Caliper ÷ GSM)
+  useEffect(() => {
+    const effectiveGsm = labResultGsm > 0 ? labResultGsm : (targetGsm > 0 ? targetGsm : (gsmStats.avg > 0 ? gsmStats.avg : 0));
+    if (caliperMm > 0 && effectiveGsm > 0) {
+      const calculatedBulk = parseFloat((caliperMm / effectiveGsm).toFixed(2));
+      setBulkCcGm(calculatedBulk);
+    }
+  }, [caliperMm, labResultGsm, targetGsm, gsmStats.avg]);
 
   const handleGsmSampleChange = (index: number, val: string) => {
     const num = parseFloat(val) || 0;
@@ -319,7 +328,6 @@ export const LabView: React.FC = () => {
                 <h1 className="text-xl sm:text-2xl font-black tracking-tight font-heading text-slate-900 dark:text-white">
                   {COMPANY_CONFIG.name} — Quality Control Laboratory
                 </h1>
-                <WorkflowStepBadge stepInfo={WORKFLOW_STEPS.lab} />
               </div>
               <p className="text-xs sm:text-sm text-slate-500 dark:text-slate-400 font-medium mt-0.5">
                 Log paper test reports, 14-sample GSM profiles, tensile/tear strength & generate official COA certificates.
@@ -806,7 +814,14 @@ export const LabView: React.FC = () => {
                   </div>
 
                   <div>
-                    <label className="block text-[10px] font-black text-slate-500 uppercase tracking-wider mb-1">4. Bulk (cc/gm)</label>
+                    <div className="flex items-center justify-between mb-1">
+                      <label className="block text-[10px] font-black text-slate-500 uppercase tracking-wider">
+                        4. Bulk (cc/gm)
+                      </label>
+                      <span className="text-[9px] font-bold text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/60 px-1.5 py-0.5 rounded border border-emerald-200 dark:border-emerald-800/60">
+                        Auto: Caliper ÷ GSM
+                      </span>
+                    </div>
                     <input
                       type="number"
                       step="0.01"
@@ -814,6 +829,9 @@ export const LabView: React.FC = () => {
                       onChange={e => setBulkCcGm(parseFloat(e.target.value) || 0)}
                       className="w-full p-2 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl font-mono font-bold dark:text-white"
                     />
+                    <span className="text-[9px] text-slate-400 mt-0.5 block font-mono">
+                      Formula: {caliperMm} ÷ {labResultGsm || targetGsm || 1} = {bulkCcGm} cc/gm
+                    </span>
                   </div>
 
                   <div>

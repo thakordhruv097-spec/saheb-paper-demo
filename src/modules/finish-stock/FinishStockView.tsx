@@ -33,22 +33,17 @@ export const FinishStockView: React.FC<FinishStockViewProps> = ({ hideHeader = f
   const { user } = useAuth();
 
   const [reels, setReels] = useState<Reel[]>(() => getReels());
-  const [activeTab, setActiveTab] = useState<'all' | 'grade_a' | 'grade_b' | 'pending_qc'>(() => {
-    const initialReels = getReels();
-    const hasGradeA = initialReels.some(r => r.status === 'IN_STOCK');
-    const hasPending = initialReels.some(r => r.status === 'QC_PENDING');
-    if (hasPending && !hasGradeA) return 'all';
-    return 'all';
-  });
+  const [activeTab, setActiveTab] = useState<'all' | 'in_stock' | 'pending_qc'>('all');
   const [stockSearchQuery, setStockSearchQuery] = useState('');
   const [expandedGroups, setExpandedGroups] = useState<Record<string, boolean>>({});
 
-  // Cascading Filter Popup States
+  // Filter States
   const [showFilterModal, setShowFilterModal] = useState(false);
   const [filterProduct, setFilterProduct] = useState<string>('ALL');
   const [filterGsm, setFilterGsm] = useState<string>('ALL');
   const [filterSize, setFilterSize] = useState<string>('ALL');
   const [filterPly, setFilterPly] = useState<string>('ALL');
+  const [filterJoint, setFilterJoint] = useState<string>('ALL');
 
   // QC Form & Inspection Details States
   const [inspectingReel, setInspectingReel] = useState<Reel | null>(null);
@@ -106,79 +101,111 @@ export const FinishStockView: React.FC<FinishStockViewProps> = ({ hideHeader = f
     }));
   }, [reels]);
 
-  // 1. Base Reels for Active Tab
+  // 1. Base Reels for Active Tab (Status filter: All, Ready In Stock, Pending QC)
   const tabReels = useMemo(() => {
     return safeReels.filter(r => {
-      if (activeTab === 'all') return r.status === 'IN_STOCK' || r.status === 'IN_STOCK_B' || r.status === 'QC_PENDING';
-      if (activeTab === 'grade_a') return r.status === 'IN_STOCK';
-      if (activeTab === 'grade_b') return r.status === 'IN_STOCK_B';
-      return r.status === 'QC_PENDING';
+      if (activeTab === 'all') return true;
+      if (activeTab === 'in_stock') return r.status === 'IN_STOCK' || r.status === 'IN_STOCK_B';
+      if (activeTab === 'pending_qc') return r.status === 'QC_PENDING';
+      return true;
     });
   }, [safeReels, activeTab]);
 
-  // 2. Cascading Options Calculations
-  // Step 1: Available Products
+  // 2. Dynamic Available Options
   const availableProducts = useMemo(() => {
     return Array.from(new Set(tabReels.map(r => r.product))).sort();
   }, [tabReels]);
 
-  // Step 2: Available GSMs (Cascaded by selected Product)
   const availableGsms = useMemo(() => {
-    let list = tabReels;
-    if (filterProduct !== 'ALL') {
-      list = list.filter(r => r.product === filterProduct);
-    }
-    return Array.from(new Set(list.map(r => r.gsm))).sort((a, b) => a - b);
-  }, [tabReels, filterProduct]);
+    return Array.from(new Set(tabReels.map(r => r.gsm))).sort((a, b) => a - b);
+  }, [tabReels]);
 
-  // Step 3: Available Sizes (Cascaded by selected Product + GSM)
   const availableSizes = useMemo(() => {
-    let list = tabReels;
-    if (filterProduct !== 'ALL') {
-      list = list.filter(r => r.product === filterProduct);
-    }
-    if (filterGsm !== 'ALL') {
-      list = list.filter(r => r.gsm === Number(filterGsm));
-    }
-    return Array.from(new Set(list.map(r => r.size))).sort((a, b) => a - b);
-  }, [tabReels, filterProduct, filterGsm]);
+    return Array.from(new Set(tabReels.map(r => r.size))).sort((a, b) => a - b);
+  }, [tabReels]);
 
-  // Step 4: Available Ply Values (Cascaded by selected Product + GSM + Size)
   const availablePlys = useMemo(() => {
-    let list = tabReels;
-    if (filterProduct !== 'ALL') {
-      list = list.filter(r => r.product === filterProduct);
-    }
-    if (filterGsm !== 'ALL') {
-      list = list.filter(r => r.gsm === Number(filterGsm));
-    }
-    if (filterSize !== 'ALL') {
-      list = list.filter(r => r.size === Number(filterSize));
-    }
-    return Array.from(new Set(list.map(r => r.ply))).sort((a, b) => a - b);
-  }, [tabReels, filterProduct, filterGsm, filterSize]);
+    return Array.from(new Set(tabReels.map(r => r.ply))).sort((a, b) => a - b);
+  }, [tabReels]);
 
-  // Handlers for Cascading Filter selection
+  const availableJoints = useMemo(() => {
+    const set = new Set(tabReels.map(r => r.joint));
+    set.add(0);
+    set.add(1);
+    set.add(2);
+    return Array.from(set).sort((a, b) => a - b);
+  }, [tabReels]);
+
+  // Faceted match count helpers for smooth interactive chips
+  const getProductMatchCount = (prod: string) => {
+    return tabReels.filter(r =>
+      (filterGsm === 'ALL' || r.gsm === Number(filterGsm)) &&
+      (filterSize === 'ALL' || r.size === Number(filterSize)) &&
+      (filterPly === 'ALL' || r.ply === Number(filterPly)) &&
+      (filterJoint === 'ALL' || r.joint === Number(filterJoint)) &&
+      r.product === prod
+    ).length;
+  };
+
+  const getGsmMatchCount = (gsmVal: number) => {
+    return tabReels.filter(r =>
+      (filterProduct === 'ALL' || r.product === filterProduct) &&
+      (filterSize === 'ALL' || r.size === Number(filterSize)) &&
+      (filterPly === 'ALL' || r.ply === Number(filterPly)) &&
+      (filterJoint === 'ALL' || r.joint === Number(filterJoint)) &&
+      r.gsm === gsmVal
+    ).length;
+  };
+
+  const getSizeMatchCount = (sizeVal: number) => {
+    return tabReels.filter(r =>
+      (filterProduct === 'ALL' || r.product === filterProduct) &&
+      (filterGsm === 'ALL' || r.gsm === Number(filterGsm)) &&
+      (filterPly === 'ALL' || r.ply === Number(filterPly)) &&
+      (filterJoint === 'ALL' || r.joint === Number(filterJoint)) &&
+      r.size === sizeVal
+    ).length;
+  };
+
+  const getPlyMatchCount = (plyVal: number) => {
+    return tabReels.filter(r =>
+      (filterProduct === 'ALL' || r.product === filterProduct) &&
+      (filterGsm === 'ALL' || r.gsm === Number(filterGsm)) &&
+      (filterSize === 'ALL' || r.size === Number(filterSize)) &&
+      (filterJoint === 'ALL' || r.joint === Number(filterJoint)) &&
+      r.ply === plyVal
+    ).length;
+  };
+
+  const getJointMatchCount = (jointVal: number) => {
+    return tabReels.filter(r =>
+      (filterProduct === 'ALL' || r.product === filterProduct) &&
+      (filterGsm === 'ALL' || r.gsm === Number(filterGsm)) &&
+      (filterSize === 'ALL' || r.size === Number(filterSize)) &&
+      (filterPly === 'ALL' || r.ply === Number(filterPly)) &&
+      r.joint === jointVal
+    ).length;
+  };
+
+  // Handlers for Smooth Selection (clicking active toggles back to ALL without wiping other filters)
   const handleProductChange = (prod: string) => {
-    setFilterProduct(prod);
-    setFilterGsm('ALL');
-    setFilterSize('ALL');
-    setFilterPly('ALL');
+    setFilterProduct(prev => (prev === prod ? 'ALL' : prod));
   };
 
   const handleGsmChange = (gsmVal: string) => {
-    setFilterGsm(gsmVal);
-    setFilterSize('ALL');
-    setFilterPly('ALL');
+    setFilterGsm(prev => (prev === gsmVal ? 'ALL' : gsmVal));
   };
 
   const handleSizeChange = (sizeVal: string) => {
-    setFilterSize(sizeVal);
-    setFilterPly('ALL');
+    setFilterSize(prev => (prev === sizeVal ? 'ALL' : sizeVal));
   };
 
   const handlePlyChange = (plyVal: string) => {
-    setFilterPly(plyVal);
+    setFilterPly(prev => (prev === plyVal ? 'ALL' : plyVal));
+  };
+
+  const handleJointChange = (jointVal: string) => {
+    setFilterJoint(prev => (prev === jointVal ? 'ALL' : jointVal));
   };
 
   const handleClearAllFilters = () => {
@@ -186,15 +213,17 @@ export const FinishStockView: React.FC<FinishStockViewProps> = ({ hideHeader = f
     setFilterGsm('ALL');
     setFilterSize('ALL');
     setFilterPly('ALL');
+    setFilterJoint('ALL');
+    setActiveTab('all');
     setStockSearchQuery('');
   };
 
-  const gradeAStockKg = useMemo(() => reels.filter(r => r.status === 'IN_STOCK').reduce((acc, r) => acc + r.weight, 0), [reels]);
-  const gradeBStockKg = useMemo(() => reels.filter(r => r.status === 'IN_STOCK_B').reduce((acc, r) => acc + r.weight, 0), [reels]);
+  const totalInStockKg = useMemo(() => reels.filter(r => r.status === 'IN_STOCK' || r.status === 'IN_STOCK_B').reduce((acc, r) => acc + r.weight, 0), [reels]);
+  const totalInStockCount = useMemo(() => reels.filter(r => r.status === 'IN_STOCK' || r.status === 'IN_STOCK_B').length, [reels]);
   const pendingQcCount = useMemo(() => reels.filter(r => r.status === 'QC_PENDING').length, [reels]);
 
   // 1-Click Bulk QC Approval
-  const handleBulkApproveAllGradeA = () => {
+  const handleBulkApproveAll = () => {
     const pending = reels.filter(r => r.status === 'QC_PENDING' || !r.qcGrade || r.qcGrade === 'PENDING');
     if (pending.length === 0) return;
     pending.forEach(r => {
@@ -208,7 +237,7 @@ export const FinishStockView: React.FC<FinishStockViewProps> = ({ hideHeader = f
       );
     });
     setReels(getReels());
-    setActiveTab('grade_a');
+    setActiveTab('all');
     handleClearAllFilters();
   };
 
@@ -216,11 +245,12 @@ export const FinishStockView: React.FC<FinishStockViewProps> = ({ hideHeader = f
   const matchingFilteredList = useMemo(() => {
     let list = [...tabReels];
 
-    // Cascading filters
+    // Progressive / Faceted filters
     if (filterProduct !== 'ALL') list = list.filter(r => r.product === filterProduct);
     if (filterGsm !== 'ALL') list = list.filter(r => r.gsm === Number(filterGsm));
     if (filterSize !== 'ALL') list = list.filter(r => r.size === Number(filterSize));
     if (filterPly !== 'ALL') list = list.filter(r => r.ply === Number(filterPly));
+    if (filterJoint !== 'ALL') list = list.filter(r => r.joint === Number(filterJoint));
 
     // Free-text Search
     if (stockSearchQuery.trim()) {
@@ -230,6 +260,9 @@ export const FinishStockView: React.FC<FinishStockViewProps> = ({ hideHeader = f
         String(r.gsm).includes(q) ||
         String(r.size).includes(q) ||
         String(r.ply).includes(q) ||
+        String(r.joint).includes(q) ||
+        `${r.joint} joint`.includes(q) ||
+        `${r.joint} joints`.includes(q) ||
         r.reelNo.toLowerCase().includes(q)
       );
     }
@@ -237,7 +270,7 @@ export const FinishStockView: React.FC<FinishStockViewProps> = ({ hideHeader = f
     // Sort descending by reel number
     list.sort((a, b) => b.reelNo.localeCompare(a.reelNo));
     return list;
-  }, [tabReels, filterProduct, filterGsm, filterSize, filterPly, stockSearchQuery]);
+  }, [tabReels, filterProduct, filterGsm, filterSize, filterPly, filterJoint, stockSearchQuery]);
 
   // Total matching statistics
   const matchingTotalWeightKg = useMemo(() => {
@@ -252,8 +285,11 @@ export const FinishStockView: React.FC<FinishStockViewProps> = ({ hideHeader = f
     if (filterGsm !== 'ALL') c++;
     if (filterSize !== 'ALL') c++;
     if (filterPly !== 'ALL') c++;
+    if (filterJoint !== 'ALL') c++;
+    if (activeTab !== 'all') c++;
+    if (stockSearchQuery.trim()) c++;
     return c;
-  }, [filterProduct, filterGsm, filterSize, filterPly]);
+  }, [filterProduct, filterGsm, filterSize, filterPly, filterJoint, activeTab, stockSearchQuery]);
 
   // 4. Grouped Stock View (Product -> GSM -> Size -> Ply)
   const groupedStock = useMemo(() => {
@@ -330,7 +366,7 @@ export const FinishStockView: React.FC<FinishStockViewProps> = ({ hideHeader = f
   return (
     <div className="space-y-6 font-sans pb-12 text-left">
       
-      {/* 1. CLEAN MINIMAL HEADER CARD (OPTION A) */}
+      {/* 1. CLEAN MINIMAL HEADER CARD */}
       {!hideHeader && (
         <div className="bg-white dark:bg-[#131d38] rounded-2xl sm:rounded-3xl p-4 sm:p-5 text-slate-900 dark:text-white shadow-xs">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
@@ -343,58 +379,77 @@ export const FinishStockView: React.FC<FinishStockViewProps> = ({ hideHeader = f
                   <h1 className="text-xl sm:text-2xl font-black tracking-tight font-heading text-slate-900 dark:text-white">
                     {t('finish_stock.title')}
                   </h1>
-                  <WorkflowStepBadge stepInfo={WORKFLOW_STEPS.finishedStock} />
                 </div>
                 <p className="text-xs sm:text-sm text-slate-500 dark:text-slate-400 font-medium mt-0.5">
-                  Browse finished reels inventory using step-by-step cascading filters (Product → GSM → Size → Ply).
+                  Browse finished reels inventory with fast multi-attribute filtering (Product, GSM, Size, Ply, Joints, Status).
                 </p>
               </div>
+            </div>
+
+            <div className="flex items-center gap-2">
+              <button
+                type="button"
+                onClick={() => setShowFilterModal(true)}
+                className="px-4 py-2.5 rounded-2xl bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 font-black text-xs transition cursor-pointer flex items-center gap-2 border border-slate-200 dark:border-slate-700 shadow-2xs"
+              >
+                <SlidersHorizontal className="h-4 w-4 text-primary dark:text-blue-400" />
+                <span>Cascading Filter</span>
+                {activeFilterCount > 0 && (
+                  <span className="px-1.5 py-0.5 rounded-full bg-primary text-white text-[10px] font-black">
+                    {activeFilterCount}
+                  </span>
+                )}
+              </button>
             </div>
           </div>
         </div>
       )}
 
-      {/* 2. TOP METRIC SCORECARDS (INTERACTIVE QUICK FILTERS) */}
+      {/* 2. TOP METRIC SCORECARDS (INTERACTIVE QUICK STATUS FILTERS) */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
         <button
           type="button"
-          onClick={() => setActiveTab('grade_a')}
+          onClick={() => setActiveTab(activeTab === 'in_stock' ? 'all' : 'in_stock')}
           className={`neumorphic-card p-5 flex items-center gap-4 text-left transition cursor-pointer ${
-            activeTab === 'grade_a'
+            activeTab === 'in_stock'
               ? 'ring-2 ring-emerald-500 bg-emerald-50/70 dark:bg-emerald-950/40'
               : 'hover:border-emerald-300'
           }`}
         >
           <div className="p-3 rounded-2xl bg-emerald-50 dark:bg-emerald-950/40 text-emerald-600 dark:text-emerald-400 border border-emerald-200/60 dark:border-emerald-800/60">
-            <CheckSquare className="h-6 w-6" />
+            <Package className="h-6 w-6" />
           </div>
           <div>
-            <p className="text-xs font-bold text-slate-500 uppercase tracking-wider">Grade A Sellable</p>
-            <p className="text-2xl font-black text-slate-900 dark:text-white mt-0.5">{gradeAStockKg.toLocaleString()} <span className="text-xs text-slate-400 font-normal">kg</span></p>
+            <p className="text-xs font-bold text-slate-500 uppercase tracking-wider">Total Warehouse Stock</p>
+            <p className="text-2xl font-black text-slate-900 dark:text-white mt-0.5">
+              {totalInStockKg.toLocaleString()} <span className="text-xs text-slate-400 font-normal">kg ({(totalInStockKg / 1000).toFixed(2)} MT)</span>
+            </p>
           </div>
         </button>
 
         <button
           type="button"
-          onClick={() => setActiveTab('grade_b')}
+          onClick={() => setActiveTab('all')}
           className={`neumorphic-card p-5 flex items-center gap-4 text-left transition cursor-pointer ${
-            activeTab === 'grade_b'
-              ? 'ring-2 ring-amber-500 bg-amber-50/70 dark:bg-amber-950/40'
-              : 'hover:border-amber-300'
+            activeTab === 'all'
+              ? 'ring-2 ring-blue-500 bg-blue-50/70 dark:bg-blue-950/40'
+              : 'hover:border-blue-300'
           }`}
         >
-          <div className="p-3 rounded-2xl bg-amber-50 dark:bg-amber-950/40 text-amber-600 dark:text-amber-400 border border-amber-200/60 dark:border-amber-800/60">
-            <ListFilter className="h-6 w-6" />
+          <div className="p-3 rounded-2xl bg-blue-50 dark:bg-blue-950/40 text-primary dark:text-blue-400 border border-blue-200/60 dark:border-blue-800/60">
+            <Layers className="h-6 w-6" />
           </div>
           <div>
-            <p className="text-xs font-bold text-slate-500 uppercase tracking-wider">Grade B / Muted</p>
-            <p className="text-2xl font-black text-slate-900 dark:text-white mt-0.5">{gradeBStockKg.toLocaleString()} <span className="text-xs text-slate-400 font-normal">kg</span></p>
+            <p className="text-xs font-bold text-slate-500 uppercase tracking-wider">Total Reels in Stock</p>
+            <p className="text-2xl font-black text-slate-900 dark:text-white mt-0.5">
+              {totalInStockCount} <span className="text-xs text-slate-400 font-normal">reels</span>
+            </p>
           </div>
         </button>
 
         <button
           type="button"
-          onClick={() => setActiveTab('pending_qc')}
+          onClick={() => setActiveTab(activeTab === 'pending_qc' ? 'all' : 'pending_qc')}
           className={`neumorphic-card p-5 flex items-center gap-4 text-left transition cursor-pointer ${
             activeTab === 'pending_qc'
               ? 'ring-2 ring-purple-500 bg-purple-50/70 dark:bg-purple-950/40'
@@ -408,13 +463,15 @@ export const FinishStockView: React.FC<FinishStockViewProps> = ({ hideHeader = f
             )}
           </div>
           <div>
-            <p className="text-xs font-bold text-slate-500 uppercase tracking-wider">Pending Inspection</p>
-            <p className="text-2xl font-black text-slate-900 dark:text-white mt-0.5">{pendingQcCount} <span className="text-xs text-slate-400 font-normal">reels</span></p>
+            <p className="text-xs font-bold text-slate-500 uppercase tracking-wider">Pending QC Inspection</p>
+            <p className="text-2xl font-black text-slate-900 dark:text-white mt-0.5">
+              {pendingQcCount} <span className="text-xs text-slate-400 font-normal">reels</span>
+            </p>
           </div>
         </button>
       </div>
 
-      {/* 2.5 STEP 7 WORKFLOW GUIDE & 1-CLICK QC APPROVAL BANNER */}
+      {/* 2.5 QUICK QC APPROVAL BANNER (IF ANY REELS PENDING) */}
       {pendingQcCount > 0 && (
         <div className="p-4 sm:p-5 bg-white dark:bg-[#131d38] border border-blue-200/80 dark:border-blue-900/60 rounded-3xl flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 shadow-xs">
           <div className="flex items-center gap-3.5">
@@ -423,13 +480,13 @@ export const FinishStockView: React.FC<FinishStockViewProps> = ({ hideHeader = f
             </div>
             <div>
               <h4 className="text-sm font-black text-slate-900 dark:text-white flex items-center gap-2">
-                <span>Step 7: Quality Inspection &amp; Stock Categorization</span>
+                <span>Quality Inspection &amp; Stock Verification</span>
                 <span className="px-2 py-0.5 rounded-full bg-blue-100 dark:bg-blue-950/60 text-primary dark:text-blue-400 border border-blue-200/80 dark:border-blue-800/80 text-[10px] font-black">
                   {pendingQcCount} Reels Pending
                 </span>
               </h4>
               <p className="text-xs text-slate-600 dark:text-slate-300 font-medium mt-0.5">
-                Reels slit in Rewinder (Step 6) need QC categorization (Grade A / B) before they can be loaded onto customer delivery challans (Step 8).
+                Reels slit in Rewinder need QC inspection before they can be loaded onto customer delivery challans.
               </p>
             </div>
           </div>
@@ -437,17 +494,17 @@ export const FinishStockView: React.FC<FinishStockViewProps> = ({ hideHeader = f
           <div className="flex items-center gap-2 shrink-0 w-full sm:w-auto">
             <button
               type="button"
-              onClick={handleBulkApproveAllGradeA}
+              onClick={handleBulkApproveAll}
               className="btn-primary-gradient w-full sm:w-auto px-5 py-2.5 text-xs uppercase tracking-wider flex items-center justify-center gap-2 cursor-pointer"
             >
               <CheckSquare className="h-4 w-4" />
-              <span>✨ 1-Click Approve All as Grade A</span>
+              <span>✨ 1-Click Approve All</span>
             </button>
           </div>
         </div>
       )}
 
-      {/* 3. FAST FILTER TOOLBAR (CASCADING PRODUCT, GRADE, GSM, SIZE PILL CHIPS) */}
+      {/* 3. FAST FILTER TOOLBAR (PRODUCT, GSM, SIZE, PLY, JOINTS, STATUS) */}
       <div className="neumorphic-card p-4 sm:p-5 space-y-3.5">
         
         {/* Row 1: Search input + Reset Filter Action */}
@@ -458,7 +515,7 @@ export const FinishStockView: React.FC<FinishStockViewProps> = ({ hideHeader = f
               type="text"
               value={stockSearchQuery}
               onChange={e => setStockSearchQuery(e.target.value)}
-              placeholder="Search by product, GSM, size, ply, or Reel No..."
+              placeholder="Search by product, GSM, size, ply, 0/1/2 joints, or Reel No..."
               className="bg-transparent border-none text-xs font-semibold focus:outline-none w-full dark:text-white placeholder-slate-400"
             />
             {stockSearchQuery && (
@@ -472,7 +529,7 @@ export const FinishStockView: React.FC<FinishStockViewProps> = ({ hideHeader = f
             )}
           </div>
 
-          {(filterProduct !== 'ALL' || filterGsm !== 'ALL' || filterSize !== 'ALL' || filterPly !== 'ALL' || activeTab !== 'all' || stockSearchQuery.trim()) && (
+          {activeFilterCount > 0 && (
             <button
               type="button"
               onClick={handleClearAllFilters}
@@ -484,7 +541,7 @@ export const FinishStockView: React.FC<FinishStockViewProps> = ({ hideHeader = f
           )}
         </div>
 
-        {/* Row 2: Product & Grade Filter Chips */}
+        {/* Row 2: Product Filter Chips + Status Tabs (NO GRADE) */}
         <div className="flex flex-wrap items-center gap-2 pt-1 border-t border-slate-100 dark:border-slate-800/60">
           <span className="text-[10px] font-black text-slate-400 uppercase tracking-wider min-w-[65px]">
             PRODUCT:
@@ -503,7 +560,7 @@ export const FinishStockView: React.FC<FinishStockViewProps> = ({ hideHeader = f
           </button>
 
           {availableProducts.map(prod => {
-            const count = tabReels.filter(r => r.product === prod).length;
+            const count = getProductMatchCount(prod);
             return (
               <button
                 key={prod}
@@ -520,9 +577,9 @@ export const FinishStockView: React.FC<FinishStockViewProps> = ({ hideHeader = f
             );
           })}
 
-          {/* Grade Filter Pill Group (All, Grade A, Grade B Only, Pending QC) */}
+          {/* Status Filter Pill Group (All, Ready Stock, Pending QC) - NO GRADE A / GRADE B */}
           <div className="flex items-center gap-1 ml-auto bg-slate-100 dark:bg-slate-900 p-1 rounded-2xl border border-slate-200 dark:border-slate-800 shrink-0 flex-wrap">
-            <span className="text-[9px] font-black text-slate-400 uppercase px-1.5">GRADE:</span>
+            <span className="text-[9px] font-black text-slate-400 uppercase px-1.5">STATUS:</span>
             <button
               type="button"
               onClick={() => setActiveTab('all')}
@@ -536,25 +593,14 @@ export const FinishStockView: React.FC<FinishStockViewProps> = ({ hideHeader = f
             </button>
             <button
               type="button"
-              onClick={() => setActiveTab('grade_a')}
+              onClick={() => setActiveTab('in_stock')}
               className={`px-2.5 py-0.5 rounded-xl text-[10px] font-extrabold cursor-pointer transition ${
-                activeTab === 'grade_a'
+                activeTab === 'in_stock'
                   ? 'bg-emerald-600 text-white shadow-xs'
                   : 'text-emerald-700 dark:text-emerald-400 hover:bg-emerald-50 dark:hover:bg-emerald-950/30'
               }`}
             >
-              Grade A ({reels.filter(r => r.status === 'IN_STOCK').length})
-            </button>
-            <button
-              type="button"
-              onClick={() => setActiveTab('grade_b')}
-              className={`px-2.5 py-0.5 rounded-xl text-[10px] font-extrabold cursor-pointer transition ${
-                activeTab === 'grade_b'
-                  ? 'bg-amber-600 text-white shadow-xs'
-                  : 'text-amber-700 dark:text-amber-400 hover:bg-amber-50 dark:hover:bg-amber-950/30'
-              }`}
-            >
-              Grade B Only ({reels.filter(r => r.status === 'IN_STOCK_B').length})
+              Ready Stock ({totalInStockCount})
             </button>
             <button
               type="button"
@@ -589,7 +635,7 @@ export const FinishStockView: React.FC<FinishStockViewProps> = ({ hideHeader = f
           </button>
 
           {availableGsms.map(gsm => {
-            const count = tabReels.filter(r => (filterProduct === 'ALL' || r.product === filterProduct) && r.gsm === gsm).length;
+            const count = getGsmMatchCount(gsm);
             return (
               <button
                 key={gsm}
@@ -626,11 +672,7 @@ export const FinishStockView: React.FC<FinishStockViewProps> = ({ hideHeader = f
           </button>
 
           {availableSizes.map(size => {
-            const count = tabReels.filter(r =>
-              (filterProduct === 'ALL' || r.product === filterProduct) &&
-              (filterGsm === 'ALL' || r.gsm === Number(filterGsm)) &&
-              r.size === size
-            ).length;
+            const count = getSizeMatchCount(size);
             return (
               <button
                 key={size}
@@ -667,12 +709,7 @@ export const FinishStockView: React.FC<FinishStockViewProps> = ({ hideHeader = f
           </button>
 
           {availablePlys.map(ply => {
-            const count = tabReels.filter(r =>
-              (filterProduct === 'ALL' || r.product === filterProduct) &&
-              (filterGsm === 'ALL' || r.gsm === Number(filterGsm)) &&
-              (filterSize === 'ALL' || r.size === Number(filterSize)) &&
-              r.ply === ply
-            ).length;
+            const count = getPlyMatchCount(ply);
             return (
               <button
                 key={ply}
@@ -689,6 +726,43 @@ export const FinishStockView: React.FC<FinishStockViewProps> = ({ hideHeader = f
             );
           })}
         </div>
+
+        {/* Row 6: Joints Filter Chips (0, 1, 2 Joints) */}
+        <div className="flex flex-wrap items-center gap-2 pt-1 border-t border-slate-100 dark:border-slate-800/60">
+          <span className="text-[10px] font-black text-slate-400 uppercase tracking-wider min-w-[65px]">
+            JOINTS:
+          </span>
+
+          <button
+            type="button"
+            onClick={() => handleJointChange('ALL')}
+            className={`px-3 py-1 rounded-full text-xs font-bold cursor-pointer transition ${
+              filterJoint === 'ALL'
+                ? 'bg-indigo-900 dark:bg-indigo-600 text-white shadow-xs'
+                : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700'
+            }`}
+          >
+            All Joints
+          </button>
+
+          {availableJoints.map(jointVal => {
+            const count = getJointMatchCount(jointVal);
+            return (
+              <button
+                key={jointVal}
+                type="button"
+                onClick={() => handleJointChange(String(jointVal))}
+                className={`px-3 py-1 rounded-full text-xs font-bold cursor-pointer transition ${
+                  filterJoint === String(jointVal)
+                    ? 'bg-indigo-600 text-white shadow-xs'
+                    : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700'
+                }`}
+              >
+                {jointVal === 0 ? '0 Joints (Seamless)' : jointVal === 1 ? '1 Joint' : `${jointVal} Joints`} ({count})
+              </button>
+            );
+          })}
+        </div>
       </div>
 
       {/* Grouped Stock View */}
@@ -698,13 +772,13 @@ export const FinishStockView: React.FC<FinishStockViewProps> = ({ hideHeader = f
             <AlertCircle className="h-8 w-8" />
           </div>
           
-          {activeTab === 'grade_a' && pendingQcCount > 0 ? (
+          {activeTab === 'in_stock' && pendingQcCount > 0 && totalInStockCount === 0 ? (
             <div className="space-y-2 max-w-md">
               <h4 className="text-sm font-black text-slate-900 dark:text-white">
                 All {pendingQcCount} Reels are currently in "Pending QC Inspection"
               </h4>
               <p className="text-xs text-slate-500">
-                They have not been categorized as Grade A yet. Click below to inspect them or 1-Click Approve all reels as Grade A sellable stock.
+                They need to be inspected before they appear in ready stock. Click below to inspect them or 1-Click Approve all reels.
               </p>
               <div className="flex flex-wrap items-center justify-center gap-2 pt-2">
                 <button
@@ -716,11 +790,11 @@ export const FinishStockView: React.FC<FinishStockViewProps> = ({ hideHeader = f
                 </button>
                 <button
                   type="button"
-                  onClick={handleBulkApproveAllGradeA}
+                  onClick={handleBulkApproveAll}
                   className="px-4 py-2 bg-[#008163] hover:bg-[#006e54] text-white rounded-xl text-xs font-black shadow-sm cursor-pointer transition flex items-center gap-1.5"
                 >
                   <CheckSquare className="h-3.5 w-3.5" />
-                  <span>✨ 1-Click Approve All as Grade A</span>
+                  <span>✨ 1-Click Approve All</span>
                 </button>
               </div>
             </div>
@@ -732,7 +806,7 @@ export const FinishStockView: React.FC<FinishStockViewProps> = ({ hideHeader = f
               {(activeFilterCount > 0 || activeTab !== 'all' || stockSearchQuery.trim()) && (
                 <button
                   onClick={handleClearAllFilters}
-                  className="mt-1 px-4 py-2 bg-[#008163] hover:bg-[#006e54] text-white rounded-xl text-xs font-black shadow-sm cursor-pointer transition"
+                  className="mt-1 px-4 py-2 bg-primary hover:bg-primary-dark text-white rounded-xl text-xs font-black shadow-sm cursor-pointer transition"
                 >
                   Reset All Filters
                 </button>
@@ -781,7 +855,7 @@ export const FinishStockView: React.FC<FinishStockViewProps> = ({ hideHeader = f
                             <tr key={reel.reelNo} className="hover:bg-blue-50/50 dark:hover:bg-slate-800/40 transition">
                               <td className="py-3 px-3 font-black font-mono text-primary dark:text-blue-400">{reel.reelNo}</td>
                               <td className="py-3 px-3 font-bold text-slate-800 dark:text-slate-200">{reel.weight} kg</td>
-                              <td className="py-3 px-3 text-slate-600 dark:text-slate-300">{reel.joint}</td>
+                              <td className="py-3 px-3 text-slate-600 dark:text-slate-300 font-bold">{reel.joint}</td>
                               <td className="py-3 px-3 text-slate-400 font-mono text-[11px]">
                                 {reel.productionDate}
                               </td>
@@ -805,12 +879,8 @@ export const FinishStockView: React.FC<FinishStockViewProps> = ({ hideHeader = f
                                   )
                                 ) : (
                                   <div className="flex items-center justify-end gap-1.5 text-[10px] font-bold">
-                                    <span className={`px-2.5 py-1 rounded-full font-black uppercase tracking-wider ${
-                                      reel.status === 'IN_STOCK' || reel.qcGrade === 'A'
-                                        ? 'bg-emerald-100 dark:bg-emerald-950/60 text-emerald-800 dark:text-emerald-300 border border-emerald-300 dark:border-emerald-700'
-                                        : 'bg-amber-100 dark:bg-amber-950/60 text-amber-800 dark:text-amber-300 border border-amber-300 dark:border-amber-700'
-                                    }`}>
-                                      {reel.status === 'IN_STOCK' || reel.qcGrade === 'A' ? 'Grade A' : 'Grade B'}
+                                    <span className="px-2.5 py-1 rounded-full font-black uppercase tracking-wider bg-emerald-100 dark:bg-emerald-950/60 text-emerald-800 dark:text-emerald-300 border border-emerald-300 dark:border-emerald-700">
+                                      In Stock
                                     </span>
                                     <button
                                       type="button"
@@ -869,10 +939,9 @@ export const FinishStockView: React.FC<FinishStockViewProps> = ({ hideHeader = f
                             <span className="font-mono font-black text-primary dark:text-blue-400 text-xs">{reel.reelNo}</span>
                             <span className={`px-2.5 py-0.5 rounded-full text-[9px] font-black uppercase ${
                               reel.status === 'QC_PENDING' ? 'bg-purple-100 dark:bg-purple-950/40 text-purple-700 dark:text-purple-300' :
-                              reel.status === 'IN_STOCK' ? 'bg-emerald-100 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300' :
-                              'bg-amber-100 dark:bg-amber-950/40 text-amber-700 dark:text-amber-300'
+                              'bg-emerald-100 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300'
                             }`}>
-                              {reel.status === 'QC_PENDING' ? 'Pending QC' : reel.status === 'IN_STOCK' ? 'Grade A' : 'Grade B'}
+                              {reel.status === 'QC_PENDING' ? 'Pending QC' : 'In Stock'}
                             </span>
                           </div>
 
@@ -911,12 +980,8 @@ export const FinishStockView: React.FC<FinishStockViewProps> = ({ hideHeader = f
                               )
                             ) : (
                               <div className="flex items-center gap-1.5 text-[10px] font-bold">
-                                <span className={`px-2.5 py-0.5 rounded-full font-black uppercase tracking-wider ${
-                                  reel.status === 'IN_STOCK' || reel.qcGrade === 'A'
-                                    ? 'bg-emerald-100 dark:bg-emerald-950/60 text-emerald-800 dark:text-emerald-300 border border-emerald-300 dark:border-emerald-700'
-                                    : 'bg-amber-100 dark:bg-amber-950/60 text-amber-800 dark:text-amber-300 border border-amber-300 dark:border-amber-700'
-                                }`}>
-                                  {reel.status === 'IN_STOCK' || reel.qcGrade === 'A' ? 'Grade A' : 'Grade B'}
+                                <span className="px-2.5 py-0.5 rounded-full font-black uppercase tracking-wider bg-emerald-100 dark:bg-emerald-950/60 text-emerald-800 dark:text-emerald-300 border border-emerald-300 dark:border-emerald-700">
+                                  In Stock
                                 </span>
                                 <button
                                   type="button"
@@ -976,7 +1041,7 @@ export const FinishStockView: React.FC<FinishStockViewProps> = ({ hideHeader = f
                   Inventory Cascading Filter
                 </h3>
                 <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
-                  Select Product → GSM → Size → Ply to view matching inventory
+                  Select Product → GSM → Size → Ply → Joints to view matching inventory
                 </p>
               </div>
               <button
@@ -1027,7 +1092,7 @@ export const FinishStockView: React.FC<FinishStockViewProps> = ({ hideHeader = f
                 <label className="block text-[11px] font-black text-slate-600 dark:text-slate-300 uppercase tracking-wider mb-1.5 flex items-center justify-between">
                   <span>2. Select GSM</span>
                   <span className="text-[10px] text-slate-400 font-medium">
-                    {filterProduct !== 'ALL' ? `Cascaded for ${filterProduct}` : 'Select Product first'}
+                    {filterProduct !== 'ALL' ? `Cascaded for ${filterProduct}` : 'All GSMs'}
                   </span>
                 </label>
                 <select
@@ -1082,6 +1147,26 @@ export const FinishStockView: React.FC<FinishStockViewProps> = ({ hideHeader = f
                 </select>
               </div>
 
+              {/* STEP 5: JOINTS */}
+              <div>
+                <label className="block text-[11px] font-black text-slate-600 dark:text-slate-300 uppercase tracking-wider mb-1.5 flex items-center justify-between">
+                  <span>5. Select Joints</span>
+                  <span className="text-[10px] text-slate-400 font-medium">
+                    0, 1, or 2 joints
+                  </span>
+                </label>
+                <select
+                  value={filterJoint}
+                  onChange={e => handleJointChange(e.target.value)}
+                  className="w-full py-2.5 px-3.5 bg-slate-50 dark:bg-slate-900 rounded-2xl text-xs font-bold text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-primary/40 cursor-pointer"
+                >
+                  <option value="ALL">All Joints</option>
+                  <option value="0">0 Joints (Seamless)</option>
+                  <option value="1">1 Joint</option>
+                  <option value="2">2 Joints</option>
+                </select>
+              </div>
+
             </div>
 
             {/* MODAL FOOTER ACTIONS */}
@@ -1099,7 +1184,7 @@ export const FinishStockView: React.FC<FinishStockViewProps> = ({ hideHeader = f
                 onClick={() => setShowFilterModal(false)}
                 className="flex-1 py-3 bg-primary hover:bg-primary-dark text-white rounded-2xl text-xs font-black uppercase tracking-wider shadow-md transition cursor-pointer flex items-center justify-center gap-2"
               >
-                <span>Apply & View ({matchingFilteredList.length} Reels)</span>
+                <span>Apply &amp; View ({matchingFilteredList.length} Reels)</span>
               </button>
             </div>
 
