@@ -56,10 +56,14 @@ function ProfileRouteWrapper({ defaultTab }: { defaultTab?: 'profile' | 'roles' 
   );
 }
 
-// Initialize i18n
 import './i18n';
+import { initSupabaseSync } from './data/index';
 
 export default function App() {
+  React.useEffect(() => {
+    initSupabaseSync();
+  }, []);
+
   return (
     <Router>
       <AuthProvider>
