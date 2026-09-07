@@ -772,4 +772,23 @@ export async function initSupabaseSync(): Promise<void> {
   } catch (err) {
     console.warn('Could not subscribe to Supabase realtime changes:', err);
   }
+
+  // 3. Heartbeat polling (every 6s when tab is active) to guarantee zero missed events
+  setInterval(() => {
+    if (typeof document !== 'undefined' && document.visibilityState === 'visible') {
+      tables.forEach(table => syncTableFromCloud(table));
+    }
+  }, 6000);
+
+  // 4. Instant re-sync whenever user focuses or switches back to the tab
+  if (typeof window !== 'undefined') {
+    window.addEventListener('visibilitychange', () => {
+      if (document.visibilityState === 'visible') {
+        tables.forEach(table => syncTableFromCloud(table));
+      }
+    });
+    window.addEventListener('focus', () => {
+      tables.forEach(table => syncTableFromCloud(table));
+    });
+  }
 }

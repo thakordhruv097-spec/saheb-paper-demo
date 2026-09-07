@@ -101,6 +101,29 @@ export const DispatchView: React.FC<DispatchViewProps> = ({ initialTab = 'orders
     setOrders(getPendingOrders());
   }, [location.pathname, initialTab]);
 
+  // Real-time listener: instant UI update whenever Supabase syncs new data
+  useEffect(() => {
+    const handleDataUpdate = (e?: any) => {
+      const table = e?.detail?.table;
+      if (!table || table === 'pending_orders') {
+        setOrders(getPendingOrders());
+      }
+      if (!table || table === 'reels') {
+        setReels(getReels());
+      }
+      if (!table || table === 'packing_slips') {
+        setSlips(getPackingSlips());
+      }
+    };
+
+    window.addEventListener('saheb_data_updated', handleDataUpdate);
+    window.addEventListener('storage', handleDataUpdate);
+    return () => {
+      window.removeEventListener('saheb_data_updated', handleDataUpdate);
+      window.removeEventListener('storage', handleDataUpdate);
+    };
+  }, []);
+
   const handleTabChange = (tab: 'orders' | 'create_slip' | 'slips_list' | 'dispatched_vault') => {
     setActiveTab(tab);
     setReels(getReels());
