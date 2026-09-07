@@ -533,8 +533,8 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
         {/* Right Side Header Controls - Matching exact reference image */}
         <div className="flex items-center gap-1.5 sm:gap-2.5">
 
-          {/* Date & Timeframe Filter controls - Enabled for all modules & users */}
-          <div className="flex items-center bg-white dark:bg-[#131d38] rounded-full p-1 pl-1.5 pr-1.5 sm:pr-2 gap-1 sm:gap-2 shadow-[4px_4px_14px_rgba(163,163,196,0.2),-4px_-4px_14px_rgba(255,255,255,0.95)] dark:shadow-none">
+          {/* Date & Timeframe Filter controls - Visible on Desktop, Hidden on Mobile */}
+          <div className="hidden md:flex items-center bg-white dark:bg-[#131d38] rounded-full p-1 pl-1.5 pr-1.5 sm:pr-2 gap-1 sm:gap-2 shadow-[4px_4px_14px_rgba(163,163,196,0.2),-4px_-4px_14px_rgba(255,255,255,0.95)] dark:shadow-none">
             {/* Timeframe Selector Sub-pill (Day / Week / Month / All) */}
             <div className="flex items-center gap-0.5">
               {(['day', 'week', 'month', 'all'] as const).map(tf => (
