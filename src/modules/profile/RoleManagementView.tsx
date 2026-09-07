@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { useAuth } from '../auth/AuthContext';
 import { getUsers, updateUserModules } from '../../data/index';
 import type { User } from '../../data/types';
@@ -17,6 +17,17 @@ export interface ModuleDefinition {
   key: string;
   label: string;
 }
+
+const getUserSortOrder = (u: User): number => {
+  const un = u.username.toLowerCase();
+  if (un === 'admin') return 1;
+  if (un === 'pulper' || u.role === 'LabOperator') return 2;
+  if (un === 'plant_manager' || u.role === 'PlantManager') return 3;
+  if (un === 'dispatcher' || u.role === 'Dispatcher') return 4;
+  if (un === 'shop' || un === 'shopper' || u.role === 'Shopper') return 5;
+  if (un === 'viewer' || u.role === 'Viewer') return 6;
+  return 99;
+};
 
 export const MODULES_13: ModuleDefinition[] = [
   { key: 'dashboard', label: 'Dashboard' },
@@ -60,9 +71,17 @@ export const RoleManagementView: React.FC = () => {
     setTimeout(() => setToastMsg(''), 3000);
   };
 
-  const reloadUsers = () => {
-    setUsers(getUsers());
-  };
+  useEffect(() => {
+    const handleSync = () => {
+      setUsers(getUsers());
+    };
+    window.addEventListener('saheb_data_updated', handleSync);
+    window.addEventListener('storage', handleSync);
+    return () => {
+      window.removeEventListener('saheb_data_updated', handleSync);
+      window.removeEventListener('storage', handleSync);
+    };
+  }, []);
 
   const handleToggleModule = (targetUser: User, moduleKey: string) => {
     const currentModules = targetUser.customModules && Array.isArray(targetUser.customModules)
@@ -78,15 +97,22 @@ export const RoleManagementView: React.FC = () => {
       updatedModules = [...currentModules, moduleKey];
     }
 
-    // Save to storage
+    // Optimistically update in-place so cards NEVER jump or change positions
+    setUsers(prev =>
+      prev.map(u =>
+        u.username.toLowerCase() === targetUser.username.toLowerCase()
+          ? { ...u, customModules: updatedModules }
+          : u
+      )
+    );
+
+    // Save to storage & cloud
     updateUserModules(targetUser.username, updatedModules, currentUser?.displayName || 'Admin');
     
     // If updating current active user session, update state
     if (currentUser?.username.toLowerCase() === targetUser.username.toLowerCase()) {
       updateUserProfile({ customModules: updatedModules });
     }
-
-    reloadUsers();
     
     const modLabel = MODULES_13.find(m => m.key === moduleKey)?.label || moduleKey;
     const action = exists ? 'disabled for' : 'granted to';
@@ -106,14 +132,16 @@ export const RoleManagementView: React.FC = () => {
   };
 
   const filteredUsers = useMemo(() => {
-    return users.filter(u => {
-      const matchSearch =
-        u.displayName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        u.username.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        (u.empId && u.empId.toLowerCase().includes(searchTerm.toLowerCase())) ||
-        (u.designation && u.designation.toLowerCase().includes(searchTerm.toLowerCase()));
-      return matchSearch;
-    });
+    return users
+      .filter(u => {
+        const matchSearch =
+          u.displayName.toLowerCase().includes(searchTerm.toLowerCase()) ||
+          u.username.toLowerCase().includes(searchTerm.toLowerCase()) ||
+          (u.empId && u.empId.toLowerCase().includes(searchTerm.toLowerCase())) ||
+          (u.designation && u.designation.toLowerCase().includes(searchTerm.toLowerCase()));
+        return matchSearch;
+      })
+      .sort((a, b) => getUserSortOrder(a) - getUserSortOrder(b));
   }, [users, searchTerm]);
 
   return (

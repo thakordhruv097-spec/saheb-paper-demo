@@ -229,18 +229,12 @@ export const OperatorProfileView: React.FC<OperatorProfileViewProps> = () => {
                 </span>
               </div>
               <div className="flex flex-wrap gap-2">
-                {MODULES_13.filter(m => (user.customModules || []).includes(m.key)).length > 0 ? (
-                  MODULES_13.filter(m => (user.customModules || []).includes(m.key)).map(m => (
-                    <span key={m.key} className="px-3 py-1.5 rounded-xl bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-200 text-xs font-bold border border-slate-200 dark:border-slate-700 flex items-center gap-2 shadow-2xs">
-                      <CheckCircle2 className="h-3.5 w-3.5 text-emerald-500 shrink-0" />
-                      <span>{m.label}</span>
-                    </span>
-                  ))
-                ) : (
-                  <span className="text-xs text-slate-400 dark:text-slate-500 italic font-medium py-1">
-                    No modules assigned yet. Admin can grant module access in Role Management.
+                {MODULES_13.filter(m => (user.customModules || []).includes(m.key)).map(m => (
+                  <span key={m.key} className="px-3 py-1.5 rounded-xl bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-200 text-xs font-bold border border-slate-200 dark:border-slate-700 flex items-center gap-2 shadow-2xs">
+                    <CheckCircle2 className="h-3.5 w-3.5 text-emerald-500 shrink-0" />
+                    <span>{m.label}</span>
                   </span>
-                )}
+                ))}
               </div>
             </div>
 

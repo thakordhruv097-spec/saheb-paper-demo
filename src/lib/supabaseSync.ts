@@ -550,10 +550,24 @@ export async function syncTableFromCloud(tableName: string): Promise<void> {
     // If cloud has data, update local storage cache
     if (data && data.length > 0) {
       switch (tableName) {
-        case 'users':
-          setLocal(KEYS.USERS, data.map(userFromDb));
+        case 'users': {
+          const sortedUsers = data.map(userFromDb).sort((a, b) => {
+            const getOrder = (u: User) => {
+              const un = u.username.toLowerCase();
+              if (un === 'admin') return 1;
+              if (un === 'pulper' || u.role === 'LabOperator') return 2;
+              if (un === 'plant_manager' || u.role === 'PlantManager') return 3;
+              if (un === 'dispatcher' || u.role === 'Dispatcher') return 4;
+              if (un === 'shop' || un === 'shopper' || u.role === 'Shopper') return 5;
+              if (un === 'viewer' || u.role === 'Viewer') return 6;
+              return 99;
+            };
+            return getOrder(a) - getOrder(b);
+          });
+          setLocal(KEYS.USERS, sortedUsers);
           notifyChange(tableName);
           break;
+        }
         case 'raw_material_stock':
         case 'raw_materials':
           setLocal(KEYS.RAW_MATERIALS, data.map(rawMaterialFromDb));

@@ -421,9 +421,9 @@ export function getUsers(): User[] {
     if (isPulperOrLab) {
       return {
         ...u,
-        displayName: 'Pulper',
-        designation: 'Pulper (Pulp Mill Operator)',
-        empId: 'EMP-003',
+        displayName: u.displayName || 'Pulper Operator',
+        designation: u.designation || 'Pulper (Pulp Mill Operator)',
+        empId: u.empId || 'EMP-002',
         username: 'pulper',
         role: 'LabOperator' as UserRole,
         roles: ['LabOperator' as UserRole],
@@ -463,6 +463,18 @@ export function getUsers(): User[] {
       roles: userRoles,
       customModules,
     };
+  }).sort((a, b) => {
+    const getOrder = (userObj: User) => {
+      const un = userObj.username.toLowerCase();
+      if (un === 'admin') return 1;
+      if (un === 'pulper' || userObj.role === 'LabOperator') return 2;
+      if (un === 'plant_manager' || userObj.role === 'PlantManager') return 3;
+      if (un === 'dispatcher' || userObj.role === 'Dispatcher') return 4;
+      if (un === 'shop' || un === 'shopper' || userObj.role === 'Shopper') return 5;
+      if (un === 'viewer' || userObj.role === 'Viewer') return 6;
+      return 99;
+    };
+    return getOrder(a) - getOrder(b);
   });
 }
 
