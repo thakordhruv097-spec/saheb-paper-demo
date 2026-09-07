@@ -19,6 +19,7 @@ import type {
   RawMaterialLot,
   PaperTestReport,
 } from './types';
+import { sortUsersByHierarchy } from './types';
 import {
   pushUpsertToCloud,
   pushDeleteToCloud,
@@ -317,7 +318,7 @@ export function initializeStorage() {
       ) {
         newU.displayName = 'Pulper';
         newU.designation = 'Pulper (Pulp Mill Operator)';
-        newU.empId = 'EMP-003';
+        newU.empId = 'EMP-002';
         newU.username = 'pulper';
         newU.role = 'LabOperator';
         newU.roles = ['LabOperator'];
@@ -329,7 +330,7 @@ export function initializeStorage() {
     });
 
     if (updated) {
-      setJSON(KEYS.USERS, fixedUsers);
+      setJSON(KEYS.USERS, sortUsersByHierarchy(fixedUsers));
     }
 
     // Fix active session if @admin session was corrupted
@@ -371,10 +372,10 @@ export function initializeStorage() {
     localStorage.setItem('saheb_operational_cleared_v5', 'true');
   }
 
-  // Refresh user cache to exact 6 configured roles
-  if (!localStorage.getItem('saheb_users_reset_v6')) {
-    setJSON(KEYS.USERS, DEFAULT_USERS);
-    localStorage.setItem('saheb_users_reset_v6', 'true');
+  // Refresh user cache to exact 6 configured roles in guaranteed fixed order
+  if (!localStorage.getItem('saheb_users_fixed_order_v10')) {
+    setJSON(KEYS.USERS, sortUsersByHierarchy(DEFAULT_USERS));
+    localStorage.setItem('saheb_users_fixed_order_v10', 'true');
   }
 }
 
@@ -407,7 +408,7 @@ export function getUsers(): User[] {
   const users = getJSON<User[]>(KEYS.USERS, DEFAULT_USERS);
   const validRoles: UserRole[] = ['Admin', 'PlantManager', 'LabOperator', 'Viewer', 'Shopper', 'Dispatcher'];
 
-  return users.map(u => {
+  const mapped = users.map(u => {
     let displayName = u.displayName;
     let designation = u.designation;
 
@@ -421,12 +422,13 @@ export function getUsers(): User[] {
     if (isPulperOrLab) {
       return {
         ...u,
-        displayName: u.displayName || 'Pulper Operator',
+        displayName: u.displayName || 'Pulper',
         designation: u.designation || 'Pulper (Pulp Mill Operator)',
-        empId: u.empId || 'EMP-002',
+        empId: u.empId === 'EMP-003' ? 'EMP-002' : (u.empId || 'EMP-002'),
         username: 'pulper',
         role: 'LabOperator' as UserRole,
         roles: ['LabOperator' as UserRole],
+        customModules: u.customModules || [],
       };
     }
 
@@ -449,9 +451,8 @@ export function getUsers(): User[] {
     let customModules = u.customModules;
     if (customModules && Array.isArray(customModules)) {
       const hasAnyUtils = customModules.some(m => ['boiler', 'etp', 'electricity', 'utilities_etp'].includes(m));
-      customModules = customModules.filter(m => !['boiler', 'etp', 'electricity', 'utilities_etp'].includes(m));
-      if (hasAnyUtils) {
-        customModules.push('utilities_etp');
+      if (hasAnyUtils && !customModules.includes('utilities_etp')) {
+        customModules = [...customModules, 'utilities_etp'];
       }
     }
 
@@ -463,19 +464,9 @@ export function getUsers(): User[] {
       roles: userRoles,
       customModules,
     };
-  }).sort((a, b) => {
-    const getOrder = (userObj: User) => {
-      const un = userObj.username.toLowerCase();
-      if (un === 'admin') return 1;
-      if (un === 'pulper' || userObj.role === 'LabOperator') return 2;
-      if (un === 'plant_manager' || userObj.role === 'PlantManager') return 3;
-      if (un === 'dispatcher' || userObj.role === 'Dispatcher') return 4;
-      if (un === 'shop' || un === 'shopper' || userObj.role === 'Shopper') return 5;
-      if (un === 'viewer' || userObj.role === 'Viewer') return 6;
-      return 99;
-    };
-    return getOrder(a) - getOrder(b);
   });
+
+  return sortUsersByHierarchy(mapped);
 }
 
 export function saveUser(user: User): User {
@@ -490,7 +481,8 @@ export function saveUser(user: User): User {
   } else {
     users.push(user);
   }
-  setJSON(KEYS.USERS, users);
+  const sorted = sortUsersByHierarchy(users);
+  setJSON(KEYS.USERS, sorted);
   pushUpsertToCloud('users', userToDb(user));
   return user;
 }
@@ -500,7 +492,8 @@ export function updateUserModules(username: string, customModules: string[], ope
   const user = users.find(u => u.username.toLowerCase() === username.toLowerCase());
   if (user) {
     user.customModules = customModules;
-    setJSON(KEYS.USERS, users);
+    const sorted = sortUsersByHierarchy(users);
+    setJSON(KEYS.USERS, sorted);
     pushUpsertToCloud('users', userToDb(user));
 
     // Sync active session if this user is currently active

@@ -1,7 +1,8 @@
 import React, { useState, useMemo, useEffect } from 'react';
 import { useAuth } from '../auth/AuthContext';
 import { getUsers, updateUserModules } from '../../data/index';
-import type { User } from '../../data/types';
+import type { User, ModuleDefinition } from '../../data/types';
+import { sortUsersByHierarchy } from '../../data/types';
 import {
   ShieldCheck,
   ShieldAlert,
@@ -13,23 +14,7 @@ import {
   Zap
 } from 'lucide-react';
 
-export interface ModuleDefinition {
-  key: string;
-  label: string;
-}
-
-const getUserSortOrder = (u: User): number => {
-  const un = u.username.toLowerCase();
-  if (un === 'admin') return 1;
-  if (un === 'pulper' || u.role === 'LabOperator') return 2;
-  if (un === 'plant_manager' || u.role === 'PlantManager') return 3;
-  if (un === 'dispatcher' || u.role === 'Dispatcher') return 4;
-  if (un === 'shop' || un === 'shopper' || u.role === 'Shopper') return 5;
-  if (un === 'viewer' || u.role === 'Viewer') return 6;
-  return 99;
-};
-
-export const MODULES_13: ModuleDefinition[] = [
+const MODULES_13: ModuleDefinition[] = [
   { key: 'dashboard', label: 'Dashboard' },
   { key: 'raw_material_stock', label: 'Raw Material Sto...' },
   { key: 'pulp_mill_operations', label: 'Pulp Mill' },
@@ -62,7 +47,7 @@ export const RoleManagementView: React.FC = () => {
     );
   }
 
-  const [users, setUsers] = useState<User[]>(() => getUsers());
+  const [users, setUsers] = useState<User[]>(() => sortUsersByHierarchy(getUsers()));
   const [searchTerm, setSearchTerm] = useState('');
   const [toastMsg, setToastMsg] = useState('');
 
@@ -73,7 +58,7 @@ export const RoleManagementView: React.FC = () => {
 
   useEffect(() => {
     const handleSync = () => {
-      setUsers(getUsers());
+      setUsers(sortUsersByHierarchy(getUsers()));
     };
     window.addEventListener('saheb_data_updated', handleSync);
     window.addEventListener('storage', handleSync);
@@ -97,14 +82,15 @@ export const RoleManagementView: React.FC = () => {
       updatedModules = [...currentModules, moduleKey];
     }
 
-    // Optimistically update in-place so cards NEVER jump or change positions
-    setUsers(prev =>
-      prev.map(u =>
-        u.username.toLowerCase() === targetUser.username.toLowerCase()
+    // Optimistically update in-place with guaranteed permanent order
+    setUsers(prev => {
+      const updated = prev.map(u =>
+        u.username.toLowerCase().trim() === targetUser.username.toLowerCase().trim()
           ? { ...u, customModules: updatedModules }
           : u
-      )
-    );
+      );
+      return sortUsersByHierarchy(updated);
+    });
 
     // Save to storage & cloud
     updateUserModules(targetUser.username, updatedModules, currentUser?.displayName || 'Admin');
@@ -132,16 +118,15 @@ export const RoleManagementView: React.FC = () => {
   };
 
   const filteredUsers = useMemo(() => {
-    return users
-      .filter(u => {
-        const matchSearch =
-          u.displayName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-          u.username.toLowerCase().includes(searchTerm.toLowerCase()) ||
-          (u.empId && u.empId.toLowerCase().includes(searchTerm.toLowerCase())) ||
-          (u.designation && u.designation.toLowerCase().includes(searchTerm.toLowerCase()));
-        return matchSearch;
-      })
-      .sort((a, b) => getUserSortOrder(a) - getUserSortOrder(b));
+    const filtered = users.filter(u => {
+      const matchSearch =
+        u.displayName.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        u.username.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        (u.empId && u.empId.toLowerCase().includes(searchTerm.toLowerCase())) ||
+        (u.designation && u.designation.toLowerCase().includes(searchTerm.toLowerCase()));
+      return matchSearch;
+    });
+    return sortUsersByHierarchy(filtered);
   }, [users, searchTerm]);
 
   return (
@@ -198,8 +183,16 @@ export const RoleManagementView: React.FC = () => {
             ? u.customModules
             : MODULES_13.map(m => m.key);
           const activeCount = activeModules.length;
-
-          const empId = u.empId || `EMP-${Math.floor(100 + Math.random() * 900)}`;
+          const isPulper = u.username.toLowerCase().includes('pulper') || u.role === 'LabOperator';
+          const empId = isPulper
+            ? 'EMP-002'
+            : (u.empId || (
+                u.role === 'Admin' ? 'EMP-001' :
+                u.username.toLowerCase().includes('manager') || u.role === 'PlantManager' ? 'EMP-003' :
+                u.role === 'Dispatcher' ? 'EMP-004' :
+                u.username.toLowerCase().includes('shop') || u.role === 'Shopper' ? 'EMP-005' :
+                u.role === 'Viewer' ? 'EMP-006' : 'EMP-000'
+              ));
           const designation = u.designation || (u.role === 'Admin' ? 'Admin / Owner' : `${u.displayName} (${u.role})`);
 
           return (

@@ -36,6 +36,117 @@ export interface ModuleDefinition {
   label: string;
 }
 
+export const CANONICAL_USER_ORDER = [
+  'admin',
+  'pulper',
+  'plant_manager',
+  'dispatcher',
+  'shop',
+  'viewer',
+] as const;
+
+export function getUserRank(user: User): number {
+  if (!user) return 99;
+  const uname = (user.username || '').toLowerCase().trim();
+  const dname = (user.displayName || '').toLowerCase().trim();
+  const role = (user.role || '').toLowerCase().trim();
+  const empId = (user.empId || '').toUpperCase().trim();
+
+  // 1. Admin (Rank 0)
+  if (
+    uname === 'admin' ||
+    role === 'admin' ||
+    empId === 'EMP-001' ||
+    dname.includes('admin') ||
+    dname.includes('rajesh')
+  ) {
+    return 0;
+  }
+
+  // 2. Pulper (Rank 1)
+  if (
+    uname === 'pulper' ||
+    uname === 'lab' ||
+    role === 'laboperator' ||
+    role === 'pulpoperator' ||
+    empId === 'EMP-002' ||
+    dname.includes('pulper') ||
+    (dname.includes('lab') && !dname.includes('manager'))
+  ) {
+    return 1;
+  }
+
+  // 3. Plant Manager (Rank 2)
+  if (
+    uname === 'plant_manager' ||
+    uname === 'plantmanager' ||
+    uname === 'manager' ||
+    role === 'plantmanager' ||
+    role === 'machineoperator' ||
+    empId === 'EMP-003' ||
+    dname.includes('plant manager') ||
+    (dname.includes('manager') && !dname.includes('store') && !dname.includes('shop'))
+  ) {
+    return 2;
+  }
+
+  // 4. Dispatcher (Rank 3)
+  if (
+    uname === 'dispatcher' ||
+    role === 'dispatcher' ||
+    empId === 'EMP-004' ||
+    dname.includes('dispatch')
+  ) {
+    return 3;
+  }
+
+  // 5. Shop / Procurement (Rank 4)
+  if (
+    uname === 'shop' ||
+    uname === 'shopper' ||
+    role === 'shopper' ||
+    role === 'storemanager' ||
+    empId === 'EMP-005' ||
+    dname.includes('shop') ||
+    dname.includes('procurement')
+  ) {
+    return 4;
+  }
+
+  // 6. Viewer (Rank 5)
+  if (
+    uname === 'viewer' ||
+    role === 'viewer' ||
+    empId === 'EMP-006' ||
+    dname.includes('viewer')
+  ) {
+    return 5;
+  }
+
+  return 99;
+}
+
+export function sortUsersByHierarchy(users: User[]): User[] {
+  if (!Array.isArray(users)) return [];
+
+  // Deduplicate by username if duplicates ever occur
+  const seen = new Set<string>();
+  const deduped: User[] = [];
+  for (const u of users) {
+    if (!u) continue;
+    const key = (u.username || '').toLowerCase().trim();
+    if (key && seen.has(key)) continue;
+    if (key) seen.add(key);
+    deduped.push(u);
+  }
+
+  return deduped.sort((a, b) => {
+    const diff = getUserRank(a) - getUserRank(b);
+    if (diff !== 0) return diff;
+    return (a.username || '').localeCompare(b.username || '');
+  });
+}
+
 export const MODULES_LIST: ModuleDefinition[] = [
   { key: 'dashboard', label: 'Dashboard' },
   { key: 'raw_material_stock', label: 'Raw Material Stock' },

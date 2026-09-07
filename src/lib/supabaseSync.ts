@@ -19,6 +19,7 @@ import type {
   RawMaterialLot,
   PaperTestReport,
 } from '../data/types';
+import { sortUsersByHierarchy } from '../data/types';
 
 // Storage keys matching src/data/index.ts
 const KEYS = {
@@ -311,7 +312,7 @@ export const logToDb = (l: TransactionLog) => ({
   module: l.module,
   action: l.action,
   details: l.details,
-  user_name: l.user,
+  user: l.user,
 });
 
 export const logFromDb = (r: any): TransactionLog => ({
@@ -320,7 +321,7 @@ export const logFromDb = (r: any): TransactionLog => ({
   module: r.module,
   action: r.action,
   details: r.details,
-  user: r.user_name,
+  user: r.user || r.user_name || 'System',
 });
 
 // 12. Boiler Logs
@@ -551,19 +552,7 @@ export async function syncTableFromCloud(tableName: string): Promise<void> {
     if (data && data.length > 0) {
       switch (tableName) {
         case 'users': {
-          const sortedUsers = data.map(userFromDb).sort((a, b) => {
-            const getOrder = (u: User) => {
-              const un = u.username.toLowerCase();
-              if (un === 'admin') return 1;
-              if (un === 'pulper' || u.role === 'LabOperator') return 2;
-              if (un === 'plant_manager' || u.role === 'PlantManager') return 3;
-              if (un === 'dispatcher' || u.role === 'Dispatcher') return 4;
-              if (un === 'shop' || un === 'shopper' || u.role === 'Shopper') return 5;
-              if (un === 'viewer' || u.role === 'Viewer') return 6;
-              return 99;
-            };
-            return getOrder(a) - getOrder(b);
-          });
+          const sortedUsers = sortUsersByHierarchy(data.map(userFromDb));
           setLocal(KEYS.USERS, sortedUsers);
           notifyChange(tableName);
           break;
