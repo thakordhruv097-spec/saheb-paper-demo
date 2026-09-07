@@ -266,11 +266,12 @@ export const CustomDatePickerModal: React.FC<CustomDatePickerProps> = ({
   return ReactDOM.createPortal(
     <>
       {/* Invisible backdrop click catcher (no dark screen blur) */}
-      <div className="fixed inset-0 z-[999998]" onClick={onClose} />
+      <div data-custom-datepicker="true" className="fixed inset-0 z-[999998]" onClick={onClose} />
 
       {/* Small Popover Date Picker positioned directly below calendar button */}
       <div
         ref={popoverRef}
+        data-custom-datepicker="true"
         style={popoverStyle}
         onClick={(e) => e.stopPropagation()}
         className="bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 rounded-3xl p-3.5 shadow-2xl w-68 font-sans space-y-3 animate-in fade-in zoom-in-95 duration-150 select-none"

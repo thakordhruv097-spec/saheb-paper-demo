@@ -28,13 +28,13 @@
   --color-surface-dark-elevated: #1e293b;
   --color-border-dark: #1e293b;
 
-  /* Text Colors - Dark navy/charcoal, not pure black */
-  --color-text-light-primary: #1E1B2E;
-  --color-text-light-secondary: #8B87A3;
+  /* Text Colors - High-contrast charcoal and slate, zero washed-out low-contrast tint */
+  --color-text-light-primary: #0F172A;
+  --color-text-light-secondary: #475569;
   --color-text-dark-primary: #f8fafc;
   --color-text-dark-secondary: #94a3b8;
 
-  /* Typography - Clean Regular Sans-Serif Everywhere */
+  /* Typography - Clean Modern Sans-Serif Everywhere */
   --font-sans: "Inter", "Plus Jakarta Sans", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
   --font-heading: "Plus Jakarta Sans", "Inter", sans-serif;
   --font-mono: "Inter", "Plus Jakarta Sans", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
@@ -97,20 +97,21 @@
   outline: none !important;
 }
 
-/* --- Primary Purple Gradient Button --- */
+/* --- Primary Action Button (Solid, Uniform, Zero Gradients) --- */
 .btn-primary-gradient {
-  background: linear-gradient(135deg, #6C4FE0 0%, #7C3AED 100%) !important;
+  background: var(--color-primary, #6C4FE0) !important;
   color: #FFFFFF !important;
   font-weight: 700;
   border: none;
   border-radius: 12px;
-  box-shadow: 0 4px 14px rgba(108, 79, 224, 0.3);
+  box-shadow: 0 2px 8px rgba(108, 79, 224, 0.25);
   transition: all 0.2s ease-in-out;
 }
 
 .btn-primary-gradient:hover {
+  background: var(--color-primary-dark, #5B3DC9) !important;
   transform: translateY(-1px);
-  box-shadow: 0 6px 20px rgba(108, 79, 224, 0.4);
+  box-shadow: 0 4px 14px rgba(108, 79, 224, 0.35);
 }
 
 .btn-primary-gradient:active {
@@ -169,9 +170,9 @@ main div[class*="bg-white"][class*="rounded-xl"] {
 }
 
 /* --- Auto-upgrade: All standard inputs/selects → inset neomorphic shadow --- */
-main input:not([type="checkbox"]):not([type="radio"]):not([type="submit"]):not([type="button"]):not([type="hidden"]):not([class*="bg-transparent"]),
-main select:not([class*="bg-transparent"]),
-main textarea:not([class*="bg-transparent"]) {
+main input:not([type="checkbox"]):not([type="radio"]):not([type="submit"]):not([type="button"]):not([type="hidden"]):not([class*="bg-transparent"]):not([class*="border"]),
+main select:not([class*="bg-transparent"]):not([class*="border"]),
+main textarea:not([class*="bg-transparent"]):not([class*="border"]) {
   background: #F3F2FA;
   border: none;
   box-shadow: inset 2px 2px 5px rgba(163,163,196,0.2), inset -2px -2px 5px rgba(255,255,255,0.7);
@@ -180,9 +181,9 @@ main textarea:not([class*="bg-transparent"]) {
   font-family: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
 }
 
-.dark main input:not([type="checkbox"]):not([type="radio"]):not([type="submit"]):not([type="button"]):not([type="hidden"]):not([class*="bg-transparent"]),
-.dark main select:not([class*="bg-transparent"]),
-.dark main textarea:not([class*="bg-transparent"]) {
+.dark main input:not([type="checkbox"]):not([type="radio"]):not([type="submit"]):not([type="button"]):not([type="hidden"]):not([class*="bg-transparent"]):not([class*="border"]),
+.dark main select:not([class*="bg-transparent"]):not([class*="border"]),
+.dark main textarea:not([class*="bg-transparent"]):not([class*="border"]) {
   background: #0f172a;
   border: 1px solid #1e293b;
   box-shadow: inset 2px 2px 6px rgba(0, 0, 0, 0.3);
@@ -250,11 +251,10 @@ main div[class*="bg-white"][class*="rounded-3xl"]:hover {
   box-shadow: none !important;
 }
 
-/* Systemic Fix: Ensure every numeric value, badge, and code class uses the same regular clean font */
+/* Ensure clean, modern typography across all text, figures, codes, and dates — eliminate typewriter monospace everywhere */
 .font-mono, [class*="font-mono"], code, pre, kbd, samp {
   font-family: "Inter", "Plus Jakarta Sans", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif !important;
-  font-feature-settings: normal !important;
-  letter-spacing: normal !important;
+  font-feature-settings: "tnum" 1;
 }
 
 html, body, #root {

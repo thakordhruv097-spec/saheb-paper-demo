@@ -23,6 +23,7 @@ import {
 } from 'lucide-react';
 import { WorkflowStepBadge, WORKFLOW_STEPS } from '../../components/WorkflowStepBadge';
 import { useBodyScrollLock } from '../../hooks/useBodyScrollLock';
+import { CustomSearchableSelect } from '../../components/CustomSearchableSelect';
 
 interface FinishStockViewProps {
   hideHeader?: boolean;
@@ -1075,16 +1076,15 @@ export const FinishStockView: React.FC<FinishStockViewProps> = ({ hideHeader = f
                     <span className="text-[10px] text-primary font-bold">Selected</span>
                   )}
                 </label>
-                <select
+                <CustomSearchableSelect
                   value={filterProduct}
-                  onChange={e => handleProductChange(e.target.value)}
-                  className="w-full py-2.5 px-3.5 bg-slate-50 dark:bg-slate-900 rounded-2xl text-xs font-bold text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-primary/40 cursor-pointer"
-                >
-                  <option value="ALL">All Products ({availableProducts.length})</option>
-                  {availableProducts.map(p => (
-                    <option key={p} value={p}>{p}</option>
-                  ))}
-                </select>
+                  onChange={handleProductChange}
+                  options={[
+                    { value: 'ALL', label: `All Products (${availableProducts.length})` },
+                    ...availableProducts.map(p => ({ value: p, label: p })),
+                  ]}
+                  placeholder="Select Product..."
+                />
               </div>
 
               {/* STEP 2: GSM */}
@@ -1095,16 +1095,15 @@ export const FinishStockView: React.FC<FinishStockViewProps> = ({ hideHeader = f
                     {filterProduct !== 'ALL' ? `Cascaded for ${filterProduct}` : 'All GSMs'}
                   </span>
                 </label>
-                <select
+                <CustomSearchableSelect
                   value={filterGsm}
-                  onChange={e => handleGsmChange(e.target.value)}
-                  className="w-full py-2.5 px-3.5 bg-slate-50 dark:bg-slate-900 rounded-2xl text-xs font-bold text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-primary/40 cursor-pointer"
-                >
-                  <option value="ALL">All GSMs ({availableGsms.length} available)</option>
-                  {availableGsms.map(g => (
-                    <option key={g} value={g}>GSM {g}</option>
-                  ))}
-                </select>
+                  onChange={handleGsmChange}
+                  options={[
+                    { value: 'ALL', label: `All GSMs (${availableGsms.length} available)` },
+                    ...availableGsms.map(g => ({ value: String(g), label: `GSM ${g}` })),
+                  ]}
+                  placeholder="Select GSM..."
+                />
               </div>
 
               {/* STEP 3: SIZE */}
@@ -1115,16 +1114,15 @@ export const FinishStockView: React.FC<FinishStockViewProps> = ({ hideHeader = f
                     {filterGsm !== 'ALL' ? `Cascaded for GSM ${filterGsm}` : 'All Sizes'}
                   </span>
                 </label>
-                <select
+                <CustomSearchableSelect
                   value={filterSize}
-                  onChange={e => handleSizeChange(e.target.value)}
-                  className="w-full py-2.5 px-3.5 bg-slate-50 dark:bg-slate-900 rounded-2xl text-xs font-bold text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-primary/40 cursor-pointer"
-                >
-                  <option value="ALL">All Sizes ({availableSizes.length} available)</option>
-                  {availableSizes.map(s => (
-                    <option key={s} value={s}>{s} cm</option>
-                  ))}
-                </select>
+                  onChange={handleSizeChange}
+                  options={[
+                    { value: 'ALL', label: `All Sizes (${availableSizes.length} available)` },
+                    ...availableSizes.map(s => ({ value: String(s), label: `${s} cm` })),
+                  ]}
+                  placeholder="Select Size..."
+                />
               </div>
 
               {/* STEP 4: PLY */}
@@ -1135,16 +1133,16 @@ export const FinishStockView: React.FC<FinishStockViewProps> = ({ hideHeader = f
                     {filterSize !== 'ALL' ? `Cascaded for Size ${filterSize} cm` : 'All Ply'}
                   </span>
                 </label>
-                <select
+                <CustomSearchableSelect
                   value={filterPly}
-                  onChange={e => handlePlyChange(e.target.value)}
-                  className="w-full py-2.5 px-3.5 bg-slate-50 dark:bg-slate-900 rounded-2xl text-xs font-bold text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-primary/40 cursor-pointer"
-                >
-                  <option value="ALL">All Ply ({availablePlys.length} available)</option>
-                  {availablePlys.map(p => (
-                    <option key={p} value={p}>{p} Ply</option>
-                  ))}
-                </select>
+                  onChange={handlePlyChange}
+                  options={[
+                    { value: 'ALL', label: `All Ply (${availablePlys.length} available)` },
+                    ...availablePlys.map(p => ({ value: String(p), label: `${p} Ply` })),
+                  ]}
+                  placeholder="Select Ply..."
+                  hideSearch
+                />
               </div>
 
               {/* STEP 5: JOINTS */}
@@ -1155,16 +1153,18 @@ export const FinishStockView: React.FC<FinishStockViewProps> = ({ hideHeader = f
                     0, 1, or 2 joints
                   </span>
                 </label>
-                <select
+                <CustomSearchableSelect
                   value={filterJoint}
-                  onChange={e => handleJointChange(e.target.value)}
-                  className="w-full py-2.5 px-3.5 bg-slate-50 dark:bg-slate-900 rounded-2xl text-xs font-bold text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-primary/40 cursor-pointer"
-                >
-                  <option value="ALL">All Joints</option>
-                  <option value="0">0 Joints (Seamless)</option>
-                  <option value="1">1 Joint</option>
-                  <option value="2">2 Joints</option>
-                </select>
+                  onChange={handleJointChange}
+                  options={[
+                    { value: 'ALL', label: 'All Joints' },
+                    { value: '0', label: '0 Joints (Seamless)' },
+                    { value: '1', label: '1 Joint' },
+                    { value: '2', label: '2 Joints' },
+                  ]}
+                  placeholder="Select Joints..."
+                  hideSearch
+                />
               </div>
 
             </div>
@@ -1233,14 +1233,15 @@ export const FinishStockView: React.FC<FinishStockViewProps> = ({ hideHeader = f
                 <label className="block text-[11px] font-black text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-1.5">
                   Inspection Grade Decision
                 </label>
-                <select
+                <CustomSearchableSelect
                   value={qcGrade}
-                  onChange={e => setQcGrade(e.target.value as 'A' | 'B')}
-                  className="block w-full py-2.5 px-3.5 bg-slate-50 dark:bg-slate-900 rounded-2xl text-xs font-bold focus:outline-none focus:ring-2 focus:ring-primary dark:text-white cursor-pointer"
-                >
-                  <option value="A">QC PASS - Grade A (Standard Stock)</option>
-                  <option value="B">QC FAIL - Grade B (B-Grade Stock)</option>
-                </select>
+                  onChange={val => setQcGrade(val as 'A' | 'B')}
+                  options={[
+                    { value: 'A', label: 'QC PASS - Grade A (Standard Stock)', badge: 'PASS', badgeColor: 'bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border-emerald-500/20' },
+                    { value: 'B', label: 'QC FAIL - Grade B (B-Grade Stock)', badge: 'FAIL', badgeColor: 'bg-amber-500/15 text-amber-600 dark:text-amber-400 border-amber-500/20' },
+                  ]}
+                  hideSearch
+                />
               </div>
 
               <div className="grid grid-cols-2 gap-3">

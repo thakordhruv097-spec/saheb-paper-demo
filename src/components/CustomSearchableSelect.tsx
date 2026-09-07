@@ -17,6 +17,8 @@ interface CustomSearchableSelectProps {
   options: SelectOption[];
   required?: boolean;
   className?: string;
+  size?: 'sm' | 'md' | 'lg';
+  hideSearch?: boolean;
 }
 
 export const CustomSearchableSelect: React.FC<CustomSearchableSelectProps> = ({
@@ -27,10 +29,15 @@ export const CustomSearchableSelect: React.FC<CustomSearchableSelectProps> = ({
   options,
   required = false,
   className = '',
+  size = 'md',
+  hideSearch,
 }) => {
   const [isOpen, setIsOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const containerRef = useRef<HTMLDivElement>(null);
+
+  const isSmall = size === 'sm';
+  const showSearch = hideSearch !== undefined ? !hideSearch : options.length > 5;
 
   // Close dropdown on outside click
   useEffect(() => {
@@ -69,8 +76,13 @@ export const CustomSearchableSelect: React.FC<CustomSearchableSelectProps> = ({
       {/* Trigger Button */}
       <button
         type="button"
+        title={selectedOption ? selectedOption.label : placeholder}
         onClick={() => setIsOpen(!isOpen)}
-        className="w-full py-3 px-3.5 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-2xl text-xs font-bold dark:text-white flex items-center justify-between gap-2 text-left cursor-pointer focus:ring-2 focus:ring-blue-500 transition shadow-xs"
+        className={`w-full ${
+          isSmall
+            ? 'py-1.5 px-2.5 rounded-xl text-xs'
+            : 'py-3 px-3.5 rounded-2xl text-xs'
+        } bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 font-bold dark:text-white flex items-center justify-between gap-2 text-left cursor-pointer focus:ring-2 focus:ring-primary transition shadow-xs`}
       >
         {selectedOption ? (
           <div className="flex items-center gap-2 truncate min-w-0">
@@ -91,24 +103,26 @@ export const CustomSearchableSelect: React.FC<CustomSearchableSelectProps> = ({
         ) : (
           <span className="text-slate-400 font-normal">{placeholder}</span>
         )}
-        <ChevronDown className={`h-4 w-4 text-slate-400 shrink-0 transition-transform ${isOpen ? 'rotate-180' : ''}`} />
+        <ChevronDown className={`${isSmall ? 'h-3.5 w-3.5' : 'h-4 w-4'} text-slate-400 shrink-0 transition-transform ${isOpen ? 'rotate-180' : ''}`} />
       </button>
 
       {/* Floating Searchable Menu */}
       {isOpen && (
-        <div className="absolute left-0 right-0 top-full mt-1.5 bg-white dark:bg-[#091124] border border-slate-200 dark:border-slate-700/90 rounded-2xl shadow-2xl z-50 p-2.5 space-y-2 max-h-72 overflow-y-auto custom-scrollbar animate-in fade-in zoom-in-95 duration-150">
+        <div className="absolute left-0 top-full mt-1.5 w-max min-w-full min-w-[220px] max-w-[calc(100vw-2rem)] sm:max-w-xs bg-white dark:bg-[#091124] border border-slate-200 dark:border-slate-700/90 rounded-2xl shadow-2xl shadow-slate-900/15 dark:shadow-black/60 z-50 p-2 space-y-1.5 max-h-72 overflow-y-auto custom-scrollbar animate-in fade-in zoom-in-95 duration-150">
           {/* Search Bar */}
-          <div className="relative">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-slate-400" />
-            <input
-              type="text"
-              value={searchQuery}
-              onChange={e => setSearchQuery(e.target.value)}
-              placeholder="Type to search..."
-              className="w-full pl-8 pr-3 py-2 bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-xs font-bold dark:text-white focus:outline-none placeholder:text-slate-400"
-              autoFocus
-            />
-          </div>
+          {showSearch && (
+            <div className="relative">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-slate-400" />
+              <input
+                type="text"
+                value={searchQuery}
+                onChange={e => setSearchQuery(e.target.value)}
+                placeholder="Type to search..."
+                className="w-full pl-8 pr-3 py-1.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-xs font-semibold text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-primary/50 placeholder:text-slate-400"
+                autoFocus
+              />
+            </div>
+          )}
 
           {/* Options List */}
           <div className="space-y-1">
@@ -124,14 +138,14 @@ export const CustomSearchableSelect: React.FC<CustomSearchableSelectProps> = ({
                       setIsOpen(false);
                       setSearchQuery('');
                     }}
-                    className={`w-full p-2.5 rounded-xl text-left flex items-center justify-between gap-2 transition cursor-pointer ${
+                    className={`w-full ${isSmall ? 'p-2 rounded-lg' : 'p-2.5 rounded-xl'} text-left flex items-center justify-between gap-3 transition cursor-pointer ${
                       isSelected
-                        ? 'bg-gradient-to-r from-[#6C4FE0] to-[#7C3AED] text-white font-black shadow-md shadow-[#6C4FE0]/25'
-                        : 'hover:bg-slate-100 dark:hover:bg-slate-800/80 text-slate-800 dark:text-slate-200'
+                        ? 'bg-primary text-white font-bold shadow-xs'
+                        : 'hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-800 dark:text-slate-200'
                     }`}
                   >
                     <div className="flex items-center gap-2 min-w-0">
-                      <span className="text-xs font-bold truncate">{o.label}</span>
+                      <span className="text-xs font-bold">{o.label}</span>
                       {o.badge && (
                         <span className={`px-1.5 py-0.5 rounded-md text-[9px] font-black uppercase ${
                           isSelected
@@ -142,11 +156,13 @@ export const CustomSearchableSelect: React.FC<CustomSearchableSelectProps> = ({
                         </span>
                       )}
                     </div>
-                    {o.sublabel && (
-                      <span className={`text-[11px] font-mono shrink-0 font-bold ${isSelected ? 'text-blue-100' : 'text-slate-400'}`}>
+                    {isSelected ? (
+                      <Check className="h-4 w-4 shrink-0 text-white" />
+                    ) : o.sublabel ? (
+                      <span className="text-[11px] font-mono shrink-0 font-medium text-slate-400">
                         {o.sublabel}
                       </span>
-                    )}
+                    ) : null}
                   </button>
                 );
               })

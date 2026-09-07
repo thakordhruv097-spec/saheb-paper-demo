@@ -555,7 +555,7 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
                   key={tf}
                   onClick={() => setTimeframe(tf)}
                   className={`px-2 sm:px-3.5 py-1 text-[10px] sm:text-xs font-bold rounded-full capitalize transition-all cursor-pointer ${timeframe === tf
-                    ? 'bg-[#5B3DC9] text-white shadow-[0_2px_8px_rgba(91,61,201,0.35)]'
+                    ? 'bg-primary text-white shadow-xs'
                     : 'text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white'
                     }`}
                 >
@@ -815,12 +815,12 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
                           key={item.id}
                           onClick={() => navigate(item.path)}
                           className={`w-full flex items-center justify-between px-3 py-2 rounded-2xl transition-all duration-150 text-left cursor-pointer group select-none ${isActive
-                            ? 'bg-gradient-to-r from-[#6C4FE0] via-[#7C3AED] to-[#5B3DC9] text-white font-bold shadow-lg shadow-[#6C4FE0]/35'
+                            ? 'bg-primary text-white font-bold shadow-sm shadow-primary/20'
                             : 'text-slate-700 dark:text-slate-300 hover:bg-[#F3F2FA] dark:hover:bg-slate-800/60'
                             }`}
                         >
                           <div className="flex items-center gap-3 min-w-0">
-                            <Icon className={`h-4.5 w-4.5 shrink-0 transition-transform ${isActive ? 'text-white stroke-[2.2]' : 'text-[#6C4FE0] dark:text-purple-400 stroke-[1.8] group-hover:scale-110'}`} />
+                            <Icon className={`h-4.5 w-4.5 shrink-0 transition-transform ${isActive ? 'text-white stroke-[2.2]' : 'text-slate-400 dark:text-slate-400 stroke-[1.8] group-hover:scale-110 group-hover:text-slate-700 dark:group-hover:text-slate-200'}`} />
                             <span className={`text-[12.5px] font-sans tracking-tight leading-tight truncate ${isActive ? 'font-bold text-white' : 'font-semibold text-[#334155] dark:text-slate-300 group-hover:text-slate-900 dark:group-hover:text-white'}`}>
                               {item.label}
                             </span>
@@ -891,12 +891,12 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
                       setMobileMenuOpen(false);
                     }}
                     className={`flex items-center justify-between px-3.5 py-2.5 rounded-2xl text-left transition cursor-pointer ${isActive
-                      ? 'bg-gradient-to-r from-[#6C4FE0] via-[#7C3AED] to-[#5B3DC9] text-white font-bold shadow-md shadow-[#6C4FE0]/30'
+                      ? 'bg-primary text-white font-bold shadow-sm shadow-primary/20'
                       : 'text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800'
                       }`}
                   >
                     <div className="flex items-center gap-3 min-w-0">
-                      <Icon className={`h-4.5 w-4.5 shrink-0 ${isActive ? 'text-white stroke-[2.2]' : 'text-[#6C4FE0] dark:text-purple-400 stroke-[1.8]'}`} />
+                      <Icon className={`h-4.5 w-4.5 shrink-0 ${isActive ? 'text-white stroke-[2.2]' : 'text-slate-400 dark:text-slate-400 stroke-[1.8]'}`} />
                       <span className={`text-xs sm:text-sm ${isActive ? 'font-bold text-white' : 'font-semibold text-slate-700 dark:text-slate-200'}`}>{item.label}</span>
                     </div>
                     {isActive && (

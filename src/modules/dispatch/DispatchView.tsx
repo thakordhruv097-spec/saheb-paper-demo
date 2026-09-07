@@ -935,7 +935,7 @@ export const DispatchView: React.FC<DispatchViewProps> = ({ initialTab = 'orders
               <button
                 type="button"
                 onClick={() => { setActiveTab('orders'); setSuccessMsg(''); setErrorMsg(''); }}
-                className="col-span-1 sm:col-span-3 w-full flex items-center justify-center gap-2.5 py-3 px-4 rounded-xl text-xs sm:text-sm font-black transition-all cursor-pointer bg-gradient-to-r from-[#6C4FE0] to-[#7C3AED] text-white shadow-md shadow-[#6C4FE0]/25"
+                className="col-span-1 sm:col-span-3 w-full flex items-center justify-center gap-2.5 py-3 px-4 rounded-xl text-xs sm:text-sm font-black transition-all cursor-pointer bg-primary text-white shadow-xs"
               >
                 <FileText className="h-4.5 w-4.5" />
                 <span>Customer Order Bookings</span>
@@ -945,9 +945,9 @@ export const DispatchView: React.FC<DispatchViewProps> = ({ initialTab = 'orders
                 <button
                   type="button"
                   onClick={() => handleTabChange('create_slip')}
-                  className={`w-full flex items-center justify-center gap-2 py-2.5 sm:py-3 px-3 sm:px-4 rounded-xl text-xs sm:text-sm font-black transition-all duration-200 cursor-pointer ${
+                  className={`w-full flex items-center justify-center gap-2 py-2.5 sm:py-3 px-3 sm:px-4 rounded-xl text-xs sm:text-sm font-bold transition-all duration-150 cursor-pointer ${
                     activeTab === 'create_slip'
-                      ? 'bg-gradient-to-r from-[#6C4FE0] to-[#7C3AED] text-white shadow-md shadow-[#6C4FE0]/25 scale-[1.01]'
+                      ? 'bg-primary text-white shadow-xs'
                       : 'text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800/80 hover:text-slate-900 dark:hover:text-white'
                   }`}
                 >
@@ -958,18 +958,18 @@ export const DispatchView: React.FC<DispatchViewProps> = ({ initialTab = 'orders
                 <button
                   type="button"
                   onClick={() => handleTabChange('slips_list')}
-                  className={`w-full flex items-center justify-center gap-2 py-2.5 sm:py-3 px-3 sm:px-4 rounded-xl text-xs sm:text-sm font-black transition-all duration-200 cursor-pointer ${
+                  className={`w-full flex items-center justify-center gap-2 py-2.5 sm:py-3 px-3 sm:px-4 rounded-xl text-xs sm:text-sm font-bold transition-all duration-150 cursor-pointer ${
                     activeTab === 'slips_list'
-                      ? 'bg-gradient-to-r from-[#6C4FE0] to-[#7C3AED] text-white shadow-md shadow-[#6C4FE0]/25 scale-[1.01]'
+                      ? 'bg-primary text-white shadow-xs'
                       : 'text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800/80 hover:text-slate-900 dark:hover:text-white'
                   }`}
                 >
                   <Truck className="h-4 w-4 shrink-0" />
                   <span className="truncate">Packing Slips &amp; Challans</span>
-                  <span className={`px-2 py-0.5 rounded-full text-[11px] font-black shrink-0 ${
+                  <span className={`px-2 py-0.5 rounded-full text-[11px] font-bold shrink-0 ${
                     activeTab === 'slips_list' 
                       ? 'bg-white/20 text-white border border-white/30' 
-                      : 'bg-blue-50 dark:bg-blue-950/60 text-primary dark:text-blue-400 border border-blue-200/60 dark:border-blue-800/60'
+                      : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 border border-slate-200/80 dark:border-slate-700/80'
                   }`}>
                     {slips.length}
                   </span>
@@ -978,18 +978,18 @@ export const DispatchView: React.FC<DispatchViewProps> = ({ initialTab = 'orders
                 <button
                   type="button"
                   onClick={() => handleTabChange('dispatched_vault')}
-                  className={`w-full flex items-center justify-center gap-2 py-2.5 sm:py-3 px-3 sm:px-4 rounded-xl text-xs sm:text-sm font-black transition-all duration-200 cursor-pointer ${
+                  className={`w-full flex items-center justify-center gap-2 py-2.5 sm:py-3 px-3 sm:px-4 rounded-xl text-xs sm:text-sm font-bold transition-all duration-150 cursor-pointer ${
                     activeTab === 'dispatched_vault'
-                      ? 'bg-gradient-to-r from-purple-600 via-indigo-600 to-purple-700 text-white shadow-md shadow-purple-600/25 scale-[1.01]'
+                      ? 'bg-primary text-white shadow-xs'
                       : 'text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800/80 hover:text-slate-900 dark:hover:text-white'
                   }`}
                 >
                   <PackageCheck className="h-4 w-4 shrink-0" />
                   <span className="truncate">Dispatched Reels</span>
-                  <span className={`px-2 py-0.5 rounded-full text-[11px] font-black shrink-0 ${
+                  <span className={`px-2 py-0.5 rounded-full text-[11px] font-bold shrink-0 ${
                     activeTab === 'dispatched_vault' 
                       ? 'bg-white/20 text-white border border-white/30' 
-                      : 'bg-purple-50 dark:bg-purple-950/60 text-purple-600 dark:text-purple-300 border border-purple-200/60 dark:border-purple-800/60'
+                      : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 border border-slate-200/80 dark:border-slate-700/80'
                   }`}>
                     {reels.filter(r => r.status === 'DISPATCHED' || r.challanNo).length}
                   </span>
@@ -1224,15 +1224,17 @@ export const DispatchView: React.FC<DispatchViewProps> = ({ initialTab = 'orders
                 </div>
                 <div>
                   <label className="block text-[10px] font-black text-slate-500 uppercase tracking-wider mb-1">Ply</label>
-                  <select
+                  <CustomSearchableSelect
+                    size="sm"
                     value={orderPly}
-                    onChange={e => setOrderPly(e.target.value)}
-                    className="w-full p-2 bg-slate-50 dark:bg-slate-900 rounded-xl text-xs font-bold dark:text-white border border-slate-200 dark:border-slate-700"
-                  >
-                    <option value="1">1 Ply</option>
-                    <option value="2">2 Ply</option>
-                    <option value="3">3 Ply</option>
-                  </select>
+                    onChange={setOrderPly}
+                    options={[
+                      { value: '1', label: '1 Ply' },
+                      { value: '2', label: '2 Ply' },
+                      { value: '3', label: '3 Ply' },
+                    ]}
+                    hideSearch
+                  />
                 </div>
               </div>
 
@@ -1800,8 +1802,8 @@ export const DispatchView: React.FC<DispatchViewProps> = ({ initialTab = 'orders
           {selectedReelNos.length > 0 ? (
             <div className="bg-white dark:bg-slate-900 border-2 border-slate-300 dark:border-slate-700 rounded-3xl p-5 sm:p-7 shadow-xl space-y-5 text-slate-900 dark:text-slate-100 relative overflow-hidden text-left">
               
-              {/* Paper document top decorative gradient bar */}
-              <div className="absolute top-0 left-0 right-0 h-2 bg-gradient-to-r from-blue-600 via-indigo-600 to-emerald-500"></div>
+              {/* Paper document top decorative bar */}
+              <div className="absolute top-0 left-0 right-0 h-1.5 bg-primary"></div>
 
               {/* Challan Document Header */}
               <div className="border-b-2 border-slate-200 dark:border-slate-800 pb-4 pt-1 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
@@ -3024,7 +3026,7 @@ export const DispatchView: React.FC<DispatchViewProps> = ({ initialTab = 'orders
                   onClick={() => setEditPickerGsmFilter('ALL')}
                   className={`px-2.5 py-0.5 rounded-full text-xs font-bold cursor-pointer transition ${
                     editPickerGsmFilter === 'ALL'
-                      ? 'bg-blue-900 dark:bg-blue-600 text-white'
+                      ? 'bg-primary text-white shadow-xs'
                       : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 hover:bg-slate-200'
                   }`}
                 >
@@ -3061,7 +3063,7 @@ export const DispatchView: React.FC<DispatchViewProps> = ({ initialTab = 'orders
                   onClick={() => setEditPickerSizeFilter('ALL')}
                   className={`px-2.5 py-0.5 rounded-full text-xs font-bold cursor-pointer transition ${
                     editPickerSizeFilter === 'ALL'
-                      ? 'bg-indigo-900 dark:bg-indigo-500 text-white'
+                      ? 'bg-primary text-white shadow-xs'
                       : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 hover:bg-slate-200'
                   }`}
                 >
@@ -3081,7 +3083,7 @@ export const DispatchView: React.FC<DispatchViewProps> = ({ initialTab = 'orders
                       onClick={() => setEditPickerSizeFilter(sz)}
                       className={`px-2.5 py-0.5 rounded-full text-xs font-bold cursor-pointer transition ${
                         editPickerSizeFilter === sz
-                          ? 'bg-indigo-600 text-white shadow-xs'
+                          ? 'bg-primary text-white shadow-xs'
                           : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 hover:bg-slate-200'
                       }`}
                     >

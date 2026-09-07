@@ -181,7 +181,7 @@ export const DispatchedReelsVault: React.FC<DispatchedReelsVaultProps> = ({
         <div className="neumorphic-card rounded-3xl p-5 shadow-xs">
           <div className="flex justify-between items-center text-slate-400 mb-1">
             <span className="text-[10px] font-black uppercase tracking-wider">Dispatched Reels</span>
-            <PackageCheck className="h-4 w-4 text-purple-500" />
+            <PackageCheck className="h-4 w-4 text-primary" />
           </div>
           <p className="text-2xl font-black font-mono text-slate-900 dark:text-white">
             {filteredRecords.length}
@@ -230,7 +230,7 @@ export const DispatchedReelsVault: React.FC<DispatchedReelsVaultProps> = ({
               value={searchTerm}
               onChange={e => setSearchTerm(e.target.value)}
               placeholder="Search dispatched reel no, product, challan no, customer..."
-              className="w-full pl-10 pr-4 py-2.5 bg-slate-50 dark:bg-slate-800/80 rounded-2xl text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-purple-500 dark:text-white placeholder-slate-400"
+              className="w-full pl-10 pr-4 py-2.5 bg-slate-50 dark:bg-slate-800/80 rounded-2xl text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-primary dark:text-white placeholder-slate-400"
             />
             {searchTerm && (
               <button
@@ -251,7 +251,7 @@ export const DispatchedReelsVault: React.FC<DispatchedReelsVaultProps> = ({
                 onClick={() => setProductFilter('ALL')}
                 className={`px-2.5 py-1 rounded-xl text-xs font-bold transition cursor-pointer ${
                   productFilter === 'ALL'
-                    ? 'bg-purple-600 text-white shadow-xs'
+                    ? 'bg-primary text-white shadow-xs'
                     : 'text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700'
                 }`}
               >
@@ -264,7 +264,7 @@ export const DispatchedReelsVault: React.FC<DispatchedReelsVaultProps> = ({
                   onClick={() => setProductFilter(p)}
                   className={`px-2.5 py-1 rounded-xl text-xs font-bold transition cursor-pointer ${
                     productFilter === p
-                      ? 'bg-purple-600 text-white shadow-xs'
+                      ? 'bg-primary text-white shadow-xs'
                       : 'text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700'
                   }`}
                 >
@@ -282,7 +282,7 @@ export const DispatchedReelsVault: React.FC<DispatchedReelsVaultProps> = ({
                   onClick={() => setGradeFilter(g)}
                   className={`px-2.5 py-1 rounded-xl text-xs font-bold transition cursor-pointer ${
                     gradeFilter === g
-                      ? 'bg-purple-600 text-white shadow-xs'
+                      ? 'bg-primary text-white shadow-xs'
                       : 'text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700'
                   }`}
                 >
@@ -324,7 +324,7 @@ export const DispatchedReelsVault: React.FC<DispatchedReelsVaultProps> = ({
                       {/* Reel No */}
                       <td className="py-3 px-3 whitespace-nowrap">
                         <div className="flex items-center gap-1.5">
-                          <span className="font-mono font-black text-xs text-purple-600 dark:text-purple-400">
+                          <span className="font-mono font-bold text-xs text-slate-900 dark:text-white">
                             {rec.reel.reelNo}
                           </span>
                           <button
@@ -361,8 +361,8 @@ export const DispatchedReelsVault: React.FC<DispatchedReelsVaultProps> = ({
 
                       {/* Challan No */}
                       <td className="py-3 px-3 whitespace-nowrap">
-                        <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-xl bg-blue-50 dark:bg-blue-950/60 text-blue-700 dark:text-blue-300 font-mono font-extrabold text-[11px] border border-blue-200/60 dark:border-blue-800/60">
-                          <Truck className="h-3 w-3" />
+                        <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 font-mono font-bold text-[11px] border border-slate-200/80 dark:border-slate-700/80">
+                          <Truck className="h-3 w-3 text-slate-500" />
                           <span>{rec.challanNo}</span>
                         </span>
                       </td>
@@ -394,7 +394,7 @@ export const DispatchedReelsVault: React.FC<DispatchedReelsVaultProps> = ({
                           <button
                             type="button"
                             onClick={() => onViewChallan(rec.slip!)}
-                            className="px-3 py-1.5 rounded-xl bg-[#008163] hover:bg-[#006e54] text-white font-black text-[10px] uppercase tracking-wider shadow-xs shadow-[#008163]/25 transition cursor-pointer inline-flex items-center gap-1.5 active:scale-95"
+                            className="px-3 py-1.5 rounded-xl bg-primary hover:bg-primary-dark text-white font-bold text-[10px] uppercase tracking-wider shadow-xs transition cursor-pointer inline-flex items-center gap-1.5 active:scale-95"
                             title="View & Print Delivery Challan PDF"
                           >
                             <Printer className="h-3 w-3" />

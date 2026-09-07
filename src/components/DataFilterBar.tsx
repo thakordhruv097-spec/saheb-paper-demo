@@ -1,5 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { Filter, X, Calendar, ChevronDown } from 'lucide-react';
+import { CustomDatePickerModal } from './CustomDatePickerModal';
 
 export interface FilterDropdownOption {
   label: string;
@@ -40,7 +41,10 @@ export const DataFilterBar: React.FC<DataFilterBarProps> = ({
   activeCount,
 }) => {
   const [isOpen, setIsOpen] = useState(false);
+  const [openDatePickerFor, setOpenDatePickerFor] = useState<'from' | 'to' | null>(null);
   const panelRef = useRef<HTMLDivElement>(null);
+  const fromBtnRef = useRef<HTMLButtonElement | null>(null);
+  const toBtnRef = useRef<HTMLButtonElement | null>(null);
 
   // Calculate active filter count
   const computedCount = activeCount ?? (() => {
@@ -54,8 +58,13 @@ export const DataFilterBar: React.FC<DataFilterBarProps> = ({
   // Close on outside click
   useEffect(() => {
     const handler = (e: MouseEvent) => {
+      const target = e.target as HTMLElement | null;
+      if (target && target.closest('[data-custom-datepicker]')) {
+        return;
+      }
       if (panelRef.current && !panelRef.current.contains(e.target as Node)) {
         setIsOpen(false);
+        setOpenDatePickerFor(null);
       }
     };
     if (isOpen) document.addEventListener('mousedown', handler);
@@ -111,28 +120,56 @@ export const DataFilterBar: React.FC<DataFilterBarProps> = ({
 
           {/* Date Range Filter */}
           <div className="space-y-2">
-            <label className="text-[10px] font-black text-slate-500 dark:text-slate-400 uppercase tracking-wider flex items-center gap-1.5">
-              <Calendar className="h-3 w-3" />
-              Date Range
-            </label>
+            <div className="flex items-center justify-between">
+              <label className="text-[10px] font-black text-slate-500 dark:text-slate-400 uppercase tracking-wider flex items-center gap-1.5">
+                <Calendar className="h-3 w-3" />
+                Date Range
+              </label>
+              {(dateFrom || dateTo) && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    onDateFromChange('');
+                    onDateToChange('');
+                  }}
+                  className="text-[10px] font-bold text-red-500 hover:text-red-700 dark:text-red-400 cursor-pointer"
+                >
+                  Clear Dates
+                </button>
+              )}
+            </div>
             <div className="grid grid-cols-2 gap-2">
               <div>
                 <label className="text-[9px] font-bold text-slate-400 uppercase mb-1 block">From</label>
-                <input
-                  type="date"
-                  value={dateFrom}
-                  onChange={e => onDateFromChange(e.target.value)}
-                  className="w-full py-2 px-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-xs font-bold focus:outline-none focus:ring-2 focus:ring-primary/50 dark:text-white"
-                />
+                <button
+                  type="button"
+                  ref={fromBtnRef}
+                  onClick={() => setOpenDatePickerFor(openDatePickerFor === 'from' ? null : 'from')}
+                  className={`w-full py-2 px-2.5 bg-slate-50 dark:bg-slate-800 border rounded-xl text-xs font-bold text-left flex items-center justify-between transition cursor-pointer ${
+                    dateFrom
+                      ? 'border-primary/50 text-slate-900 dark:text-white ring-1 ring-primary/20'
+                      : 'border-slate-200 dark:border-slate-700 text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-750'
+                  }`}
+                >
+                  <span>{dateFrom ? dateFrom.split('-').reverse().join('/') : 'dd-mm-yyyy'}</span>
+                  <Calendar className="h-3.5 w-3.5 text-slate-400 shrink-0" />
+                </button>
               </div>
               <div>
                 <label className="text-[9px] font-bold text-slate-400 uppercase mb-1 block">To</label>
-                <input
-                  type="date"
-                  value={dateTo}
-                  onChange={e => onDateToChange(e.target.value)}
-                  className="w-full py-2 px-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-xs font-bold focus:outline-none focus:ring-2 focus:ring-primary/50 dark:text-white"
-                />
+                <button
+                  type="button"
+                  ref={toBtnRef}
+                  onClick={() => setOpenDatePickerFor(openDatePickerFor === 'to' ? null : 'to')}
+                  className={`w-full py-2 px-2.5 bg-slate-50 dark:bg-slate-800 border rounded-xl text-xs font-bold text-left flex items-center justify-between transition cursor-pointer ${
+                    dateTo
+                      ? 'border-primary/50 text-slate-900 dark:text-white ring-1 ring-primary/20'
+                      : 'border-slate-200 dark:border-slate-700 text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-750'
+                  }`}
+                >
+                  <span>{dateTo ? dateTo.split('-').reverse().join('/') : 'dd-mm-yyyy'}</span>
+                  <Calendar className="h-3.5 w-3.5 text-slate-400 shrink-0" />
+                </button>
               </div>
             </div>
           </div>
@@ -185,6 +222,32 @@ export const DataFilterBar: React.FC<DataFilterBarProps> = ({
             </div>
           )}
         </div>
+      )}
+
+      {openDatePickerFor === 'from' && (
+        <CustomDatePickerModal
+          selectedDate={dateFrom || new Date().toISOString().split('T')[0]}
+          onSelectDate={(d) => {
+            onDateFromChange(d);
+            setOpenDatePickerFor(null);
+          }}
+          onClose={() => setOpenDatePickerFor(null)}
+          triggerRef={fromBtnRef}
+          allowFuture={true}
+        />
+      )}
+
+      {openDatePickerFor === 'to' && (
+        <CustomDatePickerModal
+          selectedDate={dateTo || new Date().toISOString().split('T')[0]}
+          onSelectDate={(d) => {
+            onDateToChange(d);
+            setOpenDatePickerFor(null);
+          }}
+          onClose={() => setOpenDatePickerFor(null)}
+          triggerRef={toBtnRef}
+          allowFuture={true}
+        />
       )}
     </div>
   );

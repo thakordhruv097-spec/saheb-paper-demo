@@ -27,6 +27,8 @@ import {
   Package,
   ArrowUpDown,
   MoreVertical,
+  Pencil,
+  Trash2,
 } from 'lucide-react';
 
 interface DowntimeLog {
@@ -71,6 +73,33 @@ export const PulpMillView: React.FC = () => {
   });
   const [downtimeMinutes, setDowntimeMinutes] = useState('');
   const [downtimeReason, setDowntimeReason] = useState('');
+  const [activeDtMenuId, setActiveDtMenuId] = useState<string | null>(null);
+
+  useEffect(() => {
+    const handleDocClick = () => setActiveDtMenuId(null);
+    window.addEventListener('click', handleDocClick);
+    return () => window.removeEventListener('click', handleDocClick);
+  }, []);
+
+  const handleDeleteDowntime = (id: string) => {
+    const updated = downtimeLogs.filter(dt => dt.id !== id);
+    setDowntimeLogs(updated);
+    localStorage.setItem('saheb_pulp_downtimes', JSON.stringify(updated));
+    setSuccessMsg('Downtime entry deleted.');
+    setTimeout(() => setSuccessMsg(''), 3000);
+    setActiveDtMenuId(null);
+  };
+
+  const handleEditDowntime = (dt: DowntimeLog) => {
+    setDowntimeMinutes(String(dt.durationMinutes));
+    setDowntimeReason(dt.reason);
+    const updated = downtimeLogs.filter(item => item.id !== dt.id);
+    setDowntimeLogs(updated);
+    localStorage.setItem('saheb_pulp_downtimes', JSON.stringify(updated));
+    setSuccessMsg(`Editing downtime: ${dt.durationMinutes} mins (${dt.reason})`);
+    setTimeout(() => setSuccessMsg(''), 3000);
+    setActiveDtMenuId(null);
+  };
 
   // Feedback states
   const [successMsg, setSuccessMsg] = useState('');
@@ -314,9 +343,6 @@ export const PulpMillView: React.FC = () => {
                 <h1 className="text-xl sm:text-2xl font-black tracking-tight font-heading text-slate-900 dark:text-white">
                   Pulp Mill Daily Setup & Formula Rules
                 </h1>
-                <span className="px-2.5 py-0.5 rounded-full bg-[#EDE9FE] dark:bg-purple-950/70 text-[#6C4FE0] dark:text-purple-300 text-[10px] font-black uppercase tracking-wider">
-                  ✦ Step 3/8 Guide ⓘ
-                </span>
               </div>
               <p className="text-xs sm:text-sm text-slate-500 dark:text-slate-400 font-medium mt-0.5">
                 Date: <strong className="text-slate-900 dark:text-white font-sans">{dateStr.split('-').reverse().join('/')}</strong> &bull; Governs automatic raw material deduction on Machine Production.
@@ -519,9 +545,42 @@ export const PulpMillView: React.FC = () => {
                   <span className="font-extrabold px-3 py-1 rounded-full bg-[#FEE2E2] dark:bg-red-950/40 text-[#DC2626] dark:text-red-400 text-xs">
                     {dt.durationMinutes} Mins
                   </span>
-                  <button type="button" className="text-slate-400 hover:text-slate-600 dark:hover:text-white cursor-pointer">
-                    <MoreVertical className="h-4 w-4" />
-                  </button>
+                  <div className="relative">
+                    <button 
+                      type="button" 
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setActiveDtMenuId(activeDtMenuId === dt.id ? null : dt.id);
+                      }}
+                      className="p-1.5 rounded-lg text-slate-400 hover:text-slate-600 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800 transition cursor-pointer"
+                      title="Actions"
+                    >
+                      <MoreVertical className="h-4 w-4" />
+                    </button>
+                    {activeDtMenuId === dt.id && (
+                      <div 
+                        onClick={(e) => e.stopPropagation()}
+                        className="absolute right-0 top-full mt-1 w-32 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl shadow-xl z-20 py-1 text-xs"
+                      >
+                        <button
+                          type="button"
+                          onClick={() => handleEditDowntime(dt)}
+                          className="w-full px-3 py-2 text-left flex items-center gap-2 text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 cursor-pointer font-semibold"
+                        >
+                          <Pencil className="h-3.5 w-3.5 text-blue-500" />
+                          <span>Edit</span>
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => handleDeleteDowntime(dt.id)}
+                          className="w-full px-3 py-2 text-left flex items-center gap-2 text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/40 cursor-pointer font-semibold"
+                        >
+                          <Trash2 className="h-3.5 w-3.5" />
+                          <span>Delete</span>
+                        </button>
+                      </div>
+                    )}
+                  </div>
                 </div>
               </div>
             ))

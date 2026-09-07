@@ -695,27 +695,35 @@ export const RewinderView: React.FC = () => {
               </button>
 
               {/* Date Filter */}
-              <select
-                value={dateFilter}
-                onChange={e => setDateFilter(e.target.value)}
-                className="py-2 px-3 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-200 rounded-xl text-xs font-bold focus:ring-2 focus:ring-blue-500 focus:outline-none cursor-pointer"
-              >
-                <option value="all">All Dates</option>
-                <option value="today">Today</option>
-                <option value="7days">Last 7 Days</option>
-              </select>
+              <div className="w-32">
+                <CustomSearchableSelect
+                  size="sm"
+                  value={dateFilter}
+                  onChange={setDateFilter}
+                  options={[
+                    { value: 'all', label: 'All Dates' },
+                    { value: 'today', label: 'Today' },
+                    { value: '7days', label: 'Last 7 Days' },
+                  ]}
+                  hideSearch
+                />
+              </div>
 
               {/* QC Status Filter */}
-              <select
-                value={statusFilter}
-                onChange={e => setStatusFilter(e.target.value)}
-                className="py-2 px-3 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-200 rounded-xl text-xs font-bold focus:ring-2 focus:ring-blue-500 focus:outline-none cursor-pointer"
-              >
-                <option value="all">All Statuses</option>
-                <option value="QC_PENDING">QC Pending</option>
-                <option value="GRADE_A">Grade A (Passed)</option>
-                <option value="GRADE_B">Grade B</option>
-              </select>
+              <div className="w-36">
+                <CustomSearchableSelect
+                  size="sm"
+                  value={statusFilter}
+                  onChange={setStatusFilter}
+                  options={[
+                    { value: 'all', label: 'All Statuses' },
+                    { value: 'QC_PENDING', label: 'QC Pending' },
+                    { value: 'GRADE_A', label: 'Grade A' },
+                    { value: 'GRADE_B', label: 'Grade B' },
+                  ]}
+                  hideSearch
+                />
+              </div>
 
               {hasActiveFilters && (
                 <button
@@ -914,10 +922,9 @@ export const RewinderView: React.FC = () => {
                     <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">
                       Ply
                     </label>
-                    <select
+                    <CustomSearchableSelect
                       value={reelForm.ply}
-                      onChange={e => {
-                        const newPly = e.target.value;
+                      onChange={newPly => {
                         const availableRolls = getRolls();
                         let newWeight = reelForm.weightKg;
                         if (newPly === '2') {
@@ -948,11 +955,12 @@ export const RewinderView: React.FC = () => {
                         }
                         setReelForm({ ...reelForm, ply: newPly, weightKg: newWeight });
                       }}
-                      className="w-full p-2.5 bg-slate-50 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white rounded-xl text-xs font-bold focus:ring-2 focus:ring-primary focus:outline-none cursor-pointer"
-                    >
-                      <option value="1">1 Ply</option>
-                      <option value="2">2 Ply</option>
-                    </select>
+                      options={[
+                        { value: '1', label: '1 Ply' },
+                        { value: '2', label: '2 Ply' },
+                      ]}
+                      hideSearch
+                    />
                   </div>
 
                   {/* 2nd: Running Roll No (Dynamic 1 or 2 boxes) */}
@@ -1101,10 +1109,10 @@ export const RewinderView: React.FC = () => {
                         <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">
                           Reels Cut (1 to {maxAllowedCut} Max)
                         </label>
-                        <select
-                          value={reelsCutCount}
-                          onChange={e => {
-                            const count = Math.min(maxAllowedCut, Math.max(1, Number(e.target.value)));
+                        <CustomSearchableSelect
+                          value={String(reelsCutCount)}
+                          onChange={val => {
+                            const count = Math.min(maxAllowedCut, Math.max(1, Number(val)));
                             setReelsCutCount(count);
 
                             // Auto regenerate cut reels list with guaranteed unique sequential numbers
@@ -1124,14 +1132,12 @@ export const RewinderView: React.FC = () => {
                             }
                             setCutReels(items);
                           }}
-                          className="w-full p-2.5 bg-slate-50 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white rounded-xl text-xs font-bold focus:ring-2 focus:ring-primary focus:outline-none cursor-pointer"
-                        >
-                          {Array.from({ length: maxAllowedCut }, (_, i) => i + 1).map(n => (
-                            <option key={n} value={n}>
-                              {n} {n === 1 ? 'Reel' : 'Reels'}
-                            </option>
-                          ))}
-                        </select>
+                          options={Array.from({ length: maxAllowedCut }, (_, i) => i + 1).map(n => ({
+                            value: String(n),
+                            label: `${n} ${n === 1 ? 'Reel' : 'Reels'}`,
+                          }))}
+                          hideSearch
+                        />
                       </div>
                     );
                   })()}
@@ -1266,20 +1272,18 @@ export const RewinderView: React.FC = () => {
                       <div className="grid grid-cols-12 gap-1.5 sm:contents">
                         {/* 2. Product Name (col-span-7 under Reel Name) */}
                         <div className="col-span-7 sm:col-span-1">
-                          <select
+                          <CustomSearchableSelect
+                            size="sm"
                             value={item.product || reelForm.productName}
-                            onChange={e => {
-                              const val = e.target.value;
+                            onChange={val => {
                               setCutReels(prev => prev.map((r, i) => i === idx ? { ...r, product: val } : r));
                             }}
-                            className="w-full p-1.5 sm:p-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white rounded-lg text-xs font-bold focus:ring-1 focus:ring-primary focus:outline-none cursor-pointer truncate"
-                          >
-                            {masterProducts.map(p => (
-                              <option key={p.name} value={p.name}>
-                                {p.name}
-                              </option>
-                            ))}
-                          </select>
+                            options={masterProducts.map(p => ({
+                              value: p.name,
+                              label: p.name,
+                              badge: `Grade ${p.grade}`
+                            }))}
+                          />
                         </div>
 
                         {/* 3. Size (col-span-5 under Reel Name, next to Product) */}
@@ -1591,16 +1595,15 @@ export const RewinderView: React.FC = () => {
                   <span>1. SELECT PRODUCT</span>
                   <span className="text-[10px] text-blue-500 font-medium">Step 1</span>
                 </label>
-                <select
+                <CustomSearchableSelect
                   value={filterProduct}
-                  onChange={e => handleProductChange(e.target.value)}
-                  className="w-full py-3 px-3.5 bg-slate-50 dark:bg-[#12162B] border border-slate-200 dark:border-[#262D4A] rounded-2xl text-xs font-bold text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500 cursor-pointer"
-                >
-                  <option value="ALL">All Products ({availableProducts.length})</option>
-                  {availableProducts.map(p => (
-                    <option key={p} value={p}>{p}</option>
-                  ))}
-                </select>
+                  onChange={handleProductChange}
+                  options={[
+                    { value: 'ALL', label: `All Products (${availableProducts.length})` },
+                    ...availableProducts.map(p => ({ value: p, label: p })),
+                  ]}
+                  placeholder="Select Product..."
+                />
               </div>
 
               {/* STEP 2: GSM */}
@@ -1611,16 +1614,15 @@ export const RewinderView: React.FC = () => {
                     {filterProduct !== 'ALL' ? `Cascaded for ${filterProduct}` : 'SELECT PRODUCT FIRST'}
                   </span>
                 </label>
-                <select
+                <CustomSearchableSelect
                   value={filterGsm}
-                  onChange={e => handleGsmChange(e.target.value)}
-                  className="w-full py-3 px-3.5 bg-slate-50 dark:bg-[#12162B] border border-slate-200 dark:border-[#262D4A] rounded-2xl text-xs font-bold text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500 cursor-pointer"
-                >
-                  <option value="ALL">All GSMs ({availableGsms.length} available)</option>
-                  {availableGsms.map(g => (
-                    <option key={g} value={g}>{g} GSM</option>
-                  ))}
-                </select>
+                  onChange={handleGsmChange}
+                  options={[
+                    { value: 'ALL', label: `All GSMs (${availableGsms.length} available)` },
+                    ...availableGsms.map(g => ({ value: String(g), label: `${g} GSM` })),
+                  ]}
+                  placeholder="Select GSM..."
+                />
               </div>
 
               {/* STEP 3: SIZE */}
@@ -1631,16 +1633,15 @@ export const RewinderView: React.FC = () => {
                     {filterGsm !== 'ALL' ? `Cascaded for ${filterGsm} GSM` : 'ALL SIZES'}
                   </span>
                 </label>
-                <select
+                <CustomSearchableSelect
                   value={filterSize}
-                  onChange={e => handleSizeChange(e.target.value)}
-                  className="w-full py-3 px-3.5 bg-slate-50 dark:bg-[#12162B] border border-slate-200 dark:border-[#262D4A] rounded-2xl text-xs font-bold text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500 cursor-pointer"
-                >
-                  <option value="ALL">All Sizes ({availableSizes.length} available)</option>
-                  {availableSizes.map(s => (
-                    <option key={s} value={s}>{s} cm</option>
-                  ))}
-                </select>
+                  onChange={handleSizeChange}
+                  options={[
+                    { value: 'ALL', label: `All Sizes (${availableSizes.length} available)` },
+                    ...availableSizes.map(s => ({ value: String(s), label: `${s} cm` })),
+                  ]}
+                  placeholder="Select Size..."
+                />
               </div>
 
               {/* STEP 4: PLY */}
@@ -1651,16 +1652,16 @@ export const RewinderView: React.FC = () => {
                     {filterSize !== 'ALL' ? `Cascaded for Size ${filterSize} cm` : 'ALL PLY'}
                   </span>
                 </label>
-                <select
+                <CustomSearchableSelect
                   value={filterPly}
-                  onChange={e => handlePlyChange(e.target.value)}
-                  className="w-full py-3 px-3.5 bg-slate-50 dark:bg-[#12162B] border border-slate-200 dark:border-[#262D4A] rounded-2xl text-xs font-bold text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500 cursor-pointer"
-                >
-                  <option value="ALL">All Ply ({availablePlys.length} available)</option>
-                  {availablePlys.map(p => (
-                    <option key={p} value={p}>{p} Ply</option>
-                  ))}
-                </select>
+                  onChange={handlePlyChange}
+                  options={[
+                    { value: 'ALL', label: `All Ply (${availablePlys.length} available)` },
+                    ...availablePlys.map(p => ({ value: String(p), label: `${p} Ply` })),
+                  ]}
+                  placeholder="Select Ply..."
+                  hideSearch
+                />
               </div>
 
             </div>

@@ -1,4 +1,4 @@
-import { supabase } from './supabase';
+import { supabase, isSupabaseConfigured } from './supabase';
 import type {
   User,
   RawMaterialItem,
@@ -539,6 +539,7 @@ export const labReportFromDb = (r: any): PaperTestReport => ({
 // ==================== ASYNC CLOUD SYNC OPERATIONS ====================
 
 export async function syncTableFromCloud(tableName: string): Promise<void> {
+  if (!isSupabaseConfigured || !supabase) return;
   try {
     const { data, error } = await supabase.from(tableName).select('*');
     if (error) {
@@ -734,6 +735,7 @@ export async function pushLocalTableToCloud(tableName: string): Promise<void> {
 
 // Background push to Supabase
 export async function pushUpsertToCloud(tableName: string, recordOrArray: any): Promise<void> {
+  if (!isSupabaseConfigured || !supabase) return;
   try {
     const records = Array.isArray(recordOrArray) ? recordOrArray : [recordOrArray];
     if (records.length === 0) return;
@@ -747,6 +749,7 @@ export async function pushUpsertToCloud(tableName: string, recordOrArray: any): 
 }
 
 export async function pushDeleteToCloud(tableName: string, matchColumn: string, matchValue: any): Promise<void> {
+  if (!isSupabaseConfigured || !supabase) return;
   try {
     const { error } = await supabase.from(tableName).delete().eq(matchColumn, matchValue);
     if (error) {
@@ -763,6 +766,10 @@ let syncInitialized = false;
 export async function initSupabaseSync(): Promise<void> {
   if (syncInitialized) return;
   syncInitialized = true;
+
+  if (!isSupabaseConfigured || !supabase) {
+    return;
+  }
 
   const tables = [
     'users',

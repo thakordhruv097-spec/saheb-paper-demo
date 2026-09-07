@@ -197,7 +197,7 @@ export const QRTraceabilityView: React.FC = () => {
                     }}
                     className={`px-3 py-1.5 text-[11px] rounded-xl border font-mono transition font-bold flex items-center gap-1.5 cursor-pointer ${
                       activeReel?.reelNo === r.reelNo
-                        ? 'bg-gradient-to-r from-[#6C4FE0] to-[#7C3AED] text-white border-transparent shadow-md shadow-[#6C4FE0]/25'
+                        ? 'bg-primary text-white border-transparent shadow-xs'
                         : 'bg-slate-50 hover:bg-slate-100 border-slate-200 dark:bg-slate-900 dark:hover:bg-slate-800 dark:border-slate-700 text-slate-800 dark:text-slate-200'
                     }`}
                   >

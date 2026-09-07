@@ -114,9 +114,9 @@ export const UtilitiesEtpView: React.FC<UtilitiesEtpViewProps> = ({ initialTab }
         {canAccessBoiler && (
           <button
             onClick={() => handleTabChange('boiler')}
-            className={`flex-1 min-w-[120px] flex items-center justify-center gap-2 px-5 py-3 rounded-xl text-xs font-extrabold transition-all duration-200 cursor-pointer ${
+            className={`flex-1 min-w-[120px] flex items-center justify-center gap-2 px-5 py-3 rounded-xl text-xs font-bold transition-all duration-150 cursor-pointer ${
               activeTab === 'boiler'
-                ? 'bg-gradient-to-r from-orange-500 to-amber-600 text-white shadow-md shadow-orange-500/25 scale-[1.01]'
+                ? 'bg-primary text-white shadow-xs'
                 : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-white/60 dark:hover:bg-slate-700/50'
             }`}
           >
@@ -128,9 +128,9 @@ export const UtilitiesEtpView: React.FC<UtilitiesEtpViewProps> = ({ initialTab }
         {canAccessEtp && (
           <button
             onClick={() => handleTabChange('etp_chemicals')}
-            className={`flex-1 min-w-[120px] flex items-center justify-center gap-2 px-5 py-3 rounded-xl text-xs font-extrabold transition-all duration-200 cursor-pointer ${
+            className={`flex-1 min-w-[120px] flex items-center justify-center gap-2 px-5 py-3 rounded-xl text-xs font-bold transition-all duration-150 cursor-pointer ${
               activeTab === 'etp_chemicals'
-                ? 'bg-gradient-to-r from-[#6C4FE0] to-[#7C3AED] text-white shadow-md shadow-[#6C4FE0]/25 scale-[1.01]'
+                ? 'bg-primary text-white shadow-xs'
                 : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-white/60 dark:hover:bg-slate-700/50'
             }`}
           >
@@ -142,9 +142,9 @@ export const UtilitiesEtpView: React.FC<UtilitiesEtpViewProps> = ({ initialTab }
         {canAccessElectricity && (
           <button
             onClick={() => handleTabChange('electricity')}
-            className={`flex-1 min-w-[120px] flex items-center justify-center gap-2 px-5 py-3 rounded-xl text-xs font-extrabold transition-all duration-200 cursor-pointer ${
+            className={`flex-1 min-w-[120px] flex items-center justify-center gap-2 px-5 py-3 rounded-xl text-xs font-bold transition-all duration-150 cursor-pointer ${
               activeTab === 'electricity'
-                ? 'bg-gradient-to-r from-amber-500 to-yellow-600 text-white shadow-md shadow-amber-500/25 scale-[1.01]'
+                ? 'bg-primary text-white shadow-xs'
                 : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:bg-slate-700/50'
             }`}
           >

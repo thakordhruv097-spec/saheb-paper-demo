@@ -349,7 +349,7 @@ export const MachineView: React.FC = () => {
                     }}
                     className={`h-full rounded-xl text-xs transition-all duration-150 flex items-center justify-center cursor-pointer ${
                       shift === 'A'
-                        ? 'bg-gradient-to-r from-[#6C4FE0] to-[#7C3AED] text-white shadow-xs font-black'
+                        ? 'bg-primary text-white shadow-xs font-bold'
                         : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white font-bold'
                     }`}
                   >
@@ -364,7 +364,7 @@ export const MachineView: React.FC = () => {
                     }}
                     className={`h-full rounded-xl text-xs transition-all duration-150 flex items-center justify-center cursor-pointer ${
                       shift === 'B'
-                        ? 'bg-gradient-to-r from-[#6C4FE0] to-[#7C3AED] text-white shadow-xs font-black'
+                        ? 'bg-primary text-white shadow-xs font-bold'
                         : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white font-bold'
                     }`}
                   >
@@ -380,16 +380,17 @@ export const MachineView: React.FC = () => {
                 <span className="h-2 w-2 rounded-full bg-emerald-500"></span>
                 Roll Data Parameters
               </h4>
+              {/* Row 1: Roll Number & Product Type */}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-[11px] font-black text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-1.5">
+                  <label className="block text-[11px] font-black text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-1.5 h-4 leading-none">
                     Roll Number
                   </label>
                   <input
                     type="text"
                     value={rollNo}
                     onChange={e => setRollNo(e.target.value)}
-                    className="block w-full py-2.5 px-3.5 bg-slate-50 dark:bg-slate-900 rounded-2xl text-xs font-mono font-bold focus:outline-none focus:ring-2 focus:ring-primary dark:text-white"
+                    className="w-full py-3 px-3.5 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-2xl text-xs font-mono font-bold text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500 transition shadow-xs"
                     placeholder={autoRollNo}
                   />
                 </div>
@@ -409,69 +410,71 @@ export const MachineView: React.FC = () => {
                     required
                   />
                 </div>
-                <div>
-                  <label className="block text-[11px] font-black text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-1.5">
-                    Weight (KG)
+              </div>
+
+              {/* Row 2: Physical Parameters (Weight, GSM, Size, Dia, Joint) with aligned baseline */}
+              <div className="grid grid-cols-2 sm:grid-cols-6 gap-3 pt-1">
+                <div className="col-span-2">
+                  <label className="block text-[11px] font-black text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-1.5 h-4 leading-none truncate">
+                    Weight (KG) *
                   </label>
                   <input
                     type="number"
                     step="0.01"
                     value={weightStr}
                     onChange={e => setWeightStr(e.target.value)}
-                    className="block w-full py-2.5 px-3.5 bg-slate-50 dark:bg-slate-900 rounded-2xl text-xs font-bold focus:outline-none focus:ring-2 focus:ring-primary dark:text-white"
+                    className="w-full py-3 px-3.5 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-2xl text-xs font-bold text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500 transition shadow-xs"
                     placeholder="Weight in kg"
                   />
                 </div>
-                <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
-                  <div>
-                    <label className="block text-[11px] font-black text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-1.5">
-                      GSM
-                    </label>
-                    <input
-                      type="number"
-                      value={gsmStr}
-                      onChange={e => setGsmStr(e.target.value)}
-                      className="block w-full py-2.5 px-3.5 bg-slate-50 dark:bg-slate-900 rounded-2xl text-xs font-bold focus:outline-none focus:ring-2 focus:ring-primary dark:text-white"
-                      placeholder="17"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-[11px] font-black text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-1.5">
-                      Roll Size (cm)
-                    </label>
-                    <input
-                      type="number"
-                      value={widthStr}
-                      onChange={e => setWidthStr(e.target.value)}
-                      className="block w-full py-2.5 px-3.5 bg-slate-50 dark:bg-slate-900 rounded-2xl text-xs font-bold focus:outline-none focus:ring-2 focus:ring-primary dark:text-white"
-                      placeholder="30"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-[11px] font-black text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-1.5">
-                      Dia (mm)
-                    </label>
-                    <input
-                      type="number"
-                      value={diaStr}
-                      onChange={e => setDiaStr(e.target.value)}
-                      className="block w-full py-2.5 px-3.5 bg-slate-50 dark:bg-slate-900 rounded-2xl text-xs font-bold font-mono focus:outline-none focus:ring-2 focus:ring-primary dark:text-white"
-                      placeholder="1150"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-[11px] font-black text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-1.5">
-                      Joint
-                    </label>
-                    <input
-                      type="number"
-                      min="0"
-                      value={jointStr}
-                      onChange={e => setJointStr(e.target.value)}
-                      className="block w-full py-2.5 px-3.5 bg-slate-50 dark:bg-slate-900 rounded-2xl text-xs font-bold focus:outline-none focus:ring-2 focus:ring-primary dark:text-white font-mono"
-                      placeholder="0"
-                    />
-                  </div>
+                <div className="col-span-1">
+                  <label className="block text-[11px] font-black text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-1.5 h-4 leading-none text-center truncate">
+                    GSM
+                  </label>
+                  <input
+                    type="number"
+                    value={gsmStr}
+                    onChange={e => setGsmStr(e.target.value)}
+                    className="w-full py-3 px-2 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-2xl text-xs font-bold text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500 transition shadow-xs text-center"
+                    placeholder="17"
+                  />
+                </div>
+                <div className="col-span-1">
+                  <label className="block text-[11px] font-black text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-1.5 h-4 leading-none text-center whitespace-nowrap truncate" title="Roll Size (cm)">
+                    Size (cm)
+                  </label>
+                  <input
+                    type="number"
+                    value={widthStr}
+                    onChange={e => setWidthStr(e.target.value)}
+                    className="w-full py-3 px-2 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-2xl text-xs font-bold text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500 transition shadow-xs text-center"
+                    placeholder="30"
+                  />
+                </div>
+                <div className="col-span-1">
+                  <label className="block text-[11px] font-black text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-1.5 h-4 leading-none text-center whitespace-nowrap truncate" title="Dia (mm)">
+                    Dia (mm)
+                  </label>
+                  <input
+                    type="number"
+                    value={diaStr}
+                    onChange={e => setDiaStr(e.target.value)}
+                    className="w-full py-3 px-2 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-2xl text-xs font-mono font-bold text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500 transition shadow-xs text-center"
+                    placeholder="1150"
+                  />
+                </div>
+                <div className="col-span-1">
+                  <label className="block text-[11px] font-black text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-1.5 h-4 leading-none text-center truncate">
+                    Joint
+                  </label>
+                  <input
+                    type="number"
+                    min="0"
+                    value={jointStr}
+                    onChange={e => setJointStr(e.target.value)}
+                    className="w-full py-3 px-2 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-2xl text-xs font-mono font-bold text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500 transition shadow-xs text-center"
+                    placeholder="0"
+                  />
                 </div>
               </div>
             </div>

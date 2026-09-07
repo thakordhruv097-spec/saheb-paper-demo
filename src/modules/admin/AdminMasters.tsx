@@ -1331,20 +1331,20 @@ export const AdminMasters: React.FC = () => {
                 <div className="hidden md:block overflow-x-auto min-h-[280px] pb-16">
                   <table className="w-full text-left text-xs border-collapse">
                     <thead>
-                      <tr className="border-b border-slate-100 dark:border-slate-700 text-text-light-secondary dark:text-slate-400">
-                        <th className="py-2.5 px-3 font-bold uppercase">Party Name</th>
-                        <th className="py-2.5 px-3 font-bold uppercase">Contact</th>
-                        <th className="py-2.5 px-3 font-bold uppercase">Address</th>
-                        <th className="py-2.5 px-3 font-bold uppercase text-right">Actions</th>
+                      <tr className="border-b border-slate-100 dark:border-slate-800 text-slate-500 dark:text-slate-400 uppercase text-[11px] font-bold tracking-wider">
+                        <th className="py-3 px-3">Party Name</th>
+                        <th className="py-3 px-3">Contact</th>
+                        <th className="py-3 px-3">Address</th>
+                        <th className="py-3 px-3 text-right">Actions</th>
                       </tr>
                     </thead>
-                    <tbody className="divide-y divide-slate-100 dark:divide-slate-700">
+                    <tbody className="divide-y divide-slate-100 dark:divide-slate-800 font-medium">
                       {filteredParties.map(pt => (
-                        <tr key={pt.id} className="hover:bg-slate-50 dark:hover:bg-slate-800/30">
-                          <td className="py-2.5 px-3 font-semibold text-slate-800 dark:text-white">{pt.name}</td>
-                          <td className="py-2.5 px-3 font-mono text-text-light-secondary dark:text-slate-400">{pt.contact}</td>
-                          <td className="py-2.5 px-3 text-text-light-secondary dark:text-slate-400">{pt.address}</td>
-                          <td className="py-2.5 px-3 text-right">
+                        <tr key={pt.id} className="hover:bg-blue-50/50 dark:hover:bg-slate-800/40 transition">
+                          <td className="py-3 px-3 font-semibold text-slate-900 dark:text-white capitalize">{pt.name}</td>
+                          <td className="py-3 px-3 font-mono text-xs font-semibold text-slate-700 dark:text-slate-300">{pt.contact}</td>
+                          <td className="py-3 px-3 text-xs font-medium text-slate-600 dark:text-slate-300 capitalize">{pt.address}</td>
+                          <td className="py-3 px-3 text-right">
                             <div className={`inline-block text-left ${openMenuFor === pt.id ? 'relative z-50' : 'relative'}`}>
                               <button
                                 onClick={(e) => handleOpenMenu(e, pt.id)}
@@ -1421,9 +1421,9 @@ export const AdminMasters: React.FC = () => {
                   {filteredParties.map(pt => (
                     <div key={pt.id} className="p-3.5 bg-slate-50 dark:bg-slate-900/60 rounded-2xl flex items-center justify-between gap-3 text-xs">
                       <div className="space-y-1 min-w-0 flex-1">
-                        <div className="font-bold text-slate-800 dark:text-white truncate">{pt.name}</div>
-                        <div className="font-mono text-[11px] text-slate-500 dark:text-slate-400">{pt.contact || 'No contact'}</div>
-                        <div className="text-[10px] text-slate-400 truncate">{pt.address || 'No address'}</div>
+                        <div className="font-bold text-slate-900 dark:text-white truncate capitalize">{pt.name}</div>
+                        <div className="font-mono text-xs font-semibold text-slate-700 dark:text-slate-300">{pt.contact || 'No contact'}</div>
+                        <div className="text-[11px] text-slate-500 dark:text-slate-400 truncate capitalize">{pt.address || 'No address'}</div>
                       </div>
                       <div className={`inline-block text-left ${openMenuFor === pt.id ? 'relative z-50' : 'relative'}`}>
                         <button
@@ -1502,20 +1502,20 @@ export const AdminMasters: React.FC = () => {
                 <div className="hidden md:block overflow-x-auto min-h-[280px] pb-16">
                   <table className="w-full text-left text-xs border-collapse">
                     <thead>
-                      <tr className="border-b border-slate-100 dark:border-slate-700 text-text-light-secondary dark:text-slate-400">
-                        <th className="py-2.5 px-3 font-bold uppercase">Vendor Name</th>
-                        <th className="py-2.5 px-3 font-bold uppercase">Contact</th>
-                        <th className="py-2.5 px-3 font-bold uppercase">Address</th>
-                        <th className="py-2.5 px-3 font-bold uppercase text-right">Actions</th>
+                      <tr className="border-b border-slate-100 dark:border-slate-800 text-slate-500 dark:text-slate-400 uppercase text-[11px] font-bold tracking-wider">
+                        <th className="py-3 px-3">Vendor Name</th>
+                        <th className="py-3 px-3">Contact</th>
+                        <th className="py-3 px-3">Address</th>
+                        <th className="py-3 px-3 text-right">Actions</th>
                       </tr>
                     </thead>
-                    <tbody className="divide-y divide-slate-100 dark:divide-slate-700">
+                    <tbody className="divide-y divide-slate-100 dark:divide-slate-800 font-medium">
                       {filteredVendors.map(vd => (
-                        <tr key={vd.id} className="hover:bg-slate-50 dark:hover:bg-slate-800/30">
-                          <td className="py-2.5 px-3 font-semibold text-slate-800 dark:text-white">{vd.name}</td>
-                          <td className="py-2.5 px-3 font-mono text-text-light-secondary dark:text-slate-400">{vd.contact}</td>
-                          <td className="py-2.5 px-3 text-text-light-secondary dark:text-slate-400">{vd.address}</td>
-                          <td className="py-2.5 px-3 text-right">
+                        <tr key={vd.id} className="hover:bg-blue-50/50 dark:hover:bg-slate-800/40 transition">
+                          <td className="py-3 px-3 font-semibold text-slate-900 dark:text-white capitalize">{vd.name}</td>
+                          <td className="py-3 px-3 font-mono text-xs font-semibold text-slate-700 dark:text-slate-300">{vd.contact}</td>
+                          <td className="py-3 px-3 text-xs font-medium text-slate-600 dark:text-slate-300 capitalize">{vd.address}</td>
+                          <td className="py-3 px-3 text-right">
                             <div className={`inline-block text-left ${openMenuFor === vd.id ? 'relative z-50' : 'relative'}`}>
                               <button
                                 onClick={(e) => handleOpenMenu(e, vd.id)}
@@ -1592,9 +1592,9 @@ export const AdminMasters: React.FC = () => {
                   {filteredVendors.map(vd => (
                     <div key={vd.id} className="p-3.5 bg-slate-50 dark:bg-slate-900/60 rounded-2xl flex items-center justify-between gap-3 text-xs">
                       <div className="space-y-1 min-w-0 flex-1">
-                        <div className="font-bold text-slate-800 dark:text-white truncate">{vd.name}</div>
-                        <div className="font-mono text-[11px] text-slate-500 dark:text-slate-400">{vd.contact || 'No contact'}</div>
-                        <div className="text-[10px] text-slate-400 truncate">{vd.address || 'No address'}</div>
+                        <div className="font-bold text-slate-900 dark:text-white truncate capitalize">{vd.name}</div>
+                        <div className="font-mono text-xs font-semibold text-slate-700 dark:text-slate-300">{vd.contact || 'No contact'}</div>
+                        <div className="text-[11px] text-slate-500 dark:text-slate-400 truncate capitalize">{vd.address || 'No address'}</div>
                       </div>
                       <div className={`inline-block text-left ${openMenuFor === vd.id ? 'relative z-50' : 'relative'}`}>
                         <button
@@ -1671,19 +1671,19 @@ export const AdminMasters: React.FC = () => {
               <div className="overflow-x-auto min-h-[280px] pb-16">
                 <table className="w-full text-left text-xs border-collapse">
                   <thead>
-                    <tr className="border-b border-slate-100 dark:border-slate-700 text-text-light-secondary dark:text-slate-400">
-                      <th className="py-2.5 font-bold uppercase">Display Name</th>
-                      <th className="py-2.5 font-bold uppercase">Username</th>
-                      <th className="py-2.5 font-bold uppercase">Role</th>
-                      <th className="py-2.5 font-bold uppercase">Status</th>
-                      <th className="py-2.5 font-bold uppercase text-right">Actions</th>
+                    <tr className="border-b border-slate-100 dark:border-slate-800 text-slate-500 dark:text-slate-400 uppercase text-[11px] font-bold tracking-wider">
+                      <th className="py-3 px-3">Display Name</th>
+                      <th className="py-3 px-3">Username</th>
+                      <th className="py-3 px-3">Role</th>
+                      <th className="py-3 px-3">Status</th>
+                      <th className="py-3 px-3 text-right">Actions</th>
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-slate-100 dark:divide-slate-700">
+                  <tbody className="divide-y divide-slate-100 dark:divide-slate-800 font-medium">
                     {filteredUsersList.map(u => (
-                      <tr key={u.username} className="hover:bg-slate-50 dark:hover:bg-slate-800/30">
-                        <td className="py-2.5 font-semibold text-slate-800 dark:text-white">{u.displayName}</td>
-                        <td className="py-2.5 font-mono text-text-light-secondary dark:text-slate-400">@{u.username}</td>
+                      <tr key={u.username} className="hover:bg-blue-50/50 dark:hover:bg-slate-800/40 transition">
+                        <td className="py-3 px-3 font-semibold text-slate-900 dark:text-white">{u.displayName}</td>
+                        <td className="py-3 px-3 font-mono text-xs font-semibold text-slate-700 dark:text-slate-300">@{u.username}</td>
                         <td className="py-2.5">
                           <span className="px-2 py-0.5 rounded bg-blue-50 dark:bg-blue-950/40 text-[10px] font-bold text-blue-700 dark:text-blue-300">
                             {u.role}
@@ -2755,18 +2755,22 @@ export const AdminMasters: React.FC = () => {
       {/* Toast Notification element */}
       {toast && (
         <div className="fixed bottom-4 left-4 right-4 md:left-auto md:right-6 md:bottom-6 md:w-auto z-50 animate-[slideUp_0.2s_ease-out]">
-          <div className="bg-slate-900 dark:bg-slate-950 text-white rounded-xl px-4 py-3 flex items-center gap-3 shadow-lg md:min-w-[340px]">
-            <CheckCircle2 size={18} className="text-emerald-400 shrink-0" />
-            <span className="text-xs font-semibold flex-1">{toast.text}</span>
+          <div className="bg-white dark:bg-slate-900 border border-slate-200/90 dark:border-slate-800 text-slate-800 dark:text-slate-100 rounded-2xl px-4 py-3 flex items-center gap-3 shadow-xl shadow-slate-900/10 dark:shadow-black/50 md:min-w-[340px]">
+            <CheckCircle2 size={18} className="text-emerald-600 dark:text-emerald-400 shrink-0" />
+            <span className="text-xs font-semibold flex-1 text-slate-800 dark:text-slate-100">{toast.text}</span>
             {toast.undoType && toast.undoData && (
               <button
                 onClick={handleUndoMasterDelete}
-                className="text-xs font-bold text-blue-400 hover:text-blue-300 cursor-pointer ml-2 hover:underline shrink-0"
+                className="text-xs font-bold text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 cursor-pointer ml-2 hover:underline shrink-0"
               >
                 Undo
               </button>
             )}
-            <button onClick={() => setToast(null)} className="text-slate-400 hover:text-white cursor-pointer ml-1 shrink-0">
+            <button 
+              onClick={() => setToast(null)} 
+              className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 cursor-pointer ml-1 shrink-0 p-1 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 transition"
+              title="Close"
+            >
               <X size={15} />
             </button>
           </div>

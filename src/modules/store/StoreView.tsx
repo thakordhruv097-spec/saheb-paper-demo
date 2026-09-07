@@ -220,7 +220,7 @@ export const StoreView: React.FC = () => {
           onClick={() => { setActiveTab('bearings'); setSuccessMsg(''); setErrorMsg(''); }}
           className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-black transition-all cursor-pointer ${
             activeTab === 'bearings'
-              ? 'bg-gradient-to-r from-[#6C4FE0] to-[#7C3AED] text-white shadow-md shadow-[#6C4FE0]/25'
+              ? 'bg-primary text-white shadow-xs'
               : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
           }`}
         >
@@ -231,7 +231,7 @@ export const StoreView: React.FC = () => {
           onClick={() => { setActiveTab('vbelts'); setSuccessMsg(''); setErrorMsg(''); }}
           className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-black transition-all cursor-pointer ${
             activeTab === 'vbelts'
-              ? 'bg-gradient-to-r from-[#6C4FE0] to-[#7C3AED] text-white shadow-md shadow-[#6C4FE0]/25'
+              ? 'bg-primary text-white shadow-xs'
               : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
           }`}
         >
@@ -294,7 +294,7 @@ export const StoreView: React.FC = () => {
                         <td className="py-3 px-3 text-right">
                           <button
                             onClick={() => setAdjustingItem(item)}
-                            className="px-3.5 py-1.5 bg-gradient-to-r from-[#6C4FE0] to-[#7C3AED] hover:from-[#5B3DC9] hover:to-[#6C4FE0] text-white rounded-xl text-[10px] font-black uppercase tracking-wider shadow-sm transition hover:scale-105 active:scale-95 cursor-pointer"
+                            className="px-3.5 py-1.5 bg-primary hover:bg-primary-dark text-white rounded-xl text-[10px] font-bold uppercase tracking-wider shadow-xs transition cursor-pointer"
                           >
                             Adjust
                           </button>
@@ -332,7 +332,7 @@ export const StoreView: React.FC = () => {
                     <div className="pt-2 border-t dark:border-slate-800 flex justify-end">
                       <button
                         onClick={() => setAdjustingItem(item)}
-                        className="px-3.5 py-1.5 bg-gradient-to-r from-[#6C4FE0] to-[#7C3AED] hover:from-[#5B3DC9] hover:to-[#6C4FE0] text-white rounded-xl text-[10px] font-black uppercase tracking-wider shadow-sm"
+                        className="px-3.5 py-1.5 bg-primary hover:bg-primary-dark text-white rounded-xl text-[10px] font-bold uppercase tracking-wider shadow-xs transition"
                       >
                         Adjust Stock
                       </button>
@@ -383,7 +383,7 @@ export const StoreView: React.FC = () => {
                         <td className="py-3 px-3 text-right">
                           <button
                             onClick={() => setAdjustingItem(item)}
-                            className="px-3.5 py-1.5 bg-gradient-to-r from-[#6C4FE0] to-[#7C3AED] hover:from-[#5B3DC9] hover:to-[#6C4FE0] text-white rounded-xl text-[10px] font-black uppercase tracking-wider shadow-sm transition hover:scale-105 active:scale-95 cursor-pointer"
+                            className="px-3.5 py-1.5 bg-primary hover:bg-primary-dark text-white rounded-xl text-[10px] font-bold uppercase tracking-wider shadow-xs transition cursor-pointer"
                           >
                             Adjust
                           </button>
@@ -431,7 +431,7 @@ export const StoreView: React.FC = () => {
                     <div className="pt-2 border-t dark:border-slate-800 flex justify-end">
                       <button
                         onClick={() => setAdjustingItem(item)}
-                        className="px-3.5 py-1.5 bg-gradient-to-r from-[#6C4FE0] to-[#7C3AED] hover:from-[#5B3DC9] hover:to-[#6C4FE0] text-white rounded-xl text-[10px] font-black uppercase tracking-wider shadow-sm"
+                        className="px-3.5 py-1.5 bg-primary hover:bg-primary-dark text-white rounded-xl text-[10px] font-bold uppercase tracking-wider shadow-xs transition"
                       >
                         Adjust Stock
                       </button>

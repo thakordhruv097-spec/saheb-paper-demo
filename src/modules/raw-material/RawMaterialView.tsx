@@ -338,7 +338,7 @@ export const RawMaterialView: React.FC = () => {
                               }}
                               className={`w-full p-2 rounded-xl text-left flex items-center justify-between gap-2 transition cursor-pointer ${
                                 isSelected
-                                  ? 'bg-gradient-to-r from-[#6C4FE0] to-[#7C3AED] text-white font-black shadow-md shadow-[#6C4FE0]/20'
+                                  ? 'bg-primary text-white font-bold shadow-xs'
                                   : 'hover:bg-slate-100 dark:hover:bg-slate-800/80 text-slate-800 dark:text-slate-200'
                               }`}
                             >
@@ -447,9 +447,9 @@ export const RawMaterialView: React.FC = () => {
               <button
                 key={tab.id}
                 onClick={() => setSelectedCategory(tab.id)}
-                className={`px-3.5 py-1.5 rounded-xl text-xs font-black transition-all shrink-0 cursor-pointer ${
+                className={`px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all shrink-0 cursor-pointer ${
                   selectedCategory === tab.id
-                    ? 'bg-gradient-to-r from-[#6C4FE0] to-[#7C3AED] text-white shadow-md shadow-[#6C4FE0]/25 scale-[1.02]'
+                    ? 'bg-primary text-white shadow-xs'
                     : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
                 }`}
               >
