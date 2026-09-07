@@ -245,11 +245,7 @@ const DEFAULT_STORE_ITEMS: StoreItem[] = [
   { id: 'st-6', type: 'V_BELT', name: 'A-48', pcs: 15, targetMachine: 'Hydrapulper Motor', minStock: 5, remarks: 'Standard Anti-static' },
 ];
 
-const DEFAULT_PENDING_ORDERS: PendingOrder[] = [
-  { id: 'or-1', partyId: 'pt-1', productId: 'p-1', gsm: 18, size: 30, ply: 2, qty: 10, dueDate: '2026-07-23', status: 'PENDING', dispatchedQty: 0 },
-  { id: 'or-2', partyId: 'pt-2', productId: 'p-3', gsm: 17, size: 10, ply: 3, qty: 15, dueDate: '2026-07-30', status: 'PENDING', dispatchedQty: 0 },
-  { id: 'or-3', partyId: 'pt-3', productId: 'p-2', gsm: 18, size: 30, ply: 2, qty: 30, dueDate: '2026-08-15', status: 'PENDING', dispatchedQty: 0 },
-];
+const DEFAULT_PENDING_ORDERS: PendingOrder[] = [];
 
 function formatYMD(d: Date): string {
   const y = d.getFullYear();
@@ -259,315 +255,7 @@ function formatYMD(d: Date): string {
 }
 
 function seedOneMonthData(): void {
-  const today = new Date();
-  const formulas: PulpFormula[] = [];
-  const rolls: MachineRoll[] = [];
-  const reels: Reel[] = [];
-  const boilerLogs: BoilerLog[] = [];
-  const etpLogs: EtpLog[] = [];
-  const electricityLogs: ElectricityLog[] = [];
-  const packingSlips: PackingSlip[] = [];
-  const orders = getPendingOrders();
-
-  // Generate 30 days of historical logs ending on TODAY's system clock date
-  const startDate = new Date(today);
-  startDate.setDate(today.getDate() - 29);
-
-  for (let i = 0; i < 30; i++) {
-    const currentDate = new Date(startDate);
-    currentDate.setDate(startDate.getDate() + i);
-    const dateStr = formatYMD(currentDate);
-
-    // 1. Pulp Formula Daily Mix
-    const formulaId = `formula-${dateStr}`;
-    const dailyFormula: PulpFormula = {
-      id: formulaId,
-      date: dateStr,
-      wasteMix: {
-        'Indian Tissue Waste': 50,
-        'Imported Tissue Waste': 0,
-        'SMK': 20,
-        'Cupstock': 0,
-        'Pulp Sheet': 15,
-        'Broke': 15,
-      },
-      chemicals: {
-        'DSR': 12,
-        'WSR': 15,
-        'OBA': 1,
-      },
-    };
-    formulas.push(dailyFormula);
-
-    // 2. Machine Production (2 rolls per day)
-    const rollNo1 = `R-${dateStr.replace(/-/g, '')}-01`;
-    const roll1: MachineRoll = {
-      rollNo: rollNo1,
-      date: dateStr,
-      product: 'Napkin Tissue',
-      weight: 1200,
-      gsm: 18,
-      width: 2300,
-      shift: 'A',
-      startTime: '08:00',
-      offTime: '16:00',
-      downtimeReason: '',
-      formulaId,
-    };
-    rolls.push(roll1);
-
-    const rollNo2 = `R-${dateStr.replace(/-/g, '')}-02`;
-    const roll2: MachineRoll = {
-      rollNo: rollNo2,
-      date: dateStr,
-      product: 'Toilet Tissue',
-      weight: 1000,
-      gsm: 17,
-      width: 2100,
-      shift: 'B',
-      startTime: '16:00',
-      offTime: '24:00',
-      downtimeReason: 'Blade change',
-      formulaId,
-    };
-    rolls.push(roll2);
-
-    // 3. Rewinder (4 reels per day: 2 from Roll 1, 2 from Roll 2)
-    const reelNo1 = `REEL-${dateStr.replace(/-/g, '')}-01`;
-    const reel1: Reel = {
-      reelNo: reelNo1,
-      parentRollNo: rollNo1,
-      product: 'Napkin Tissue',
-      weight: 580,
-      dia: 850,
-      gsm: 18,
-      size: 30,
-      ply: 2,
-      joint: 0,
-      status: 'IN_STOCK',
-      qcGrade: 'A',
-      productionDate: `${dateStr} 12:00`,
-      qcInspector: 'admin',
-      qcTimestamp: new Date(`${dateStr} 12:05`).toISOString(),
-      qcGsmResult: 18.1,
-      qcBrightness: 86,
-      qcSoftness: 8,
-    };
-    reels.push(reel1);
-
-    const reelNo2 = `REEL-${dateStr.replace(/-/g, '')}-02`;
-    const reel2: Reel = {
-      reelNo: reelNo2,
-      parentRollNo: rollNo1,
-      product: 'Napkin Tissue',
-      weight: 590,
-      dia: 850,
-      gsm: 18,
-      size: 30,
-      ply: 2,
-      joint: 1,
-      status: 'IN_STOCK',
-      qcGrade: 'A',
-      productionDate: `${dateStr} 13:10`,
-      qcInspector: 'admin',
-      qcTimestamp: new Date(`${dateStr} 13:15`).toISOString(),
-      qcGsmResult: 17.9,
-      qcBrightness: 85,
-      qcSoftness: 7,
-    };
-    reels.push(reel2);
-
-    const reelNo3 = `REEL-${dateStr.replace(/-/g, '')}-03`;
-    const reel3: Reel = {
-      reelNo: reelNo3,
-      parentRollNo: rollNo2,
-      product: 'Toilet Tissue',
-      weight: 480,
-      dia: 800,
-      gsm: 17,
-      size: 10,
-      ply: 3,
-      joint: 0,
-      status: 'IN_STOCK',
-      qcGrade: 'A',
-      productionDate: `${dateStr} 18:30`,
-      qcInspector: 'admin',
-      qcTimestamp: new Date(`${dateStr} 18:35`).toISOString(),
-      qcGsmResult: 17.0,
-      qcBrightness: 84,
-      qcSoftness: 8,
-    };
-    reels.push(reel3);
-
-    const reelNo4 = `REEL-${dateStr.replace(/-/g, '')}-04`;
-    const reel4: Reel = {
-      reelNo: reelNo4,
-      parentRollNo: rollNo2,
-      product: 'Toilet Tissue',
-      weight: 490,
-      dia: 800,
-      gsm: 17,
-      size: 10,
-      ply: 3,
-      joint: 0,
-      status: 'IN_STOCK_B',
-      qcGrade: 'B',
-      productionDate: `${dateStr} 19:40`,
-      qcInspector: 'admin',
-      qcTimestamp: new Date(`${dateStr} 19:45`).toISOString(),
-      qcGsmResult: 16.5,
-      qcBrightness: 81,
-      qcSoftness: 5,
-    };
-    reels.push(reel4);
-
-    // 4. Utilities logs (Boiler, ETP, Electricity)
-    const shifts: ('Day' | 'Night')[] = ['Day', 'Night'];
-    const woodCons = [550, 480];
-    const waterCons = [750, 680];
-    shifts.forEach((sh, idx) => {
-      boilerLogs.push({
-        id: `BLR-${dateStr.replace(/-/g, '')}-${sh}`,
-        date: dateStr,
-        woodUsed: woodCons[idx],
-        waterUsed: waterCons[idx],
-        pressure: 125 + (i % 5) * 3,
-        temperature: 175 + (i % 4) * 4,
-        operator: 'admin',
-        shift: sh,
-      });
-    });
-
-    etpLogs.push({
-      id: `etp-${dateStr}`,
-      date: dateStr,
-      flockLiq: 12 + (i % 3),
-      flockMaster: 6 + (i % 2),
-      operator: 'admin',
-    });
-
-    electricityLogs.push({
-      id: `elec-${dateStr}`,
-      date: dateStr,
-      units: 1850 + (i % 5) * 50,
-      operator: 'admin',
-    });
-
-    // 5. Dispatch slips (every 3 days)
-    if (i % 3 === 0) {
-      const slipNoStr = `CHALLAN-${dateStr.replace(/-/g, '')}-0001`;
-      const isFirstParty = (i % 2 === 0);
-      const partyId = isFirstParty ? 'pt-1' : 'pt-2';
-      const partyName = isFirstParty ? 'Ambika Traders' : 'Krishna Enterprises';
-      const vehicleId = isFirstParty ? 'vh-1' : 'vh-2';
-      const vehicleNo = isFirstParty ? 'GJ-05-BY-1234' : 'GJ-03-XX-5678';
-
-      // Mark reels as Dispatched
-      reel1.status = 'DISPATCHED';
-      reel1.dispatchDetails = {
-        partyName,
-        vehicleNo,
-        dispatchDate: dateStr,
-        packingSlipNo: slipNoStr,
-      };
-
-      reel3.status = 'DISPATCHED';
-      reel3.dispatchDetails = {
-        partyName,
-        vehicleNo,
-        dispatchDate: dateStr,
-        packingSlipNo: slipNoStr,
-      };
-
-      packingSlips.push({
-        id: `slip-${dateStr}`,
-        slipNo: slipNoStr,
-        date: dateStr,
-        partyId,
-        vehicleId,
-        reelNos: [reelNo1, reelNo3],
-        driverSignature: 'Ramesh Bhai',
-        receiverSignature: 'Manager Patel',
-        status: 'DISPATCHED',
-      });
-
-      // Update matching pending orders
-      const matchedOrder = orders.find(o => o.partyId === partyId && o.status !== 'COMPLETED');
-      if (matchedOrder) {
-        matchedOrder.dispatchedQty += 2;
-        if (matchedOrder.dispatchedQty >= matchedOrder.qty) {
-          matchedOrder.status = 'COMPLETED';
-        } else {
-          matchedOrder.status = 'PARTIAL';
-        }
-      }
-    }
-  }
-
-  // Save generated logs to localStorage
-  setJSON(KEYS.FORMULAS, formulas);
-  setJSON(KEYS.ROLLS, rolls);
-  setJSON(KEYS.REELS, reels);
-  setJSON(KEYS.BOILER_LOGS, boilerLogs);
-  setJSON(KEYS.ETP_LOGS, etpLogs);
-  setJSON(KEYS.ELECTRICITY_LOGS, electricityLogs);
-  setJSON(KEYS.PACKING_SLIPS, packingSlips);
-  setJSON(KEYS.PENDING_ORDERS, orders);
-
-  // Initialize and dynamically compute raw material stock consumption
-  const materials = JSON.parse(JSON.stringify(DEFAULT_RAW_MATERIALS)) as RawMaterialItem[];
-
-  // Set starting stocks realistically high enough to cover consumption:
-  materials.forEach(m => {
-    if (m.category === 'WASTE_PAPER') m.stock = 50000;
-    else if (m.category === 'OTHER_RAW_MATERIAL') m.stock = 25000;
-    else if (m.category === 'CHEMICAL') m.stock = 5000;
-    else if (m.category === 'FIREWOOD') m.stock = 60000;
-    else m.stock = 5000;
-  });
-
-  // Deduct for each seeded roll
-  rolls.forEach(roll => {
-    const formula = formulas.find(f => f.id === roll.formulaId);
-    if (formula) {
-      const rollWeight = roll.weight;
-      // Waste Mix
-      for (const wasteItem in formula.wasteMix) {
-        const pct = formula.wasteMix[wasteItem];
-        const deductKg = rollWeight * (pct / 100);
-        const mat = materials.find(m => m.name === wasteItem);
-        if (mat) {
-          mat.stock = Math.max(0, parseFloat((mat.stock - deductKg).toFixed(3)));
-        }
-      }
-      // Chemicals
-      for (const chemicalName in formula.chemicals) {
-        const dosageKgPerTon = formula.chemicals[chemicalName];
-        const deductKg = (rollWeight / 1000) * dosageKgPerTon;
-        // Search chemical in materials (map Wet Strength to WSR, and Defoamer to Deformer)
-        const mat = materials.find(m =>
-          m.name === chemicalName ||
-          (m.name === 'WSR' && chemicalName === 'Wet Strength') ||
-          (m.name === 'Deformer' && chemicalName === 'Defoamer')
-        );
-        if (mat) {
-          mat.stock = Math.max(0, parseFloat((mat.stock - deductKg).toFixed(3)));
-        }
-      }
-    }
-  });
-
-  // Deduct for each seeded boiler log
-  boilerLogs.forEach(log => {
-    const mat = materials.find(m => m.name === 'Wood');
-    if (mat) {
-      mat.stock = Math.max(0, parseFloat((mat.stock - log.woodUsed).toFixed(3)));
-    }
-  });
-
-  setJSON(KEYS.RAW_MATERIALS, materials);
-
-  localStorage.setItem('saheb_one_month_seeded_v2', 'true');
+  // Demo seeding disabled - operational records start completely clean
 }
 
 // Initialize Storage if empty
@@ -665,11 +353,20 @@ export function initializeStorage() {
     console.error(e);
   }
 
-  // Seed one month of operational history if not already present or sparse
-  const existingRolls = getJSON<MachineRoll[]>(KEYS.ROLLS, []);
-  if (existingRolls.length < 20 || !localStorage.getItem('saheb_one_month_seeded_v5')) {
-    seedOneMonthData();
-    localStorage.setItem('saheb_one_month_seeded_v5', 'true');
+  // Operational data clean reset: ensure browser cache is cleared of demo records
+  if (!localStorage.getItem('saheb_operational_cleared_v1')) {
+    setJSON(KEYS.FORMULAS, []);
+    setJSON(KEYS.ROLLS, []);
+    setJSON(KEYS.REELS, []);
+    setJSON(KEYS.LOGS, []);
+    setJSON(KEYS.BOILER_LOGS, []);
+    setJSON(KEYS.ETP_LOGS, []);
+    setJSON(KEYS.ELECTRICITY_LOGS, []);
+    setJSON(KEYS.PENDING_ORDERS, []);
+    setJSON(KEYS.PACKING_SLIPS, []);
+    setJSON(KEYS.RAW_MATERIAL_LOTS, []);
+    setJSON(KEYS.LAB_REPORTS, []);
+    localStorage.setItem('saheb_operational_cleared_v1', 'true');
   }
 }
 

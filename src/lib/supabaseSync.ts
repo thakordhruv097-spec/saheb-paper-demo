@@ -622,17 +622,36 @@ export async function syncTableFromCloud(tableName: string): Promise<void> {
         setLocal(KEYS.LAB_REPORTS, data.map(labReportFromDb));
         notifyChange(tableName);
         break;
+      }
+    } else if (data && data.length === 0) {
+      const operationalTableKeys: Record<string, string> = {
+        machine_rolls: KEYS.ROLLS,
+        reels: KEYS.REELS,
+        pending_orders: KEYS.PENDING_ORDERS,
+        packing_slips: KEYS.PACKING_SLIPS,
+        pulp_formulas: KEYS.FORMULAS,
+        boiler_logs: KEYS.BOILER_LOGS,
+        etp_logs: KEYS.ETP_LOGS,
+        electricity_logs: KEYS.ELECTRICITY_LOGS,
+        paper_test_reports: KEYS.LAB_REPORTS,
+        raw_material_lots: KEYS.RAW_MATERIAL_LOTS,
+        transaction_logs: KEYS.LOGS,
+      };
+
+      if (operationalTableKeys[tableName]) {
+        setLocal(operationalTableKeys[tableName], []);
+        notifyChange(tableName);
+      } else {
+        // Only seed master catalog if empty
+        pushLocalTableToCloud(tableName);
+      }
     }
-  } else if (data && data.length === 0) {
-    // If cloud table is empty, seed it from local cache
-    pushLocalTableToCloud(tableName);
+  } catch (err) {
+    console.error(`Supabase sync error for ${tableName}:`, err);
   }
-} catch (err) {
-  console.error(`Supabase sync error for ${tableName}:`, err);
-}
 }
 
-// Push local table data up to cloud if cloud is newly initialized
+// Push local table data up to cloud for master catalogs if cloud is newly initialized
 export async function pushLocalTableToCloud(tableName: string): Promise<void> {
   try {
     switch (tableName) {
@@ -644,11 +663,6 @@ export async function pushLocalTableToCloud(tableName: string): Promise<void> {
       case 'raw_materials': {
         const local = getLocal<RawMaterialItem[]>(KEYS.RAW_MATERIALS, []);
         if (local.length > 0) await pushUpsertToCloud('raw_materials', local.map(rawMaterialToDb));
-        break;
-      }
-      case 'raw_material_lots': {
-        const local = getLocal<RawMaterialLot[]>(KEYS.RAW_MATERIAL_LOTS, []);
-        if (local.length > 0) await pushUpsertToCloud('raw_material_lots', local.map(rawMaterialLotToDb));
         break;
       }
       case 'products': {
@@ -671,59 +685,9 @@ export async function pushLocalTableToCloud(tableName: string): Promise<void> {
         if (local.length > 0) await pushUpsertToCloud('vehicles', local.map(vehicleToDb));
         break;
       }
-      case 'pulp_formulas': {
-        const local = getLocal<PulpFormula[]>(KEYS.FORMULAS, []);
-        if (local.length > 0) await pushUpsertToCloud('pulp_formulas', local.map(formulaToDb));
-        break;
-      }
-      case 'machine_rolls': {
-        const local = getLocal<MachineRoll[]>(KEYS.ROLLS, []);
-        if (local.length > 0) await pushUpsertToCloud('machine_rolls', local.map(machineRollToDb));
-        break;
-      }
-      case 'reels': {
-        const local = getLocal<Reel[]>(KEYS.REELS, []);
-        if (local.length > 0) await pushUpsertToCloud('reels', local.map(reelToDb));
-        break;
-      }
-      case 'transaction_logs': {
-        const local = getLocal<TransactionLog[]>(KEYS.LOGS, []);
-        if (local.length > 0) await pushUpsertToCloud('transaction_logs', local.map(logToDb));
-        break;
-      }
-      case 'boiler_logs': {
-        const local = getLocal<BoilerLog[]>(KEYS.BOILER_LOGS, []);
-        if (local.length > 0) await pushUpsertToCloud('boiler_logs', local.map(boilerLogToDb));
-        break;
-      }
-      case 'etp_logs': {
-        const local = getLocal<EtpLog[]>(KEYS.ETP_LOGS, []);
-        if (local.length > 0) await pushUpsertToCloud('etp_logs', local.map(etpLogToDb));
-        break;
-      }
-      case 'electricity_logs': {
-        const local = getLocal<ElectricityLog[]>(KEYS.ELECTRICITY_LOGS, []);
-        if (local.length > 0) await pushUpsertToCloud('electricity_logs', local.map(electricityLogToDb));
-        break;
-      }
-      case 'pending_orders': {
-        const local = getLocal<PendingOrder[]>(KEYS.PENDING_ORDERS, []);
-        if (local.length > 0) await pushUpsertToCloud('pending_orders', local.map(pendingOrderToDb));
-        break;
-      }
-      case 'packing_slips': {
-        const local = getLocal<PackingSlip[]>(KEYS.PACKING_SLIPS, []);
-        if (local.length > 0) await pushUpsertToCloud('packing_slips', local.map(packingSlipToDb));
-        break;
-      }
       case 'store_items': {
         const local = getLocal<StoreItem[]>(KEYS.STORE_ITEMS, []);
         if (local.length > 0) await pushUpsertToCloud('store_items', local.map(storeItemToDb));
-        break;
-      }
-      case 'paper_test_reports': {
-        const local = getLocal<PaperTestReport[]>(KEYS.LAB_REPORTS, []);
-        if (local.length > 0) await pushUpsertToCloud('paper_test_reports', local.map(labReportToDb));
         break;
       }
     }
