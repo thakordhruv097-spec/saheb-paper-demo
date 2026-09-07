@@ -149,11 +149,10 @@ export function sortUsersByHierarchy(users: User[]): User[] {
 
 export const MODULES_LIST: ModuleDefinition[] = [
   { key: 'dashboard', label: 'Dashboard' },
-  { key: 'raw_material_stock', label: 'Raw Material Stock' },
+  { key: 'raw_material_stock', label: 'Raw Material' },
   { key: 'pulp_mill_operations', label: 'Pulp Mill' },
   { key: 'machine_production', label: 'Plant Manager' },
   { key: 'rewinding_reel_conversion', label: 'Rewinder' },
-  { key: 'lab', label: 'Lab Quality Control' },
   { key: 'boiler', label: 'Boiler' },
   { key: 'etp', label: 'ETP' },
   { key: 'electricity', label: 'Electricity' },
@@ -166,7 +165,6 @@ export const MODULES_LIST: ModuleDefinition[] = [
 
 export const MODULES_11 = MODULES_LIST;
 export const MODULES_13 = MODULES_LIST;
-export const MODULES_14 = MODULES_LIST;
 
 export type RawMaterialCategory =
   | 'WASTE_PAPER'

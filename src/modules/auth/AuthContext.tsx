@@ -255,7 +255,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     if (moduleName === 'pulp_mill_operations') return custom.includes('pulp_mill_operations');
     if (moduleName === 'machine_production') return custom.includes('machine_production');
     if (moduleName === 'rewinding_reel_conversion') return custom.includes('rewinding_reel_conversion');
-    if (moduleName === 'lab') return custom.includes('lab');
+    if (moduleName === 'lab') {
+      return user.role === 'LabOperator' || (user.roles && user.roles.includes('LabOperator')) || custom.includes('lab') || custom.includes('pulp_mill_operations') || custom.includes('rewinding_reel_conversion');
+    }
 
     // Individual utilities and unified module
     if (moduleName === 'utilities_etp') {

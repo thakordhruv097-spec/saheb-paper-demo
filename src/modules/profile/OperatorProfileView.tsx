@@ -222,7 +222,7 @@ export const OperatorProfileView: React.FC<OperatorProfileViewProps> = () => {
             <div className="sm:col-span-2 p-4 rounded-2xl bg-slate-50/70 dark:bg-slate-900/60 border border-slate-200/70 dark:border-slate-700/70 space-y-3">
               <div className="flex items-center justify-between">
                 <span className="text-[11px] font-bold uppercase tracking-wider text-slate-400 flex items-center gap-1.5">
-                  <ShieldCheck className="h-3.5 w-3.5 text-primary" /> Active Module Permissions ({user.customModules ? user.customModules.length : MODULES_13.length}/{MODULES_13.length})
+                  <ShieldCheck className="h-3.5 w-3.5 text-primary" /> Active Module Permissions ({MODULES_13.filter(m => (user.customModules || []).includes(m.key)).length}/{MODULES_13.length})
                 </span>
                 <span className="text-xs font-bold px-2.5 py-0.5 rounded-full bg-blue-100 dark:bg-blue-950 text-primary dark:text-blue-300 border border-blue-200/60 dark:border-blue-800/60">
                   Role Synchronized

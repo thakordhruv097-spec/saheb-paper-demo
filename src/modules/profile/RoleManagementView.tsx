@@ -21,7 +21,6 @@ const ERP_MODULES: ModuleDefinition[] = [
   { key: 'pulp_mill_operations', label: 'Pulp Mill' },
   { key: 'machine_production', label: 'Plant Manager' },
   { key: 'rewinding_reel_conversion', label: 'Rewinder' },
-  { key: 'lab', label: 'Lab Quality' },
   { key: 'boiler', label: 'Boiler' },
   { key: 'etp', label: 'ETP' },
   { key: 'electricity', label: 'Electricity' },
@@ -35,7 +34,7 @@ const ERP_MODULES: ModuleDefinition[] = [
 const isModuleActive = (user: User, moduleKey: string): boolean => {
   const activeModules = user.customModules && Array.isArray(user.customModules)
     ? user.customModules
-    : ERP_MODULES.map(m => m.key);
+    : (user.role === 'Admin' ? ERP_MODULES.map(m => m.key) : []);
 
   if (moduleKey === 'etp') {
     return activeModules.includes('etp') || activeModules.includes('etp_chemicals');
@@ -50,7 +49,6 @@ const getFirstAccessibleRoute = (targetUser: User): string => {
   if (modules.includes('pulp_mill_operations')) return '/pulp-mill-operations';
   if (modules.includes('machine_production')) return '/machine-production';
   if (modules.includes('rewinding_reel_conversion')) return '/rewinding-reel-conversion';
-  if (modules.includes('lab')) return '/lab';
   if (modules.includes('boiler')) return '/utilities-&-etp/boiler-operations';
   if (modules.includes('etp') || modules.includes('etp_chemicals')) return '/utilities-&-etp/etp-water-&-chemicals';
   if (modules.includes('electricity')) return '/utilities-&-etp/electricity-&-power-grid';
@@ -152,15 +150,8 @@ export const RoleManagementView: React.FC = () => {
       updatedModules = [...currentModules, moduleKey];
     }
 
-    // Keep utilities_etp umbrella key in sync so sidebar menu item displays if any utility is active
-    const hasAnyUtils = updatedModules.some(m => ['boiler', 'etp', 'electricity', 'etp_chemicals'].includes(m));
-    if (hasAnyUtils) {
-      if (!updatedModules.includes('utilities_etp')) {
-        updatedModules.push('utilities_etp');
-      }
-    } else {
-      updatedModules = updatedModules.filter(m => m !== 'utilities_etp');
-    }
+    // Strictly restrict updatedModules to the 13 canonical ERP modules
+    updatedModules = updatedModules.filter(m => ERP_MODULES.some(mod => mod.key === m));
 
     // Optimistically update in-place with guaranteed permanent order
     setUsers(prev => {

@@ -98,8 +98,8 @@ const DEFAULT_USERS: User[] = [
     empId: 'EMP-001',
     designation: 'Admin / Owner',
     customModules: [
-      'dashboard', 'raw_material_stock', 'pulp_mill_operations', 'machine_production', 'rewinding_reel_conversion', 'lab',
-      'boiler', 'etp', 'electricity', 'utilities_etp', 'orders', 'finished_stock_dispatch', 'dispatch', 'spareparts_management', 'monthly_yearly_reporting'
+      'dashboard', 'raw_material_stock', 'pulp_mill_operations', 'machine_production', 'rewinding_reel_conversion',
+      'boiler', 'etp', 'electricity', 'orders', 'finished_stock_dispatch', 'dispatch', 'spareparts_management', 'monthly_yearly_reporting'
     ]
   },
   {
@@ -377,6 +377,44 @@ export function initializeStorage() {
     setJSON(KEYS.USERS, sortUsersByHierarchy(DEFAULT_USERS));
     localStorage.setItem('saheb_users_fixed_order_v10', 'true');
   }
+
+  // Migration: Clean customModules to strictly the 13 canonical ERP modules
+  if (!localStorage.getItem('saheb_clean_13_modules_v2')) {
+    try {
+      const rawUsers = getJSON<User[]>(KEYS.USERS, DEFAULT_USERS);
+      const validKeys = [
+        'dashboard', 'raw_material_stock', 'pulp_mill_operations', 'machine_production', 'rewinding_reel_conversion',
+        'boiler', 'etp', 'electricity', 'orders', 'finished_stock_dispatch', 'dispatch', 'spareparts_management', 'monthly_yearly_reporting'
+      ];
+      const cleanedUsers = rawUsers.map(u => {
+        let custom = u.customModules || [];
+        custom = custom.filter(k => validKeys.includes(k));
+        if (u.role === 'Admin' || u.username === 'admin') {
+          custom = [...validKeys];
+        }
+        return { ...u, customModules: custom };
+      });
+      setJSON(KEYS.USERS, sortUsersByHierarchy(cleanedUsers));
+
+      // Also clean active session if present
+      const rawSession = localStorage.getItem('saheb_session');
+      if (rawSession) {
+        const session = JSON.parse(rawSession);
+        if (session.user) {
+          if (session.user.role === 'Admin' || session.user.username === 'admin') {
+            session.user.customModules = [...validKeys];
+          } else if (session.user.customModules) {
+            session.user.customModules = session.user.customModules.filter((k: string) => validKeys.includes(k));
+          }
+          localStorage.setItem('saheb_session', JSON.stringify(session));
+          localStorage.setItem('saheb_active_user', JSON.stringify(session.user));
+        }
+      }
+    } catch (err) {
+      console.error('Error during 13 modules cleanup migration:', err);
+    }
+    localStorage.setItem('saheb_clean_13_modules_v2', 'true');
+  }
 }
 
 // Ensure execution on import
@@ -412,13 +450,14 @@ export function getUsers(): User[] {
     let displayName = u.displayName;
     let designation = u.designation;
 
-    let customModules = u.customModules;
-    if (customModules && Array.isArray(customModules)) {
-      const hasAnyUtils = customModules.some(m => ['boiler', 'etp', 'electricity', 'etp_chemicals'].includes(m));
-      if (hasAnyUtils && !customModules.includes('utilities_etp')) {
-        customModules = [...customModules, 'utilities_etp'];
-      }
-    }
+    const VALID_13_KEYS = [
+      'dashboard', 'raw_material_stock', 'pulp_mill_operations', 'machine_production', 'rewinding_reel_conversion',
+      'boiler', 'etp', 'electricity', 'orders', 'finished_stock_dispatch', 'dispatch', 'spareparts_management', 'monthly_yearly_reporting'
+    ];
+
+    let customModules = u.customModules && Array.isArray(u.customModules)
+      ? u.customModules.filter(k => VALID_13_KEYS.includes(k))
+      : (u.role === 'Admin' ? [...VALID_13_KEYS] : []);
 
     const isPulperOrLab =
       u.username.toLowerCase() === 'pulper' ||
@@ -492,15 +531,11 @@ export function updateUserModules(username: string, customModules: string[], ope
   const users = getUsers();
   const user = users.find(u => u.username.toLowerCase() === username.toLowerCase());
   if (user) {
-    let finalModules = [...customModules];
-    const hasUtils = finalModules.some(m => ['boiler', 'etp', 'electricity', 'etp_chemicals'].includes(m));
-    if (hasUtils) {
-      if (!finalModules.includes('utilities_etp')) {
-        finalModules.push('utilities_etp');
-      }
-    } else {
-      finalModules = finalModules.filter(m => m !== 'utilities_etp');
-    }
+    const VALID_13_KEYS = [
+      'dashboard', 'raw_material_stock', 'pulp_mill_operations', 'machine_production', 'rewinding_reel_conversion',
+      'boiler', 'etp', 'electricity', 'orders', 'finished_stock_dispatch', 'dispatch', 'spareparts_management', 'monthly_yearly_reporting'
+    ];
+    const finalModules = customModules.filter(m => VALID_13_KEYS.includes(m));
     user.customModules = finalModules;
     const sorted = sortUsersByHierarchy(users);
     setJSON(KEYS.USERS, sorted);
