@@ -17,9 +17,16 @@ export const UtilitiesEtpView: React.FC<UtilitiesEtpViewProps> = ({ initialTab }
 
   const isUserAdmin = user?.role === 'Admin' || (user?.roles && user.roles.includes('Admin'));
 
-  const canAccessBoiler = isUserAdmin || (user?.customModules && Array.isArray(user.customModules) ? user.customModules.includes('boiler') : true);
-  const canAccessEtp = isUserAdmin || (user?.customModules && Array.isArray(user.customModules) ? user.customModules.includes('etp') : true);
-  const canAccessElectricity = isUserAdmin || (user?.customModules && Array.isArray(user.customModules) ? user.customModules.includes('electricity') : true);
+  // User has access to Utilities & ETP module if Admin OR if assigned utilities_etp / boiler / etp / electricity
+  const hasUtilsAccess = isUserAdmin || (
+    user?.customModules && Array.isArray(user.customModules)
+      ? user.customModules.some(m => ['utilities_etp', 'boiler', 'etp', 'electricity', 'etp_chemicals'].includes(m))
+      : true
+  );
+
+  const canAccessBoiler = hasUtilsAccess;
+  const canAccessEtp = hasUtilsAccess;
+  const canAccessElectricity = hasUtilsAccess;
 
   // Read tab from path, initialTab prop, or ?tab= query param
   const getTabFromUrl = (): 'boiler' | 'etp_chemicals' | 'electricity' => {

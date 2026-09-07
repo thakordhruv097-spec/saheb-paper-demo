@@ -14,21 +14,31 @@ import {
   Zap
 } from 'lucide-react';
 
-const MODULES_13: ModuleDefinition[] = [
+const ERP_MODULES: ModuleDefinition[] = [
   { key: 'dashboard', label: 'Dashboard' },
-  { key: 'raw_material_stock', label: 'Raw Material Sto...' },
+  { key: 'raw_material_stock', label: 'Raw Material' },
   { key: 'pulp_mill_operations', label: 'Pulp Mill' },
   { key: 'machine_production', label: 'Plant Manager' },
   { key: 'rewinding_reel_conversion', label: 'Rewinder' },
-  { key: 'boiler', label: 'Boiler' },
-  { key: 'etp', label: 'ETP' },
-  { key: 'electricity', label: 'Electricity' },
+  { key: 'lab', label: 'Lab Quality' },
+  { key: 'utilities_etp', label: 'Utilities & ETP' },
   { key: 'orders', label: 'Pending Orders' },
   { key: 'finished_stock_dispatch', label: 'Finish Stock' },
   { key: 'dispatch', label: 'Dispatch' },
   { key: 'spareparts_management', label: 'Store (Spares)' },
-  { key: 'monthly_yearly_reporting', label: 'Reports & Analy...' },
+  { key: 'monthly_yearly_reporting', label: 'Reports & Analytics' },
 ];
+
+const isModuleActive = (user: User, moduleKey: string): boolean => {
+  const activeModules = user.customModules && Array.isArray(user.customModules)
+    ? user.customModules
+    : ERP_MODULES.map(m => m.key);
+
+  if (moduleKey === 'utilities_etp') {
+    return activeModules.some(m => ['utilities_etp', 'boiler', 'etp', 'electricity', 'etp_chemicals'].includes(m));
+  }
+  return activeModules.includes(moduleKey);
+};
 
 export const RoleManagementView: React.FC = () => {
   const { user: currentUser, simulateWorkerLogin, updateUserProfile } = useAuth();
@@ -71,15 +81,26 @@ export const RoleManagementView: React.FC = () => {
   const handleToggleModule = (targetUser: User, moduleKey: string) => {
     const currentModules = targetUser.customModules && Array.isArray(targetUser.customModules)
       ? [...targetUser.customModules]
-      : MODULES_13.map(m => m.key);
+      : ERP_MODULES.map(m => m.key);
 
-    const exists = currentModules.includes(moduleKey);
+    const active = isModuleActive(targetUser, moduleKey);
     let updatedModules: string[];
 
-    if (exists) {
-      updatedModules = currentModules.filter(m => m !== moduleKey);
+    if (moduleKey === 'utilities_etp') {
+      if (active) {
+        updatedModules = currentModules.filter(
+          m => !['utilities_etp', 'boiler', 'etp', 'electricity', 'etp_chemicals'].includes(m)
+        );
+      } else {
+        const set = new Set([...currentModules, 'utilities_etp', 'boiler', 'etp', 'electricity']);
+        updatedModules = Array.from(set);
+      }
     } else {
-      updatedModules = [...currentModules, moduleKey];
+      if (active) {
+        updatedModules = currentModules.filter(m => m !== moduleKey);
+      } else {
+        updatedModules = [...currentModules, moduleKey];
+      }
     }
 
     // Optimistically update in-place with guaranteed permanent order
@@ -100,8 +121,8 @@ export const RoleManagementView: React.FC = () => {
       updateUserProfile({ customModules: updatedModules });
     }
     
-    const modLabel = MODULES_13.find(m => m.key === moduleKey)?.label || moduleKey;
-    const action = exists ? 'disabled for' : 'granted to';
+    const modLabel = ERP_MODULES.find(m => m.key === moduleKey)?.label || moduleKey;
+    const action = active ? 'disabled for' : 'granted to';
     triggerToast(`"${modLabel}" role ${action} ${targetUser.displayName}`);
   };
 
@@ -179,10 +200,7 @@ export const RoleManagementView: React.FC = () => {
       <div className="space-y-4">
         {filteredUsers.map(u => {
           const isCurrent = currentUser?.username.toLowerCase() === u.username.toLowerCase();
-          const activeModules = u.customModules && Array.isArray(u.customModules)
-            ? u.customModules
-            : MODULES_13.map(m => m.key);
-          const activeCount = activeModules.length;
+          const activeCount = ERP_MODULES.filter(m => isModuleActive(u, m.key)).length;
           const isPulper = u.username.toLowerCase().includes('pulper') || u.role === 'LabOperator';
           const empId = isPulper
             ? 'EMP-002'
@@ -225,7 +243,7 @@ export const RoleManagementView: React.FC = () => {
                 {/* RIGHT ACTIONS: COUNTER & SIMULATE BUTTON */}
                 <div className="flex items-center gap-3 self-start md:self-auto">
                   <div className="px-3.5 py-1.5 rounded-[14px] bg-[#F4F7FC] dark:bg-slate-900 text-slate-700 dark:text-slate-200 text-xs font-bold tracking-wide shadow-[inset_1px_1px_2px_rgba(180,195,230,0.2)]">
-                    {activeCount} / 13 Modules Active
+                    {activeCount} / {ERP_MODULES.length} Modules Active
                   </div>
 
                   <button
@@ -256,10 +274,10 @@ export const RoleManagementView: React.FC = () => {
                 Module Permissions for {u.displayName}:
               </div>
 
-              {/* 13 MODULE CHIPS GRID */}
-              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-2.5">
-                {MODULES_13.map(mod => {
-                  const isActive = activeModules.includes(mod.key);
+              {/* ERP MODULE CHIPS GRID */}
+              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-2.5">
+                {ERP_MODULES.map(mod => {
+                  const isActive = isModuleActive(u, mod.key);
 
                   return (
                     <button

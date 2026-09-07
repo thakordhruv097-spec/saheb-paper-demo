@@ -412,6 +412,14 @@ export function getUsers(): User[] {
     let displayName = u.displayName;
     let designation = u.designation;
 
+    let customModules = u.customModules;
+    if (customModules && Array.isArray(customModules)) {
+      const hasAnyUtils = customModules.some(m => ['boiler', 'etp', 'electricity', 'utilities_etp', 'etp_chemicals'].includes(m));
+      if (hasAnyUtils) {
+        customModules = Array.from(new Set([...customModules, 'utilities_etp', 'boiler', 'etp', 'electricity']));
+      }
+    }
+
     const isPulperOrLab =
       u.username.toLowerCase() === 'pulper' ||
       u.username.toLowerCase() === 'lab' ||
@@ -428,7 +436,7 @@ export function getUsers(): User[] {
         username: 'pulper',
         role: 'LabOperator' as UserRole,
         roles: ['LabOperator' as UserRole],
-        customModules: u.customModules || [],
+        customModules: customModules || [],
       };
     }
 
@@ -439,6 +447,7 @@ export function getUsers(): User[] {
         designation,
         role: 'Admin' as UserRole,
         roles: ['Admin' as UserRole],
+        customModules: customModules || DEFAULT_USERS[0].customModules,
       };
     }
 
@@ -447,14 +456,6 @@ export function getUsers(): User[] {
       ? u.roles.filter(r => validRoles.includes(r))
       : [primaryRole];
     if (userRoles.length === 0) userRoles = [primaryRole];
-
-    let customModules = u.customModules;
-    if (customModules && Array.isArray(customModules)) {
-      const hasAnyUtils = customModules.some(m => ['boiler', 'etp', 'electricity', 'utilities_etp'].includes(m));
-      if (hasAnyUtils && !customModules.includes('utilities_etp')) {
-        customModules = [...customModules, 'utilities_etp'];
-      }
-    }
 
     return {
       ...u,
@@ -491,7 +492,14 @@ export function updateUserModules(username: string, customModules: string[], ope
   const users = getUsers();
   const user = users.find(u => u.username.toLowerCase() === username.toLowerCase());
   if (user) {
-    user.customModules = customModules;
+    let finalModules = [...customModules];
+    const hasUtils = finalModules.some(m => ['utilities_etp', 'boiler', 'etp', 'electricity'].includes(m));
+    if (hasUtils) {
+      finalModules = Array.from(new Set([...finalModules, 'utilities_etp', 'boiler', 'etp', 'electricity']));
+    } else {
+      finalModules = finalModules.filter(m => !['utilities_etp', 'boiler', 'etp', 'electricity', 'etp_chemicals'].includes(m));
+    }
+    user.customModules = finalModules;
     const sorted = sortUsersByHierarchy(users);
     setJSON(KEYS.USERS, sorted);
     pushUpsertToCloud('users', userToDb(user));
@@ -502,7 +510,7 @@ export function updateUserModules(username: string, customModules: string[], ope
       try {
         const session = JSON.parse(rawSession);
         if (session.user && session.user.username.toLowerCase() === username.toLowerCase()) {
-          session.user.customModules = customModules;
+          session.user.customModules = finalModules;
           localStorage.setItem('saheb_session', JSON.stringify(session));
           localStorage.setItem('saheb_active_user', JSON.stringify(session.user));
         }
