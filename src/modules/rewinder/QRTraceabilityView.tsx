@@ -1,4 +1,5 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { getReels, getRolls, getFormulaForDate, getRawMaterialLots, getBoilerLogs } from '../../data/index';
 import type { Reel, MachineRoll, PulpFormula, RawMaterialLot, BoilerLog } from '../../data/types';
@@ -6,6 +7,7 @@ import { QrCode, Search, AlertCircle, FileText, CheckCircle, Truck, Database, Fl
 
 export const QRTraceabilityView: React.FC = () => {
   const { t } = useTranslation();
+  const [searchParams] = useSearchParams();
 
   const [searchTerm, setSearchTerm] = useState('');
   const [activeReel, setActiveReel] = useState<Reel | null>(null);
@@ -14,6 +16,15 @@ export const QRTraceabilityView: React.FC = () => {
   const [activeLot, setActiveLot] = useState<RawMaterialLot | null>(null);
   const [activeBoilerLog, setActiveBoilerLog] = useState<BoilerLog | null>(null);
   const [searchError, setSearchError] = useState('');
+
+  // Auto-search if q param is present in URL
+  useEffect(() => {
+    const q = searchParams.get('q');
+    if (q) {
+      setSearchTerm(q);
+      handleSearch(q);
+    }
+  }, [searchParams]);
 
   // List of all reels for quick demo selection
   const allReels = getReels();

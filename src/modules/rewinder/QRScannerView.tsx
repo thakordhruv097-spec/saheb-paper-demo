@@ -3,13 +3,26 @@ import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import {
   getReels,
+  getRolls,
+  getPackingSlips,
+  getLabReports,
   getRawMaterialLots,
   getBoilerLogs,
   getParties,
   getVehicles,
   savePackingSlip,
+  saveReel,
 } from '../../data/index';
-import type { Reel, RawMaterialLot, BoilerLog, PartyItem, VehicleItem } from '../../data/types';
+import type {
+  Reel,
+  MachineRoll,
+  PackingSlip,
+  PaperTestReport,
+  RawMaterialLot,
+  BoilerLog,
+  PartyItem,
+  VehicleItem,
+} from '../../data/types';
 import { Html5Qrcode } from 'html5-qrcode';
 import {
   Camera,
@@ -28,6 +41,11 @@ import {
   Tag,
   AlertCircle,
   AlertTriangle,
+  Warehouse,
+  Layers,
+  FlaskConical,
+  Scissors,
+  Flame,
 } from 'lucide-react';
 
 interface QRScannerViewProps {
@@ -40,9 +58,12 @@ export const QRScannerViewInner: React.FC<QRScannerViewProps> = ({ onOpenPrintSt
 
   const [scanResult, setScanResult] = useState<{
     code: string;
-    type: 'REEL' | 'LOT' | 'BOILER';
+    type: 'REEL' | 'LOT' | 'ROLL' | 'DISPATCH' | 'LAB' | 'BOILER';
     reel?: Reel;
     lot?: RawMaterialLot;
+    roll?: MachineRoll;
+    slip?: PackingSlip;
+    lab?: PaperTestReport;
     boiler?: BoilerLog;
   } | null>(null);
 
@@ -101,6 +122,18 @@ export const QRScannerViewInner: React.FC<QRScannerViewProps> = ({ onOpenPrintSt
     }
   };
 
+  // Real-time synchronization listener
+  const [, setSyncVersion] = useState(0);
+  useEffect(() => {
+    const handleUpdate = () => setSyncVersion(v => v + 1);
+    window.addEventListener('saheb_data_updated', handleUpdate);
+    window.addEventListener('storage', handleUpdate);
+    return () => {
+      window.removeEventListener('saheb_data_updated', handleUpdate);
+      window.removeEventListener('storage', handleUpdate);
+    };
+  }, []);
+
   const processScannedCode = (code: string) => {
     let targetCode = code.trim().toUpperCase();
     setScanError('');
@@ -112,13 +145,20 @@ export const QRScannerViewInner: React.FC<QRScannerViewProps> = ({ onOpenPrintSt
         const parsed = JSON.parse(code);
         if (parsed.reelNo) {
           targetCode = String(parsed.reelNo).trim().toUpperCase();
+        } else if (parsed.lotNo) {
+          targetCode = String(parsed.lotNo).trim().toUpperCase();
+        } else if (parsed.rollNo) {
+          targetCode = String(parsed.rollNo).trim().toUpperCase();
+        } else if (parsed.slipNo) {
+          targetCode = String(parsed.slipNo).trim().toUpperCase();
         }
       } catch (e) {
         console.warn('Scanned text is not valid JSON, using raw value');
       }
     }
 
-    if (targetCode.startsWith('LOT-')) {
+    // 1. Raw Material Inward Batch (LOT-... or RM-...)
+    if (targetCode.startsWith('LOT-') || targetCode.startsWith('RM-')) {
       const lotsList = getRawMaterialLots();
       const foundLot = lotsList.find(l => l.lotNo.trim().toUpperCase() === targetCode);
       if (foundLot) {
@@ -126,7 +166,52 @@ export const QRScannerViewInner: React.FC<QRScannerViewProps> = ({ onOpenPrintSt
       } else {
         setScanResult({ code: targetCode, type: 'LOT' });
       }
-    } else if (targetCode.startsWith('BLR-')) {
+    }
+    // 2. Machine Jumbo Roll (R-... or ROLL-...)
+    else if (targetCode.startsWith('R-') || targetCode.startsWith('ROLL-')) {
+      const rollsList = getRolls();
+      const foundRoll = rollsList.find(r => r.rollNo.trim().toUpperCase() === targetCode);
+      if (foundRoll) {
+        setScanResult({ code: targetCode, type: 'ROLL', roll: foundRoll });
+      } else {
+        const reelsList = getReels();
+        const foundReel = reelsList.find(r => r.reelNo.trim().toUpperCase() === targetCode);
+        if (foundReel) {
+          setScanResult({ code: targetCode, type: 'REEL', reel: foundReel });
+          setEditForm({
+            reelNo: foundReel.reelNo,
+            product: foundReel.product,
+            gsm: foundReel.gsm,
+            size: foundReel.size,
+            weight: foundReel.weight,
+          });
+        } else {
+          setScanResult({ code: targetCode, type: 'ROLL' });
+        }
+      }
+    }
+    // 3. Dispatch Receipt / Packing Slip (CHALLAN-... or SLIP-... or PS-...)
+    else if (targetCode.startsWith('CHALLAN-') || targetCode.startsWith('SLIP-') || targetCode.startsWith('PS-')) {
+      const slipsList = getPackingSlips();
+      const foundSlip = slipsList.find(s => s.slipNo.trim().toUpperCase() === targetCode || s.id.toUpperCase() === targetCode);
+      if (foundSlip) {
+        setScanResult({ code: targetCode, type: 'DISPATCH', slip: foundSlip });
+      } else {
+        setScanResult({ code: targetCode, type: 'DISPATCH' });
+      }
+    }
+    // 4. Lab Quality Control Report (PTR-...)
+    else if (targetCode.startsWith('PTR-')) {
+      const labList = getLabReports();
+      const foundReport = labList.find(r => r.id.trim().toUpperCase() === targetCode);
+      if (foundReport) {
+        setScanResult({ code: targetCode, type: 'LAB', lab: foundReport });
+      } else {
+        setScanResult({ code: targetCode, type: 'LAB' });
+      }
+    }
+    // 5. Boiler Operations Log (BLR-...)
+    else if (targetCode.startsWith('BLR-')) {
       const boilerLogs = getBoilerLogs();
       const foundLog = boilerLogs.find(b => b.id.trim().toUpperCase() === targetCode);
       if (foundLog) {
@@ -134,8 +219,9 @@ export const QRScannerViewInner: React.FC<QRScannerViewProps> = ({ onOpenPrintSt
       } else {
         setScanResult({ code: targetCode, type: 'BOILER' });
       }
-    } else {
-      // Re-query latest reels list to verify against latest stock
+    }
+    // 6. Finished Reels / Numeric Barcodes / General Code Search
+    else {
       const freshReels = getReels();
       const foundReel = freshReels.find(r => r.reelNo.trim().toUpperCase() === targetCode);
       if (foundReel) {
@@ -148,8 +234,23 @@ export const QRScannerViewInner: React.FC<QRScannerViewProps> = ({ onOpenPrintSt
           weight: foundReel.weight,
         });
       } else {
-        // Scanned QR code exists, but no matching reel in active database
-        setScanResult({ code: targetCode, type: 'REEL' });
+        // Cross-entity fallback lookup
+        const foundLot = getRawMaterialLots().find(l => l.lotNo.trim().toUpperCase() === targetCode);
+        if (foundLot) {
+          setScanResult({ code: targetCode, type: 'LOT', lot: foundLot });
+        } else {
+          const foundRoll = getRolls().find(r => r.rollNo.trim().toUpperCase() === targetCode);
+          if (foundRoll) {
+            setScanResult({ code: targetCode, type: 'ROLL', roll: foundRoll });
+          } else {
+            const foundSlip = getPackingSlips().find(s => s.slipNo.trim().toUpperCase() === targetCode);
+            if (foundSlip) {
+              setScanResult({ code: targetCode, type: 'DISPATCH', slip: foundSlip });
+            } else {
+              setScanResult({ code: targetCode, type: 'REEL' });
+            }
+          }
+        }
       }
     }
   };
@@ -354,8 +455,7 @@ export const QRScannerViewInner: React.FC<QRScannerViewProps> = ({ onOpenPrintSt
         size: Number(editForm.size),
         weight: Number(editForm.weight),
       };
-      currentReels[index] = updatedReel;
-      localStorage.setItem('saheb_reels_v2', JSON.stringify(currentReels));
+      saveReel(updatedReel, 'Operator');
       setScanResult({ code: updatedReel.reelNo, type: 'REEL', reel: updatedReel });
       setIsEditing(false);
       setToastMsg(`Reel #${updatedReel.reelNo} details updated successfully!`);
@@ -421,9 +521,9 @@ export const QRScannerViewInner: React.FC<QRScannerViewProps> = ({ onOpenPrintSt
               </div>
               <div>
                 <span className="font-extrabold text-sm text-slate-900 dark:text-white uppercase tracking-wider block">
-                  Industrial Reel Scanner
+                  Multi-Module QR &amp; Barcode Scanner
                 </span>
-                <span className="text-[10px] text-slate-500 font-semibold">Live Camera &amp; Barcode Reader</span>
+                <span className="text-[10px] text-slate-500 font-semibold">Reels &bull; Raw Materials &bull; Jumbo Rolls &bull; Dispatch</span>
               </div>
             </div>
             <span className="px-2.5 py-1 rounded-full bg-emerald-100 text-emerald-700 dark:bg-emerald-950/60 dark:text-emerald-300 text-[10px] font-black uppercase tracking-wider flex items-center gap-1.5">
@@ -535,7 +635,7 @@ export const QRScannerViewInner: React.FC<QRScannerViewProps> = ({ onOpenPrintSt
                 type="text"
                 value={manualCodeInput}
                 onChange={e => setManualCodeInput(e.target.value)}
-                placeholder="Type or scan barcode (e.g. RL-1048)..."
+                placeholder="Type or scan barcode (e.g. LOT-..., 2605..., R-..., CHALLAN-...)..."
                 className="flex-1 px-4 py-3 bg-slate-50 dark:bg-slate-900 rounded-2xl text-xs font-bold text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500 uppercase placeholder:normal-case font-mono"
               />
               <button
@@ -581,235 +681,482 @@ export const QRScannerViewInner: React.FC<QRScannerViewProps> = ({ onOpenPrintSt
         </div>
       </div>
 
-      {/* 2. SCAN RESULT CARD WITH DETAILS, INLINE EDIT, & DIRECT DISPATCH */}
-      {scanResult && (
-        <div className="w-full bg-white dark:bg-surface-dark border-2 border-blue-500 dark:border-blue-500 rounded-3xl p-5 sm:p-6 shadow-2xl space-y-4 animate-in zoom-in-95 duration-200">
-          
-          <div className="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-3">
-            <div className="flex items-center gap-2.5">
-              <div className={`p-2 rounded-xl ${
-                scanResult.reel
-                  ? 'bg-emerald-50 dark:bg-emerald-950/50 text-emerald-600 dark:text-emerald-400'
-                  : 'bg-amber-50 dark:bg-amber-950/50 text-amber-600 dark:text-amber-400'
-              }`}>
-                {scanResult.reel ? <CheckCircle className="h-5 w-5" /> : <AlertTriangle className="h-5 w-5" />}
-              </div>
-              <div>
-                <span className="font-extrabold text-sm text-slate-900 dark:text-white uppercase tracking-wider block">
-                  {scanResult.reel ? 'Reel Verified in Stock' : 'QR Code Scanned'}
-                </span>
-                <span className={`text-[10px] font-bold ${
-                  scanResult.reel ? 'text-emerald-600' : 'text-amber-600 dark:text-amber-400'
+      {/* 2. SCAN RESULT CARD WITH MULTI-MODULE DETAILS, INLINE EDIT, & DIRECT ACTIONS */}
+      {scanResult && (() => {
+        const isFound = Boolean(scanResult.reel || scanResult.lot || scanResult.roll || scanResult.slip || scanResult.lab || scanResult.boiler);
+
+        const getModuleTitle = () => {
+          if (scanResult.reel) return 'Reel Verified in Stock';
+          if (scanResult.lot) return 'Raw Material Lot Verified';
+          if (scanResult.roll) return 'Machine Jumbo Roll Verified';
+          if (scanResult.slip) return 'Dispatch Challan Verified';
+          if (scanResult.lab) return 'Lab QC Report Verified';
+          if (scanResult.boiler) return 'Boiler Shift Log Verified';
+          return 'QR Code Scanned';
+        };
+
+        const getModuleSubtitle = () => {
+          if (scanResult.reel) return 'Ready for Loading Sheet & Dispatch';
+          if (scanResult.lot) return 'Active Inward Batch in Warehouse';
+          if (scanResult.roll) return 'Paper Machine Production Output';
+          if (scanResult.slip) return `Challan Status: ${scanResult.slip.status}`;
+          if (scanResult.lab) return `QC Result: Grade ${scanResult.lab.qcStatus}`;
+          if (scanResult.boiler) return 'Utilities Operational Shift';
+          return 'Not Registered in Active Stock';
+        };
+
+        const getModuleTypeLabel = () => {
+          switch (scanResult.type) {
+            case 'LOT': return 'RAW MATERIAL BATCH';
+            case 'ROLL': return 'MACHINE JUMBO ROLL';
+            case 'DISPATCH': return 'DISPATCH CHALLAN';
+            case 'LAB': return 'LAB QUALITY REPORT';
+            case 'BOILER': return 'BOILER OPERATION LOG';
+            default: return 'REEL / BARCODE IDENTIFIER';
+          }
+        };
+
+        return (
+          <div className="w-full bg-white dark:bg-surface-dark border-2 border-blue-500 dark:border-blue-500 rounded-3xl p-5 sm:p-6 shadow-2xl space-y-4 animate-in zoom-in-95 duration-200">
+            
+            {/* Header / Status Banner */}
+            <div className="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-3">
+              <div className="flex items-center gap-2.5">
+                <div className={`p-2 rounded-xl ${
+                  isFound
+                    ? 'bg-emerald-50 dark:bg-emerald-950/50 text-emerald-600 dark:text-emerald-400'
+                    : 'bg-amber-50 dark:bg-amber-950/50 text-amber-600 dark:text-amber-400'
                 }`}>
-                  {scanResult.reel ? 'Ready for Loading Sheet' : 'Not Registered in Active Stock'}
-                </span>
-              </div>
-            </div>
-            <button onClick={handleResetScanner} className="p-1.5 rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-400 cursor-pointer">
-              <X className="h-5 w-5" />
-            </button>
-          </div>
-
-          {/* Reel Header & Weight / Status Badge */}
-          <div className="p-4 bg-slate-50 dark:bg-slate-900/80 rounded-2xl border border-slate-200 dark:border-slate-800 flex items-center justify-between">
-            <div>
-              <span className="text-[10px] font-black uppercase text-slate-400 tracking-wider block">
-                {scanResult.type === 'REEL' ? 'REEL / BARCODE IDENTIFIER' : `${scanResult.type} IDENTIFIER`}
-              </span>
-              <span className="text-xl font-black font-mono text-blue-600 dark:text-blue-400">{scanResult.code}</span>
-            </div>
-            <div className="text-right">
-              <span className="text-[10px] font-black uppercase text-slate-400 tracking-wider block">
-                {scanResult.reel ? 'NET WEIGHT' : 'STOCK STATUS'}
-              </span>
-              {scanResult.reel ? (
-                <span className="text-xl font-black font-mono text-emerald-600 dark:text-emerald-400">
-                  {scanResult.reel.weight.toLocaleString()} KG
-                </span>
-              ) : (
-                <span className="px-2.5 py-1 rounded-full bg-amber-100 dark:bg-amber-950/60 text-amber-700 dark:text-amber-300 text-xs font-black uppercase inline-block">
-                  Not in Stock
-                </span>
-              )}
-            </div>
-          </div>
-
-          {/* ITEM DETAILS SPECS GRID OR NOT REGISTERED NOTICE */}
-          {scanResult.reel ? (
-            isEditing ? (
-              /* Inline Edit Mode */
-              <div className="space-y-3 p-4 bg-blue-50/50 dark:bg-slate-900/80 rounded-2xl border border-blue-200 dark:border-blue-800 text-xs">
-                <div className="flex justify-between items-center pb-2 border-b border-blue-100 dark:border-slate-800">
-                  <span className="font-black text-blue-600 dark:text-blue-400 uppercase text-[10px]">Edit Reel Specs Manually</span>
-                  <button type="button" onClick={() => setIsEditing(false)} className="text-slate-400 hover:text-slate-600">
-                    <X className="h-4 w-4" />
-                  </button>
+                  {isFound ? <CheckCircle className="h-5 w-5" /> : <AlertTriangle className="h-5 w-5" />}
                 </div>
-
-                <div className="grid grid-cols-2 gap-3">
-                  <div>
-                    <label className="block text-[10px] font-bold text-slate-500 uppercase mb-1">Reel No</label>
-                    <input
-                      type="text"
-                      value={editForm.reelNo}
-                      onChange={e => setEditForm({ ...editForm, reelNo: e.target.value })}
-                      className="w-full p-2 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl font-bold font-mono"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-[10px] font-bold text-slate-500 uppercase mb-1">Product</label>
-                    <input
-                      type="text"
-                      value={editForm.product}
-                      onChange={e => setEditForm({ ...editForm, product: e.target.value })}
-                      className="w-full p-2 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl font-bold"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-[10px] font-bold text-slate-500 uppercase mb-1">Weight (kg)</label>
-                    <input
-                      type="number"
-                      value={editForm.weight}
-                      onChange={e => setEditForm({ ...editForm, weight: parseFloat(e.target.value) || 0 })}
-                      className="w-full p-2 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl font-bold font-mono"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-[10px] font-bold text-slate-500 uppercase mb-1">GSM &amp; Size</label>
-                    <div className="flex gap-1">
-                      <input
-                        type="number"
-                        value={editForm.gsm}
-                        onChange={e => setEditForm({ ...editForm, gsm: parseFloat(e.target.value) || 0 })}
-                        className="w-1/2 p-2 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl font-bold"
-                        placeholder="GSM"
-                      />
-                      <input
-                        type="number"
-                        value={editForm.size}
-                        onChange={e => setEditForm({ ...editForm, size: parseFloat(e.target.value) || 0 })}
-                        className="w-1/2 p-2 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl font-bold"
-                        placeholder="Size"
-                      />
-                    </div>
-                  </div>
-                </div>
-
-                <button
-                  type="button"
-                  onClick={handleSaveEditReel}
-                  className="w-full mt-2 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl font-black text-xs uppercase tracking-wider flex items-center justify-center gap-1.5 transition cursor-pointer"
-                >
-                  <Check className="h-4 w-4" />
-                  <span>Save Updated Specs</span>
-                </button>
-              </div>
-            ) : (
-              /* Display View Mode */
-              <div className="grid grid-cols-2 gap-2.5 text-xs">
-                <div className="p-3 bg-slate-50 dark:bg-slate-900/60 rounded-xl border border-slate-200 dark:border-slate-800">
-                  <span className="text-[10px] text-slate-400 font-bold block uppercase tracking-wider">Product Quality</span>
-                  <span className="font-extrabold text-slate-900 dark:text-white mt-0.5 block">{scanResult.reel.product}</span>
-                </div>
-                <div className="p-3 bg-slate-50 dark:bg-slate-900/60 rounded-xl border border-slate-200 dark:border-slate-800">
-                  <span className="text-[10px] text-slate-400 font-bold block uppercase tracking-wider">GSM &amp; Deckle</span>
-                  <span className="font-extrabold text-slate-900 dark:text-white mt-0.5 block">{scanResult.reel.gsm} GSM &bull; {scanResult.reel.size} cm</span>
-                </div>
-                <div className="p-3 bg-slate-50 dark:bg-slate-900/60 rounded-xl border border-slate-200 dark:border-slate-800">
-                  <span className="text-[10px] text-slate-400 font-bold block uppercase tracking-wider">Production Date</span>
-                  <span className="font-extrabold text-slate-900 dark:text-white mt-0.5 block">{scanResult.reel.productionDate || 'Today'}</span>
-                </div>
-                <div className="p-3 bg-slate-50 dark:bg-slate-900/60 rounded-xl border border-slate-200 dark:border-slate-800">
-                  <span className="text-[10px] text-slate-400 font-bold block uppercase tracking-wider">QC Clearance</span>
-                  <span className={`font-black mt-0.5 block ${scanResult.reel.status === 'DISPATCHED' ? 'text-purple-600' : 'text-emerald-600 dark:text-emerald-400'}`}>
-                    {scanResult.reel.status === 'DISPATCHED' ? 'ALREADY DISPATCHED' : `Grade ${scanResult.reel.qcGrade} Passed`}
+                <div>
+                  <span className="font-extrabold text-sm text-slate-900 dark:text-white uppercase tracking-wider block">
+                    {getModuleTitle()}
+                  </span>
+                  <span className={`text-[10px] font-bold ${
+                    isFound ? 'text-emerald-600 dark:text-emerald-400' : 'text-amber-600 dark:text-amber-400'
+                  }`}>
+                    {getModuleSubtitle()}
                   </span>
                 </div>
               </div>
-            )
-          ) : (
-            <div className="p-4 bg-amber-50 dark:bg-amber-950/30 text-amber-800 dark:text-amber-300 rounded-2xl text-xs space-y-1.5 border border-amber-200 dark:border-amber-900/40">
-              <div className="font-bold flex items-center gap-1.5">
-                <AlertCircle className="h-4 w-4 shrink-0 text-amber-600 dark:text-amber-400" />
-                <span>Code &quot;{scanResult.code}&quot; successfully scanned!</span>
-              </div>
-              <p className="text-[11px] text-amber-700 dark:text-amber-400 font-medium">
-                No active reel record currently matches this code in the database. You can scan another barcode, trace production logs, or check reels inventory.
-              </p>
+              <button onClick={handleResetScanner} className="p-1.5 rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-400 cursor-pointer">
+                <X className="h-5 w-5" />
+              </button>
             </div>
-          )}
 
-          {/* ACTION BUTTONS */}
-          <div className="space-y-2 pt-2">
-            {scanResult.reel && scanResult.reel.status !== 'DISPATCHED' && (
-              <button
-                type="button"
-                onClick={() => setShowDispatchModal(true)}
-                className="w-full bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white font-black py-3.5 px-4 rounded-2xl text-xs uppercase tracking-wider shadow-lg shadow-emerald-500/25 transition cursor-pointer flex items-center justify-center gap-2"
-              >
-                <Truck className="h-4 w-4" />
-                <span>Quick Dispatch This Reel Now (Auto-Minus)</span>
-              </button>
+            {/* Identifier & Key Metric Badge */}
+            <div className="p-4 bg-slate-50 dark:bg-slate-900/80 rounded-2xl border border-slate-200 dark:border-slate-800 flex items-center justify-between">
+              <div>
+                <span className="text-[10px] font-black uppercase text-slate-400 tracking-wider block">
+                  {getModuleTypeLabel()}
+                </span>
+                <span className="text-xl font-black font-mono text-blue-600 dark:text-blue-400">{scanResult.code}</span>
+              </div>
+              <div className="text-right">
+                <span className="text-[10px] font-black uppercase text-slate-400 tracking-wider block">
+                  {scanResult.reel ? 'NET WEIGHT' :
+                   scanResult.lot ? 'BATCH WEIGHT' :
+                   scanResult.roll ? 'JUMBO WEIGHT' :
+                   scanResult.slip ? 'TOTAL REELS' :
+                   scanResult.lab ? 'TESTED GSM' :
+                   scanResult.boiler ? 'WOOD USED' : 'STOCK STATUS'}
+                </span>
+                {scanResult.reel ? (
+                  <span className="text-xl font-black font-mono text-emerald-600 dark:text-emerald-400">
+                    {scanResult.reel.weight.toLocaleString()} KG
+                  </span>
+                ) : scanResult.lot ? (
+                  <span className="text-xl font-black font-mono text-emerald-600 dark:text-emerald-400">
+                    {Number(scanResult.lot.weight).toLocaleString()} KG
+                  </span>
+                ) : scanResult.roll ? (
+                  <span className="text-xl font-black font-mono text-emerald-600 dark:text-emerald-400">
+                    {scanResult.roll.weight.toLocaleString()} KG
+                  </span>
+                ) : scanResult.slip ? (
+                  <span className="text-xl font-black font-mono text-emerald-600 dark:text-emerald-400">
+                    {scanResult.slip.reelNos?.length || 0} REELS
+                  </span>
+                ) : scanResult.lab ? (
+                  <span className="text-xl font-black font-mono text-emerald-600 dark:text-emerald-400">
+                    {scanResult.lab.labResultGsm} g/m²
+                  </span>
+                ) : scanResult.boiler ? (
+                  <span className="text-xl font-black font-mono text-emerald-600 dark:text-emerald-400">
+                    {scanResult.boiler.woodUsed.toLocaleString()} KG
+                  </span>
+                ) : (
+                  <span className="px-2.5 py-1 rounded-full bg-amber-100 dark:bg-amber-950/60 text-amber-700 dark:text-amber-300 text-xs font-black uppercase inline-block">
+                    Not in Stock
+                  </span>
+                )}
+              </div>
+            </div>
+
+            {/* MODULE-SPECIFIC CONTENT PANELS */}
+            {/* 1. REEL PANEL */}
+            {scanResult.reel && (
+              isEditing ? (
+                <div className="space-y-3 p-4 bg-blue-50/50 dark:bg-slate-900/80 rounded-2xl border border-blue-200 dark:border-blue-800 text-xs">
+                  <div className="flex justify-between items-center pb-2 border-b border-blue-100 dark:border-slate-800">
+                    <span className="font-black text-blue-600 dark:text-blue-400 uppercase text-[10px]">Edit Reel Specs Manually</span>
+                    <button type="button" onClick={() => setIsEditing(false)} className="text-slate-400 hover:text-slate-600">
+                      <X className="h-4 w-4" />
+                    </button>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-3">
+                    <div>
+                      <label className="block text-[10px] font-bold text-slate-500 uppercase mb-1">Reel No</label>
+                      <input
+                        type="text"
+                        value={editForm.reelNo}
+                        onChange={e => setEditForm({ ...editForm, reelNo: e.target.value })}
+                        className="w-full p-2 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl font-bold font-mono"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-[10px] font-bold text-slate-500 uppercase mb-1">Product</label>
+                      <input
+                        type="text"
+                        value={editForm.product}
+                        onChange={e => setEditForm({ ...editForm, product: e.target.value })}
+                        className="w-full p-2 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl font-bold"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-[10px] font-bold text-slate-500 uppercase mb-1">Weight (kg)</label>
+                      <input
+                        type="number"
+                        value={editForm.weight}
+                        onChange={e => setEditForm({ ...editForm, weight: parseFloat(e.target.value) || 0 })}
+                        className="w-full p-2 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl font-bold font-mono"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-[10px] font-bold text-slate-500 uppercase mb-1">GSM &amp; Size</label>
+                      <div className="flex gap-1">
+                        <input
+                          type="number"
+                          value={editForm.gsm}
+                          onChange={e => setEditForm({ ...editForm, gsm: parseFloat(e.target.value) || 0 })}
+                          className="w-1/2 p-2 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl font-bold"
+                          placeholder="GSM"
+                        />
+                        <input
+                          type="number"
+                          value={editForm.size}
+                          onChange={e => setEditForm({ ...editForm, size: parseFloat(e.target.value) || 0 })}
+                          className="w-1/2 p-2 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl font-bold"
+                          placeholder="Size"
+                        />
+                      </div>
+                    </div>
+                  </div>
+
+                  <button
+                    type="button"
+                    onClick={handleSaveEditReel}
+                    className="w-full mt-2 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl font-black text-xs uppercase tracking-wider flex items-center justify-center gap-1.5 transition cursor-pointer"
+                  >
+                    <Check className="h-4 w-4" />
+                    <span>Save Updated Specs</span>
+                  </button>
+                </div>
+              ) : (
+                <div className="grid grid-cols-2 gap-2.5 text-xs">
+                  <div className="p-3 bg-slate-50 dark:bg-slate-900/60 rounded-xl border border-slate-200 dark:border-slate-800">
+                    <span className="text-[10px] text-slate-400 font-bold block uppercase tracking-wider">Product Quality</span>
+                    <span className="font-extrabold text-slate-900 dark:text-white mt-0.5 block">{scanResult.reel.product}</span>
+                  </div>
+                  <div className="p-3 bg-slate-50 dark:bg-slate-900/60 rounded-xl border border-slate-200 dark:border-slate-800">
+                    <span className="text-[10px] text-slate-400 font-bold block uppercase tracking-wider">GSM &amp; Deckle</span>
+                    <span className="font-extrabold text-slate-900 dark:text-white mt-0.5 block">{scanResult.reel.gsm} GSM &bull; {scanResult.reel.size} cm</span>
+                  </div>
+                  <div className="p-3 bg-slate-50 dark:bg-slate-900/60 rounded-xl border border-slate-200 dark:border-slate-800">
+                    <span className="text-[10px] text-slate-400 font-bold block uppercase tracking-wider">Production Date</span>
+                    <span className="font-extrabold text-slate-900 dark:text-white mt-0.5 block">{scanResult.reel.productionDate || 'Today'}</span>
+                  </div>
+                  <div className="p-3 bg-slate-50 dark:bg-slate-900/60 rounded-xl border border-slate-200 dark:border-slate-800">
+                    <span className="text-[10px] text-slate-400 font-bold block uppercase tracking-wider">QC Clearance</span>
+                    <span className={`font-black mt-0.5 block ${scanResult.reel.status === 'DISPATCHED' ? 'text-purple-600' : 'text-emerald-600 dark:text-emerald-400'}`}>
+                      {scanResult.reel.status === 'DISPATCHED' ? 'ALREADY DISPATCHED' : `Grade ${scanResult.reel.qcGrade} Passed`}
+                    </span>
+                  </div>
+                </div>
+              )
             )}
 
-            {/* Print Reel QR Label Button */}
-            {onOpenPrintStudio && scanResult.reel && (
-              <button
-                type="button"
-                onClick={() => onOpenPrintStudio(scanResult.reel, scanResult.code)}
-                className="btn-primary-gradient w-full py-3 px-4 text-xs uppercase tracking-wider flex items-center justify-center gap-2 cursor-pointer"
-              >
-                <Tag className="h-4 w-4" />
-                <span>Print Reel Barcode / QR Label</span>
-              </button>
+            {/* 2. RAW MATERIAL LOT PANEL */}
+            {scanResult.lot && (
+              <div className="grid grid-cols-2 gap-2.5 text-xs">
+                <div className="p-3 bg-slate-50 dark:bg-slate-900/60 rounded-xl border border-slate-200 dark:border-slate-800">
+                  <span className="text-[10px] text-slate-400 font-bold block uppercase tracking-wider">Raw Material</span>
+                  <span className="font-extrabold text-slate-900 dark:text-white mt-0.5 block">{scanResult.lot.materialName}</span>
+                </div>
+                <div className="p-3 bg-slate-50 dark:bg-slate-900/60 rounded-xl border border-slate-200 dark:border-slate-800">
+                  <span className="text-[10px] text-slate-400 font-bold block uppercase tracking-wider">Vendor / Supplier</span>
+                  <span className="font-extrabold text-slate-900 dark:text-white mt-0.5 block">{scanResult.lot.vendorName}</span>
+                </div>
+                <div className="p-3 bg-slate-50 dark:bg-slate-900/60 rounded-xl border border-slate-200 dark:border-slate-800">
+                  <span className="text-[10px] text-slate-400 font-bold block uppercase tracking-wider">Inward Date</span>
+                  <span className="font-extrabold text-slate-900 dark:text-white mt-0.5 block">{scanResult.lot.date}</span>
+                </div>
+                <div className="p-3 bg-slate-50 dark:bg-slate-900/60 rounded-xl border border-slate-200 dark:border-slate-800">
+                  <span className="text-[10px] text-slate-400 font-bold block uppercase tracking-wider">Logged By</span>
+                  <span className="font-extrabold text-emerald-600 dark:text-emerald-400 mt-0.5 block">{scanResult.lot.operator || 'Store In-Charge'}</span>
+                </div>
+              </div>
             )}
 
-            <div className="flex gap-2">
-              {scanResult.reel && !isEditing && (
+            {/* 3. MACHINE JUMBO ROLL PANEL */}
+            {scanResult.roll && (
+              <div className="grid grid-cols-2 gap-2.5 text-xs">
+                <div className="p-3 bg-slate-50 dark:bg-slate-900/60 rounded-xl border border-slate-200 dark:border-slate-800">
+                  <span className="text-[10px] text-slate-400 font-bold block uppercase tracking-wider">Product Quality</span>
+                  <span className="font-extrabold text-slate-900 dark:text-white mt-0.5 block">{scanResult.roll.product}</span>
+                </div>
+                <div className="p-3 bg-slate-50 dark:bg-slate-900/60 rounded-xl border border-slate-200 dark:border-slate-800">
+                  <span className="text-[10px] text-slate-400 font-bold block uppercase tracking-wider">GSM &amp; Width</span>
+                  <span className="font-extrabold text-slate-900 dark:text-white mt-0.5 block">{scanResult.roll.gsm} GSM &bull; {scanResult.roll.width} cm</span>
+                </div>
+                <div className="p-3 bg-slate-50 dark:bg-slate-900/60 rounded-xl border border-slate-200 dark:border-slate-800">
+                  <span className="text-[10px] text-slate-400 font-bold block uppercase tracking-wider">Shift &amp; Working Time</span>
+                  <span className="font-extrabold text-slate-900 dark:text-white mt-0.5 block">Shift {scanResult.roll.shift} &bull; {scanResult.roll.startTime} - {scanResult.roll.offTime}</span>
+                </div>
+                <div className="p-3 bg-slate-50 dark:bg-slate-900/60 rounded-xl border border-slate-200 dark:border-slate-800">
+                  <span className="text-[10px] text-slate-400 font-bold block uppercase tracking-wider">Production Date</span>
+                  <span className="font-extrabold text-slate-900 dark:text-white mt-0.5 block">{scanResult.roll.date}</span>
+                </div>
+              </div>
+            )}
+
+            {/* 4. DISPATCH RECEIPT PANEL */}
+            {scanResult.slip && (
+              <div className="grid grid-cols-2 gap-2.5 text-xs">
+                <div className="p-3 bg-slate-50 dark:bg-slate-900/60 rounded-xl border border-slate-200 dark:border-slate-800">
+                  <span className="text-[10px] text-slate-400 font-bold block uppercase tracking-wider">Vehicle No</span>
+                  <span className="font-extrabold text-slate-900 dark:text-white mt-0.5 block">{scanResult.slip.vehicleId}</span>
+                </div>
+                <div className="p-3 bg-slate-50 dark:bg-slate-900/60 rounded-xl border border-slate-200 dark:border-slate-800">
+                  <span className="text-[10px] text-slate-400 font-bold block uppercase tracking-wider">Customer Party</span>
+                  <span className="font-extrabold text-slate-900 dark:text-white mt-0.5 block">
+                    {parties.find(p => p.id === scanResult.slip?.partyId)?.name || scanResult.slip.partyId}
+                  </span>
+                </div>
+                <div className="p-3 bg-slate-50 dark:bg-slate-900/60 rounded-xl border border-slate-200 dark:border-slate-800">
+                  <span className="text-[10px] text-slate-400 font-bold block uppercase tracking-wider">Challan Date</span>
+                  <span className="font-extrabold text-slate-900 dark:text-white mt-0.5 block">{scanResult.slip.date}</span>
+                </div>
+                <div className="p-3 bg-slate-50 dark:bg-slate-900/60 rounded-xl border border-slate-200 dark:border-slate-800">
+                  <span className="text-[10px] text-slate-400 font-bold block uppercase tracking-wider">Challan Status</span>
+                  <span className={`font-black mt-0.5 block ${scanResult.slip.status === 'DISPATCHED' ? 'text-purple-600 dark:text-purple-400' : 'text-amber-600 dark:text-amber-400'}`}>
+                    {scanResult.slip.status}
+                  </span>
+                </div>
+              </div>
+            )}
+
+            {/* 5. LAB QUALITY REPORT PANEL */}
+            {scanResult.lab && (
+              <div className="grid grid-cols-2 gap-2.5 text-xs">
+                <div className="p-3 bg-slate-50 dark:bg-slate-900/60 rounded-xl border border-slate-200 dark:border-slate-800">
+                  <span className="text-[10px] text-slate-400 font-bold block uppercase tracking-wider">Roll Tested</span>
+                  <span className="font-extrabold text-slate-900 dark:text-white mt-0.5 block">#{scanResult.lab.rollNo} ({scanResult.lab.product})</span>
+                </div>
+                <div className="p-3 bg-slate-50 dark:bg-slate-900/60 rounded-xl border border-slate-200 dark:border-slate-800">
+                  <span className="text-[10px] text-slate-400 font-bold block uppercase tracking-wider">Target vs Actual GSM</span>
+                  <span className="font-extrabold text-slate-900 dark:text-white mt-0.5 block">{scanResult.lab.targetGsm} / {scanResult.lab.labResultGsm} g/m²</span>
+                </div>
+                <div className="p-3 bg-slate-50 dark:bg-slate-900/60 rounded-xl border border-slate-200 dark:border-slate-800">
+                  <span className="text-[10px] text-slate-400 font-bold block uppercase tracking-wider">Moisture %</span>
+                  <span className="font-extrabold text-slate-900 dark:text-white mt-0.5 block">{scanResult.lab.moisturePct}%</span>
+                </div>
+                <div className="p-3 bg-slate-50 dark:bg-slate-900/60 rounded-xl border border-slate-200 dark:border-slate-800">
+                  <span className="text-[10px] text-slate-400 font-bold block uppercase tracking-wider">QC Clearance</span>
+                  <span className="font-black text-emerald-600 dark:text-emerald-400 mt-0.5 block">Grade {scanResult.lab.qcStatus} Passed</span>
+                </div>
+              </div>
+            )}
+
+            {/* 6. BOILER OPERATIONS PANEL */}
+            {scanResult.boiler && (
+              <div className="grid grid-cols-2 gap-2.5 text-xs">
+                <div className="p-3 bg-slate-50 dark:bg-slate-900/60 rounded-xl border border-slate-200 dark:border-slate-800">
+                  <span className="text-[10px] text-slate-400 font-bold block uppercase tracking-wider">Wood Consumption</span>
+                  <span className="font-extrabold text-slate-900 dark:text-white mt-0.5 block">{scanResult.boiler.woodUsed.toLocaleString()} kg</span>
+                </div>
+                <div className="p-3 bg-slate-50 dark:bg-slate-900/60 rounded-xl border border-slate-200 dark:border-slate-800">
+                  <span className="text-[10px] text-slate-400 font-bold block uppercase tracking-wider">Water Input</span>
+                  <span className="font-extrabold text-slate-900 dark:text-white mt-0.5 block">{scanResult.boiler.waterUsed.toLocaleString()} L</span>
+                </div>
+                <div className="p-3 bg-slate-50 dark:bg-slate-900/60 rounded-xl border border-slate-200 dark:border-slate-800">
+                  <span className="text-[10px] text-slate-400 font-bold block uppercase tracking-wider">Steam Pressure</span>
+                  <span className="font-extrabold text-slate-900 dark:text-white mt-0.5 block">{scanResult.boiler.pressure} psi</span>
+                </div>
+                <div className="p-3 bg-slate-50 dark:bg-slate-900/60 rounded-xl border border-slate-200 dark:border-slate-800">
+                  <span className="text-[10px] text-slate-400 font-bold block uppercase tracking-wider">Shift Date</span>
+                  <span className="font-extrabold text-slate-900 dark:text-white mt-0.5 block">{scanResult.boiler.date} ({scanResult.boiler.shift})</span>
+                </div>
+              </div>
+            )}
+
+            {/* 7. NOT REGISTERED IN ACTIVE DATABASE */}
+            {!isFound && (
+              <div className="p-4 bg-amber-50 dark:bg-amber-950/30 text-amber-800 dark:text-amber-300 rounded-2xl text-xs space-y-1.5 border border-amber-200 dark:border-amber-900/40">
+                <div className="font-bold flex items-center gap-1.5">
+                  <AlertCircle className="h-4 w-4 shrink-0 text-amber-600 dark:text-amber-400" />
+                  <span>Code &quot;{scanResult.code}&quot; successfully scanned!</span>
+                </div>
+                <p className="text-[11px] text-amber-700 dark:text-amber-400 font-medium">
+                  No active reel, raw material inward lot, jumbo roll, or dispatch receipt currently matches this code in the database.
+                </p>
+              </div>
+            )}
+
+            {/* ACTION BUTTONS */}
+            <div className="space-y-2 pt-2">
+              {/* Reel Direct Quick Dispatch */}
+              {scanResult.reel && scanResult.reel.status !== 'DISPATCHED' && (
                 <button
                   type="button"
-                  onClick={() => setIsEditing(true)}
-                  className="flex-1 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 text-slate-700 dark:text-slate-200 font-bold py-2.5 px-3 rounded-2xl text-xs uppercase tracking-wider transition cursor-pointer flex items-center justify-center gap-1.5 border border-slate-200 dark:border-slate-700"
+                  onClick={() => setShowDispatchModal(true)}
+                  className="w-full bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white font-black py-3.5 px-4 rounded-2xl text-xs uppercase tracking-wider shadow-lg shadow-emerald-500/25 transition cursor-pointer flex items-center justify-center gap-2"
                 >
-                  <Pencil className="h-3.5 w-3.5" />
-                  <span>Edit Specs</span>
+                  <Truck className="h-4 w-4" />
+                  <span>Quick Dispatch This Reel Now (Auto-Minus)</span>
                 </button>
               )}
 
-              <button
-                onClick={() => navigate('/traceability')}
-                className="flex-1 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 text-slate-700 dark:text-slate-200 font-bold py-2.5 px-3 rounded-2xl text-xs uppercase tracking-wider transition cursor-pointer flex items-center justify-center gap-1.5 border border-slate-200 dark:border-slate-700"
-              >
-                <span>Traceability</span>
-                <ArrowRight className="h-3.5 w-3.5" />
-              </button>
-
-              {!scanResult.reel && (
+              {/* Reel Print QR Label */}
+              {onOpenPrintStudio && scanResult.reel && (
                 <button
-                  onClick={() => navigate('/rewinding-reel-conversion')}
+                  type="button"
+                  onClick={() => onOpenPrintStudio(scanResult.reel, scanResult.code)}
+                  className="btn-primary-gradient w-full py-3 px-4 text-xs uppercase tracking-wider flex items-center justify-center gap-2 cursor-pointer"
+                >
+                  <Tag className="h-4 w-4" />
+                  <span>Print Reel Barcode / QR Label</span>
+                </button>
+              )}
+
+              {/* Raw Material Lot Actions */}
+              {scanResult.lot && (
+                <div className="space-y-2">
+                  <button
+                    type="button"
+                    onClick={() => navigate('/raw-material-stock')}
+                    className="w-full bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white font-black py-3 px-4 rounded-2xl text-xs uppercase tracking-wider shadow-lg shadow-emerald-500/25 transition cursor-pointer flex items-center justify-center gap-2"
+                  >
+                    <Warehouse className="h-4 w-4" />
+                    <span>View in Raw Material Stock</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => navigate('/pulp-mill-operations')}
+                    className="w-full bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white font-black py-3 px-4 rounded-2xl text-xs uppercase tracking-wider shadow-lg shadow-blue-500/25 transition cursor-pointer flex items-center justify-center gap-2"
+                  >
+                    <Layers className="h-4 w-4" />
+                    <span>Use in Pulp Mill Batch</span>
+                  </button>
+                </div>
+              )}
+
+              {/* Machine Roll Actions */}
+              {scanResult.roll && (
+                <div className="space-y-2">
+                  <button
+                    type="button"
+                    onClick={() => navigate('/rewinding-reel-conversion')}
+                    className="w-full bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white font-black py-3 px-4 rounded-2xl text-xs uppercase tracking-wider shadow-lg shadow-blue-500/25 transition cursor-pointer flex items-center justify-center gap-2"
+                  >
+                    <Scissors className="h-4 w-4" />
+                    <span>Cut Reels in Rewinder</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => navigate('/lab')}
+                    className="w-full bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 text-white font-black py-3 px-4 rounded-2xl text-xs uppercase tracking-wider shadow-lg shadow-purple-500/25 transition cursor-pointer flex items-center justify-center gap-2"
+                  >
+                    <FlaskConical className="h-4 w-4" />
+                    <span>Log Paper Quality Test</span>
+                  </button>
+                </div>
+              )}
+
+              {/* Dispatch Slip Actions */}
+              {scanResult.slip && (
+                <button
+                  type="button"
+                  onClick={() => navigate('/dispatch-receipt')}
+                  className="w-full bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 text-white font-black py-3 px-4 rounded-2xl text-xs uppercase tracking-wider shadow-lg shadow-purple-500/25 transition cursor-pointer flex items-center justify-center gap-2"
+                >
+                  <Truck className="h-4 w-4" />
+                  <span>Open Dispatch Challan #{scanResult.slip.slipNo}</span>
+                </button>
+              )}
+
+              {/* Lab Report Actions */}
+              {scanResult.lab && (
+                <button
+                  type="button"
+                  onClick={() => navigate('/lab')}
+                  className="w-full bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 text-white font-black py-3 px-4 rounded-2xl text-xs uppercase tracking-wider shadow-lg shadow-purple-500/25 transition cursor-pointer flex items-center justify-center gap-2"
+                >
+                  <FlaskConical className="h-4 w-4" />
+                  <span>Open Lab Quality Control Certificate</span>
+                </button>
+              )}
+
+              {/* Boiler Log Actions */}
+              {scanResult.boiler && (
+                <button
+                  type="button"
+                  onClick={() => navigate('/utilities-&-etp/boiler-operations')}
+                  className="w-full bg-gradient-to-r from-amber-600 to-orange-600 hover:from-amber-700 hover:to-orange-700 text-white font-black py-3 px-4 rounded-2xl text-xs uppercase tracking-wider shadow-lg shadow-amber-500/25 transition cursor-pointer flex items-center justify-center gap-2"
+                >
+                  <Flame className="h-4 w-4" />
+                  <span>Open Boiler Operations Log</span>
+                </button>
+              )}
+
+              {/* Shared Secondary Buttons (Edit Specs & Traceability) */}
+              <div className="flex gap-2">
+                {scanResult.reel && !isEditing && (
+                  <button
+                    type="button"
+                    onClick={() => setIsEditing(true)}
+                    className="flex-1 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 text-slate-700 dark:text-slate-200 font-bold py-2.5 px-3 rounded-2xl text-xs uppercase tracking-wider transition cursor-pointer flex items-center justify-center gap-1.5 border border-slate-200 dark:border-slate-700"
+                  >
+                    <Pencil className="h-3.5 w-3.5" />
+                    <span>Edit Specs</span>
+                  </button>
+                )}
+
+                <button
+                  onClick={() => navigate(`/traceability?q=${encodeURIComponent(scanResult.code)}`)}
                   className="flex-1 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 text-slate-700 dark:text-slate-200 font-bold py-2.5 px-3 rounded-2xl text-xs uppercase tracking-wider transition cursor-pointer flex items-center justify-center gap-1.5 border border-slate-200 dark:border-slate-700"
                 >
-                  <span>Reel Stock</span>
+                  <Search className="h-3.5 w-3.5" />
+                  <span>Traceability</span>
                   <ArrowRight className="h-3.5 w-3.5" />
                 </button>
-              )}
+              </div>
+
+              {/* Reset / Next Scan Button */}
+              <button
+                onClick={handleResetScanner}
+                className="w-full py-3 px-4 rounded-2xl text-xs font-black uppercase tracking-wider transition cursor-pointer flex items-center justify-center gap-2 btn-primary-gradient shadow-lg"
+              >
+                <RefreshCw className="h-3.5 w-3.5" />
+                <span>Scan Next QR / Barcode</span>
+              </button>
             </div>
 
-            <button
-              onClick={handleResetScanner}
-              className={`w-full py-3 px-4 rounded-2xl text-xs font-black uppercase tracking-wider transition cursor-pointer flex items-center justify-center gap-2 ${
-                !scanResult.reel
-                  ? 'btn-primary-gradient shadow-lg'
-                  : 'bg-slate-50 dark:bg-slate-900 text-slate-600 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white'
-              }`}
-            >
-              <RefreshCw className="h-3.5 w-3.5" />
-              <span>Scan Next Reel / Barcode</span>
-            </button>
           </div>
-
-        </div>
-      )}
+        );
+      })()}
 
       {/* QUICK DISPATCH MODAL POPUP */}
       {showDispatchModal && scanResult?.reel && (

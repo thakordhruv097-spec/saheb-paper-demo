@@ -1045,6 +1045,20 @@ export function saveSingleReel(
   );
 }
 
+export function saveReel(reel: Reel, user: string): Reel {
+  const currentReels = getReels();
+  const index = currentReels.findIndex(r => r.reelNo === reel.reelNo);
+  if (index > -1) {
+    currentReels[index] = reel;
+  } else {
+    currentReels.unshift(reel);
+  }
+  setJSON(KEYS.REELS, currentReels);
+  pushUpsertToCloud('rewinder_production', reelToDb(reel));
+  addLog('Rewinder', 'Reel Updated', `Updated Reel #${reel.reelNo} specs`, user);
+  return reel;
+}
+
 export function updateReelQC(
   reelNo: string,
   qcGrade: 'A' | 'B',
