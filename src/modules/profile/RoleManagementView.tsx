@@ -21,7 +21,9 @@ const ERP_MODULES: ModuleDefinition[] = [
   { key: 'machine_production', label: 'Plant Manager' },
   { key: 'rewinding_reel_conversion', label: 'Rewinder' },
   { key: 'lab', label: 'Lab Quality' },
-  { key: 'utilities_etp', label: 'Utilities & ETP' },
+  { key: 'boiler', label: 'Boiler' },
+  { key: 'etp', label: 'ETP' },
+  { key: 'electricity', label: 'Electricity' },
   { key: 'orders', label: 'Pending Orders' },
   { key: 'finished_stock_dispatch', label: 'Finish Stock' },
   { key: 'dispatch', label: 'Dispatch' },
@@ -34,8 +36,8 @@ const isModuleActive = (user: User, moduleKey: string): boolean => {
     ? user.customModules
     : ERP_MODULES.map(m => m.key);
 
-  if (moduleKey === 'utilities_etp') {
-    return activeModules.some(m => ['utilities_etp', 'boiler', 'etp', 'electricity', 'etp_chemicals'].includes(m));
+  if (moduleKey === 'etp') {
+    return activeModules.includes('etp') || activeModules.includes('etp_chemicals');
   }
   return activeModules.includes(moduleKey);
 };
@@ -86,21 +88,24 @@ export const RoleManagementView: React.FC = () => {
     const active = isModuleActive(targetUser, moduleKey);
     let updatedModules: string[];
 
-    if (moduleKey === 'utilities_etp') {
-      if (active) {
-        updatedModules = currentModules.filter(
-          m => !['utilities_etp', 'boiler', 'etp', 'electricity', 'etp_chemicals'].includes(m)
-        );
+    if (active) {
+      if (moduleKey === 'etp') {
+        updatedModules = currentModules.filter(m => m !== 'etp' && m !== 'etp_chemicals');
       } else {
-        const set = new Set([...currentModules, 'utilities_etp', 'boiler', 'etp', 'electricity']);
-        updatedModules = Array.from(set);
+        updatedModules = currentModules.filter(m => m !== moduleKey);
       }
     } else {
-      if (active) {
-        updatedModules = currentModules.filter(m => m !== moduleKey);
-      } else {
-        updatedModules = [...currentModules, moduleKey];
+      updatedModules = [...currentModules, moduleKey];
+    }
+
+    // Keep utilities_etp umbrella key in sync so sidebar menu item displays if any utility is active
+    const hasAnyUtils = updatedModules.some(m => ['boiler', 'etp', 'electricity', 'etp_chemicals'].includes(m));
+    if (hasAnyUtils) {
+      if (!updatedModules.includes('utilities_etp')) {
+        updatedModules.push('utilities_etp');
       }
+    } else {
+      updatedModules = updatedModules.filter(m => m !== 'utilities_etp');
     }
 
     // Optimistically update in-place with guaranteed permanent order

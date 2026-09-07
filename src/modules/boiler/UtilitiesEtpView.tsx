@@ -17,16 +17,25 @@ export const UtilitiesEtpView: React.FC<UtilitiesEtpViewProps> = ({ initialTab }
 
   const isUserAdmin = user?.role === 'Admin' || (user?.roles && user.roles.includes('Admin'));
 
-  // User has access to Utilities & ETP module if Admin OR if assigned utilities_etp / boiler / etp / electricity
-  const hasUtilsAccess = isUserAdmin || (
+  const userModules = user?.customModules && Array.isArray(user.customModules) ? user.customModules : [];
+  // For backwards compatibility: if account only has legacy utilities_etp without specific sub-modules, grant all 3
+  const hasLegacyAll = userModules.includes('utilities_etp') && !userModules.includes('boiler') && !userModules.includes('etp') && !userModules.includes('electricity');
+
+  const canAccessBoiler = isUserAdmin || hasLegacyAll || (
     user?.customModules && Array.isArray(user.customModules)
-      ? user.customModules.some(m => ['utilities_etp', 'boiler', 'etp', 'electricity', 'etp_chemicals'].includes(m))
+      ? user.customModules.includes('boiler')
       : true
   );
-
-  const canAccessBoiler = hasUtilsAccess;
-  const canAccessEtp = hasUtilsAccess;
-  const canAccessElectricity = hasUtilsAccess;
+  const canAccessEtp = isUserAdmin || hasLegacyAll || (
+    user?.customModules && Array.isArray(user.customModules)
+      ? (user.customModules.includes('etp') || user.customModules.includes('etp_chemicals'))
+      : true
+  );
+  const canAccessElectricity = isUserAdmin || hasLegacyAll || (
+    user?.customModules && Array.isArray(user.customModules)
+      ? user.customModules.includes('electricity')
+      : true
+  );
 
   // Read tab from path, initialTab prop, or ?tab= query param
   const getTabFromUrl = (): 'boiler' | 'etp_chemicals' | 'electricity' => {
@@ -68,8 +77,22 @@ export const UtilitiesEtpView: React.FC<UtilitiesEtpViewProps> = ({ initialTab }
 
   // Sync tab when URL pathname or search query param changes
   useEffect(() => {
-    setActiveTab(getTabFromUrl());
-  }, [location.pathname, location.search, initialTab]);
+    const targetTab = getTabFromUrl();
+    setActiveTab(targetTab);
+
+    // If current URL points to a sub-section the user doesn't have permission for, gracefully redirect to their permitted section
+    const path = location.pathname.toLowerCase();
+    if ((path.includes('boiler-operations') || path.endsWith('/boiler')) && !canAccessBoiler) {
+      if (canAccessEtp) navigate('/utilities-&-etp/etp-water-&-chemicals', { replace: true });
+      else if (canAccessElectricity) navigate('/utilities-&-etp/electricity-&-power-grid', { replace: true });
+    } else if ((path.includes('etp-water') || path.includes('etp-chemicals') || path.endsWith('/etp')) && !canAccessEtp) {
+      if (canAccessBoiler) navigate('/utilities-&-etp/boiler-operations', { replace: true });
+      else if (canAccessElectricity) navigate('/utilities-&-etp/electricity-&-power-grid', { replace: true });
+    } else if ((path.includes('electricity') || path.includes('power-grid')) && !canAccessElectricity) {
+      if (canAccessBoiler) navigate('/utilities-&-etp/boiler-operations', { replace: true });
+      else if (canAccessEtp) navigate('/utilities-&-etp/etp-water-&-chemicals', { replace: true });
+    }
+  }, [location.pathname, location.search, initialTab, canAccessBoiler, canAccessEtp, canAccessElectricity]);
 
   const handleTabChange = (tab: 'boiler' | 'etp_chemicals' | 'electricity') => {
     setActiveTab(tab);

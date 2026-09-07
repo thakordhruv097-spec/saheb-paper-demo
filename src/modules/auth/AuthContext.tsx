@@ -216,8 +216,17 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     if (moduleName === 'lab') return custom.includes('lab');
 
     // Individual utilities and unified module
-    if (moduleName === 'boiler' || moduleName === 'etp' || moduleName === 'electricity' || moduleName === 'utilities_etp') {
+    if (moduleName === 'utilities_etp') {
       return custom.includes('utilities_etp') || custom.includes('boiler') || custom.includes('etp') || custom.includes('electricity');
+    }
+    if (moduleName === 'boiler') {
+      return custom.includes('boiler');
+    }
+    if (moduleName === 'etp' || moduleName === 'etp_chemicals') {
+      return custom.includes('etp') || custom.includes('etp_chemicals');
+    }
+    if (moduleName === 'electricity') {
+      return custom.includes('electricity');
     }
 
     if (moduleName === 'orders') return custom.includes('orders');

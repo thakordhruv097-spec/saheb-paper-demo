@@ -440,6 +440,13 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
     i18n.changeLanguage(lng);
   };
 
+  const getUtilitiesPath = () => {
+    if (hasAccess('boiler')) return '/utilities-&-etp/boiler-operations';
+    if (hasAccess('etp')) return '/utilities-&-etp/etp-water-&-chemicals';
+    if (hasAccess('electricity')) return '/utilities-&-etp/electricity-&-power-grid';
+    return '/utilities-&-etp/boiler-operations';
+  };
+
   const menuItems = [
     { id: 'dashboard', path: '/', label: t('nav.dashboard', 'Dashboard'), icon: LayoutGrid },
     { id: 'raw_material_stock', path: '/raw-material-stock', label: t('nav.raw_material', 'Raw Material'), icon: Home },
@@ -448,7 +455,7 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
     { id: 'rewinding_reel_conversion', path: '/rewinding-reel-conversion', label: t('nav.rewinder', 'Rewinder Roll-to-Reel'), icon: RotateCw },
     { id: 'lab', path: '/lab', label: 'Lab Quality Control', icon: FlaskConical },
     { id: 'orders', path: '/orders', label: t('nav.orders', 'Order Bookings'), icon: FileText },
-    { id: 'utilities_etp', path: '/utilities-&-etp/boiler-operations', label: t('nav.utilities_etp', 'Utilities & ETP'), icon: Droplet },
+    { id: 'utilities_etp', path: getUtilitiesPath(), label: t('nav.utilities_etp', 'Utilities & ETP'), icon: Droplet },
     { id: 'dispatch_receipt', path: '/dispatch-receipt/draft-packing-slip', label: t('nav.dispatch_receipt', 'Dispatch Receipt'), icon: Truck },
     { id: 'finished_stock_dispatch', path: '/stock-categorization', label: t('nav.finished_stock_dispatch', 'Stock Categorization'), icon: Layers },
     { id: 'spareparts_management', path: '/spareparts-management', label: t('nav.store', 'Spares Store'), icon: Wrench },

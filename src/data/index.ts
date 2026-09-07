@@ -99,7 +99,7 @@ const DEFAULT_USERS: User[] = [
     designation: 'Admin / Owner',
     customModules: [
       'dashboard', 'raw_material_stock', 'pulp_mill_operations', 'machine_production', 'rewinding_reel_conversion', 'lab',
-      'utilities_etp', 'orders', 'finished_stock_dispatch', 'dispatch', 'spareparts_management', 'monthly_yearly_reporting'
+      'boiler', 'etp', 'electricity', 'utilities_etp', 'orders', 'finished_stock_dispatch', 'dispatch', 'spareparts_management', 'monthly_yearly_reporting'
     ]
   },
   {
@@ -414,9 +414,9 @@ export function getUsers(): User[] {
 
     let customModules = u.customModules;
     if (customModules && Array.isArray(customModules)) {
-      const hasAnyUtils = customModules.some(m => ['boiler', 'etp', 'electricity', 'utilities_etp', 'etp_chemicals'].includes(m));
-      if (hasAnyUtils) {
-        customModules = Array.from(new Set([...customModules, 'utilities_etp', 'boiler', 'etp', 'electricity']));
+      const hasAnyUtils = customModules.some(m => ['boiler', 'etp', 'electricity', 'etp_chemicals'].includes(m));
+      if (hasAnyUtils && !customModules.includes('utilities_etp')) {
+        customModules = [...customModules, 'utilities_etp'];
       }
     }
 
@@ -493,11 +493,13 @@ export function updateUserModules(username: string, customModules: string[], ope
   const user = users.find(u => u.username.toLowerCase() === username.toLowerCase());
   if (user) {
     let finalModules = [...customModules];
-    const hasUtils = finalModules.some(m => ['utilities_etp', 'boiler', 'etp', 'electricity'].includes(m));
+    const hasUtils = finalModules.some(m => ['boiler', 'etp', 'electricity', 'etp_chemicals'].includes(m));
     if (hasUtils) {
-      finalModules = Array.from(new Set([...finalModules, 'utilities_etp', 'boiler', 'etp', 'electricity']));
+      if (!finalModules.includes('utilities_etp')) {
+        finalModules.push('utilities_etp');
+      }
     } else {
-      finalModules = finalModules.filter(m => !['utilities_etp', 'boiler', 'etp', 'electricity', 'etp_chemicals'].includes(m));
+      finalModules = finalModules.filter(m => m !== 'utilities_etp');
     }
     user.customModules = finalModules;
     const sorted = sortUsersByHierarchy(users);
