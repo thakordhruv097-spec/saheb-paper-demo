@@ -343,7 +343,7 @@ export const LabView: React.FC = () => {
             <div>
               <div className="flex flex-wrap items-center gap-2.5">
                 <h1 className="text-xl sm:text-2xl font-black tracking-tight font-heading text-slate-900 dark:text-white">
-                  {COMPANY_CONFIG.name} — Quality Control Laboratory
+                  Quality Control Laboratory
                 </h1>
               </div>
               <p className="text-xs sm:text-sm text-slate-500 dark:text-slate-400 font-medium mt-0.5">
@@ -363,7 +363,7 @@ export const LabView: React.FC = () => {
                 className="btn-primary-gradient px-4 py-2.5 text-xs uppercase tracking-wider cursor-pointer active:scale-95 flex items-center justify-center gap-2"
               >
                 <Plus className="h-4 w-4" />
-                <span>+ Create New Report</span>
+                <span>Create New Report</span>
               </button>
             </div>
           )}
@@ -442,7 +442,7 @@ export const LabView: React.FC = () => {
               Paper Test Reports History Ledger
             </h3>
             <p className="text-xs text-slate-500 dark:text-slate-400 font-medium mt-0.5">
-              {COMPANY_CONFIG.name} physical quality testing records & Certificate of Analysis (COA)
+              Physical quality testing records & Certificate of Analysis (COA)
             </p>
           </div>
 
@@ -595,7 +595,7 @@ export const LabView: React.FC = () => {
               <div className="flex items-center gap-2">
                 <Beaker className="h-5 w-5 text-purple-600 dark:text-purple-400" />
                 <h3 className="text-sm font-black text-slate-900 dark:text-white uppercase tracking-wider font-heading">
-                  {COMPANY_CONFIG.name} — PAPER TEST REPORT ENTRY
+                  Paper Test Report Entry
                 </h3>
               </div>
               <button onClick={() => setIsModalOpen(false)} className="text-slate-400 hover:text-slate-600 dark:hover:text-white cursor-pointer p-1 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800">

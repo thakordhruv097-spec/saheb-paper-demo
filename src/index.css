@@ -93,7 +93,7 @@
 }
 
 .neumorphic-input:focus {
-  box-shadow: inset 2px 2px 5px rgba(163,163,196,0.2), inset -2px -2px 5px rgba(255,255,255,0.7), 0 0 0 3px rgba(108, 79, 224, 0.2) !important;
+  box-shadow: inset 2px 2px 5px rgba(163,163,196,0.25), inset -2px -2px 5px rgba(255,255,255,0.8) !important;
   outline: none !important;
 }
 
@@ -189,9 +189,13 @@ main textarea:not([class*="bg-transparent"]):not([class*="border"]) {
   box-shadow: inset 2px 2px 6px rgba(0, 0, 0, 0.3);
 }
 
-/* Ensure transparent inputs inside custom pill containers are never overwritten by global input rules */
+/* Ensure transparent inputs inside custom pill containers are never overwritten by global input rules, even on focus */
 main input.bg-transparent,
-main input[class*="bg-transparent"] {
+main input[class*="bg-transparent"],
+main input.bg-transparent:focus,
+main input[class*="bg-transparent"]:focus,
+.dark main input.bg-transparent:focus,
+.dark main input[class*="bg-transparent"]:focus {
   background: transparent !important;
   box-shadow: none !important;
   border: none !important;
@@ -199,19 +203,24 @@ main input[class*="bg-transparent"] {
   border-radius: 0 !important;
 }
 
-/* --- Auto-upgrade: Purple focus glow on all inputs --- */
+/* --- Clean focus on inputs without artificial border rings --- */
 main input:focus,
 main select:focus,
 main textarea:focus {
-  box-shadow: inset 2px 2px 5px rgba(163,163,196,0.2), inset -2px -2px 5px rgba(255,255,255,0.7), 0 0 0 3px rgba(108, 79, 224, 0.2) !important;
   outline: none !important;
 }
 
-.dark main input:focus,
-.dark main select:focus,
-.dark main textarea:focus {
-  border-color: #7C3AED !important;
-  box-shadow: inset 2px 2px 6px rgba(0, 0, 0, 0.3), 0 0 0 3px rgba(124, 58, 237, 0.25) !important;
+main input:not([type="checkbox"]):not([type="radio"]):not([type="submit"]):not([type="button"]):not([type="hidden"]):not([class*="bg-transparent"]):focus,
+main select:not([class*="bg-transparent"]):focus,
+main textarea:not([class*="bg-transparent"]):focus {
+  box-shadow: inset 2px 2px 5px rgba(163,163,196,0.25), inset -2px -2px 5px rgba(255,255,255,0.8) !important;
+  outline: none !important;
+}
+
+.dark main input:not([type="checkbox"]):not([type="radio"]):not([type="submit"]):not([type="button"]):not([type="hidden"]):not([class*="bg-transparent"]):focus,
+.dark main select:not([class*="bg-transparent"]):focus,
+.dark main textarea:not([class*="bg-transparent"]):focus {
+  box-shadow: inset 2px 2px 6px rgba(0, 0, 0, 0.35) !important;
   outline: none !important;
 }
 

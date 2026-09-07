@@ -116,16 +116,11 @@ export const PulpMillView: React.FC = () => {
   }, []);
 
   const availablePulpChemicals = useMemo<string[]>(() => {
-    const allRm: RawMaterialItem[] = getRawMaterials();
-    const pulpChems = allRm.filter((m: RawMaterialItem) => m.category === 'CHEMICAL' && m.active !== false && (m.usedInModule === 'PULP_MILL' || m.usedInModule === 'GENERAL' || !m.usedInModule));
-    if (pulpChems.length > 0) {
-      return pulpChems.map((c: RawMaterialItem) => c.name);
-    }
-    return ['Hydrogen Peroxide', 'Hypo', 'Bleaching Powder', 'Caustic', 'Washing Powder', 'DSR', 'WSR', 'OBA'];
+    return ['DSR', 'WSR', 'OBA', 'Hydrogen Peroxide', 'Hypo', 'Bleaching Powder', 'Caustic', 'Washing Powder'];
   }, []);
 
   // 6 Waste Mix items
-  const [wasteMix, setWasteMix] = useState<Record<string, number>>({
+  const [wasteMix, setWasteMix] = useState<Record<string, number | string>>({
     'Indian Tissue Waste': 50,
     'Imported Tissue Waste': 0,
     SMK: 20,
@@ -134,44 +129,71 @@ export const PulpMillView: React.FC = () => {
     Broke: 20,
   });
 
-  // Dynamic Chemical items
-  const [chemicals, setChemicals] = useState<Record<string, number>>({
+  // Top Chemical items (DSR, WSR, OBA, Hydrogen Peroxide, Hypo, Bleaching Powder, Caustic, Washing Powder)
+  const [chemicals, setChemicals] = useState<Record<string, number | string>>({
     DSR: 10,
     WSR: 15,
+    OBA: 0,
     'Hydrogen Peroxide': 0,
     Hypo: 0,
     'Bleaching Powder': 0,
     Caustic: 0,
-    OBA: 0,
+    'Washing Powder': 0,
   });
 
   // Load formula if already exists for dateStr
   useEffect(() => {
     const existing = formulas.find(f => f.date === dateStr);
     if (existing) {
-      if (existing.wasteMix) setWasteMix({ ...existing.wasteMix });
-      if (existing.chemicals) setChemicals({ ...existing.chemicals });
+      if (existing.wasteMix) {
+        const fullMix: Record<string, number | string> = {};
+        availableWastePapers.forEach(name => {
+          fullMix[name] = existing.wasteMix[name] !== undefined ? existing.wasteMix[name] : 0;
+        });
+        setWasteMix(fullMix);
+      }
+      if (existing.chemicals) {
+        const fullChems: Record<string, number | string> = {};
+        availablePulpChemicals.forEach(name => {
+          fullChems[name] = existing.chemicals[name] !== undefined ? existing.chemicals[name] : 0;
+        });
+        setChemicals(fullChems);
+      }
     }
-  }, [dateStr, formulas]);
+  }, [dateStr, formulas, availableWastePapers, availablePulpChemicals]);
 
-  const handleWasteChange = (name: string, val: string) => {
-    const num = parseFloat(val) || 0;
+  const handleWasteChange = (name: string, val: string | number) => {
+    if (val === '') {
+      setWasteMix(prev => ({
+        ...prev,
+        [name]: '',
+      }));
+      return;
+    }
+    const num = parseFloat(String(val));
     setWasteMix(prev => ({
       ...prev,
-      [name]: num,
+      [name]: isNaN(num) ? '' : num,
     }));
   };
 
-  const handleChemicalChange = (name: string, val: string) => {
-    const num = parseFloat(val) || 0;
+  const handleChemicalChange = (name: string, val: string | number) => {
+    if (val === '') {
+      setChemicals(prev => ({
+        ...prev,
+        [name]: '',
+      }));
+      return;
+    }
+    const num = parseFloat(String(val));
     setChemicals(prev => ({
       ...prev,
-      [name]: num,
+      [name]: isNaN(num) ? '' : num,
     }));
   };
 
   const totalWastePct = useMemo(() => {
-    return Object.values(wasteMix).reduce((sum, v) => sum + (Number(v) || 0), 0);
+    return Object.values(wasteMix).reduce<number>((sum, v) => sum + (Number(v) || 0), 0);
   }, [wasteMix]);
 
   const isFormula100 = Math.abs(totalWastePct - 100) < 0.001;
@@ -194,8 +216,12 @@ export const PulpMillView: React.FC = () => {
     const formulaObj: PulpFormula = {
       id: `form-${dateStr}`,
       date: dateStr,
-      wasteMix: { ...wasteMix },
-      chemicals: { ...chemicals },
+      wasteMix: Object.fromEntries(
+        Object.entries(wasteMix).map(([k, v]) => [k, Number(v) || 0])
+      ),
+      chemicals: Object.fromEntries(
+        Object.entries(chemicals).map(([k, v]) => [k, Number(v) || 0])
+      ),
     };
 
     saveFormula(formulaObj, user?.displayName || 'System');
@@ -416,16 +442,43 @@ export const PulpMillView: React.FC = () => {
                   <span className="text-xs font-bold text-slate-800 dark:text-slate-100">{name}</span>
                   <div className="flex items-center gap-2">
                     {/* Sunken Neomorphic Capsule Input Matching 2nd Picture */}
-                    <div className="relative flex items-center bg-[#F3F2FA] dark:bg-slate-950 rounded-full px-4 py-1.5 shadow-[inset_2px_2px_5px_rgba(163,163,196,0.22),inset_-2px_-2px_5px_rgba(255,255,255,0.85)] dark:shadow-none w-28 justify-end">
+                    <div 
+                      onClick={e => {
+                        const input = e.currentTarget.querySelector('input');
+                        if (input) input.focus();
+                      }}
+                      className="relative flex items-center bg-[#F3F2FA] dark:bg-slate-950 rounded-full px-4 py-1.5 shadow-[inset_2px_2px_5px_rgba(163,163,196,0.22),inset_-2px_-2px_5px_rgba(255,255,255,0.85)] dark:shadow-none w-28 justify-end cursor-text"
+                    >
                       <input
                         type="number"
                         min="0"
                         max="100"
                         step="1"
-                        value={wasteMix[name] !== undefined ? wasteMix[name] : ''}
+                        value={wasteMix[name] !== undefined ? wasteMix[name] : 0}
                         onChange={e => handleWasteChange(name, e.target.value)}
+                        onFocus={e => {
+                          const currentVal = wasteMix[name];
+                          if (currentVal === 0 || currentVal === '0' || Number(currentVal) === 0 || e.target.value === '0') {
+                            handleWasteChange(name, '');
+                          } else {
+                            e.target.select();
+                          }
+                        }}
+                        onClick={e => {
+                          const currentVal = wasteMix[name];
+                          if (currentVal === 0 || currentVal === '0' || Number(currentVal) === 0 || (e.target as HTMLInputElement).value === '0') {
+                            handleWasteChange(name, '');
+                          } else {
+                            (e.target as HTMLInputElement).select();
+                          }
+                        }}
+                        onBlur={e => {
+                          if (e.target.value === '' || e.target.value === undefined) {
+                            handleWasteChange(name, 0);
+                          }
+                        }}
                         className="w-full bg-transparent border-none text-xs font-bold font-sans text-right text-slate-900 dark:text-white focus:outline-none p-0"
-                        placeholder="0"
+                        style={{ outline: 'none', boxShadow: 'none', border: 'none' }}
                       />
                     </div>
                     <span className="text-xs font-bold text-[#8B87A3] dark:text-slate-400 w-4 text-center">%</span>
@@ -458,15 +511,42 @@ export const PulpMillView: React.FC = () => {
                 >
                   <span className="text-xs font-bold text-slate-800 dark:text-slate-100 truncate pr-2">{chemName}</span>
                   <div className="flex items-center gap-1.5 shrink-0">
-                    <div className="relative flex items-center bg-[#F3F2FA] dark:bg-slate-950 rounded-full px-3 py-1.5 shadow-[inset_2px_2px_5px_rgba(163,163,196,0.22),inset_-2px_-2px_5px_rgba(255,255,255,0.85)] dark:shadow-none w-20 justify-end">
+                    <div 
+                      onClick={e => {
+                        const input = e.currentTarget.querySelector('input');
+                        if (input) input.focus();
+                      }}
+                      className="relative flex items-center bg-[#F3F2FA] dark:bg-slate-950 rounded-full px-3 py-1.5 shadow-[inset_2px_2px_5px_rgba(163,163,196,0.22),inset_-2px_-2px_5px_rgba(255,255,255,0.85)] dark:shadow-none w-20 justify-end cursor-text"
+                    >
                       <input
                         type="number"
                         step="0.1"
                         min="0"
-                        value={chemicals[chemName] !== undefined ? chemicals[chemName] : ''}
+                        value={chemicals[chemName] !== undefined ? chemicals[chemName] : 0}
                         onChange={e => handleChemicalChange(chemName, e.target.value)}
+                        onFocus={e => {
+                          const currentVal = chemicals[chemName];
+                          if (currentVal === 0 || currentVal === '0' || Number(currentVal) === 0 || e.target.value === '0') {
+                            handleChemicalChange(chemName, '');
+                          } else {
+                            e.target.select();
+                          }
+                        }}
+                        onClick={e => {
+                          const currentVal = chemicals[chemName];
+                          if (currentVal === 0 || currentVal === '0' || Number(currentVal) === 0 || (e.target as HTMLInputElement).value === '0') {
+                            handleChemicalChange(chemName, '');
+                          } else {
+                            (e.target as HTMLInputElement).select();
+                          }
+                        }}
+                        onBlur={e => {
+                          if (e.target.value === '' || e.target.value === undefined) {
+                            handleChemicalChange(chemName, 0);
+                          }
+                        }}
                         className="w-full bg-transparent border-none text-xs font-bold font-sans text-right text-slate-900 dark:text-white focus:outline-none p-0"
-                        placeholder="0"
+                        style={{ outline: 'none', boxShadow: 'none', border: 'none' }}
                       />
                     </div>
                     <span className="text-[10px] font-bold text-[#8B87A3] dark:text-slate-400 w-7">kg/T</span>

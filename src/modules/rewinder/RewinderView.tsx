@@ -554,22 +554,6 @@ export const RewinderView: React.FC = () => {
               </p>
             </div>
           </div>
-          <div className="flex items-center gap-2 sm:gap-3 shrink-0">
-            <button
-              onClick={handlePrintAllToday}
-              className="flex items-center justify-center gap-2 px-3.5 py-2.5 rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 font-bold text-xs transition cursor-pointer border border-slate-200 dark:border-slate-700 shadow-2xs whitespace-nowrap"
-            >
-              <Printer className="h-4 w-4 text-slate-500" />
-              <span>Print QR Labels ({reels.length})</span>
-            </button>
-            <button
-              onClick={handleOpenAddModal}
-              className="btn-primary-gradient px-4 py-2.5 text-xs font-bold uppercase tracking-wider flex items-center justify-center gap-2 cursor-pointer active:scale-95 shrink-0 whitespace-nowrap"
-            >
-              <Plus className="h-4 w-4 text-white" />
-              <span>Add Reel Entry</span>
-            </button>
-          </div>
         </div>
       </div>
 

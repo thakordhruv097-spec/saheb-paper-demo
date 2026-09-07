@@ -7,16 +7,14 @@ import type { MachineRoll } from '../../data/types';
 import { CustomDatePickerModal } from '../../components/CustomDatePickerModal';
 import { DataFilterBar } from '../../components/DataFilterBar';
 import { CustomSearchableSelect } from '../../components/CustomSearchableSelect';
-import { Cog, Plus, Info, Search, Calendar, Clock } from 'lucide-react';
+import { Cog, Plus, Info, Search, Calendar, Clock, AlertTriangle, X } from 'lucide-react';
 
 import { WorkflowStepBadge, WORKFLOW_STEPS } from '../../components/WorkflowStepBadge';
-import { useDateFilter, isDateInTimeframe } from '../../context/DateFilterContext';
-
+ 
 export const MachineView: React.FC = () => {
   const { t } = useTranslation();
   const { user } = useAuth();
   const navigate = useNavigate();
-  const { timeframe, selectedDate } = useDateFilter();
 
   const [rolls, setRolls] = useState<MachineRoll[]>(() => getRolls());
   const products = getProducts();
@@ -32,13 +30,9 @@ export const MachineView: React.FC = () => {
   const [machShiftFilter, setMachShiftFilter] = useState('all');
   const [machProductFilter, setMachProductFilter] = useState('all');
 
-  // Filtered Rolls Memo
+  // Filtered Rolls Memo (displays recent logged rolls, with local search & DataFilterBar)
   const filteredRolls = useMemo(() => {
     let list = rolls;
-    // 1. Timeframe Filter (Day, Week, Month, All)
-    if (timeframe && selectedDate) {
-      list = list.filter(r => isDateInTimeframe(r.date, selectedDate, timeframe));
-    }
     if (searchRoll.trim()) {
       const term = searchRoll.toLowerCase();
       list = list.filter(r => 
@@ -53,7 +47,7 @@ export const MachineView: React.FC = () => {
     if (machShiftFilter && machShiftFilter !== 'all') list = list.filter(r => r.shift === machShiftFilter);
     if (machProductFilter && machProductFilter !== 'all') list = list.filter(r => r.product === machProductFilter);
     return list;
-  }, [rolls, searchRoll, machDateFrom, machDateTo, machShiftFilter, machProductFilter, timeframe, selectedDate]);
+  }, [rolls, searchRoll, machDateFrom, machDateTo, machShiftFilter, machProductFilter]);
 
   // Form States - load from localStorage if present
   const [dateStr, setDateStr] = useState(() => {
@@ -81,6 +75,47 @@ export const MachineView: React.FC = () => {
   const [startTime, setStartTime] = useState(() => localStorage.getItem('draft_roll_start_time') || '08:00');
   const [offTime, setOffTime] = useState(() => localStorage.getItem('draft_roll_off_time') || '16:00');
   const [downtimeReason, setDowntimeReason] = useState(() => localStorage.getItem('draft_roll_downtime') || '');
+
+  // Multiple Downtime Incidents List
+  const [downtimeList, setDowntimeList] = useState<{ id: string; reason: string; minutes: number }[]>(() => {
+    try {
+      const saved = localStorage.getItem('draft_roll_downtimes');
+      return saved ? JSON.parse(saved) : [];
+    } catch {
+      return [];
+    }
+  });
+  const [newDowntimeReason, setNewDowntimeReason] = useState('');
+  const [newDowntimeMinutes, setNewDowntimeMinutes] = useState('');
+
+  const totalDowntimeMinutes = useMemo(() => {
+    return downtimeList.reduce((acc, item) => acc + item.minutes, 0);
+  }, [downtimeList]);
+
+  const handleAddDowntimeItem = (e?: React.MouseEvent | React.KeyboardEvent) => {
+    if (e) e.preventDefault();
+    if (!newDowntimeReason.trim()) return;
+    const mins = parseInt(newDowntimeMinutes, 10) || 0;
+    if (mins <= 0) return;
+
+    const item = {
+      id: `dt-${Date.now()}-${Math.random().toString(36).substring(2, 6)}`,
+      reason: newDowntimeReason.trim(),
+      minutes: mins,
+    };
+
+    const updated = [...downtimeList, item];
+    setDowntimeList(updated);
+    localStorage.setItem('draft_roll_downtimes', JSON.stringify(updated));
+    setNewDowntimeReason('');
+    setNewDowntimeMinutes('');
+  };
+
+  const handleRemoveDowntimeItem = (id: string) => {
+    const updated = downtimeList.filter(item => item.id !== id);
+    setDowntimeList(updated);
+    localStorage.setItem('draft_roll_downtimes', JSON.stringify(updated));
+  };
   
   // Persist values to localStorage
   React.useEffect(() => {
@@ -111,6 +146,10 @@ export const MachineView: React.FC = () => {
     localStorage.removeItem('draft_roll_start_time');
     localStorage.removeItem('draft_roll_off_time');
     localStorage.removeItem('draft_roll_downtime');
+    localStorage.removeItem('draft_roll_downtimes');
+    setDowntimeList([]);
+    setNewDowntimeReason('');
+    setNewDowntimeMinutes('');
   };
 
   // Helper for working time calculation in minutes
@@ -205,6 +244,13 @@ export const MachineView: React.FC = () => {
     // Get pulp mill recipe formula for target date (with automatic fallback)
     const formula = getFormulaForDate(dateStr);
 
+    const grossMin = calculateWorkingMinutes(startTime, offTime);
+    const netWorkingMin = Math.max(0, grossMin - totalDowntimeMinutes);
+
+    const compiledDowntime = downtimeList.length > 0
+      ? downtimeList.map(d => `${d.reason} (${d.minutes}m)`).join(', ') + (downtimeReason.trim() ? ` | Note: ${downtimeReason.trim()}` : '')
+      : downtimeReason.trim();
+
     const rollObj: MachineRoll = {
       rollNo: targetRollNo,
       product: prod ? prod.name : 'Unknown Product',
@@ -216,8 +262,8 @@ export const MachineView: React.FC = () => {
       shift,
       startTime,
       offTime,
-      workingMinutes: calculateWorkingMinutes(startTime, offTime),
-      downtimeReason,
+      workingMinutes: netWorkingMin,
+      downtimeReason: compiledDowntime,
       date: dateStr,
       formulaId: formula.id,
     };
@@ -481,10 +527,19 @@ export const MachineView: React.FC = () => {
 
             {/* 2. Time & Downtime Section */}
             <div className="border border-slate-200 dark:border-slate-800 rounded-3xl p-5 space-y-4">
-              <h4 className="text-xs font-black text-slate-900 dark:text-white uppercase tracking-wider border-b pb-2 border-slate-100 dark:border-slate-800 flex items-center gap-2">
-                <span className="h-2 w-2 rounded-full bg-blue-500"></span>
-                Time Tracking & Downtime Incidents
-              </h4>
+              <div className="flex items-center justify-between border-b pb-2 border-slate-100 dark:border-slate-800">
+                <h4 className="text-xs font-black text-slate-900 dark:text-white uppercase tracking-wider flex items-center gap-2">
+                  <span className="h-2 w-2 rounded-full bg-blue-500"></span>
+                  Time Tracking & Downtime Incidents
+                </h4>
+                {totalDowntimeMinutes > 0 && (
+                  <span className="px-2.5 py-0.5 rounded-full text-[10px] font-black bg-amber-100 dark:bg-amber-950/60 text-amber-700 dark:text-amber-300">
+                    {downtimeList.length} incident{downtimeList.length > 1 ? 's' : ''} ({totalDowntimeMinutes}m lost)
+                  </span>
+                )}
+              </div>
+
+              {/* Start & Off Time Grid */}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
                   <label className="block text-[11px] font-black text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-1.5">
@@ -510,34 +565,163 @@ export const MachineView: React.FC = () => {
                 </div>
               </div>
 
-              {/* Working Time Live Calculation Badge */}
+              {/* Working Time & Downtime Live Calculation Banner */}
               {(() => {
-                const mins = calculateWorkingMinutes(startTime, offTime);
-                const hrs = Math.floor(mins / 60);
-                const remMins = mins % 60;
+                const grossMins = calculateWorkingMinutes(startTime, offTime);
+                const netMins = Math.max(0, grossMins - totalDowntimeMinutes);
+                const grossHrs = Math.floor(grossMins / 60);
+                const grossRem = grossMins % 60;
+                const netHrs = Math.floor(netMins / 60);
+                const netRem = netMins % 60;
                 return (
-                  <div className="p-3 rounded-2xl bg-blue-50/70 dark:bg-blue-950/30 border border-blue-200/80 dark:border-blue-900/40 flex items-center justify-between text-xs font-bold">
-                    <span className="text-slate-600 dark:text-slate-400 flex items-center gap-1.5">
-                      <Clock className="h-4 w-4 text-primary dark:text-blue-400" />
-                      Calculated Working Time:
-                    </span>
-                    <span className="text-primary dark:text-blue-400 font-mono font-black text-sm">
-                      {mins} mins <span className="text-xs font-normal text-slate-500">({hrs}h {String(remMins).padStart(2, '0')}m)</span>
-                    </span>
+                  <div className="p-3.5 rounded-2xl bg-blue-50/70 dark:bg-blue-950/30 border border-blue-200/80 dark:border-blue-900/40 flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 text-xs font-bold">
+                    <div className="flex flex-wrap items-center gap-3">
+                      <div className="flex items-center gap-1.5 text-slate-600 dark:text-slate-400">
+                        <Clock className="h-4 w-4 text-primary dark:text-blue-400 shrink-0" />
+                        <span>Gross Run:</span>
+                        <span className="font-mono text-slate-900 dark:text-white">{grossMins}m ({grossHrs}h {String(grossRem).padStart(2, '0')}m)</span>
+                      </div>
+                      {totalDowntimeMinutes > 0 && (
+                        <div className="flex items-center gap-1 text-amber-600 dark:text-amber-400">
+                          <AlertTriangle className="h-3.5 w-3.5 shrink-0" />
+                          <span>Downtime:</span>
+                          <span className="font-mono font-bold">-{totalDowntimeMinutes}m</span>
+                        </div>
+                      )}
+                    </div>
+                    <div className="flex items-center gap-2 self-end sm:self-auto">
+                      <span className="text-emerald-700 dark:text-emerald-400">Net Working Time:</span>
+                      <span className="text-primary dark:text-blue-400 font-mono font-black text-sm">
+                        {netMins} mins <span className="text-xs font-normal text-slate-500">({netHrs}h {String(netRem).padStart(2, '0')}m)</span>
+                      </span>
+                    </div>
                   </div>
                 );
               })()}
 
+              {/* Dynamic Downtime Incidents Logger with + Button */}
+              <div className="p-4 rounded-2xl bg-slate-50 dark:bg-slate-900/60 border border-slate-200/80 dark:border-slate-800 space-y-3">
+                <div className="flex items-center justify-between">
+                  <label className="text-[11px] font-black text-slate-700 dark:text-slate-300 uppercase tracking-wider flex items-center gap-1.5">
+                    <AlertTriangle className="h-3.5 w-3.5 text-amber-500" />
+                    Log Downtime Incident
+                  </label>
+                  <span className="text-[10px] text-slate-400 font-medium">Add breakdown / delay with +</span>
+                </div>
+
+                {/* Quick Presets */}
+                <div className="flex flex-wrap gap-1.5">
+                  {['Paper Break', 'Wire Change', 'Felt Cleaning', 'Blade Change', 'Steam Low', 'Power Failure', 'Mechanical Maintenance'].map(preset => (
+                    <button
+                      key={preset}
+                      type="button"
+                      onClick={() => setNewDowntimeReason(preset)}
+                      className={`text-[10px] font-bold px-2.5 py-1 rounded-full border transition cursor-pointer ${
+                        newDowntimeReason === preset
+                          ? 'bg-amber-100 border-amber-300 text-amber-900 dark:bg-amber-950/70 dark:border-amber-700 dark:text-amber-200'
+                          : 'bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700'
+                      }`}
+                    >
+                      {preset}
+                    </button>
+                  ))}
+                </div>
+
+                {/* Incident Inputs Row with + Button */}
+                <div className="flex flex-col sm:flex-row gap-2">
+                  <input
+                    type="text"
+                    value={newDowntimeReason}
+                    onChange={e => setNewDowntimeReason(e.target.value)}
+                    placeholder="Reason (e.g. Wire change, Paper break)"
+                    className="flex-1 py-2.5 px-3.5 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-xs font-bold text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-amber-500 placeholder-slate-400"
+                    onKeyDown={e => {
+                      if (e.key === 'Enter') {
+                        e.preventDefault();
+                        handleAddDowntimeItem();
+                      }
+                    }}
+                  />
+                  <div className="flex items-center gap-2">
+                    <div className="relative w-28">
+                      <input
+                        type="number"
+                        min="1"
+                        value={newDowntimeMinutes}
+                        onChange={e => setNewDowntimeMinutes(e.target.value)}
+                        placeholder="Minutes"
+                        className="w-full py-2.5 px-3 pr-8 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-xs font-bold text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-amber-500 placeholder-slate-400 text-right font-mono"
+                        onKeyDown={e => {
+                          if (e.key === 'Enter') {
+                            e.preventDefault();
+                            handleAddDowntimeItem();
+                          }
+                        }}
+                      />
+                      <span className="absolute right-2.5 top-2.5 text-[10px] font-bold text-slate-400 pointer-events-none">min</span>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={handleAddDowntimeItem}
+                      disabled={!newDowntimeReason.trim() || !newDowntimeMinutes || parseInt(newDowntimeMinutes, 10) <= 0}
+                      className="px-4 py-2.5 bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 text-white text-xs font-black rounded-xl shadow-xs flex items-center gap-1.5 transition cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed disabled:pointer-events-none shrink-0"
+                    >
+                      <Plus className="h-4 w-4" />
+                      <span>Add</span>
+                    </button>
+                  </div>
+                </div>
+
+                {/* Dynamic Recorded Incidents List ("niche + hota rahe") */}
+                {downtimeList.length > 0 && (
+                  <div className="space-y-1.5 pt-2 border-t border-slate-200/60 dark:border-slate-800">
+                    <div className="flex items-center justify-between text-[10px] font-black text-slate-400 uppercase tracking-wider">
+                      <span>Logged Incidents ({downtimeList.length})</span>
+                      <span className="text-amber-600 dark:text-amber-400 font-mono">Total: {totalDowntimeMinutes} mins lost</span>
+                    </div>
+                    <div className="space-y-1.5 max-h-48 overflow-y-auto pr-1">
+                      {downtimeList.map((item, idx) => (
+                        <div
+                          key={item.id}
+                          className="flex items-center justify-between p-2 px-3 rounded-xl bg-white dark:bg-slate-800/80 border border-amber-200/50 dark:border-amber-900/30 text-xs font-bold animate-in fade-in"
+                        >
+                          <div className="flex items-center gap-2 truncate pr-2">
+                            <span className="w-5 h-5 rounded-full bg-amber-100 dark:bg-amber-950 text-amber-700 dark:text-amber-300 text-[10px] font-black flex items-center justify-center shrink-0">
+                              {idx + 1}
+                            </span>
+                            <span className="text-slate-800 dark:text-slate-100 truncate">{item.reason}</span>
+                          </div>
+                          <div className="flex items-center gap-2 shrink-0">
+                            <span className="px-2 py-0.5 rounded-full bg-amber-50 dark:bg-amber-950/60 text-amber-700 dark:text-amber-300 font-mono text-[11px] font-bold">
+                              {item.minutes} mins
+                            </span>
+                            <button
+                              type="button"
+                              onClick={() => handleRemoveDowntimeItem(item.id)}
+                              className="p-1 text-slate-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-950/50 rounded-lg transition cursor-pointer"
+                              title="Delete incident"
+                            >
+                              <X className="h-3.5 w-3.5" />
+                            </button>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              {/* General Downtime / Shift Notes (Optional) */}
               <div>
                 <label className="block text-[11px] font-black text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-1.5">
-                  Down Time Reasons / Notes
+                  General Production Notes / Remarks (Optional)
                 </label>
                 <textarea
                   rows={2}
                   value={downtimeReason}
                   onChange={e => setDowntimeReason(e.target.value)}
                   className="block w-full py-2.5 px-3.5 bg-slate-50 dark:bg-slate-900 rounded-2xl text-xs font-bold focus:outline-none focus:ring-2 focus:ring-primary dark:text-white"
-                  placeholder="Log delays or downtime incidents here (if any)"
+                  placeholder="Any other observations, wire conditions, or shift handover notes..."
                 />
               </div>
             </div>
