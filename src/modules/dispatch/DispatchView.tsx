@@ -105,13 +105,13 @@ export const DispatchView: React.FC<DispatchViewProps> = ({ initialTab = 'orders
   useEffect(() => {
     const handleDataUpdate = (e?: any) => {
       const table = e?.detail?.table;
-      if (!table || table === 'pending_orders') {
+      if (!table || table === 'order_booking' || table === 'pending_orders') {
         setOrders(getPendingOrders());
       }
-      if (!table || table === 'reels') {
+      if (!table || table === 'rewinder_production' || table === 'reels') {
         setReels(getReels());
       }
-      if (!table || table === 'packing_slips') {
+      if (!table || table === 'dispatch_receipt' || table === 'packing_slips') {
         setSlips(getPackingSlips());
       }
     };
