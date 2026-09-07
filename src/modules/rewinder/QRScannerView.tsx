@@ -26,13 +26,15 @@ import {
   Volume2,
   VolumeX,
   Tag,
+  AlertCircle,
+  AlertTriangle,
 } from 'lucide-react';
 
 interface QRScannerViewProps {
   onOpenPrintStudio?: (reel?: Reel, code?: string) => void;
 }
 
-export const QRScannerView: React.FC<QRScannerViewProps> = ({ onOpenPrintStudio }) => {
+export const QRScannerViewInner: React.FC<QRScannerViewProps> = ({ onOpenPrintStudio }) => {
   const { t } = useTranslation();
   const navigate = useNavigate();
 
@@ -50,6 +52,8 @@ export const QRScannerView: React.FC<QRScannerViewProps> = ({ onOpenPrintStudio 
   const [soundEnabled, setSoundEnabled] = useState(true);
   const [cameraError, setCameraError] = useState('');
   const [isCameraActive, setIsCameraActive] = useState(false);
+
+  // Active Html5Qrcode instance reference
   const html5QrCodeRef = useRef<Html5Qrcode | null>(null);
 
   // Manual Reel Entry Input State
@@ -79,7 +83,9 @@ export const QRScannerView: React.FC<QRScannerViewProps> = ({ onOpenPrintStudio 
   const playBeep = () => {
     if (!soundEnabled) return;
     try {
-      const audioCtx = new (window.AudioContext || (window as any).webkitAudioContext)();
+      const AudioCtxClass = window.AudioContext || (window as any).webkitAudioContext;
+      if (!AudioCtxClass) return;
+      const audioCtx = new AudioCtxClass();
       const osc = audioCtx.createOscillator();
       const gain = audioCtx.createGain();
       osc.connect(gain);
@@ -129,7 +135,9 @@ export const QRScannerView: React.FC<QRScannerViewProps> = ({ onOpenPrintStudio 
         setScanResult({ code: targetCode, type: 'BOILER' });
       }
     } else {
-      const foundReel = reelsList.find(r => r.reelNo.trim().toUpperCase() === targetCode);
+      // Re-query latest reels list to verify against latest stock
+      const freshReels = getReels();
+      const foundReel = freshReels.find(r => r.reelNo.trim().toUpperCase() === targetCode);
       if (foundReel) {
         setScanResult({ code: targetCode, type: 'REEL', reel: foundReel });
         setEditForm({
@@ -140,38 +148,83 @@ export const QRScannerView: React.FC<QRScannerViewProps> = ({ onOpenPrintStudio 
           weight: foundReel.weight,
         });
       } else {
+        // Scanned QR code exists, but no matching reel in active database
         setScanResult({ code: targetCode, type: 'REEL' });
       }
     }
   };
 
   const [cameraFacingMode, setCameraFacingMode] = useState<'environment' | 'user'>('environment');
-  const [camerasList, setCamerasList] = useState<Array<{ id: string; label: string }>>([]);
-  const [selectedCameraId, setSelectedCameraId] = useState<string>('');
+  const [, setCamerasList] = useState<Array<{ id: string; label: string }>>([]);
+  const [, setSelectedCameraId] = useState<string>('');
 
-  // Setup live camera scanner using direct Html5Qrcode instance
+  // Synchronously stop camera media tracks so camera light turns off immediately
+  const stopMediaTracks = () => {
+    try {
+      const videoEl = document.querySelector('#pure-camera-viewfinder video') as HTMLVideoElement | null;
+      if (videoEl && videoEl.srcObject) {
+        const stream = videoEl.srcObject as MediaStream;
+        stream.getTracks().forEach(track => {
+          try {
+            track.stop();
+          } catch (_) {}
+        });
+        videoEl.srcObject = null;
+      }
+    } catch (_) {}
+  };
+
+  // Safe scanner teardown that handles synchronous throws and race conditions
+  const safeStopScanner = async (scanner: Html5Qrcode | null) => {
+    stopMediaTracks();
+    if (!scanner) return;
+    try {
+      // Html5QrcodeScannerState: 2 is SCANNING, 3 is PAUSED
+      const state = scanner.getState();
+      if (state === 2 || state === 3) {
+        await scanner.stop();
+      }
+    } catch (_) {
+      // Ignore synchronous state error ("Cannot stop, scanner is not running or paused")
+    }
+
+    try {
+      scanner.clear();
+    } catch (_) {}
+  };
+
+  // Setup live camera scanner with bulletproof lifecycle management
   useEffect(() => {
     let isMounted = true;
+    let localScanner: Html5Qrcode | null = null;
 
     const startScanner = async () => {
-      if (!isScanning || scanResult) return;
+      if (!isMounted) return;
+      if (!isScanning || Boolean(scanResult)) return;
+
+      const container = document.getElementById('pure-camera-viewfinder');
+      if (!container) return;
 
       try {
         setCameraError('');
         if (html5QrCodeRef.current) {
-          try {
-            await html5QrCodeRef.current.stop();
-          } catch (_) {}
+          await safeStopScanner(html5QrCodeRef.current);
           html5QrCodeRef.current = null;
         }
 
-        const qrScanner = new Html5Qrcode('pure-camera-viewfinder');
-        html5QrCodeRef.current = qrScanner;
+        if (!isMounted) return;
+
+        localScanner = new Html5Qrcode('pure-camera-viewfinder');
+        html5QrCodeRef.current = localScanner;
 
         // Auto-detect and prioritize Back / Rear Camera
         let cameraConfig: any = { facingMode: cameraFacingMode };
         try {
           const devices = await Html5Qrcode.getCameras();
+          if (!isMounted) {
+            await safeStopScanner(localScanner);
+            return;
+          }
           if (devices && devices.length > 0) {
             setCamerasList(devices);
             if (cameraFacingMode === 'environment') {
@@ -202,11 +255,15 @@ export const QRScannerView: React.FC<QRScannerViewProps> = ({ onOpenPrintStudio 
             }
           }
         } catch (camErr) {
-          console.warn('Could not enumerate cameras, falling back to facingMode:', camErr);
           cameraConfig = { facingMode: cameraFacingMode };
         }
 
-        await qrScanner.start(
+        if (!isMounted) {
+          await safeStopScanner(localScanner);
+          return;
+        }
+
+        await localScanner.start(
           cameraConfig,
           {
             fps: 15,
@@ -214,44 +271,49 @@ export const QRScannerView: React.FC<QRScannerViewProps> = ({ onOpenPrintStudio 
             aspectRatio: 1.0,
           },
           (decodedText) => {
-            if (isMounted) {
-              processScannedCode(decodedText);
-              setIsScanning(false);
-              setIsCameraActive(false);
-              qrScanner.stop().catch(() => {});
-            }
+            if (!isMounted) return;
+            processScannedCode(decodedText);
+            setIsScanning(false);
+            setIsCameraActive(false);
+            safeStopScanner(localScanner);
           },
           () => {
-            // Scanning frame...
+            // Scanning frame tick...
           }
         );
 
         if (isMounted) {
           setIsCameraActive(true);
+        } else {
+          await safeStopScanner(localScanner);
         }
       } catch (err: any) {
-        console.warn('Camera scanner init error:', err);
         if (isMounted) {
           setIsCameraActive(false);
+          const msg = String(err?.message || err || '');
           setCameraError(
-            err?.message?.includes('Permission')
-              ? 'Camera permission required. Please allow camera access.'
-              : 'Could not start back camera. Tap Start Camera or Switch Camera.'
+            msg.toLowerCase().includes('permission')
+              ? 'Camera permission required. Please allow camera access in browser settings.'
+              : 'Could not start back camera. Tap Start Camera to retry.'
           );
         }
+        await safeStopScanner(localScanner);
       }
     };
 
-    const timer = setTimeout(startScanner, 250);
+    const timer = setTimeout(startScanner, 200);
 
     return () => {
       isMounted = false;
       clearTimeout(timer);
-      if (html5QrCodeRef.current) {
-        html5QrCodeRef.current.stop().catch(() => {});
+      stopMediaTracks();
+      const current = html5QrCodeRef.current || localScanner;
+      html5QrCodeRef.current = null;
+      if (current) {
+        safeStopScanner(current);
       }
     };
-  }, [isScanning, scanResult, cameraFacingMode]);
+  }, [isScanning, Boolean(scanResult), cameraFacingMode]);
 
   const handleToggleCameraFacing = () => {
     const nextFacing = cameraFacingMode === 'environment' ? 'user' : 'environment';
@@ -261,6 +323,7 @@ export const QRScannerView: React.FC<QRScannerViewProps> = ({ onOpenPrintStudio 
   };
 
   const handleResetScanner = () => {
+    safeStopScanner(html5QrCodeRef.current);
     setScanResult(null);
     setScanError('');
     setIsScanning(true);
@@ -347,7 +410,8 @@ export const QRScannerView: React.FC<QRScannerViewProps> = ({ onOpenPrintStudio 
       )}
 
       {/* 1. DUAL MODE: CAMERA SCANNER & MANUAL TYPE SEARCH */}
-      {!scanResult ? (
+      {/* Container is kept mounted in the DOM to avoid destroying Html5Qrcode video/canvas mid-teardown */}
+      <div className={`w-full ${scanResult ? 'hidden' : 'block'}`}>
         <div className="w-full neumorphic-card rounded-3xl p-4 sm:p-6 shadow-xl space-y-4">
           
           <div className="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-3">
@@ -371,7 +435,7 @@ export const QRScannerView: React.FC<QRScannerViewProps> = ({ onOpenPrintStudio 
           {/* Camera Viewfinder with Modern Laser Frame Overlay */}
           <div className="relative overflow-hidden rounded-2xl bg-[#090D16] shadow-2xl border border-slate-800 min-h-[260px] sm:min-h-[300px] flex items-center justify-center">
             
-            {/* HTML5 QR Code Mount */}
+            {/* HTML5 QR Code Mount - Permanently mounted */}
             <div id="pure-camera-viewfinder" className="w-full h-full min-h-[260px] z-10 flex items-center justify-center [&_video]:w-full [&_video]:h-full [&_video]:object-cover [&_video]:rounded-2xl" />
 
             {/* Error or Permission Retry Banner */}
@@ -515,20 +579,30 @@ export const QRScannerView: React.FC<QRScannerViewProps> = ({ onOpenPrintStudio 
           )}
 
         </div>
-      ) : (
-        /* 2. SCAN RESULT CARD WITH DETAILS, INLINE EDIT, & DIRECT DISPATCH */
+      </div>
+
+      {/* 2. SCAN RESULT CARD WITH DETAILS, INLINE EDIT, & DIRECT DISPATCH */}
+      {scanResult && (
         <div className="w-full bg-white dark:bg-surface-dark border-2 border-blue-500 dark:border-blue-500 rounded-3xl p-5 sm:p-6 shadow-2xl space-y-4 animate-in zoom-in-95 duration-200">
           
           <div className="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-3">
             <div className="flex items-center gap-2.5">
-              <div className="p-2 rounded-xl bg-emerald-50 dark:bg-emerald-950/50 text-emerald-600 dark:text-emerald-400">
-                <CheckCircle className="h-5 w-5" />
+              <div className={`p-2 rounded-xl ${
+                scanResult.reel
+                  ? 'bg-emerald-50 dark:bg-emerald-950/50 text-emerald-600 dark:text-emerald-400'
+                  : 'bg-amber-50 dark:bg-amber-950/50 text-amber-600 dark:text-amber-400'
+              }`}>
+                {scanResult.reel ? <CheckCircle className="h-5 w-5" /> : <AlertTriangle className="h-5 w-5" />}
               </div>
               <div>
                 <span className="font-extrabold text-sm text-slate-900 dark:text-white uppercase tracking-wider block">
-                  Reel Verified in Stock
+                  {scanResult.reel ? 'Reel Verified in Stock' : 'QR Code Scanned'}
                 </span>
-                <span className="text-[10px] text-emerald-600 font-bold">Ready for Loading Sheet</span>
+                <span className={`text-[10px] font-bold ${
+                  scanResult.reel ? 'text-emerald-600' : 'text-amber-600 dark:text-amber-400'
+                }`}>
+                  {scanResult.reel ? 'Ready for Loading Sheet' : 'Not Registered in Active Stock'}
+                </span>
               </div>
             </div>
             <button onClick={handleResetScanner} className="p-1.5 rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-400 cursor-pointer">
@@ -536,21 +610,31 @@ export const QRScannerView: React.FC<QRScannerViewProps> = ({ onOpenPrintStudio 
             </button>
           </div>
 
-          {/* Reel Header & Weight Badge */}
+          {/* Reel Header & Weight / Status Badge */}
           <div className="p-4 bg-slate-50 dark:bg-slate-900/80 rounded-2xl border border-slate-200 dark:border-slate-800 flex items-center justify-between">
             <div>
-              <span className="text-[10px] font-black uppercase text-slate-400 tracking-wider block">REEL IDENTIFIER</span>
+              <span className="text-[10px] font-black uppercase text-slate-400 tracking-wider block">
+                {scanResult.type === 'REEL' ? 'REEL / BARCODE IDENTIFIER' : `${scanResult.type} IDENTIFIER`}
+              </span>
               <span className="text-xl font-black font-mono text-blue-600 dark:text-blue-400">{scanResult.code}</span>
             </div>
             <div className="text-right">
-              <span className="text-[10px] font-black uppercase text-slate-400 tracking-wider block">NET WEIGHT</span>
-              <span className="text-xl font-black font-mono text-emerald-600 dark:text-emerald-400">
-                {scanResult.reel ? `${scanResult.reel.weight.toLocaleString()} KG` : 'N/A'}
+              <span className="text-[10px] font-black uppercase text-slate-400 tracking-wider block">
+                {scanResult.reel ? 'NET WEIGHT' : 'STOCK STATUS'}
               </span>
+              {scanResult.reel ? (
+                <span className="text-xl font-black font-mono text-emerald-600 dark:text-emerald-400">
+                  {scanResult.reel.weight.toLocaleString()} KG
+                </span>
+              ) : (
+                <span className="px-2.5 py-1 rounded-full bg-amber-100 dark:bg-amber-950/60 text-amber-700 dark:text-amber-300 text-xs font-black uppercase inline-block">
+                  Not in Stock
+                </span>
+              )}
             </div>
           </div>
 
-          {/* ITEM DETAILS SPECS GRID */}
+          {/* ITEM DETAILS SPECS GRID OR NOT REGISTERED NOTICE */}
           {scanResult.reel ? (
             isEditing ? (
               /* Inline Edit Mode */
@@ -644,8 +728,14 @@ export const QRScannerView: React.FC<QRScannerViewProps> = ({ onOpenPrintStudio 
               </div>
             )
           ) : (
-            <div className="p-4 bg-amber-50 dark:bg-amber-950/30 text-amber-800 dark:text-amber-300 rounded-2xl text-xs font-bold border border-amber-200">
-              Scanned code &quot;{scanResult.code}&quot; is not registered in active stock.
+            <div className="p-4 bg-amber-50 dark:bg-amber-950/30 text-amber-800 dark:text-amber-300 rounded-2xl text-xs space-y-1.5 border border-amber-200 dark:border-amber-900/40">
+              <div className="font-bold flex items-center gap-1.5">
+                <AlertCircle className="h-4 w-4 shrink-0 text-amber-600 dark:text-amber-400" />
+                <span>Code &quot;{scanResult.code}&quot; successfully scanned!</span>
+              </div>
+              <p className="text-[11px] text-amber-700 dark:text-amber-400 font-medium">
+                No active reel record currently matches this code in the database. You can scan another barcode, trace production logs, or check reels inventory.
+              </p>
             </div>
           )}
 
@@ -663,7 +753,7 @@ export const QRScannerView: React.FC<QRScannerViewProps> = ({ onOpenPrintStudio 
             )}
 
             {/* Print Reel QR Label Button */}
-            {onOpenPrintStudio && (
+            {onOpenPrintStudio && scanResult.reel && (
               <button
                 type="button"
                 onClick={() => onOpenPrintStudio(scanResult.reel, scanResult.code)}
@@ -693,14 +783,28 @@ export const QRScannerView: React.FC<QRScannerViewProps> = ({ onOpenPrintStudio 
                 <span>Traceability</span>
                 <ArrowRight className="h-3.5 w-3.5" />
               </button>
+
+              {!scanResult.reel && (
+                <button
+                  onClick={() => navigate('/rewinding-reel-conversion')}
+                  className="flex-1 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 text-slate-700 dark:text-slate-200 font-bold py-2.5 px-3 rounded-2xl text-xs uppercase tracking-wider transition cursor-pointer flex items-center justify-center gap-1.5 border border-slate-200 dark:border-slate-700"
+                >
+                  <span>Reel Stock</span>
+                  <ArrowRight className="h-3.5 w-3.5" />
+                </button>
+              )}
             </div>
 
             <button
               onClick={handleResetScanner}
-              className="w-full bg-slate-50 dark:bg-slate-900 text-slate-600 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white font-extrabold py-2.5 px-4 rounded-2xl text-xs uppercase tracking-wider transition cursor-pointer flex items-center justify-center gap-2"
+              className={`w-full py-3 px-4 rounded-2xl text-xs font-black uppercase tracking-wider transition cursor-pointer flex items-center justify-center gap-2 ${
+                !scanResult.reel
+                  ? 'btn-primary-gradient shadow-lg'
+                  : 'bg-slate-50 dark:bg-slate-900 text-slate-600 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white'
+              }`}
             >
               <RefreshCw className="h-3.5 w-3.5" />
-              <span>Scan Next Reel</span>
+              <span>Scan Next Reel / Barcode</span>
             </button>
           </div>
 
@@ -776,5 +880,58 @@ export const QRScannerView: React.FC<QRScannerViewProps> = ({ onOpenPrintStudio 
     </div>
   );
 };
+
+// Local Error Boundary to catch any camera hardware or browser exceptions locally
+class QRScannerErrorBoundary extends React.Component<
+  { children: React.ReactNode },
+  { hasError: boolean; errorMsg: string }
+> {
+  constructor(props: { children: React.ReactNode }) {
+    super(props);
+    this.state = { hasError: false, errorMsg: '' };
+  }
+
+  static getDerivedStateFromError(error: any) {
+    return { hasError: true, errorMsg: String(error?.message || error || 'Scanner error') };
+  }
+
+  componentDidCatch(error: any, errorInfo: any) {
+    console.warn('QRScannerErrorBoundary captured local error:', error, errorInfo);
+  }
+
+  render() {
+    if (this.state.hasError) {
+      return (
+        <div className="w-full max-w-2xl mx-auto p-4 text-center select-none font-sans">
+          <div className="p-6 sm:p-8 bg-slate-900 border border-slate-800 rounded-3xl space-y-4 shadow-2xl">
+            <div className="p-3 bg-amber-500/10 text-amber-400 rounded-2xl w-fit mx-auto">
+              <Camera className="h-8 w-8" />
+            </div>
+            <h3 className="font-black text-sm text-white uppercase tracking-wider">
+              Camera Scanner Ready to Restart
+            </h3>
+            <p className="text-xs text-slate-400 max-w-sm mx-auto">
+              Camera session was safely reset. Tap below to reconnect the scanner.
+            </p>
+            <button
+              onClick={() => this.setState({ hasError: false, errorMsg: '' })}
+              className="btn-primary-gradient px-5 py-2.5 rounded-xl text-xs font-bold uppercase tracking-wider inline-flex items-center gap-2 cursor-pointer shadow-lg"
+            >
+              <RefreshCw className="h-4 w-4" />
+              <span>Restart Camera</span>
+            </button>
+          </div>
+        </div>
+      );
+    }
+    return this.props.children;
+  }
+}
+
+export const QRScannerView: React.FC<QRScannerViewProps> = (props) => (
+  <QRScannerErrorBoundary>
+    <QRScannerViewInner {...props} />
+  </QRScannerErrorBoundary>
+);
 
 export default QRScannerView;
