@@ -9,6 +9,9 @@ interface AuthContextType {
   resetPin: (username: string, newPin: string) => Promise<boolean>;
   updateUserProfile: (updatedFields: Partial<User>) => Promise<boolean>;
   simulateWorkerLogin: (targetUsername: string) => Promise<boolean>;
+  exitSimulation: () => Promise<boolean>;
+  isSimulating: boolean;
+  simulatedBy: string | null;
   hasAccess: (module: string) => boolean;
 }
 
@@ -20,16 +23,23 @@ interface SessionData {
   token: string;
   expiresAt: number;
   user: User;
+  simulatedBy?: string;
 }
 
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
+  const [simulatedBy, setSimulatedBy] = useState<string | null>(() => {
+    return localStorage.getItem('saheb_simulated_by');
+  });
+  const isSimulating = Boolean(simulatedBy);
 
   const clearSession = () => {
     setUser(null);
+    setSimulatedBy(null);
     localStorage.removeItem('saheb_session');
     localStorage.removeItem('saheb_active_user');
+    localStorage.removeItem('saheb_simulated_by');
   };
 
   useEffect(() => {
@@ -177,18 +187,50 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
     const token = `token_sim_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`;
     const expiresAt = Date.now() + 8 * 60 * 60 * 1000;
+    const adminUsername = (user && user.role === 'Admin') ? user.username : (simulatedBy || 'admin');
 
     const session: SessionData = {
       token,
       user: targetUser,
       expiresAt,
+      simulatedBy: adminUsername,
     };
 
     localStorage.setItem('saheb_session', JSON.stringify(session));
     localStorage.setItem('saheb_active_user', JSON.stringify(targetUser));
+    localStorage.setItem('saheb_simulated_by', adminUsername);
     setUser(targetUser);
+    setSimulatedBy(adminUsername);
     window.dispatchEvent(new Event('storage'));
     addLog('Auth', 'Worker Login Simulated', `Admin simulated session for: ${targetUser.username} (${targetUser.displayName})`, 'Admin');
+    return true;
+  };
+
+  const exitSimulation = async (): Promise<boolean> => {
+    const users = getUsers();
+    const targetAdminUsername = simulatedBy || 'admin';
+    const adminUser = users.find(u => u.username.toLowerCase() === targetAdminUsername.toLowerCase())
+      || users.find(u => u.role === 'Admin')
+      || users[0];
+
+    if (!adminUser) return false;
+
+    const token = `token_admin_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`;
+    const expiresAt = Date.now() + 8 * 60 * 60 * 1000;
+
+    const session: SessionData = {
+      token,
+      user: adminUser,
+      expiresAt,
+    };
+
+    localStorage.setItem('saheb_session', JSON.stringify(session));
+    localStorage.setItem('saheb_active_user', JSON.stringify(adminUser));
+    localStorage.removeItem('saheb_simulated_by');
+    setUser(adminUser);
+    setSimulatedBy(null);
+    window.dispatchEvent(new Event('storage'));
+    addLog('Auth', 'Simulation Exited', `Restored session for Admin: ${adminUser.username}`, 'Admin');
     return true;
   };
 
@@ -259,7 +301,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   }
 
   return (
-    <AuthContext.Provider value={{ user, login, logout, resetPin, updateUserProfile, simulateWorkerLogin, hasAccess }}>
+    <AuthContext.Provider value={{ user, login, logout, resetPin, updateUserProfile, simulateWorkerLogin, exitSimulation, isSimulating, simulatedBy, hasAccess }}>
       {children}
     </AuthContext.Provider>
   );

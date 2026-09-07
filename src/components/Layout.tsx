@@ -25,6 +25,7 @@ import {
   X,
   ChevronDown,
   User,
+  UserCheck,
   Shield,
   Flame,
   Droplet,
@@ -53,7 +54,7 @@ interface LayoutProps {
 }
 
 export const Layout: React.FC<LayoutProps> = ({ children }) => {
-  const { user, logout, hasAccess, updateUserProfile } = useAuth();
+  const { user, logout, hasAccess, updateUserProfile, isSimulating, exitSimulation } = useAuth();
   const { t, i18n } = useTranslation();
   const navigate = useNavigate();
   const location = useLocation();
@@ -492,6 +493,40 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
 
   return (
     <div className="min-h-screen bg-bg-light dark:bg-bg-dark text-text-light-primary dark:text-slate-100 flex flex-col transition-colors duration-200">
+
+      {/* Simulation Banner - Displays whenever Admin is simulating a worker */}
+      {isSimulating && (
+        <div className={`sticky top-0 z-50 bg-gradient-to-r from-blue-600 via-indigo-600 to-blue-700 text-white px-3 sm:px-5 py-2 text-xs font-bold flex items-center justify-between shadow-lg backdrop-blur-md transition-all ${
+          user ? 'md:ml-[268px] md:w-[calc(100%-268px)]' : 'w-full'
+        }`}>
+          <div className="flex items-center gap-2.5 min-w-0">
+            <span className="flex h-2.5 w-2.5 relative shrink-0">
+              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-amber-400 opacity-75"></span>
+              <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-amber-300"></span>
+            </span>
+            <span className="font-extrabold tracking-wider uppercase text-[10px] bg-white/20 px-2 py-0.5 rounded-full shrink-0">
+              Simulating
+            </span>
+            <span className="truncate text-slate-100 text-xs font-semibold hidden sm:inline">
+              Viewing as: <strong className="text-white font-bold">{user?.displayName}</strong> ({user?.designation || user?.role}) &bull; Active permissions applied
+            </span>
+            <span className="truncate text-slate-100 text-xs font-semibold sm:hidden">
+              Worker: <strong className="text-white font-bold">{user?.displayName}</strong>
+            </span>
+          </div>
+
+          <button
+            onClick={async () => {
+              await exitSimulation();
+              navigate('/profile?tab=roles');
+            }}
+            className="ml-3 px-3.5 py-1 rounded-xl bg-white text-blue-700 hover:bg-blue-50 text-xs font-black shadow-md transition active:scale-95 cursor-pointer shrink-0 flex items-center gap-1.5"
+          >
+            <UserCheck className="h-3.5 w-3.5 text-blue-600" />
+            <span>Exit Simulation</span>
+          </button>
+        </div>
+      )}
 
       {/* 1. Header (Common across all sizes) - Seamless background matching page without white partition bar */}
       <header className={`sticky top-0 z-30 bg-bg-light/95 dark:bg-bg-dark/95 text-slate-900 dark:text-white backdrop-blur-md h-14 sm:h-16 flex items-center justify-between px-3 sm:px-4 lg:px-6 transition-all duration-300 w-full max-w-full ${user ? 'md:ml-[268px] md:w-[calc(100%-268px)]' : 'w-full'

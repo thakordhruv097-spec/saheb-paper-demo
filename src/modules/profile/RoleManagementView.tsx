@@ -1,4 +1,5 @@
 import React, { useState, useMemo, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../auth/AuthContext';
 import { getUsers, updateUserModules } from '../../data/index';
 import type { User, ModuleDefinition } from '../../data/types';
@@ -42,10 +43,63 @@ const isModuleActive = (user: User, moduleKey: string): boolean => {
   return activeModules.includes(moduleKey);
 };
 
+const getFirstAccessibleRoute = (targetUser: User): string => {
+  const modules = targetUser.customModules || [];
+  if (modules.includes('dashboard') || targetUser.role === 'Admin') return '/';
+  if (modules.includes('raw_material_stock')) return '/raw-material-stock';
+  if (modules.includes('pulp_mill_operations')) return '/pulp-mill-operations';
+  if (modules.includes('machine_production')) return '/machine-production';
+  if (modules.includes('rewinding_reel_conversion')) return '/rewinding-reel-conversion';
+  if (modules.includes('lab')) return '/lab';
+  if (modules.includes('boiler')) return '/utilities-&-etp/boiler-operations';
+  if (modules.includes('etp') || modules.includes('etp_chemicals')) return '/utilities-&-etp/etp-water-&-chemicals';
+  if (modules.includes('electricity')) return '/utilities-&-etp/electricity-&-power-grid';
+  if (modules.includes('orders')) return '/orders';
+  if (modules.includes('finished_stock_dispatch')) return '/stock-categorization';
+  if (modules.includes('dispatch') || modules.includes('dispatch_receipt')) return '/dispatch-receipt/draft-packing-slip';
+  if (modules.includes('spareparts_management')) return '/spareparts-management';
+  if (modules.includes('monthly_yearly_reporting')) return '/monthly-yearly-reporting';
+  return '/';
+};
+
 export const RoleManagementView: React.FC = () => {
-  const { user: currentUser, simulateWorkerLogin, updateUserProfile } = useAuth();
+  const { user: currentUser, simulateWorkerLogin, exitSimulation, isSimulating, updateUserProfile } = useAuth();
+  const navigate = useNavigate();
 
   if (currentUser?.role !== 'Admin') {
+    if (isSimulating) {
+      return (
+        <div className="p-8 text-center bg-white dark:bg-[#131d38] rounded-3xl border border-amber-300 dark:border-amber-600/50 space-y-4 shadow-sm max-w-xl mx-auto my-8">
+          <div className="w-12 h-12 rounded-2xl bg-amber-100 dark:bg-amber-950/60 text-amber-600 dark:text-amber-400 mx-auto flex items-center justify-center">
+            <Zap className="h-6 w-6" />
+          </div>
+          <h3 className="text-lg font-black text-slate-900 dark:text-white">Active Worker Simulation</h3>
+          <p className="text-xs text-slate-500 dark:text-slate-400 font-medium max-w-md mx-auto">
+            You are currently simulating <strong>{currentUser?.displayName}</strong> ({currentUser?.designation || currentUser?.role}).
+            Role management is only accessible in Admin mode.
+          </p>
+          <div className="flex items-center justify-center gap-3 pt-2">
+            <button
+              onClick={async () => {
+                await exitSimulation();
+                navigate('/profile?tab=roles');
+              }}
+              className="px-5 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold transition shadow-sm cursor-pointer flex items-center gap-2"
+            >
+              <UserCheck className="h-4 w-4" />
+              <span>Exit Simulation &amp; Return to Admin</span>
+            </button>
+            <button
+              onClick={() => navigate('/')}
+              className="px-4 py-2.5 rounded-xl bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 text-xs font-bold transition cursor-pointer"
+            >
+              Go to Dashboard
+            </button>
+          </div>
+        </div>
+      );
+    }
+
     return (
       <div className="p-8 text-center bg-white dark:bg-slate-900 rounded-3xl border border-red-200 dark:border-red-800 space-y-3">
         <div className="w-12 h-12 rounded-2xl bg-red-100 dark:bg-red-950/50 text-red-600 dark:text-red-400 mx-auto flex items-center justify-center">
@@ -132,14 +186,21 @@ export const RoleManagementView: React.FC = () => {
   };
 
   const handleSimulateLogin = async (targetUser: User) => {
-    if (currentUser?.username === targetUser.username) {
-      triggerToast(`Currently logged in as ${targetUser.displayName}`);
+    if (currentUser?.username.toLowerCase() === targetUser.username.toLowerCase()) {
+      if (isSimulating) {
+        await exitSimulation();
+        triggerToast(`Exited simulation. Restored Admin session.`);
+      } else {
+        triggerToast(`Currently active as ${targetUser.displayName}`);
+      }
       return;
     }
 
     const success = await simulateWorkerLogin(targetUser.username);
     if (success) {
       triggerToast(`Simulating active worker session: ${targetUser.displayName} (${targetUser.designation || targetUser.role})`);
+      const targetRoute = getFirstAccessibleRoute(targetUser);
+      navigate(targetRoute);
     }
   };
 
@@ -254,15 +315,22 @@ export const RoleManagementView: React.FC = () => {
                   <button
                     onClick={() => handleSimulateLogin(u)}
                     className={`px-4 py-2 rounded-[14px] text-xs font-bold transition cursor-pointer flex items-center gap-1.5 active:scale-95 ${
-                      isCurrent
+                      isCurrent && isSimulating
+                        ? 'bg-amber-500 hover:bg-amber-600 text-white shadow-[2px_2px_8px_rgba(245,158,11,0.35)]'
+                        : isCurrent
                         ? 'bg-[#F4F7FC] dark:bg-slate-800 text-slate-400 dark:text-slate-500 cursor-default'
                         : 'bg-[#2563EB] hover:bg-[#1D4ED8] text-white shadow-[2px_2px_8px_rgba(37,99,235,0.35)]'
                     }`}
                   >
-                    {isCurrent ? (
+                    {isCurrent && isSimulating ? (
+                      <>
+                        <UserCheck className="h-3.5 w-3.5 text-white" />
+                        <span>Exit Simulation</span>
+                      </>
+                    ) : isCurrent ? (
                       <>
                         <UserCheck className="h-3.5 w-3.5 text-[#2563EB] dark:text-blue-400" />
-                        <span>Simulating Current User</span>
+                        <span>Current Admin</span>
                       </>
                     ) : (
                       <>
