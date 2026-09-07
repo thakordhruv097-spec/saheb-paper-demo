@@ -37,7 +37,6 @@ import {
   Bell,
   FlaskConical,
   Layers,
-  ArrowLeft,
   Eye,
   EyeOff,
   CheckCircle2,
@@ -492,55 +491,43 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
         } ${showHeader ? 'translate-y-0 opacity-100' : '-translate-y-full opacity-0 pointer-events-none'
         }`}>
 
-        {/* Left Side Logo & Back Navigation */}
+        {/* Left Side Logo & Navigation */}
         <div className="flex items-center gap-2 sm:gap-3 shrink-0 min-w-0">
-          {location.pathname !== '/' ? (
+          {(user?.role === 'Admin' || user?.role === 'Management') && (
             <button
-              onClick={() => navigate(-1)}
-              className="p-2 rounded-2xl bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-700 text-slate-700 dark:text-white transition flex items-center gap-1.5 cursor-pointer shadow-[3px_3px_8px_rgba(163,163,196,0.18),-3px_-3px_8px_rgba(255,255,255,0.95)] dark:shadow-none"
-              title="Navigate Back"
+              onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+              className="p-2 rounded-2xl bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-700 text-slate-700 dark:text-white md:hidden transition shadow-[3px_3px_8px_rgba(163,163,196,0.18),-3px_-3px_8px_rgba(255,255,255,0.95)] dark:shadow-none shrink-0 cursor-pointer"
+              aria-label="Toggle Menu"
             >
-              <ArrowLeft className="h-4.5 w-4.5" />
-              <span className="text-xs font-bold hidden xs:inline">Back</span>
-            </button>
-          ) : (
-            <>
-              {(user?.role === 'Admin' || user?.role === 'Management') && (
-                <button
-                  onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-                  className="p-2 rounded-2xl bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-700 text-slate-700 dark:text-white md:hidden transition shadow-[3px_3px_8px_rgba(163,163,196,0.18),-3px_-3px_8px_rgba(255,255,255,0.95)] dark:shadow-none shrink-0"
-                >
-                  {mobileMenuOpen ? (
-                    <X className="h-5 w-5" />
-                  ) : (
-                    <svg className="h-5 w-5 text-[#6C4FE0] dark:text-purple-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                      <line x1="3" y1="6" x2="21" y2="6" />
-                      <line x1="3" y1="12" x2="15" y2="12" />
-                      <line x1="3" y1="18" x2="9" y2="18" />
-                    </svg>
-                  )}
-                </button>
+              {mobileMenuOpen ? (
+                <X className="h-5 w-5" />
+              ) : (
+                <svg className="h-5 w-5 text-[#6C4FE0] dark:text-purple-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                  <line x1="3" y1="6" x2="21" y2="6" />
+                  <line x1="3" y1="12" x2="15" y2="12" />
+                  <line x1="3" y1="18" x2="9" y2="18" />
+                </svg>
               )}
-
-              {/* Mobile Only Header Logo */}
-              <div className="flex md:hidden items-center gap-2.5 cursor-pointer group select-none min-w-0" onClick={() => navigate('/')}>
-                <img src={`${import.meta.env.BASE_URL}logo.png`} alt="Saheb Paper Logo" className="h-8 w-8 object-contain rounded-xl shadow-xs border border-slate-200 dark:border-slate-700 bg-white p-0.5 shrink-0" />
-                <div className="min-w-0">
-                  <div className="flex items-center gap-1.5">
-                    <span className="text-xs sm:text-sm font-black text-slate-900 dark:text-white leading-none tracking-tight truncate font-heading">
-                      Saheb Paper Pvt. Ltd.
-                    </span>
-                    <span className="px-1.5 py-0.2 rounded-full bg-[#EDE9FE] dark:bg-purple-950/60 text-[#6C4FE0] dark:text-purple-300 text-[8px] font-black uppercase shrink-0">
-                      ERP
-                    </span>
-                  </div>
-                  <p className="text-[9px] text-slate-500 dark:text-slate-400 font-medium tracking-tight truncate mt-0.5">
-                    Paper Mill Management System
-                  </p>
-                </div>
-              </div>
-            </>
+            </button>
           )}
+
+          {/* Mobile Only Header Logo */}
+          <div className="flex md:hidden items-center gap-2.5 cursor-pointer group select-none min-w-0" onClick={() => navigate('/')}>
+            <img src={`${import.meta.env.BASE_URL}logo.png`} alt="Saheb Paper Logo" className="h-8 w-8 object-contain rounded-xl shadow-xs border border-slate-200 dark:border-slate-700 bg-white p-0.5 shrink-0" />
+            <div className="min-w-0">
+              <div className="flex items-center gap-1.5">
+                <span className="text-xs sm:text-sm font-black text-slate-900 dark:text-white leading-none tracking-tight truncate font-heading">
+                  Saheb Paper Pvt. Ltd.
+                </span>
+                <span className="px-1.5 py-0.2 rounded-full bg-[#EDE9FE] dark:bg-purple-950/60 text-[#6C4FE0] dark:text-purple-300 text-[8px] font-black uppercase shrink-0">
+                  ERP
+                </span>
+              </div>
+              <p className="text-[9px] text-slate-500 dark:text-slate-400 font-medium tracking-tight truncate mt-0.5">
+                Paper Mill Management System
+              </p>
+            </div>
+          </div>
         </div>
 
         {/* Right Side Header Controls - Matching exact reference image */}
