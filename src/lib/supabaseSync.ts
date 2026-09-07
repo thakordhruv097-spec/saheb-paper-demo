@@ -554,6 +554,7 @@ export async function syncTableFromCloud(tableName: string): Promise<void> {
           setLocal(KEYS.USERS, data.map(userFromDb));
           notifyChange(tableName);
           break;
+        case 'raw_material_stock':
         case 'raw_materials':
           setLocal(KEYS.RAW_MATERIALS, data.map(rawMaterialFromDb));
           notifyChange(tableName);
@@ -573,66 +574,85 @@ export async function syncTableFromCloud(tableName: string): Promise<void> {
         case 'vendors':
           setLocal(KEYS.VENDORS, data.map(vendorFromDb));
           notifyChange(tableName);
-        break;
-      case 'vehicles':
-        setLocal(KEYS.VEHICLES, data.map(vehicleFromDb));
-        notifyChange(tableName);
-        break;
-      case 'pulp_formulas':
-        setLocal(KEYS.FORMULAS, data.map(formulaFromDb));
-        notifyChange(tableName);
-        break;
-      case 'machine_rolls':
-        setLocal(KEYS.ROLLS, data.map(machineRollFromDb));
-        notifyChange(tableName);
-        break;
-      case 'reels':
-        setLocal(KEYS.REELS, data.map(reelFromDb));
-        notifyChange(tableName);
-        break;
-      case 'transaction_logs':
-        setLocal(KEYS.LOGS, data.map(logFromDb));
-        notifyChange(tableName);
-        break;
-      case 'boiler_logs':
-        setLocal(KEYS.BOILER_LOGS, data.map(boilerLogFromDb));
-        notifyChange(tableName);
-        break;
-      case 'etp_logs':
-        setLocal(KEYS.ETP_LOGS, data.map(etpLogFromDb));
-        notifyChange(tableName);
-        break;
-      case 'electricity_logs':
-        setLocal(KEYS.ELECTRICITY_LOGS, data.map(electricityLogFromDb));
-        notifyChange(tableName);
-        break;
-      case 'pending_orders':
-        setLocal(KEYS.PENDING_ORDERS, data.map(pendingOrderFromDb));
-        notifyChange(tableName);
-        break;
-      case 'packing_slips':
-        setLocal(KEYS.PACKING_SLIPS, data.map(packingSlipFromDb));
-        notifyChange(tableName);
-        break;
-      case 'store_items':
-        setLocal(KEYS.STORE_ITEMS, data.map(storeItemFromDb));
-        notifyChange(tableName);
-        break;
-      case 'paper_test_reports':
-        setLocal(KEYS.LAB_REPORTS, data.map(labReportFromDb));
-        notifyChange(tableName);
-        break;
+          break;
+        case 'vehicles':
+          setLocal(KEYS.VEHICLES, data.map(vehicleFromDb));
+          notifyChange(tableName);
+          break;
+        case 'pulp_mill_operations':
+        case 'pulp_formulas':
+          setLocal(KEYS.FORMULAS, data.map(formulaFromDb));
+          notifyChange(tableName);
+          break;
+        case 'machine_production':
+        case 'machine_rolls':
+          setLocal(KEYS.ROLLS, data.map(machineRollFromDb));
+          notifyChange(tableName);
+          break;
+        case 'rewinder_production':
+        case 'reels':
+          setLocal(KEYS.REELS, data.map(reelFromDb));
+          notifyChange(tableName);
+          break;
+        case 'transaction_logs':
+          setLocal(KEYS.LOGS, data.map(logFromDb));
+          notifyChange(tableName);
+          break;
+        case 'boiler_operations':
+        case 'boiler_logs':
+          setLocal(KEYS.BOILER_LOGS, data.map(boilerLogFromDb));
+          notifyChange(tableName);
+          break;
+        case 'etp_operations':
+        case 'etp_logs':
+          setLocal(KEYS.ETP_LOGS, data.map(etpLogFromDb));
+          notifyChange(tableName);
+          break;
+        case 'power_grid_operations':
+        case 'electricity_logs':
+          setLocal(KEYS.ELECTRICITY_LOGS, data.map(electricityLogFromDb));
+          notifyChange(tableName);
+          break;
+        case 'order_booking':
+        case 'pending_orders':
+          setLocal(KEYS.PENDING_ORDERS, data.map(pendingOrderFromDb));
+          notifyChange(tableName);
+          break;
+        case 'dispatch_receipt':
+        case 'packing_slips':
+          setLocal(KEYS.PACKING_SLIPS, data.map(packingSlipFromDb));
+          notifyChange(tableName);
+          break;
+        case 'spares_store':
+        case 'store_items':
+          setLocal(KEYS.STORE_ITEMS, data.map(storeItemFromDb));
+          notifyChange(tableName);
+          break;
+        case 'lab_quality_control':
+        case 'paper_test_reports':
+          setLocal(KEYS.LAB_REPORTS, data.map(labReportFromDb));
+          notifyChange(tableName);
+          break;
       }
     } else if (data && data.length === 0) {
       const operationalTableKeys: Record<string, string> = {
+        machine_production: KEYS.ROLLS,
         machine_rolls: KEYS.ROLLS,
+        rewinder_production: KEYS.REELS,
         reels: KEYS.REELS,
+        order_booking: KEYS.PENDING_ORDERS,
         pending_orders: KEYS.PENDING_ORDERS,
+        dispatch_receipt: KEYS.PACKING_SLIPS,
         packing_slips: KEYS.PACKING_SLIPS,
+        pulp_mill_operations: KEYS.FORMULAS,
         pulp_formulas: KEYS.FORMULAS,
+        boiler_operations: KEYS.BOILER_LOGS,
         boiler_logs: KEYS.BOILER_LOGS,
+        etp_operations: KEYS.ETP_LOGS,
         etp_logs: KEYS.ETP_LOGS,
+        power_grid_operations: KEYS.ELECTRICITY_LOGS,
         electricity_logs: KEYS.ELECTRICITY_LOGS,
+        lab_quality_control: KEYS.LAB_REPORTS,
         paper_test_reports: KEYS.LAB_REPORTS,
         raw_material_lots: KEYS.RAW_MATERIAL_LOTS,
         transaction_logs: KEYS.LOGS,
@@ -660,9 +680,10 @@ export async function pushLocalTableToCloud(tableName: string): Promise<void> {
         if (local.length > 0) await pushUpsertToCloud('users', local.map(userToDb));
         break;
       }
+      case 'raw_material_stock':
       case 'raw_materials': {
         const local = getLocal<RawMaterialItem[]>(KEYS.RAW_MATERIALS, []);
-        if (local.length > 0) await pushUpsertToCloud('raw_materials', local.map(rawMaterialToDb));
+        if (local.length > 0) await pushUpsertToCloud('raw_material_stock', local.map(rawMaterialToDb));
         break;
       }
       case 'products': {
@@ -685,9 +706,10 @@ export async function pushLocalTableToCloud(tableName: string): Promise<void> {
         if (local.length > 0) await pushUpsertToCloud('vehicles', local.map(vehicleToDb));
         break;
       }
+      case 'spares_store':
       case 'store_items': {
         const local = getLocal<StoreItem[]>(KEYS.STORE_ITEMS, []);
-        if (local.length > 0) await pushUpsertToCloud('store_items', local.map(storeItemToDb));
+        if (local.length > 0) await pushUpsertToCloud('spares_store', local.map(storeItemToDb));
         break;
       }
     }
@@ -737,23 +759,23 @@ export async function initSupabaseSync(): Promise<void> {
 
   const tables = [
     'users',
-    'raw_materials',
+    'raw_material_stock',
     'raw_material_lots',
     'products',
     'parties',
     'vendors',
     'vehicles',
-    'pulp_formulas',
-    'machine_rolls',
-    'reels',
+    'pulp_mill_operations',
+    'machine_production',
+    'rewinder_production',
     'transaction_logs',
-    'boiler_logs',
-    'etp_logs',
-    'electricity_logs',
-    'pending_orders',
-    'packing_slips',
-    'store_items',
-    'paper_test_reports',
+    'boiler_operations',
+    'etp_operations',
+    'power_grid_operations',
+    'order_booking',
+    'dispatch_receipt',
+    'spares_store',
+    'lab_quality_control',
   ];
 
   // 1. Initial parallel fetch from cloud
