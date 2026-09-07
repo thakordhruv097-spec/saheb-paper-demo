@@ -353,8 +353,8 @@ export function initializeStorage() {
     console.error(e);
   }
 
-  // Operational data clean reset: ensure browser cache is cleared of demo records
-  if (!localStorage.getItem('saheb_operational_cleared_v1')) {
+  // Operational data clean reset: ensure browser cache is cleared of test/demo records
+  if (!localStorage.getItem('saheb_operational_cleared_v2')) {
     setJSON(KEYS.FORMULAS, []);
     setJSON(KEYS.ROLLS, []);
     setJSON(KEYS.REELS, []);
@@ -366,7 +366,7 @@ export function initializeStorage() {
     setJSON(KEYS.PACKING_SLIPS, []);
     setJSON(KEYS.RAW_MATERIAL_LOTS, []);
     setJSON(KEYS.LAB_REPORTS, []);
-    localStorage.setItem('saheb_operational_cleared_v1', 'true');
+    localStorage.setItem('saheb_operational_cleared_v2', 'true');
   }
 }
 
