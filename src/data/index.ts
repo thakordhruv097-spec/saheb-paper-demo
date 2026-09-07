@@ -354,7 +354,7 @@ export function initializeStorage() {
   }
 
   // Operational data clean reset: ensure browser cache is cleared of test/demo records
-  if (!localStorage.getItem('saheb_operational_cleared_v4')) {
+  if (!localStorage.getItem('saheb_operational_cleared_v5')) {
     setJSON(KEYS.FORMULAS, []);
     setJSON(KEYS.ROLLS, []);
     setJSON(KEYS.REELS, []);
@@ -374,7 +374,7 @@ export function initializeStorage() {
     if (stores.length > 0) {
       setJSON(KEYS.STORE_ITEMS, stores.map(s => ({ ...s, pcs: 0 })));
     }
-    localStorage.setItem('saheb_operational_cleared_v4', 'true');
+    localStorage.setItem('saheb_operational_cleared_v5', 'true');
   }
 }
 
@@ -1598,177 +1598,7 @@ export function deleteVehicle(id: string): void {
 
 // --- LAB QUALITY REPORTS ---
 export function getLabReports(): PaperTestReport[] {
-  const reports = getJSON<PaperTestReport[]>(KEYS.LAB_REPORTS, []);
-  let updated = false;
-
-  if (reports.length === 0) {
-    // Default seed matching Sahab Paper Limited Paper Test Report (Roll No 11, Napkin)
-    const defaultReport: PaperTestReport = {
-      id: 'PTR-20260803-11',
-      product: 'NAPKIN',
-      rollNo: '11',
-      shift: 'A',
-      date: '2026-08-03',
-      time: '07:50',
-      targetGsm: 16,
-      weight: 500,
-      speed: 130,
-      crepingPct: 18.00,
-      gsmSamples: [16.1, 16.6, 16.5, 16.7, 16.9, 17.1, 16.5, 16.6, 16.4, 16.4, 16.6, 16.3, 16.1, 16.1],
-      avgGsm: 16.5,
-      maxGsm: 17.1,
-      minGsm: 16.1,
-      rangeGsm: 1.00,
-      breakageCount: 0,
-      labResultGsm: 16.5,
-      moisturePct: 5.60,
-      caliperMm: 80,
-      bulkCcGm: 4.85,
-      breakingLengthMd: 1.867,
-      breakingLengthCd: 0.701,
-      brightnessPct: 81.4,
-      tearMd: 8.00,
-      tearCd: 1.80,
-      tensileDryMd: 302.20,
-      tensileDryCd: 113.47,
-      stretchDryMd: 2.70,
-      stretchDryCd: 1.60,
-      qcStatus: 'GRADE_A',
-      remarks: 'Sample meets all physical strength, moisture & GSM quality benchmarks.',
-      inspector: 'lab_operator',
-      timestamp: '2026-08-03 07:55',
-    };
-    reports.push(defaultReport);
-    updated = true;
-  }
-
-  // Ensure certified Grade-A Lab Quality Control Report for roll #R-20260822-0001 exists
-  if (!reports.some(r => r.rollNo === 'R-20260822-0001')) {
-    const rollReport2026: PaperTestReport = {
-      id: 'PTR-20260822-R-20260822-0001',
-      product: 'NAPKIN TISSUE',
-      rollNo: 'R-20260822-0001',
-      shift: 'A',
-      date: '2026-08-22',
-      time: '08:15',
-      targetGsm: 18,
-      weight: 4850,
-      speed: 135,
-      crepingPct: 18.50,
-      gsmSamples: [17.9, 18.1, 18.0, 18.2, 17.8, 18.1, 18.0, 18.3, 17.9, 18.0, 18.1, 18.0, 17.9, 18.1],
-      avgGsm: 18.0,
-      maxGsm: 18.3,
-      minGsm: 17.8,
-      rangeGsm: 0.50,
-      breakageCount: 0,
-      labResultGsm: 18.0,
-      moisturePct: 5.50,
-      caliperMm: 85,
-      bulkCcGm: 4.90,
-      breakingLengthMd: 1.910,
-      breakingLengthCd: 0.725,
-      brightnessPct: 85.5,
-      tearMd: 8.50,
-      tearCd: 1.95,
-      tensileDryMd: 310.00,
-      tensileDryCd: 118.50,
-      stretchDryMd: 2.80,
-      stretchDryCd: 1.70,
-      qcStatus: 'GRADE_A',
-      remarks: 'Sample tested on 2026-08-22. Exceeds tensile strength, moisture balance, brightness (85.5%) & 18 GSM quality standards with Grade-A clearance.',
-      inspector: 'Rajesh Sharma (Lead QC Chemist)',
-      timestamp: '2026-08-22 08:30',
-    };
-    reports.unshift(rollReport2026);
-    updated = true;
-  }
-
-  // Ensure certified Grade-A Lab Quality Control Report for roll #R-20260812-0001 exists
-  if (!reports.some(r => r.rollNo === 'R-20260812-0001')) {
-    const rollReport1: PaperTestReport = {
-      id: 'PTR-20260812-R-20260812-0001',
-      product: 'NAPKIN TISSUE',
-      rollNo: 'R-20260812-0001',
-      shift: 'A',
-      date: '2026-08-12',
-      time: '07:30',
-      targetGsm: 16,
-      weight: 4500,
-      speed: 135,
-      crepingPct: 18.00,
-      gsmSamples: [15.9, 16.1, 16.0, 16.2, 15.8, 16.1, 16.0, 16.3, 15.9, 16.0, 16.1, 16.0, 15.9, 16.1],
-      avgGsm: 16.0,
-      maxGsm: 16.3,
-      minGsm: 15.8,
-      rangeGsm: 0.50,
-      breakageCount: 0,
-      labResultGsm: 16.0,
-      moisturePct: 5.40,
-      caliperMm: 82,
-      bulkCcGm: 4.85,
-      breakingLengthMd: 1.880,
-      breakingLengthCd: 0.710,
-      brightnessPct: 82.5,
-      tearMd: 8.20,
-      tearCd: 1.85,
-      tensileDryMd: 305.50,
-      tensileDryCd: 115.20,
-      stretchDryMd: 2.75,
-      stretchDryCd: 1.65,
-      qcStatus: 'GRADE_A',
-      remarks: 'Sample passed all physical strength, moisture & 16 GSM quality benchmarks with Grade-A clearance.',
-      inspector: 'Lab Quality Specialist',
-      timestamp: '2026-08-12 07:45',
-    };
-    reports.unshift(rollReport1);
-    updated = true;
-  }
-
-  // Ensure certified Grade-A Lab Quality Control Report for roll #R-20260812-0002 exists
-  if (!reports.some(r => r.rollNo === 'R-20260812-0002')) {
-    const rollReport: PaperTestReport = {
-      id: 'PTR-20260812-R-20260812-0002',
-      product: 'NAPKIN TISSUE',
-      rollNo: 'R-20260812-0002',
-      shift: 'A',
-      date: '2026-08-12',
-      time: '08:30',
-      targetGsm: 18,
-      weight: 5000,
-      speed: 140,
-      crepingPct: 18.50,
-      gsmSamples: [17.9, 18.1, 18.0, 18.2, 17.8, 18.1, 18.0, 18.3, 17.9, 18.0, 18.1, 18.0, 17.9, 18.1],
-      avgGsm: 18.0,
-      maxGsm: 18.3,
-      minGsm: 17.8,
-      rangeGsm: 0.50,
-      breakageCount: 0,
-      labResultGsm: 18.0,
-      moisturePct: 5.40,
-      caliperMm: 82,
-      bulkCcGm: 4.90,
-      breakingLengthMd: 1.910,
-      breakingLengthCd: 0.725,
-      brightnessPct: 82.5,
-      tearMd: 8.20,
-      tearCd: 1.85,
-      tensileDryMd: 310.50,
-      tensileDryCd: 118.20,
-      stretchDryMd: 2.80,
-      stretchDryCd: 1.65,
-      qcStatus: 'GRADE_A',
-      remarks: 'Sample passed all physical strength, moisture & 18 GSM quality benchmarks with Grade-A clearance.',
-      inspector: 'Lab Quality Specialist',
-      timestamp: '2026-08-12 08:45',
-    };
-    reports.unshift(rollReport);
-    updated = true;
-  }
-
-  if (updated) {
-    setJSON(KEYS.LAB_REPORTS, reports);
-  }
-  return reports;
+  return getJSON<PaperTestReport[]>(KEYS.LAB_REPORTS, []);
 }
 
 export function saveLabReport(report: PaperTestReport, user: string): PaperTestReport {

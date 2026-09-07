@@ -42,6 +42,23 @@ export const LabView: React.FC = () => {
 
   useBodyScrollLock(isModalOpen || !!selectedReportForView);
 
+  // Real-time listener: instant UI update whenever Supabase syncs new lab reports
+  useEffect(() => {
+    const handleDataUpdate = (e?: any) => {
+      const table = e?.detail?.table;
+      if (!table || table === 'lab_quality_control' || table === 'paper_test_reports') {
+        setReports(getLabReports());
+      }
+    };
+
+    window.addEventListener('saheb_data_updated', handleDataUpdate);
+    window.addEventListener('storage', handleDataUpdate);
+    return () => {
+      window.removeEventListener('saheb_data_updated', handleDataUpdate);
+      window.removeEventListener('storage', handleDataUpdate);
+    };
+  }, []);
+
   // Filter states for lab reports history
   const [labDateFrom, setLabDateFrom] = useState('');
   const [labDateTo, setLabDateTo] = useState('');
