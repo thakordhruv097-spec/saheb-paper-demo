@@ -92,9 +92,18 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const login = async (username: string, pin: string): Promise<boolean> => {
     const users = getUsers();
-    const foundUser = users.find(
-      u => u.username.toLowerCase() === username.toLowerCase() && u.pin === pin
-    );
+    const cleanUser = username.trim().toLowerCase();
+    const cleanPin = pin.trim();
+    const foundUser = users.find(u => {
+      const uName = u.username.toLowerCase();
+      const matchName =
+        uName === cleanUser ||
+        (cleanUser === 'shop' && (uName === 'shopper' || u.role === 'Shopper')) ||
+        (cleanUser === 'shopper' && (uName === 'shop' || u.role === 'Shopper')) ||
+        (cleanUser === 'pulper' && (uName === 'pulper' || u.role === 'LabOperator')) ||
+        (cleanUser === 'lab_operator' && (uName === 'pulper' || u.role === 'LabOperator'));
+      return matchName && u.pin.trim() === cleanPin;
+    });
 
     if (foundUser) {
       if (foundUser.active === false) {

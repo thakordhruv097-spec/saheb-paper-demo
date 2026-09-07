@@ -89,7 +89,7 @@ const DEFAULT_USERS: User[] = [
     role: 'Admin',
     roles: ['Admin'],
     pin: '1234',
-    displayName: 'Rajesh Sharma',
+    displayName: 'Rajesh Sharma (Admin)',
     email: 'admin@sahebpaper.com',
     phone: '9876543210',
     securityQuestion: 'What is your favorite color?',
@@ -102,80 +102,74 @@ const DEFAULT_USERS: User[] = [
     ]
   },
   {
-    username: 'plant_manager',
-    role: 'PlantManager',
-    roles: ['PlantManager'],
-    pin: '1111',
-    displayName: 'Anil Verma',
-    email: 'manager@sahebpaper.com',
-    phone: '9876543219',
-    securityQuestion: 'What is your favorite color?',
-    securityAnswer: 'blue',
-    empId: 'EMP-002',
-    designation: 'Plant Manager',
-    customModules: ['dashboard', 'raw_material_stock', 'pulp_mill_operations', 'machine_production']
-  },
-  {
     username: 'pulper',
     role: 'LabOperator',
     roles: ['LabOperator'],
     pin: '1234',
-    displayName: 'Pulper',
+    displayName: 'Pulper Operator',
     email: 'pulper@sahebpaper.com',
     phone: '9876543220',
     securityQuestion: 'What is your favorite color?',
     securityAnswer: 'blue',
-    empId: 'EMP-003',
+    empId: 'EMP-002',
     designation: 'Pulper (Pulp Mill Operator)',
-    customModules: [
-      'dashboard', 'raw_material_stock', 'pulp_mill_operations', 'machine_production', 'rewinding_reel_conversion', 'lab',
-      'utilities_etp', 'orders', 'finished_stock_dispatch', 'dispatch', 'spareparts_management', 'monthly_yearly_reporting'
-    ]
+    customModules: []
+  },
+  {
+    username: 'plant_manager',
+    role: 'PlantManager',
+    roles: ['PlantManager'],
+    pin: '1234',
+    displayName: 'Plant Manager',
+    email: 'manager@sahebpaper.com',
+    phone: '9876543219',
+    securityQuestion: 'What is your favorite color?',
+    securityAnswer: 'blue',
+    empId: 'EMP-003',
+    designation: 'Plant Manager',
+    customModules: []
   },
   {
     username: 'dispatcher',
     role: 'Dispatcher',
     roles: ['Dispatcher'],
     pin: '1234',
-    displayName: 'Vikram Singh',
+    displayName: 'Dispatcher',
     email: 'dispatch@sahebpaper.com',
     phone: '9876543222',
     securityQuestion: 'What is your favorite color?',
     securityAnswer: 'blue',
     empId: 'EMP-004',
     designation: 'Dispatcher',
-    customModules: ['dashboard', 'orders', 'finished_stock_dispatch', 'spareparts_management']
+    customModules: []
   },
   {
-    username: 'shopper',
+    username: 'shop',
     role: 'Shopper',
     roles: ['Shopper'],
     pin: '1234',
-    displayName: 'Amit Patel',
-    email: 'shopper@sahebpaper.com',
+    displayName: 'Shop / Procurement',
+    email: 'shop@sahebpaper.com',
     phone: '9876543221',
     securityQuestion: 'What is your favorite color?',
     securityAnswer: 'blue',
     empId: 'EMP-005',
-    designation: 'Shopper (Store & Procurement)',
-    customModules: ['dashboard', 'finished_stock_dispatch', 'dispatch']
+    designation: 'Shop & Procurement Incharge',
+    customModules: []
   },
   {
     username: 'viewer',
     role: 'Viewer',
     roles: ['Viewer'],
     pin: '1234',
-    displayName: 'Guest Viewer',
+    displayName: 'Viewer',
     email: 'viewer@sahebpaper.com',
     phone: '9876543223',
     securityQuestion: 'What is your favorite color?',
     securityAnswer: 'blue',
-    empId: 'GUEST-001',
-    designation: 'Guest / Read-Only Viewer',
-    customModules: [
-      'dashboard', 'raw_material_stock', 'pulp_mill_operations', 'machine_production', 'rewinding_reel_conversion',
-      'boiler', 'etp', 'electricity', 'orders', 'finished_stock_dispatch', 'dispatch', 'spareparts_management', 'monthly_yearly_reporting'
-    ]
+    empId: 'EMP-006',
+    designation: 'Read-Only Viewer',
+    customModules: []
   },
 ];
 
@@ -375,6 +369,12 @@ export function initializeStorage() {
       setJSON(KEYS.STORE_ITEMS, stores.map(s => ({ ...s, pcs: 0 })));
     }
     localStorage.setItem('saheb_operational_cleared_v5', 'true');
+  }
+
+  // Refresh user cache to exact 6 configured roles
+  if (!localStorage.getItem('saheb_users_reset_v6')) {
+    setJSON(KEYS.USERS, DEFAULT_USERS);
+    localStorage.setItem('saheb_users_reset_v6', 'true');
   }
 }
 

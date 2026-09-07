@@ -287,7 +287,7 @@ export const LoginView: React.FC = () => {
                 <button
                   type="button"
                   onClick={async () => {
-                    const success = await login('plant_manager', '1111');
+                    const success = await login('plant_manager', '1234');
                     if (success) navigate('/');
                   }}
                   className="flex items-center gap-1.5 sm:gap-2 p-1.5 sm:p-2 bg-gradient-to-br from-blue-50 to-blue-100/50 hover:from-blue-100 hover:to-blue-200/50 border border-blue-200/80 rounded-xl transition-all duration-200 cursor-pointer group"
@@ -297,14 +297,14 @@ export const LoginView: React.FC = () => {
                   </div>
                   <div className="text-left flex-1 min-w-0">
                     <p className="text-[10px] sm:text-[11px] font-bold text-blue-700 truncate">Plant Mgr</p>
-                    <p className="text-[9px] text-blue-600/70 font-medium">PIN: 1111</p>
+                    <p className="text-[9px] text-blue-600/70 font-medium">PIN: 1234</p>
                   </div>
                 </button>
 
                 <button
                   type="button"
                   onClick={async () => {
-                    const success = await login('lab_operator', '1234');
+                    const success = await login('pulper', '1234');
                     if (success) navigate('/');
                   }}
                   className="flex items-center gap-1.5 sm:gap-2 p-1.5 sm:p-2 bg-gradient-to-br from-purple-50 to-purple-100/50 hover:from-purple-100 hover:to-purple-200/50 border border-purple-200/80 rounded-xl transition-all duration-200 cursor-pointer group"
@@ -321,7 +321,7 @@ export const LoginView: React.FC = () => {
                 <button
                   type="button"
                   onClick={async () => {
-                    const success = await login('shopper', '1234');
+                    const success = await login('shop', '1234');
                     if (success) navigate('/');
                   }}
                   className="flex items-center gap-1.5 sm:gap-2 p-1.5 sm:p-2 bg-gradient-to-br from-emerald-50 to-emerald-100/50 hover:from-emerald-100 hover:to-emerald-200/50 border border-emerald-200/80 rounded-xl transition-all duration-200 cursor-pointer group"
@@ -330,7 +330,7 @@ export const LoginView: React.FC = () => {
                     🛒
                   </div>
                   <div className="text-left flex-1 min-w-0">
-                    <p className="text-[10px] sm:text-[11px] font-bold text-emerald-700 truncate">Shopper</p>
+                    <p className="text-[10px] sm:text-[11px] font-bold text-emerald-700 truncate">Shop</p>
                     <p className="text-[9px] text-emerald-600/70 font-medium">PIN: 1234</p>
                   </div>
                 </button>
