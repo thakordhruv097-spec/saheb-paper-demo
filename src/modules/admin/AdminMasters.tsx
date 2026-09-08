@@ -49,6 +49,11 @@ export const AdminMasters: React.FC = () => {
   const location = useLocation();
 
   const [activeTab, setActiveTab] = useState<'products' | 'raw_materials' | 'parties' | 'vendors' | 'users' | 'roles' | 'backup' | 'logs'>(() => {
+    const params = new URLSearchParams(location.search);
+    const queryTab = params.get('tab');
+    if (queryTab && ['products', 'raw_materials', 'parties', 'vendors', 'users', 'roles', 'backup', 'logs'].includes(queryTab)) {
+      return queryTab as any;
+    }
     if (location.state && (location.state as any).tab) {
       return (location.state as any).tab;
     }
@@ -56,10 +61,16 @@ export const AdminMasters: React.FC = () => {
   });
 
   useEffect(() => {
+    const params = new URLSearchParams(location.search);
+    const queryTab = params.get('tab');
+    if (queryTab && ['products', 'raw_materials', 'parties', 'vendors', 'users', 'roles', 'backup', 'logs'].includes(queryTab)) {
+      setActiveTab(queryTab as any);
+      return;
+    }
     if (location.state && (location.state as any).tab) {
       setActiveTab((location.state as any).tab);
     }
-  }, [location.state]);
+  }, [location.search, location.state]);
 
   // Master Data States
   const [products, setProducts] = useState<ProductItem[]>(() => getProducts());

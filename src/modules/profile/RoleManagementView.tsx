@@ -57,7 +57,19 @@ const getFirstAccessibleRoute = (targetUser: User): string => {
   if (modules.includes('dispatch') || modules.includes('dispatch_receipt')) return '/dispatch-receipt/draft-packing-slip';
   if (modules.includes('spareparts_management')) return '/spareparts-management';
   if (modules.includes('monthly_yearly_reporting')) return '/monthly-yearly-reporting';
-  return '/';
+
+  // Role-based smart fallback when customModules has not been configured yet
+  const role = (targetUser.role || '').toLowerCase();
+  const uname = (targetUser.username || '').toLowerCase();
+  if (role.includes('pulp') || uname.includes('pulper') || role.includes('lab')) return '/pulp-mill-operations';
+  if (role.includes('plant') || role.includes('machine') || uname.includes('manager')) return '/machine-production';
+  if (role.includes('dispatch')) return '/dispatch-receipt/draft-packing-slip';
+  if (role.includes('shop') || role.includes('store')) return '/spareparts-management';
+  if (role.includes('boiler')) return '/utilities-&-etp/boiler-operations';
+  if (role.includes('etp')) return '/utilities-&-etp/etp-water-&-chemicals';
+  if (role.includes('view')) return '/monthly-yearly-reporting';
+
+  return '/profile';
 };
 
 export const RoleManagementView: React.FC = () => {
@@ -80,7 +92,7 @@ export const RoleManagementView: React.FC = () => {
             <button
               onClick={async () => {
                 await exitSimulation();
-                navigate('/profile?tab=roles');
+                navigate('/admin-panel-audit?tab=roles', { state: { tab: 'roles' } });
               }}
               className="px-5 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold transition shadow-sm cursor-pointer flex items-center gap-2"
             >
@@ -181,6 +193,7 @@ export const RoleManagementView: React.FC = () => {
       if (isSimulating) {
         await exitSimulation();
         triggerToast(`Exited simulation. Restored Admin session.`);
+        navigate('/admin-panel-audit?tab=roles', { state: { tab: 'roles' } });
       } else {
         triggerToast(`Currently active as ${targetUser.displayName}`);
       }

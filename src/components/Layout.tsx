@@ -518,7 +518,7 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
           <button
             onClick={async () => {
               await exitSimulation();
-              navigate('/profile?tab=roles');
+              navigate('/admin-panel-audit?tab=roles', { state: { tab: 'roles' } });
             }}
             className="ml-3 px-3.5 py-1 rounded-xl bg-white text-blue-700 hover:bg-blue-50 text-xs font-black shadow-md transition active:scale-95 cursor-pointer shrink-0 flex items-center gap-1.5"
           >

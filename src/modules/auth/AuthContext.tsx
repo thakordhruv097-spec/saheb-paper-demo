@@ -30,7 +30,16 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
   const [simulatedBy, setSimulatedBy] = useState<string | null>(() => {
-    return localStorage.getItem('saheb_simulated_by');
+    const direct = localStorage.getItem('saheb_simulated_by');
+    if (direct) return direct;
+    const rawSession = localStorage.getItem('saheb_session');
+    if (rawSession) {
+      try {
+        const session: SessionData = JSON.parse(rawSession);
+        if (session.simulatedBy) return session.simulatedBy;
+      } catch (err) {}
+    }
+    return null;
   });
   const isSimulating = Boolean(simulatedBy);
 
@@ -62,6 +71,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
             clearSession();
           } else {
             setUser(activeDbUser);
+            if (session.simulatedBy) {
+              setSimulatedBy(session.simulatedBy);
+              localStorage.setItem('saheb_simulated_by', session.simulatedBy);
+            }
           }
         }
       } catch (err) {
@@ -85,6 +98,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           const activeDbUser = currentUsers.find(u => u.username.toLowerCase() === session.user.username.toLowerCase());
           if (activeDbUser && activeDbUser.active !== false) {
             setUser({ ...activeDbUser });
+            const simBy = session.simulatedBy || localStorage.getItem('saheb_simulated_by') || null;
+            setSimulatedBy(simBy);
           }
         } catch (err) {
           console.error(err);
@@ -289,6 +304,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     if (moduleName === 'label_studio') return custom.includes('label_studio');
     if (moduleName === 'monthly_yearly_reporting') return custom.includes('monthly_yearly_reporting');
     if (moduleName === 'admin_panel_audit') return custom.includes('admin_panel_audit');
+    if (moduleName === 'profile') return true;
 
     // STRICT DENIAL: If a module is NOT enabled in Role Management, DENY ACCESS!
     return false;

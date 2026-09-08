@@ -114,7 +114,7 @@ const DEFAULT_USERS: User[] = [
     securityAnswer: 'blue',
     empId: 'EMP-002',
     designation: 'Pulper (Pulp Mill Operator)',
-    customModules: []
+    customModules: ['raw_material_stock', 'pulp_mill_operations', 'boiler', 'etp']
   },
   {
     username: 'plant_manager',
@@ -128,7 +128,7 @@ const DEFAULT_USERS: User[] = [
     securityAnswer: 'blue',
     empId: 'EMP-003',
     designation: 'Plant Manager',
-    customModules: []
+    customModules: ['dashboard', 'raw_material_stock', 'pulp_mill_operations', 'machine_production', 'rewinding_reel_conversion', 'boiler', 'etp', 'electricity']
   },
   {
     username: 'dispatcher',
@@ -142,7 +142,7 @@ const DEFAULT_USERS: User[] = [
     securityAnswer: 'blue',
     empId: 'EMP-004',
     designation: 'Dispatcher',
-    customModules: []
+    customModules: ['orders', 'finished_stock_dispatch', 'dispatch']
   },
   {
     username: 'shop',
@@ -156,7 +156,7 @@ const DEFAULT_USERS: User[] = [
     securityAnswer: 'blue',
     empId: 'EMP-005',
     designation: 'Shop & Procurement Incharge',
-    customModules: []
+    customModules: ['spareparts_management']
   },
   {
     username: 'viewer',
@@ -170,7 +170,7 @@ const DEFAULT_USERS: User[] = [
     securityAnswer: 'blue',
     empId: 'EMP-006',
     designation: 'Read-Only Viewer',
-    customModules: []
+    customModules: ['dashboard', 'monthly_yearly_reporting']
   },
 ];
 
@@ -299,7 +299,7 @@ export function initializeStorage() {
           newU.designation = defaultMatch.designation;
           modified = true;
         }
-        if (!newU.customModules && defaultMatch.customModules) {
+        if ((!newU.customModules || newU.customModules.length === 0) && defaultMatch.customModules) {
           newU.customModules = defaultMatch.customModules;
           modified = true;
         }
@@ -378,8 +378,8 @@ export function initializeStorage() {
     localStorage.setItem('saheb_users_fixed_order_v10', 'true');
   }
 
-  // Migration: Clean customModules to strictly the 13 canonical ERP modules
-  if (!localStorage.getItem('saheb_clean_13_modules_v2')) {
+  // Migration: Clean customModules to strictly the 13 canonical ERP modules & assign default role modules
+  if (!localStorage.getItem('saheb_clean_13_modules_v3')) {
     try {
       const rawUsers = getJSON<User[]>(KEYS.USERS, DEFAULT_USERS);
       const validKeys = [
@@ -389,6 +389,10 @@ export function initializeStorage() {
       const cleanedUsers = rawUsers.map(u => {
         let custom = u.customModules || [];
         custom = custom.filter(k => validKeys.includes(k));
+        const defaultMatch = DEFAULT_USERS.find(d => d.username.toLowerCase() === u.username.toLowerCase());
+        if (custom.length === 0 && defaultMatch?.customModules && defaultMatch.customModules.length > 0) {
+          custom = [...defaultMatch.customModules];
+        }
         if (u.role === 'Admin' || u.username === 'admin') {
           custom = [...validKeys];
         }
@@ -403,8 +407,13 @@ export function initializeStorage() {
         if (session.user) {
           if (session.user.role === 'Admin' || session.user.username === 'admin') {
             session.user.customModules = [...validKeys];
-          } else if (session.user.customModules) {
-            session.user.customModules = session.user.customModules.filter((k: string) => validKeys.includes(k));
+          } else {
+            const defaultMatch = DEFAULT_USERS.find(d => d.username.toLowerCase() === session.user.username?.toLowerCase());
+            let userMods = (session.user.customModules || []).filter((k: string) => validKeys.includes(k));
+            if (userMods.length === 0 && defaultMatch?.customModules) {
+              userMods = [...defaultMatch.customModules];
+            }
+            session.user.customModules = userMods;
           }
           localStorage.setItem('saheb_session', JSON.stringify(session));
           localStorage.setItem('saheb_active_user', JSON.stringify(session.user));
@@ -413,7 +422,7 @@ export function initializeStorage() {
     } catch (err) {
       console.error('Error during 13 modules cleanup migration:', err);
     }
-    localStorage.setItem('saheb_clean_13_modules_v2', 'true');
+    localStorage.setItem('saheb_clean_13_modules_v3', 'true');
   }
 }
 

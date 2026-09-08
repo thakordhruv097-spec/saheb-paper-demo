@@ -87,7 +87,7 @@ export default function App() {
             <Route
               path="/profile"
               element={
-                <ProtectedRoute moduleName="dashboard">
+                <ProtectedRoute moduleName="profile">
                   <Layout>
                     <ProfileRouteWrapper />
                   </Layout>

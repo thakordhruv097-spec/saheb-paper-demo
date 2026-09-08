@@ -37,19 +37,28 @@ export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children, module
               <button
                 onClick={async () => {
                   await exitSimulation();
-                  navigate('/profile?tab=roles');
+                  navigate('/admin-panel-audit?tab=roles', { state: { tab: 'roles' } });
                 }}
                 className="px-4 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold transition shadow-sm cursor-pointer"
               >
                 Exit Simulation &amp; Return to Admin
               </button>
             )}
-            <button
-              onClick={() => navigate('/')}
-              className="btn-primary-gradient px-5 py-2.5 text-xs uppercase tracking-wider cursor-pointer"
-            >
-              Back to Dashboard
-            </button>
+            {hasAccess('dashboard') ? (
+              <button
+                onClick={() => navigate('/')}
+                className="btn-primary-gradient px-5 py-2.5 text-xs uppercase tracking-wider cursor-pointer"
+              >
+                Back to Dashboard
+              </button>
+            ) : (
+              <button
+                onClick={() => navigate('/profile')}
+                className="btn-primary-gradient px-5 py-2.5 text-xs uppercase tracking-wider cursor-pointer"
+              >
+                Go to Profile
+              </button>
+            )}
           </div>
         </div>
       </div>
