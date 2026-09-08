@@ -32,7 +32,7 @@ const shell_command_projection_cjs_1 = require("./shell-command-projection.cjs")
 const external_descriptor_trust_cjs_1 = require("./external-descriptor-trust.cjs");
 // eslint-disable-next-line @typescript-eslint/no-require-imports
 const conversionModule = require("./runtime-artifact-conversion.cjs");
-const { applyAgentPathRewrites: _applyAgentPathRewrites, processAttribution: _processAttribution, normalizeAgentBodyForRuntime: _normalizeAgentBodyForRuntime, readGsdCommandNames: _readGsdCommandNames, deriveAgentName: _deriveAgentName, applyAgentFrontmatterExtensions: _applyAgentFrontmatterExtensions, } = conversionModule;
+const { applyAgentPathRewrites: _applyAgentPathRewrites, processAttribution: _processAttribution, normalizeAgentBodyForRuntime: _normalizeAgentBodyForRuntime, readGsdCommandNames: _readGsdCommandNames, deriveAgentName: _deriveAgentName, applyAgentFrontmatterExtensions: _applyAgentFrontmatterExtensions, appendAgentTools: _appendAgentTools, } = conversionModule;
 // #2995 (epic #1671 Phase 6.4): agent bodies join the fragment model. Markers are
 // stripped at emit BEFORE any path rewrite or converter runs, so a `.agents/` ->
 // `.windsurf/` regex can never reach inside a marker attribute and corrupt it —
@@ -40,6 +40,8 @@ const { applyAgentPathRewrites: _applyAgentPathRewrites, processAttribution: _pr
 // eslint-disable-next-line @typescript-eslint/no-require-imports
 const workflowFragmentsModule = require("./workflow-fragments.cjs");
 const { composeWorkflow: _composeWorkflow } = workflowFragmentsModule;
+// eslint-disable-next-line @typescript-eslint/no-require-imports
+const installModelOverrideResolver = require("./install-model-override-resolver.cjs");
 // ---------------------------------------------------------------------------
 // Profile definitions
 // ---------------------------------------------------------------------------
@@ -137,9 +139,79 @@ function parseCallsAgents(content) {
  * Also derives calls_agents for each skill by scanning the body text for
  * `gsd-*` agent name references. Agent stems are stored under the special
  * key `_calls_agents_<stem>` so they don't conflict with skill stems.
+ *
+ * #3798: command bodies are thin delegators — the actual `subagent_type=`
+ * spawns live in the workflow files each command references
+ * (`@…/workflows/<name>.md`). The agent derivation therefore ALSO reads every
+ * workflow file the command references (plus the workflow's steps/ fragments
+ * when it is split per the progressive-disclosure pattern) and unions their
+ * `gsd-*` tokens into the same `_calls_agents_<stem>` set. Without this,
+ * tiered profiles omitted agents their own installed skills spawn
+ * (gsd-verifier at execute-phase's verify_phase_goal was the filed repro).
+ * Over-inclusion fails safe: a tiered profile installing one extra agent
+ * costs bytes, never a broken spawn.
  */
 const DEFAULT_COMMANDS_DIR = node_path_1.default.resolve(__dirname, '..', '..', '..', 'commands', 'gsd');
-function loadSkillsManifest(commandsDir = DEFAULT_COMMANDS_DIR) {
+const DEFAULT_WORKFLOWS_DIR = node_path_1.default.resolve(__dirname, '..', '..', 'workflows');
+/**
+ * Collect the `gsd-*` agent tokens from every workflow file a command body
+ * references. References are the `workflows/<name>.md` path suffixes the
+ * delegating commands embed (`@…/gsd-core/workflows/<name>.md`). A
+ * split workflow (workflows/<name>/steps/*.md) contributes its fragments as
+ * well, because the parent dispatches into them and the spawns live there.
+ */
+function workflowAgentRefs(content, workflowsDir) {
+    const refs = content.match(/workflows\/([a-z0-9][a-z0-9-]*)\.md/g) || [];
+    const names = [...new Set(refs.map((r) => r.slice('workflows/'.length)))];
+    const tokens = new Set();
+    for (const name of names) {
+        const direct = node_path_1.default.join(workflowsDir, name);
+        let body = null;
+        try {
+            body = node_fs_1.default.readFileSync(direct, 'utf8');
+        }
+        catch {
+            body = null;
+        }
+        if (body === null)
+            continue;
+        for (const tok of parseCallsAgents(body))
+            tokens.add(tok);
+        // Split workflow: union EVERY fragment under the workflow's directory
+        // (steps/, modes/, templates/…) — the parent dispatches into these per
+        // the progressive-disclosure pattern, and spawns live in all of them
+        // (#3798 review: modes/ carried gsd-advisor-researcher's spawn while the
+        // parent only named it incidentally in prose).
+        const fragDir = node_path_1.default.join(workflowsDir, name.slice(0, -3));
+        const walk = (dir) => {
+            let frags;
+            try {
+                frags = node_fs_1.default.readdirSync(dir, { withFileTypes: true });
+            }
+            catch {
+                return;
+            }
+            for (const frag of frags) {
+                const full = node_path_1.default.join(dir, frag.name);
+                if (frag.isDirectory()) {
+                    walk(full);
+                    continue;
+                }
+                if (!frag.isFile() || !frag.name.endsWith('.md'))
+                    continue;
+                try {
+                    const fragBody = node_fs_1.default.readFileSync(full, 'utf8');
+                    for (const tok of parseCallsAgents(fragBody))
+                        tokens.add(tok);
+                }
+                catch { /* unreadable fragment — skip */ }
+            }
+        };
+        walk(fragDir);
+    }
+    return [...tokens];
+}
+function loadSkillsManifest(commandsDir = DEFAULT_COMMANDS_DIR, workflowsDir = DEFAULT_WORKFLOWS_DIR) {
     const manifest = new Map();
     if (!node_fs_1.default.existsSync(commandsDir))
         return manifest;
@@ -153,9 +225,12 @@ function loadSkillsManifest(commandsDir = DEFAULT_COMMANDS_DIR) {
         try {
             const content = node_fs_1.default.readFileSync(node_path_1.default.join(commandsDir, entry.name), 'utf8');
             manifest.set(stem, parseRequires(content));
-            // Derive agent references from body text
-            const agentRefs = parseCallsAgents(content);
-            manifest.set(`_calls_agents_${stem}`, agentRefs);
+            // Derive agent references from body text + the workflows it delegates to
+            const agentRefs = [
+                ...parseCallsAgents(content),
+                ...workflowAgentRefs(content, workflowsDir),
+            ];
+            manifest.set(`_calls_agents_${stem}`, [...new Set(agentRefs)]);
         }
         catch {
             manifest.set(stem, []);
@@ -823,14 +898,14 @@ function stageSkillsForRuntimeAsSkills(srcCommandsDir, resolvedProfile, converte
  * agent loop in bin/install.js exactly:
  *   1. applyAgentPathRewrites   (4 base .agents/ regexes; skipped for copilot/antigravity)
  *   2. processAttribution       (Co-Authored-By policy)
- *   3. converter                (runtime-specific frontmatter/body transform)
- *   4. applyAgentFrontmatterExtensions (#2875 Part 2: effort/disallowedTools,
+ *   3. appendAgentTools         (#4032: validated agent_tools grants, before host conversion)
+ *   4. converter                (runtime-specific frontmatter/body transform)
+ *   5. applyAgentFrontmatterExtensions (#2875 Part 2: effort/disallowedTools,
  *      gated by hostBehaviors.agentFrontmatterExtensions — no-op for a runtime
  *      that declares nothing, e.g. every non-the agent runtime today)
- *   5. normalizeAgentBodyForRuntime (colon→hyphen refs; no-op for trivial group)
- * When `agentCtx` is absent, only the converter is applied (backward-compat for
- * the feat-1173 synthetic-descriptor tests and the copilot/antigravity paths
- * that handle cross-cutting inside their converters).
+ *   6. normalizeAgentBodyForRuntime (colon→hyphen refs; no-op for trivial group)
+ * When `agentCtx` is absent, only global `agent_tools` augmentation and the
+ * converter run; other cross-cutting remains absent for backward compatibility.
  *
  * @param srcAgentsDir    source agents directory (e.g. agents/)
  * @param resolvedProfile profile filter from resolveProfile()
@@ -844,8 +919,7 @@ function stageSkillsForRuntimeAsSkills(srcCommandsDir, resolvedProfile, converte
  *                        every OTHER converter's contract — converters that don't declare a
  *                        3rd parameter simply never read it.
  * @param isGlobal        install scope passed through to the converter
- * @param agentCtx        optional cross-cutting context (ADR-1235 §1); when absent,
- *                        only the converter is applied (backward compat)
+ * @param agentCtx        optional cross-cutting context (ADR-1235 §1)
  */
 function stageAgentsForRuntimeWithConverter(srcAgentsDir, resolvedProfile, converter, isGlobal = false, agentCtx) {
     if (!installFs().existsSync(srcAgentsDir))
@@ -877,6 +951,7 @@ function stageAgentsForRuntimeWithConverter(srcAgentsDir, resolvedProfile, conve
     try {
         // Resolve cmdNames once per staging call (not per file) for performance.
         const cmdNames = agentCtx ? _readGsdCommandNames() : [];
+        const agentTools = installModelOverrideResolver.readGsdEffectiveAgentTools(agentCtx?.projectDir ?? agentCtx?.targetDir ?? null);
         for (const entry of entries) {
             if (!entry.isFile())
                 continue;
@@ -896,25 +971,31 @@ function stageAgentsForRuntimeWithConverter(srcAgentsDir, resolvedProfile, conve
             // throws loudly naming the file for a malformed marker, never emitting a
             // half-composed agent.
             content = _composeWorkflow(content, { sourcePath: agentSourcePath });
+            const agentName = _deriveAgentName(entry.name);
+            const grants = [
+                ...(agentTools?.['*'] || []),
+                ...(agentTools?.[agentName] || []),
+            ];
             if (agentCtx) {
                 // #2875 Part 2 / row I3: derived exactly as the inline loop does —
                 // single-sourced via deriveAgentName (runtime-artifact-conversion.cts).
-                const agentName = _deriveAgentName(entry.name);
                 // ADR-1235 §1: pre-converter cross-cutting (matches inline loop order exactly)
                 // Step 1: path rewrites (4 base .agents/ regexes; skipped for copilot/antigravity)
                 content = _applyAgentPathRewrites(content, agentCtx.runtime, agentCtx.pathPrefix);
                 // Step 2: attribution
                 content = _processAttribution(content, agentCtx.attribution);
-                // Step 3: converter (runtime-specific frontmatter/body transform)
+                // Step 3: validated canonical grants, before host conversion.
+                content = _appendAgentTools(content, grants);
+                // Step 4: converter (runtime-specific frontmatter/body transform)
                 content = converter(content, isGlobal, { agentName });
-                // Step 4: frontmatter extensions (effort/disallowedTools; no-op unless
+                // Step 5: frontmatter extensions (effort/disallowedTools; no-op unless
                 // the runtime declares hostBehaviors.agentFrontmatterExtensions)
                 content = _applyAgentFrontmatterExtensions(content, { runtime: agentCtx.runtime, agentName, targetDir: agentCtx.targetDir });
-                // Step 5: normalize colon→hyphen refs (no-op for trivial group)
+                // Step 6: normalize colon→hyphen refs (no-op for trivial group)
                 content = _normalizeAgentBodyForRuntime(content, agentCtx.runtime, cmdNames);
             }
             else {
-                // Backward-compat: only apply the converter (no cross-cutting)
+                content = _appendAgentTools(content, grants);
                 content = converter(content, isGlobal);
             }
             installFs().writeFileSync(node_path_1.default.join(stageDir, entry.name), content, 'utf8');
@@ -1156,6 +1237,7 @@ module.exports = {
     // Shared internals
     parseRequires,
     parseCallsAgents,
+    workflowAgentRefs,
     cleanupStagedSkills,
     // #2322: capability-skill security seams — exported for direct unit-testing
     // and for surface.cts's prune pass (CAPABILITY_SKILL_MARKER parity).

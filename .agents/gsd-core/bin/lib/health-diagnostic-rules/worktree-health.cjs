@@ -35,10 +35,8 @@
  * src/health-diagnostic-rules/worktree-health.cts, compiled to
  * gsd-core/bin/lib/health-diagnostic-rules/worktree-health.cjs (gitignored).
  */
-var __importDefault = (this && this.__importDefault) || function (mod) {
-    return (mod && mod.__esModule) ? mod : { "default": mod };
-};
-const node_path_1 = __importDefault(require("node:path"));
+// eslint-disable-next-line @typescript-eslint/no-require-imports
+const shellCmdProjection = require("../shell-command-projection.cjs");
 // eslint-disable-next-line @typescript-eslint/no-require-imports
 const healthDiagnosticMod = require("../health-diagnostic-types.cjs");
 const { SEVERITY, adviseRemedy } = healthDiagnosticMod;
@@ -121,15 +119,31 @@ function checkW017(snapshot) {
 // against `process.cwd()`. Per this batch's brief: the interpolated command
 // (with the real path) lives in `message`; `remedy.args.command` stays a
 // static `<path>` template, mirroring the split the brief specifies.
+// ─── #3663 — path-comparison provenance helper ─────────────────────────────
+//
+// snapshot.cwd is raw process-cwd-derived — path.resolve() normalizes
+// separators and relative segments but NOT casing, and a process launched via
+// a differently-cased path echoes that spelling back. finding.path is
+// `git worktree list`-derived, which self-normalizes to the canonical
+// on-disk casing (forward slashes). Comparing those two spellings strictly
+// misclassifies the ACTIVE worktree as stale on win32 — so the comparison
+// folds case ONLY on win32 (case-insensitive filesystem, via the Shell
+// Command Projection seam's toComparablePathKey — the platform-conditional
+// fold policy lives there, not per call site) and stays case-sensitive on
+// POSIX, where differently-cased paths are genuinely different directories.
+// No realpath resolution — that would change symlink matching behavior.
+function isActiveWorktreePath(activeCwd, worktreePath, platform = process.platform) {
+    const active = shellCmdProjection.toComparablePathKey(activeCwd, platform);
+    const worktree = shellCmdProjection.toComparablePathKey(worktreePath, platform);
+    return active === worktree || active.startsWith(worktree + '/');
+}
 function checkW027(snapshot) {
     const diagnostics = [];
     const activeCwd = snapshot.cwd;
     for (const finding of snapshot.worktreeHealth.value) {
         if (finding.kind !== 'stale')
             continue;
-        const normalizedWorktree = node_path_1.default.resolve(finding.path);
-        const isActiveWorktree = activeCwd === normalizedWorktree || activeCwd.startsWith(normalizedWorktree + node_path_1.default.sep);
-        if (isActiveWorktree)
+        if (isActiveWorktreePath(activeCwd, finding.path))
             continue;
         diagnostics.push({
             code: 'W027',
@@ -170,4 +184,4 @@ const RULES = [
         check: checkW027,
     },
 ];
-module.exports = { RULES };
+module.exports = { RULES, isActiveWorktreePath };

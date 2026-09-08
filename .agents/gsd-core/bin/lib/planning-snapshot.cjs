@@ -29,7 +29,7 @@ const roadmapParserMod = require("./roadmap-parser.cjs");
 const { getMilestoneInfo, extractCurrentMilestone } = roadmapParserMod;
 // eslint-disable-next-line @typescript-eslint/no-require-imports
 const phaseLocatorMod = require("./phase-locator.cjs");
-const { listMilestonePhaseDirs } = phaseLocatorMod;
+const { listMilestonePhaseDirs, listAllPhaseDirs } = phaseLocatorMod;
 // eslint-disable-next-line @typescript-eslint/no-require-imports
 const verificationMod = require("./verification.cjs");
 const { isPhaseComplete } = verificationMod;
@@ -37,7 +37,11 @@ const { isPhaseComplete } = verificationMod;
 const scanPhasePlans = require("./plan-scan.cjs");
 // eslint-disable-next-line @typescript-eslint/no-require-imports
 const planningWorkspace = require("./planning-workspace.cjs");
-const { planningPaths, planningRoot } = planningWorkspace;
+// #612: `resolvePhaseIdConvention` is the federated (workstream -> root)
+// `phase_id_convention` reader, from the same §7 owner module `planningPaths`
+// comes from. Resolved once in `buildPlanningSnapshot` — see the
+// `phaseIdConvention` field's comment for why one resolution point matters.
+const { planningPaths, planningRoot, resolvePhaseIdConvention } = planningWorkspace;
 const shell_command_projection_cjs_1 = require("./shell-command-projection.cjs");
 // eslint-disable-next-line @typescript-eslint/no-require-imports
 const frontmatterMod = require("./frontmatter.cjs");
@@ -64,7 +68,15 @@ const configLoaderMod = require("./config-loader.cjs");
 const { isGitIgnored } = configLoaderMod;
 // eslint-disable-next-line @typescript-eslint/no-require-imports
 const phaseIdMod = require("./phase-id.cjs");
-const { PHASE_NUMBER_TOKEN_SOURCE, OPTIONAL_PHASE_TAG_SOURCE, stripProjectCodePrefix, scopeToPhase } = phaseIdMod;
+// #612: `phaseHeadingPrefixSrcFor`/`PHASE_HEADING_BASELINE` SELECT a heading
+// intro by convention (a convention-less call compiles the byte-identical base
+// source the literal it replaced spelled); `isSentinelPhaseId` gets its bracket
+// reading only when handed the convention explicitly.
+const { PHASE_NUMBER_TOKEN_SOURCE, OPTIONAL_PHASE_TAG_SOURCE, stripProjectCodePrefix, phaseHeadingPrefixSrcFor, PHASE_HEADING_BASELINE, isSentinelPhaseId, scopeToPhase, } = phaseIdMod;
+// #612: `phaseTokenFromDir` is the convention-SELECTED counterpart of
+// `PHASE_TOKEN_FROM_DIR_RE` — handed no convention it delegates to that very
+// regex, so a legacy repo's tokenization is unchanged. `checkBracketCoherence`
+// re-homed into `validate.cts` when #3309 deleted its `verify.cts` neighbours.
 const validate_cjs_1 = require("./validate.cjs");
 // ─── worstScope — the one new piece of coordination logic ───────────────────
 /**
@@ -462,18 +474,31 @@ function buildProjectSectionsField(cwd) {
  * only the mismatches" to "record every attribution" — this field exposes
  * the parsed fact; the future W021/W026 rules make the mismatch judgment.
  */
-function buildRoadmapDeclaredPhasesField(roadmapPath) {
+function buildRoadmapDeclaredPhasesField(roadmapPath, convention) {
     if (!node_fs_1.default.existsSync(roadmapPath)) {
-        return { value: [], scope: SCOPE.UNREADABLE };
+        return {
+            declared: { value: [], scope: SCOPE.UNREADABLE },
+            sentinelTokens: { value: [], scope: SCOPE.UNREADABLE },
+        };
     }
     let content;
     try {
         content = node_fs_1.default.readFileSync(roadmapPath, 'utf-8');
     }
     catch {
-        return { value: [], scope: SCOPE.UNREADABLE };
+        return {
+            declared: { value: [], scope: SCOPE.UNREADABLE },
+            sentinelTokens: { value: [], scope: SCOPE.UNREADABLE },
+        };
     }
-    const { roadmapPhases } = (0, validate_cjs_1.buildRoadmapPhaseVariants)(content);
+    // #612: the declared-phase scan is SELECTED by the resolved convention — a
+    // non-bracket repo compiles the byte-identical pattern sources this call
+    // compiled before, so its declared set is unchanged. `sentinelPhases` is the
+    // same call's third output (empty off the bracket convention) and is surfaced
+    // rather than filtered in place: `roadmapPhases` feeds both a membership check
+    // (W002's valid-phase set) and a missing-directory warning (W006), and only
+    // the latter should ignore an icebox item.
+    const { roadmapPhases, sentinelPhases } = (0, validate_cjs_1.buildRoadmapPhaseVariants)(content, convention);
     const milestoneByPhase = new Map();
     const sectionRx = /^#{1,3}\s+(?:\[[^\]]{1,200}\]\s*)?.*v(\d+\.\d+)/gim;
     const sections = [];
@@ -497,7 +522,10 @@ function buildRoadmapDeclaredPhasesField(roadmapPath) {
         phaseId,
         milestone: milestoneByPhase.get(phaseId) ?? null,
     }));
-    return { value, scope: SCOPE.COMPLETE };
+    return {
+        declared: { value, scope: SCOPE.COMPLETE },
+        sentinelTokens: { value: [...sentinelPhases], scope: SCOPE.COMPLETE },
+    };
 }
 /**
  * Resolve `roadmapPhaseCheckboxes` — parsed `[x]`/`[ ]` checkbox state per
@@ -518,7 +546,7 @@ function buildRoadmapDeclaredPhasesField(roadmapPath) {
  * diagnostic (W011) whose entire purpose is flagging when the two DISAGREE —
  * reading the data is not re-litigating who is authoritative.
  */
-function buildRoadmapPhaseCheckboxesField(roadmapPath) {
+function buildRoadmapPhaseCheckboxesField(roadmapPath, convention) {
     if (!node_fs_1.default.existsSync(roadmapPath)) {
         return { value: {}, scope: SCOPE.UNREADABLE };
     }
@@ -529,13 +557,57 @@ function buildRoadmapPhaseCheckboxesField(roadmapPath) {
     catch {
         return { value: {}, scope: SCOPE.UNREADABLE };
     }
-    const checkboxRe = new RegExp(`-\\s*\\[([xX ])\\].*?Phase\\s+0*(${PHASE_NUMBER_TOKEN_SOURCE})${OPTIONAL_PHASE_TAG_SOURCE}[:\\s]`, 'gi');
+    // #612: the `Phase\s+` label intro is SELECTED, exactly as
+    // `buildNotStartedPhaseVariants` (`validate.cts`) selects it for the same
+    // ROADMAP checklist shape — this field is what W006's not-started exclusion
+    // now reads instead of that helper, so the two must recognize the same
+    // checklist lines or a bracket repo's `- [ ] **[GSD.02] 05: Name**` entries
+    // vanish from the exclusion set and every unstarted bracket phase gains a
+    // W006. NON-capturing (`capturing` defaults false), so the phase token stays
+    // group 2 and the legacy repo compiles a byte-identical source.
+    const checkboxRe = new RegExp(`-\\s*\\[([xX ])\\].*?${phaseHeadingPrefixSrcFor(PHASE_HEADING_BASELINE.LABEL_ONLY, convention)}0*(${PHASE_NUMBER_TOKEN_SOURCE})${OPTIONAL_PHASE_TAG_SOURCE}[:\\s]`, 'gi');
     const value = {};
     let m;
     while ((m = checkboxRe.exec(content)) !== null) {
         value[m[2]] = m[1].toLowerCase() === 'x';
     }
     return { value, scope: SCOPE.COMPLETE };
+}
+/**
+ * Resolve `roadmapBracketIncoherences` — W021's bracket half (#612). Delegates
+ * wholly to `checkBracketCoherence` (`validate.cjs`), which is pure and owns
+ * both sub-checks; this builder only supplies the ROADMAP text and the
+ * convention gate.
+ *
+ * GATED, not merely filtered downstream: off the bracket convention the ROADMAP
+ * is never parsed for this at all and the field is a `COMPLETE`-scoped empty
+ * list. Inferring 'bracket' from the SHAPE of a matched heading would run a
+ * repo-failing check against a repo that never opted in — a legacy ROADMAP
+ * containing `### [RFC.2119] 5:` is legal legacy content, and that is the exact
+ * regression PR-2's round 1 killed the original ungated design over.
+ */
+function buildRoadmapBracketIncoherencesField(roadmapPath, convention) {
+    // File-readability is decided FIRST, so `scope` means the same thing on every
+    // repo: UNREADABLE iff ROADMAP.md could not be read, never "this convention
+    // was skipped." Ordering the convention gate first would have made an absent
+    // ROADMAP.md report COMPLETE on a legacy repo and UNREADABLE on a bracket one
+    // — the same "empty, nothing to say" state wearing two different scopes, which
+    // is precisely the non-answer/answer distinction ADR-3180 §8.1 gives `scope`
+    // to carry.
+    if (!node_fs_1.default.existsSync(roadmapPath))
+        return { value: [], scope: SCOPE.UNREADABLE };
+    // A non-bracket repo has no bracket incoherences BY DEFINITION — a real,
+    // COMPLETE answer, not a skipped read.
+    if (convention !== 'bracket')
+        return { value: [], scope: SCOPE.COMPLETE };
+    let content;
+    try {
+        content = node_fs_1.default.readFileSync(roadmapPath, 'utf-8');
+    }
+    catch {
+        return { value: [], scope: SCOPE.UNREADABLE };
+    }
+    return { value: (0, validate_cjs_1.checkBracketCoherence)(content), scope: SCOPE.COMPLETE };
 }
 /**
  * Resolve `researchValidationStatus` — per phase directory, whether its
@@ -666,21 +738,25 @@ function buildPlanningRootFilesField(cwd) {
  * `phaseDirs` cannot). An absent `phases/` root is a real empty, not a
  * failure (mirrors `listMilestonePhaseDirs`'s own treatment); a present but
  * unreadable root degrades to `UNREADABLE` with an empty list.
+ *
+ * #3882 (ADR-3473 §8.3): delegates the actual disk scan to
+ * `listAllPhaseDirs(phasesDir, {includeSentinels: true})` — that function is
+ * the sole owner of "readdirSync the phases/ root, map to dir names, handle
+ * absent-vs-unreadable"; this field is one more consumer of that scan, not a
+ * second implementation of it. The two functions previously duplicated the
+ * same readdirSync + filter + map + absent/unreadable handling, which is
+ * exactly the defect class ADR-3473 §8.3 forbids.
+ *
+ * The RE-SORT below is deliberate, not leftover duplication:
+ * `listAllPhaseDirs` orders its `value` by `comparePhaseNum` (numeric phase
+ * order — its own documented contract), but `allPhaseDirNames`'s existing,
+ * externally-observable order is plain lexicographic `.sort()`, and W007's
+ * consumers depend on that order today. Re-sorting here preserves that
+ * contract without forking the underlying scan.
  */
 function buildAllPhaseDirNamesField(phasesDir) {
-    if (!node_fs_1.default.existsSync(phasesDir))
-        return { value: [], scope: SCOPE.COMPLETE };
-    try {
-        const value = node_fs_1.default
-            .readdirSync(phasesDir, { withFileTypes: true })
-            .filter((e) => e.isDirectory())
-            .map((e) => e.name)
-            .sort();
-        return { value, scope: SCOPE.COMPLETE };
-    }
-    catch {
-        return { value: [], scope: SCOPE.UNREADABLE };
-    }
+    const { value, scope } = listAllPhaseDirs(phasesDir, { includeSentinels: true });
+    return { value: value.slice().sort(), scope };
 }
 /**
  * Resolve `archivedPhaseTokens` — every phase-number token belonging to a
@@ -695,7 +771,7 @@ function buildAllPhaseDirNamesField(phasesDir) {
  * present-but-unreadable per-archive-dir entry is silently skipped, mirroring
  * `forEachArchivedPhaseToken`'s own per-directory `catch { /* absent/unreadable *\/ }`.
  */
-function buildArchivedPhaseTokensField(planBase) {
+function buildArchivedPhaseTokensField(planBase, convention) {
     const milestonesDir = node_path_1.default.join(planBase, 'milestones');
     let archiveDirs;
     try {
@@ -716,9 +792,19 @@ function buildArchivedPhaseTokensField(planBase) {
             for (const e of entries) {
                 if (!e.isDirectory())
                     continue;
-                const m = e.name.match(validate_cjs_1.PHASE_TOKEN_FROM_DIR_RE);
-                if (m)
-                    value.push(stripProjectCodePrefix(m[1]));
+                // #612: composed, not chosen. The convention-aware extractor decides
+                // WHICH directory shapes are recognized (so an archived
+                // `{CODE}.{MM}-{PP}-slug` is seen at all — `PHASE_TOKEN_FROM_DIR_RE`
+                // rejects it outright, which is why every archived bracket phase used
+                // to still draw a W006/W002); `stripProjectCodePrefix` then normalizes
+                // the token it returns. The strip is a no-op on every bracket token
+                // (`01`, `01.02` — the `{CODE}.{MM}` prefix is not part of the token)
+                // and does the #2528 work on legacy ones (`MEM-05` -> `05`), so neither
+                // side loses its case. Handed no convention, `phaseTokenFromDir`
+                // delegates to `PHASE_TOKEN_FROM_DIR_RE` itself — legacy is unchanged.
+                const token = (0, validate_cjs_1.phaseTokenFromDir)(e.name, convention);
+                if (token)
+                    value.push(stripProjectCodePrefix(token));
             }
         }
         catch {
@@ -736,7 +822,7 @@ function buildArchivedPhaseTokensField(planBase) {
  * ROADMAP.md degrades to an empty list, mirroring every other
  * ROADMAP-sourced field's absent-file handling.
  */
-function buildCurrentMilestoneRoadmapPhaseIdsField(cwd, roadmapPath) {
+function buildCurrentMilestoneRoadmapPhaseIdsField(cwd, roadmapPath, convention) {
     if (!node_fs_1.default.existsSync(roadmapPath))
         return { value: [], scope: SCOPE.UNREADABLE };
     let content;
@@ -749,8 +835,32 @@ function buildCurrentMilestoneRoadmapPhaseIdsField(cwd, roadmapPath) {
     const scoped = extractCurrentMilestone(content, cwd);
     // #1729: `(?:\s*\([^)\n]{0,200}\))?` tolerates a pre-colon ( ) tag (literal
     // mirror of OPTIONAL_PHASE_TAG_SOURCE) — verbatim from `verify.cts:2366`.
-    const phasePattern = new RegExp(`#{2,4}\\s*Phase\\s+(${PHASE_NUMBER_TOKEN_SOURCE})(?:\\s*\\([^)\\n]{0,200}\\))?\\s*:`, 'gi');
-    const value = [...scoped.matchAll(phasePattern)].map((m) => m[1]);
+    //
+    // #612: this scan is convention-AGNOSTIC in POSTURE — W026 is ungated, and
+    // bug-557 pins it with an empty config so it fires on every repo — but its
+    // heading grammar is still SELECTED, never widened. Under bracket the intro
+    // CAPTURES, so the phase token moves to group 2 and `bracketGroup` carries
+    // that offset; off bracket the source is byte-identical to the literal above
+    // and `bracketGroup` is 0. Inferring the convention from a matched bracket's
+    // shape would run a repo-failing check against a repo that never opted in.
+    const bracketGroup = convention === 'bracket' ? 1 : 0;
+    const phasePattern = new RegExp(`#{2,4}\\s*${phaseHeadingPrefixSrcFor(PHASE_HEADING_BASELINE.LABEL_ONLY, convention, Boolean(bracketGroup))}(${PHASE_NUMBER_TOKEN_SOURCE})(?:\\s*\\([^)\\n]{0,200}\\))?\\s*:`, 'gi');
+    const value = [];
+    for (const m of scoped.matchAll(phasePattern)) {
+        const bracketId = bracketGroup ? m[1] : undefined;
+        const phaseNum = m[1 + bracketGroup];
+        // A bracket sentinel is an ICEBOX item, not an unstarted phase — it
+        // legitimately has no directory, so leaving it in this list makes W026
+        // ("STATE says milestone complete but ROADMAP lists an unstarted phase")
+        // fire on every bracket repo that keeps an icebox. Filtered here rather
+        // than in `RULE_W026` because the bracket id is only visible at the match:
+        // the emitted token is `07`, and sentinel-ness lives in the `[GSD.999]`
+        // milestone this scan just discarded. This field's only consumer is W026
+        // (see its own doc comment above).
+        if (bracketId && isSentinelPhaseId(`${bracketId}-${phaseNum}`, 'bracket'))
+            continue;
+        value.push(phaseNum);
+    }
     return { value, scope: SCOPE.COMPLETE };
 }
 /**
@@ -849,11 +959,29 @@ function buildPerPhasePlanScanFields(phasesDir, phaseDirNames, enumerationScope)
  */
 function buildPlanningSnapshot(cwd) {
     const paths = planningPaths(cwd);
+    // #612: ONE federated (workstream -> root) resolution for the whole snapshot.
+    // See the `phaseIdConvention` field's comment for why one resolution point is
+    // load-bearing rather than a micro-optimisation.
+    const phaseIdConvention = resolvePhaseIdConvention(cwd) ?? null;
     const milestone = getMilestoneInfo(cwd);
+    // #612: deliberately LEFT to `listMilestonePhaseDirs`'s own lazy resolve —
+    // this call is byte-identical to upstream's.
+    //
+    // Passing `phaseIdConvention` here would NOT be a no-op, which is exactly why
+    // it is not passed. The lazy path resolves `resolvePhaseIdConvention(cwd, ws)`
+    // with this call's `ws`, which defaults to `null` — the PROJECT-only reading,
+    // with no root fallback. The field above is resolved with `ws` undefined,
+    // i.e. the FEDERATED workstream -> root reading. On a workstream repo whose
+    // root opts into bracket while the workstream config does not, the two answers
+    // genuinely differ, and substituting one for the other would silently re-scope
+    // `phaseDirs` — a change this PR does not need and no test covers. The
+    // federation guarantee PR-2 exists to deliver is delivered where it is
+    // observable: in the rules that read `snapshot.phaseIdConvention`.
     const phaseDirs = listMilestonePhaseDirs(paths.phases, { cwd });
     const phasesValue = phaseDirs.value.map((dir) => buildPhaseSnapshot(paths.phases, dir));
     const stateFields = buildStateFields(paths.state);
     const allPhaseDirNames = buildAllPhaseDirNamesField(paths.phases);
+    const roadmapDeclared = buildRoadmapDeclaredPhasesField(paths.roadmap, phaseIdConvention);
     const perPhasePlanScanFields = buildPerPhasePlanScanFields(paths.phases, allPhaseDirNames.value, allPhaseDirNames.scope);
     return {
         cwd: node_path_1.default.resolve(cwd),
@@ -871,17 +999,20 @@ function buildPlanningSnapshot(cwd) {
         projectSections: buildProjectSectionsField(cwd),
         statePhaseTokens: stateFields.statePhaseTokens,
         stateStatus: stateFields.stateStatus,
-        roadmapDeclaredPhases: buildRoadmapDeclaredPhasesField(paths.roadmap),
-        roadmapPhaseCheckboxes: buildRoadmapPhaseCheckboxesField(paths.roadmap),
+        roadmapDeclaredPhases: roadmapDeclared.declared,
+        roadmapPhaseCheckboxes: buildRoadmapPhaseCheckboxesField(paths.roadmap, phaseIdConvention),
         researchValidationStatus: buildResearchValidationStatusField(paths.phases, phaseDirs.value, phaseDirs.scope),
         milestoneArchiveStatus: buildMilestoneArchiveStatusField(cwd),
         planningRootFiles: buildPlanningRootFilesField(cwd),
         allPhaseDirNames,
-        archivedPhaseTokens: buildArchivedPhaseTokensField(paths.planning),
-        currentMilestoneRoadmapPhaseIds: buildCurrentMilestoneRoadmapPhaseIdsField(cwd, paths.roadmap),
+        archivedPhaseTokens: buildArchivedPhaseTokensField(paths.planning, phaseIdConvention),
+        currentMilestoneRoadmapPhaseIds: buildCurrentMilestoneRoadmapPhaseIdsField(cwd, paths.roadmap, phaseIdConvention),
         perPhasePlanNumbering: perPhasePlanScanFields.perPhasePlanNumbering,
         perPhaseOrphanSummaries: perPhasePlanScanFields.perPhaseOrphanSummaries,
         perPhaseWaveMissingPlans: perPhasePlanScanFields.perPhaseWaveMissingPlans,
+        phaseIdConvention,
+        roadmapSentinelPhaseTokens: roadmapDeclared.sentinelTokens,
+        roadmapBracketIncoherences: buildRoadmapBracketIncoherencesField(paths.roadmap, phaseIdConvention),
     };
 }
 module.exports = {

@@ -5,7 +5,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "\"C:/Program Files/nodejs/node.exe\" .agents/hooks/gsd-check-update.js"
+            "command": "\"$(for n in \"C:/Program Files/nodejs/node.exe\" \"$(command -v node)\" /usr/local/bin/node /usr/bin/node; do [ -x \"$n\" ] && { [ \"${n#/}\" != \"$n\" ] || [ \"${n#?:}\" != \"$n\" ]; } && printf '%s' \"$n\" && break; done)\" \".agents/hooks/gsd-check-update.js\""
           }
         ]
       }
@@ -16,7 +16,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "\"C:/Program Files/nodejs/node.exe\" .agents/hooks/gsd-context-monitor.js",
+            "command": "\"$(for n in \"C:/Program Files/nodejs/node.exe\" \"$(command -v node)\" /usr/local/bin/node /usr/bin/node; do [ -x \"$n\" ] && { [ \"${n#/}\" != \"$n\" ] || [ \"${n#?:}\" != \"$n\" ]; } && printf '%s' \"$n\" && break; done)\" \".agents/hooks/gsd-context-monitor.js\"",
             "timeout": 10
           }
         ]
@@ -26,7 +26,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "\"C:/Program Files/nodejs/node.exe\" .agents/hooks/gsd-read-injection-scanner.js",
+            "command": "\"$(for n in \"C:/Program Files/nodejs/node.exe\" \"$(command -v node)\" /usr/local/bin/node /usr/bin/node; do [ -x \"$n\" ] && { [ \"${n#/}\" != \"$n\" ] || [ \"${n#?:}\" != \"$n\" ]; } && printf '%s' \"$n\" && break; done)\" \".agents/hooks/gsd-read-injection-scanner.js\"",
             "timeout": 5
           }
         ]
@@ -38,8 +38,8 @@
         "hooks": [
           {
             "type": "command",
-            "command": "\"C:/Program Files/nodejs/node.exe\" .agents/hooks/gsd-prompt-guard.js",
-            "timeout": 5
+            "command": "\"$(for n in \"C:/Program Files/nodejs/node.exe\" \"$(command -v node)\" /usr/local/bin/node /usr/bin/node; do [ -x \"$n\" ] && { [ \"${n#/}\" != \"$n\" ] || [ \"${n#?:}\" != \"$n\" ]; } && printf '%s' \"$n\" && break; done)\" \".agents/hooks/gsd-prompt-guard.js\"",
+            "timeout": 120
           }
         ]
       },
@@ -48,7 +48,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "\"C:/Program Files/nodejs/node.exe\" .agents/hooks/gsd-read-guard.js",
+            "command": "\"$(for n in \"C:/Program Files/nodejs/node.exe\" \"$(command -v node)\" /usr/local/bin/node /usr/bin/node; do [ -x \"$n\" ] && { [ \"${n#/}\" != \"$n\" ] || [ \"${n#?:}\" != \"$n\" ]; } && printf '%s' \"$n\" && break; done)\" \".agents/hooks/gsd-read-guard.js\"",
             "timeout": 5
           }
         ]
@@ -58,8 +58,8 @@
         "hooks": [
           {
             "type": "command",
-            "command": "\"C:/Program Files/nodejs/node.exe\" .agents/hooks/gsd-workflow-guard.js",
-            "timeout": 5
+            "command": "\"$(for n in \"C:/Program Files/nodejs/node.exe\" \"$(command -v node)\" /usr/local/bin/node /usr/bin/node; do [ -x \"$n\" ] && { [ \"${n#/}\" != \"$n\" ] || [ \"${n#?:}\" != \"$n\" ]; } && printf '%s' \"$n\" && break; done)\" \".agents/hooks/gsd-workflow-guard.js\"",
+            "timeout": 120
           }
         ]
       },
@@ -68,8 +68,8 @@
         "hooks": [
           {
             "type": "command",
-            "command": "\"C:/Program Files/nodejs/node.exe\" .agents/hooks/gsd-worktree-path-guard.js",
-            "timeout": 5
+            "command": "\"$(for n in \"C:/Program Files/nodejs/node.exe\" \"$(command -v node)\" /usr/local/bin/node /usr/bin/node; do [ -x \"$n\" ] && { [ \"${n#/}\" != \"$n\" ] || [ \"${n#?:}\" != \"$n\" ]; } && printf '%s' \"$n\" && break; done)\" \".agents/hooks/gsd-worktree-path-guard.js\"",
+            "timeout": 120
           }
         ]
       },
@@ -78,8 +78,8 @@
         "hooks": [
           {
             "type": "command",
-            "command": "\"C:/Program Files/nodejs/node.exe\" .agents/hooks/gsd-agent-isolation-guard.js",
-            "timeout": 5
+            "command": "\"$(for n in \"C:/Program Files/nodejs/node.exe\" \"$(command -v node)\" /usr/local/bin/node /usr/bin/node; do [ -x \"$n\" ] && { [ \"${n#/}\" != \"$n\" ] || [ \"${n#?:}\" != \"$n\" ]; } && printf '%s' \"$n\" && break; done)\" \".agents/hooks/gsd-agent-isolation-guard.js\"",
+            "timeout": 120
           }
         ]
       },
@@ -88,8 +88,18 @@
         "hooks": [
           {
             "type": "command",
-            "command": "\"C:/Program Files/nodejs/node.exe\" .agents/hooks/gsd-write-guard.js",
-            "timeout": 5
+            "command": "\"$(for n in \"C:/Program Files/nodejs/node.exe\" \"$(command -v node)\" /usr/local/bin/node /usr/bin/node; do [ -x \"$n\" ] && { [ \"${n#/}\" != \"$n\" ] || [ \"${n#?:}\" != \"$n\" ]; } && printf '%s' \"$n\" && break; done)\" \".agents/hooks/gsd-write-guard.js\"",
+            "timeout": 120
+          }
+        ]
+      },
+      {
+        "matcher": "Read|Grep|Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "\"$(for n in \"C:/Program Files/nodejs/node.exe\" \"$(command -v node)\" /usr/local/bin/node /usr/bin/node; do [ -x \"$n\" ] && { [ \"${n#/}\" != \"$n\" ] || [ \"${n#?:}\" != \"$n\" ]; } && printf '%s' \"$n\" && break; done)\" .agents/hooks/gsd-secret-read-guard.js",
+            "timeout": 120
           }
         ]
       }

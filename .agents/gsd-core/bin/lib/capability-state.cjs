@@ -39,13 +39,13 @@ const ioMod = require("./io.cjs");
 const { output: coreOutput, error: coreError } = ioMod;
 // eslint-disable-next-line @typescript-eslint/no-require-imports
 const activationMod = require("./capability-activation.cjs");
-const { _resolveActivationValue } = activationMod;
+const { _resolveActivationValue, _resolvePointGate } = activationMod;
 // eslint-disable-next-line @typescript-eslint/no-require-imports
 const configLoaderMod = require("./config-loader.cjs");
 const { loadConfig } = configLoaderMod;
 // eslint-disable-next-line @typescript-eslint/no-require-imports
 const installProfilesMod = require("./install-profiles.cjs");
-const { readActiveProfile, loadSkillsManifest, resolveProfile, parseRequires, parseCallsAgents } = installProfilesMod;
+const { readActiveProfile, loadSkillsManifest, resolveProfile, parseRequires, parseCallsAgents, workflowAgentRefs } = installProfilesMod;
 // eslint-disable-next-line @typescript-eslint/no-require-imports
 const surfaceMod = require("./surface.cjs");
 const { resolveSurface } = surfaceMod;
@@ -179,6 +179,12 @@ function resolveCapabilityState(input) {
                     // (mirrors loop-resolver.isActive: `typeof when !== 'string' || when.length === 0` → false)
                     configured = false;
                 }
+                // #3661: optional point-selection gate, ANDed in — mirrors loop-resolver.isActive
+                // EXACTLY (see capability-activation.cts's _resolvePointGate doc comment; this
+                // parity is load-bearing, see tests/capability-precedence-parity.test.cjs).
+                if (configured) {
+                    configured = _resolvePointGate(h['pointFrom'], point, config, cwd, registry);
+                }
                 // Hook active = capability-level active AND hook's own config gate.
                 // The capability's `active` constant (= enabled && configActivation) is
                 // used here so that a config-disabled capability (active=false) cannot
@@ -299,7 +305,17 @@ function _loadInstalledSkillsManifest(configDir) {
  * no gsd-*.md files (so _resolveManifest can use size>0 as the "flat layout
  * present" signal and fall through to the installed-skills branch otherwise).
  */
-function _loadFlatCommandsGsdManifest(commandsParentDir) {
+function _loadFlatCommandsGsdManifest(commandsParentDir, workflowsDir) {
+    // #3798: derive agents from the command body PLUS the workflow files it
+    // references, exactly like loadSkillsManifest does for the nested layout —
+    // the flat (#1858) layout retained the original defect otherwise, and the
+    // parity test in tests/capability-state.test.cjs asserts the two loaders
+    // produce identical _calls_agents_* sets. Default: <pkg>/gsd-core/workflows
+    // one level above the commands dir — the shape of both the repo checkout
+    // (<repo>/commands/) and a flat runtime install (the runtime config dir's
+    // commands/ with the package's gsd-core/ beside it).
+    const flatWorkflowsDir = workflowsDir
+        || node_path_1.default.resolve(commandsParentDir, '..', 'gsd-core', 'workflows');
     const manifest = new Map();
     let entries;
     try {
@@ -327,7 +343,12 @@ function _loadFlatCommandsGsdManifest(commandsParentDir) {
         try {
             const content = node_fs_1.default.readFileSync(node_path_1.default.join(commandsParentDir, entry.name), 'utf8');
             manifest.set(stem, parseRequires(content));
-            manifest.set(`_calls_agents_${stem}`, parseCallsAgents(content));
+            manifest.set(`_calls_agents_${stem}`, [
+                ...new Set([
+                    ...parseCallsAgents(content),
+                    ...workflowAgentRefs(content, flatWorkflowsDir),
+                ]),
+            ]);
         }
         catch {
             manifest.set(stem, []);

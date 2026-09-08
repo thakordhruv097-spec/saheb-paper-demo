@@ -15,6 +15,22 @@
  *   - node:fs / node:path (stdlib)
  *   - ./phase-id.cjs       (comparePhaseNum, used by readSubdirectories)
  *   - ./planning-workspace.cjs (findContextMdIn, used by getPhaseFileStats)
+ *
+ * #3883 (ADR-3473 §8.3): two of this module's cyclic partners require
+ * generateSlugInternal, the canonical slug formula:
+ *   - phase-id.cjs requires this module directly.
+ *   - planning-workspace.cjs is a cyclic partner via a longer path:
+ *     core-utils.cjs -> planning-workspace.cjs -> active-workstream-store.cjs
+ *     -> workstream-name-policy.cjs -> core-utils.cjs.
+ * Both are genuine circular requires. They are safe ONLY because every side
+ * accesses the other's exports lazily, through the live module-namespace
+ * object (`phaseIdModule.foo(...)` / `planningWorkspace.foo(...)`) inside a
+ * function body, never via a top-level destructure — a top-level
+ * `const { foo } = require(...)` copies the binding at import time and would
+ * silently capture `undefined` whichever module loses the load-order race.
+ * This is an absolute rule with no exception in this file: every cyclic
+ * partner's export is accessed through its module-namespace object, never
+ * destructured at the top level.
  */
 var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
@@ -23,12 +39,63 @@ const node_fs_1 = __importDefault(require("node:fs"));
 const node_path_1 = __importDefault(require("node:path"));
 // eslint-disable-next-line @typescript-eslint/no-require-imports
 const phaseIdModule = require("./phase-id.cjs");
-const { comparePhaseNum, scopeToPhase } = phaseIdModule;
 // eslint-disable-next-line @typescript-eslint/no-require-imports
 const planningWorkspace = require("./planning-workspace.cjs");
-const { findContextMdIn } = planningWorkspace;
 // eslint-disable-next-line @typescript-eslint/no-require-imports
 const shellCommandProjection = require("./shell-command-projection.cjs");
+// planning-scope.cjs is a leaf module (no imports of its own — see its file
+// header), so importing it here directly cannot introduce a cycle.
+// eslint-disable-next-line @typescript-eslint/no-require-imports
+const planningScopeMod = require("./planning-scope.cjs");
+const { SCOPE } = planningScopeMod;
+// ─── Line-ending normalization ─────────────────────────────────────────────────
+/**
+ * Normalize every line ending in `content` to a bare `\n`, ONCE — the shared
+ * seam every document-READ boundary in this codebase should route through
+ * (#3707-CR follow-up MAJOR).
+ *
+ * CommonMark treats a lone CR (no paired LF) as a line ending — such a
+ * document RENDERS as separate lines to a human reader — but a parser that
+ * splits/tokenizes/scans on `\n` alone treats a lone-CR-separated document as
+ * ONE unbroken line, hiding every row boundary in it. `src/uat.cts` originally
+ * carried this exact fix as a PRIVATE, unexported function applied inside two
+ * of its own parse functions (`parseUatItemsWithStats`, `parseCurrentTest`) —
+ * which is why two OTHER read sites in the same module (`cmdAuditUat`'s
+ * VERIFICATION and deferred-items.md ingresses) were missed: normalizing
+ * per-parser means every new parser must remember to call it. Promoted here,
+ * to the shared leaf module every document consumer can reach without a new
+ * dependency edge, so normalization can be applied at the READ boundary
+ * instead — every current and future parser fed from a boundary that calls
+ * this gets normalized text by construction.
+ *
+ * `/\r\n?/g` is deliberately ONE alternation, not two separate replaces: a
+ * two-pass `replace(/\r\n/g,'\n').replace(/\r/g,'\n')` is equivalent here
+ * because the first pass already consumes every CRLF pair before the second
+ * pass ever runs, but a single regex avoids relying on pass ORDER and matches
+ * greedily left-to-right in one scan, so a CRLF is always consumed as ONE
+ * unit (never left as a stray trailing `\r` after the `\n` half is matched
+ * first) and a lone CR — including one immediately followed by nothing, i.e.
+ * at EOF, or by another lone CR — is still replaced.
+ *
+ * This is deliberately NOT a length-preserving transform (CRLF, two UTF-16
+ * units, becomes LF, one), so any offsets a caller computes must be compared
+ * only against THIS normalized string, never against the original raw text.
+ *
+ * U+2028 LINE SEPARATOR / U+2029 PARAGRAPH SEPARATOR (#3078-CR) are
+ * DELIBERATELY NOT folded here, unlike `\r`/`\r\n`. Folding is unnecessary:
+ * `String.prototype.split('\n')` never treats U+2028/U+2029 as a delimiter,
+ * so an exotic separator can never manufacture a fake line start for a
+ * consumer that scans lines produced by `split('\n')`, rather than anchoring
+ * a multiline (`/m`) regex directly over unsplit text. Only the latter
+ * pattern is vulnerable to the ECMA-262 LineTerminator set including these
+ * two code points. This module performs no line-anchored matching of its
+ * own; a caller that scans lines should split first and match per-line
+ * rather than anchor `/m` over unsplit text — this comment makes no claim
+ * about whether any particular caller currently does so.
+ */
+function normalizeLineEndings(content) {
+    return content.replace(/\r\n?/g, '\n');
+}
 // ─── Path helpers ────────────────────────────────────────────────────────────
 /**
  * Normalize a relative path to always use forward slashes (cross-platform).
@@ -108,7 +175,19 @@ function pathExistsInternal(cwd, targetPath) {
         return false;
     }
 }
-function generateSlugInternal(text) {
+/**
+ * #3883 (ADR-3473 §8.3 remediation): `maxLen` lets a caller state its own
+ * truncation contract instead of being forced into this function's
+ * historical 60-char cap. Some call sites truncated at 60 before the #3883
+ * consolidation (commands.cts:cmdGenerateSlug) and some never truncated at
+ * all (phase-id.cts toDir/getPhaseDirFromPhaseId, the init.cts/phase-locator
+ * phase_slug sites, workstream-name-policy.cts toWorkstreamSlug) — collapsing
+ * every caller onto a single hard-coded 60 introduced two identity
+ * collisions (distinct >60-char names/phase-slugs truncating to the same
+ * value) that did not exist pre-migration. `maxLen: 60` remains the default
+ * so untouched callers keep prior behavior; pass `null` for no truncation.
+ */
+function generateSlugInternal(text, maxLen = 60) {
     if (!text)
         return null;
     // #2849: strip leading/trailing hyphens AFTER truncation, not only before.
@@ -116,7 +195,9 @@ function generateSlugInternal(text) {
     // the strip step exists to prevent. Truncation cannot add a leading hyphen, so
     // running the full ^-+|-+$ pass last is equivalent for leading hyphens and
     // fixes the trailing-hyphen-after-truncation case.
-    return transliterateForSlug(text).replace(/[^a-z0-9]+/g, '-').substring(0, 60).replace(/^-+|-+$/g, '');
+    const collapsed = transliterateForSlug(text).replace(/[^a-z0-9]+/g, '-');
+    const truncated = maxLen === null ? collapsed : collapsed.substring(0, maxLen);
+    return truncated.replace(/^-+|-+$/g, '');
 }
 // ─── Transliteration (#2848) ─────────────────────────────────────────────────
 //
@@ -195,16 +276,38 @@ function transliterateForSlug(text) {
  * Degrades on an unreadable directory instead of throwing: empty arrays,
  * every flag false, scope UNREADABLE (mirroring scanPhasePlans's own
  * degrade path).
+ *
+ * #4014 (epic #3473 B4-unreadable): this function's OWN readdirSync used to
+ * catch its own failure and then return `scope: scan.scope` — the scope of
+ * the UNRELATED, already-successful scanPhasePlans call — silently dropping
+ * that THIS read failed. The own-readdirSync is now routed through
+ * findContextMdIn's directory-string form (which never throws and reports
+ * its own SCOPE.UNREADABLE), and the two independently-scoped answers are
+ * combined into the worse of the two below — never letting a successful
+ * scan.scope mask this function's own failed read.
+ *
+ * The combination is written out as a two-value comparison rather than
+ * calling planning-snapshot.cts's `worstScope` directly: that module
+ * requires core-utils.cjs (for `findOrphanSummaries`) at its own top level,
+ * so importing it back here would create a tight, direct
+ * core-utils.cjs <-> planning-snapshot.cjs cycle — a materially different
+ * (and riskier) shape than this file's existing, documented lazy-access
+ * cyclic partners (planning-workspace.cjs, phase-id.cjs), which
+ * planning-snapshot.cts sits *above* in the dependency graph, not beside.
+ * `findContextMdIn`'s directory-string form can only ever report
+ * SCOPE.COMPLETE or SCOPE.UNREADABLE (a single readdirSync is binary — see
+ * its own doc comment), so per planning-snapshot.cts's SCOPE_SEVERITY
+ * ordering (UNREADABLE is maximal), `worstScope(scan.scope, ownScope)` is
+ * exactly `ownScope === UNREADABLE ? UNREADABLE : scan.scope` — the
+ * expression below is that identity, not a re-derivation of the ordering.
  */
 function getPhaseFileStats(phaseDir) {
     // eslint-disable-next-line @typescript-eslint/no-require-imports, @typescript-eslint/no-unsafe-assignment
     const scanPhasePlans = require('./plan-scan.cjs');
     const scan = scanPhasePlans(phaseDir);
-    let files;
-    try {
-        files = node_fs_1.default.readdirSync(phaseDir);
-    }
-    catch {
+    const { files, scope: ownScope } = planningWorkspace.findContextMdIn(phaseDir);
+    const scope = ownScope === SCOPE.UNREADABLE ? SCOPE.UNREADABLE : scan.scope;
+    if (ownScope === SCOPE.UNREADABLE) {
         return {
             plans: scan.planFiles,
             summaries: scan.summaryFiles,
@@ -212,18 +315,18 @@ function getPhaseFileStats(phaseDir) {
             hasContext: false,
             hasVerification: false,
             hasReviews: false,
-            scope: scan.scope,
+            scope,
         };
     }
-    const scopedFiles = scopeToPhase(files, node_path_1.default.basename(phaseDir));
+    const scopedFiles = phaseIdModule.scopeToPhase(files, node_path_1.default.basename(phaseDir));
     return {
         plans: scan.planFiles,
         summaries: scan.summaryFiles,
         hasResearch: scopedFiles.some(f => f.endsWith('-RESEARCH.md') || f === 'RESEARCH.md'),
-        hasContext: findContextMdIn(scopedFiles) !== null,
+        hasContext: planningWorkspace.findContextMdIn(scopedFiles) !== null,
         hasVerification: scopedFiles.some(f => f.endsWith('-VERIFICATION.md') || f === 'VERIFICATION.md'),
         hasReviews: scopedFiles.some(f => f.endsWith('-REVIEWS.md') || f === 'REVIEWS.md'),
-        scope: scan.scope,
+        scope,
     };
 }
 /**
@@ -235,7 +338,7 @@ function readSubdirectories(dirPath, sort = false) {
     try {
         const entries = node_fs_1.default.readdirSync(dirPath, { withFileTypes: true });
         const dirs = entries.filter(e => e.isDirectory()).map(e => e.name);
-        return sort ? dirs.sort((a, b) => comparePhaseNum(a, b)) : dirs;
+        return sort ? dirs.sort((a, b) => phaseIdModule.comparePhaseNum(a, b)) : dirs;
     }
     catch {
         return [];
@@ -415,6 +518,7 @@ function findOrphanSummaries(planFiles, summaryFiles) {
 }
 module.exports = {
     toPosixPath,
+    normalizeLineEndings,
     detectSubRepos,
     extractOneLinerFromBody,
     pathExistsInternal,

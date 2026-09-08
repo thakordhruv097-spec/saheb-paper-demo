@@ -35,6 +35,7 @@ const model_catalog_cjs_1 = require("./model-catalog.cjs");
 const node_fs_1 = __importDefault(require("node:fs"));
 const node_path_1 = __importDefault(require("node:path"));
 const runtime_name_policy_cjs_1 = require("./runtime-name-policy.cjs");
+const runtime_slash_cjs_1 = require("./runtime-slash.cjs");
 // eslint-disable-next-line @typescript-eslint/no-require-imports
 const planningWorkspaceMod = require("./planning-workspace.cjs");
 const { planningDir } = planningWorkspaceMod;
@@ -58,38 +59,19 @@ const { planningDir } = planningWorkspaceMod;
 // registry-parity test guards this set so a future alias-capable runtime fails
 // loudly here instead of silently omitting.
 const RUNTIMES_WITH_NATIVE_ALIASES = new Set(['claude']);
-let _installMarkerCache;
-function readInstallRuntimeMarker() {
-    if (_installMarkerCache !== undefined)
-        return _installMarkerCache;
-    try {
-        const markerPath = node_path_1.default.join(__dirname, '..', '..', '.gsd-runtime');
-        const raw = node_fs_1.default.readFileSync(markerPath, 'utf8').trim();
-        _installMarkerCache = raw || null;
-    }
-    catch {
-        // No marker: dev/source tree, or an install predating #2297. Fall through to
-        // the 'claude' default (keeps tier aliases — never worse than the bug).
-        _installMarkerCache = null;
-    }
-    return _installMarkerCache;
-}
-// Test seams for the install-marker rung (the dev/source tree has no marker, so
-// the file read always bottoms out at 'claude' — these let tests exercise the
-// third precedence rung and reset the module-level cache between cases).
-function _setInstallRuntimeMarkerForTests(value) {
-    _installMarkerCache = value;
-}
-function _resetInstallRuntimeMarkerCacheForTests() {
-    _installMarkerCache = undefined;
-}
+// #3897 rung 2: the marker reader + its cache and test seams were promoted to
+// the canonical owner, `runtime-slash.cts` (imported above) — this module now
+// consumes that single implementation instead of holding its own copy. N5:
+// behaviour and the seam contract are unchanged by the move; the re-exports
+// below (`export =` at the bottom of this file) preserve every existing
+// caller's `require('./model-resolver.cjs')` surface byte-for-behaviour.
 // The runtime whose install is actually resolving, canonicalized so an alias or
 // case variant (e.g. "claude-code"/"the agent") cannot defeat the native-alias
 // check below (#2297 review). Precedence mirrors resolveRuntime()
 // (runtime-slash.cts): GSD_RUNTIME env → project config.runtime → per-install
 // .gsd-runtime marker → 'claude'.
 function resolveActiveRuntime(config) {
-    return (0, runtime_name_policy_cjs_1.resolveRuntimeNameFromCandidates)(process.env['GSD_RUNTIME'], config['runtime'], readInstallRuntimeMarker()) || 'claude';
+    return (0, runtime_name_policy_cjs_1.resolveRuntimeNameFromCandidates)(process.env['GSD_RUNTIME'], config['runtime'], (0, runtime_slash_cjs_1.readInstallRuntimeMarker)()) || 'claude';
 }
 // Did the PROJECT's own config (root `.planning/config.json` or the active
 // workstream/project override) explicitly set resolve_model_ids to "omit"?
@@ -841,8 +823,8 @@ module.exports = {
     resolveTierFromConfig,
     _resetModelPolicyWarningCacheForTests,
     _resetModelOverrideWarningCacheForTests,
-    _setInstallRuntimeMarkerForTests,
-    _resetInstallRuntimeMarkerCacheForTests,
+    _setInstallRuntimeMarkerForTests: runtime_slash_cjs_1._setInstallRuntimeMarkerForTests,
+    _resetInstallRuntimeMarkerCacheForTests: runtime_slash_cjs_1._resetInstallRuntimeMarkerCacheForTests,
     VALID_GRANULARITIES,
     resolveGranularityInternal,
     assertValidGranularityOverride,

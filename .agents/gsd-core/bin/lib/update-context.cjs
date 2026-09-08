@@ -80,6 +80,10 @@ function inferPreferredRuntime({ fs, env, preferredConfigDir }) {
             return 'opencode';
         if (fs.exists(node_path_1.default.join(preferredConfigDir, exports.CODEX_CONFIG_MARKER)))
             return 'codex';
+        const resolved = node_path_1.default.resolve(preferredConfigDir);
+        const known = exports.RUNTIME_DIRS.find(([, reldir]) => resolved.endsWith(node_path_1.default.sep + reldir.split('/').join(node_path_1.default.sep)));
+        if (known)
+            return known[0];
     }
     if (env['CODEX_HOME'])
         return 'codex';
@@ -91,7 +95,7 @@ function inferPreferredRuntime({ fs, env, preferredConfigDir }) {
         return 'opencode';
     if (env['CLAUDE_CONFIG_DIR'])
         return 'claude';
-    return 'claude';
+    return '';
 }
 // Absolute env-override candidates, mirroring the bash ENV_RUNTIME_DIRS block.
 function envRuntimeDirs({ env, home }) {
@@ -196,7 +200,7 @@ function resolveUpdateContext({ home, cwd, env = {}, fs, preferredConfigDir = ''
     if (globalRuntime) {
         return { installedVersion: '0.0.0', scope: 'GLOBAL', runtime: globalRuntime, gsdDir: globalDir };
     }
-    return { installedVersion: '0.0.0', scope: 'UNKNOWN', runtime: 'claude', gsdDir: '' };
+    return { installedVersion: '0.0.0', scope: 'UNKNOWN', runtime: '', gsdDir: '' };
 }
 /**
  * CLI wiring: resolve against the real filesystem.

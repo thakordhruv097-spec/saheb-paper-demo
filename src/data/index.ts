@@ -59,6 +59,10 @@ const getJSON = <T>(key: string, defaultValue: T): T => {
 
 const setJSON = <T>(key: string, value: T): void => {
   localStorage.setItem(key, JSON.stringify(value));
+  if (typeof window !== 'undefined') {
+    window.dispatchEvent(new Event('storage'));
+    window.dispatchEvent(new CustomEvent('saheb_data_updated', { detail: { key, value } }));
+  }
 };
 
 // LocalStorage Keys
@@ -207,13 +211,19 @@ const DEFAULT_RAW_MATERIALS: RawMaterialItem[] = [
 ];
 
 const DEFAULT_PRODUCTS: ProductItem[] = [
-  { id: 'p-1', name: 'Napkin Tissue', grade: 'A', gsm: 18, size: 30, ply: 2 },
-  { id: 'p-2', name: 'Napkin B-Grade', grade: 'B', gsm: 18, size: 30, ply: 2 },
-  { id: 'p-3', name: 'Toilet Tissue', grade: 'A', gsm: 17, size: 10, ply: 3 },
-  { id: 'p-4', name: 'Toilet B-Grade', grade: 'B', gsm: 17, size: 10, ply: 3 },
-  { id: 'p-5', name: 'KT', grade: 'A', gsm: 22, size: 20, ply: 1 },
-  { id: 'p-6', name: 'KT B-Grade', grade: 'B', gsm: 22, size: 20, ply: 1 },
-  { id: 'p-7', name: 'HRT', grade: 'A', gsm: 24, size: 25, ply: 1 },
+  { id: 'p-1', name: 'Napkin Tissue (Virgin Pulp)', grade: 'A', gsm: 16, size: 30, ply: 2 },
+  { id: 'p-2', name: 'Soft Tissue Napkin', grade: 'A', gsm: 17, size: 30, ply: 2 },
+  { id: 'p-3', name: 'Premium Tissue', grade: 'A', gsm: 18, size: 30, ply: 2 },
+  { id: 'p-4', name: 'Jumbo Tissue Roll', grade: 'A', gsm: 19, size: 120, ply: 1 },
+  { id: 'p-5', name: 'Toilet Tissue', grade: 'A', gsm: 17, size: 10, ply: 3 },
+  { id: 'p-6', name: 'Hard Roll Towel (HRT)', grade: 'A', gsm: 24, size: 25, ply: 1 },
+  { id: 'p-7', name: 'Kitchen Towel (KT)', grade: 'A', gsm: 22, size: 20, ply: 1 },
+  { id: 'p-8', name: 'Kraft Paper Liner', grade: 'A', gsm: 120, size: 110, ply: 1 },
+  { id: 'p-9', name: 'Cupstock Board', grade: 'A', gsm: 180, size: 85, ply: 1 },
+  { id: 'p-10', name: 'Duplex Board', grade: 'A', gsm: 230, size: 95, ply: 1 },
+  { id: 'p-11', name: 'Napkin B-Grade', grade: 'B', gsm: 18, size: 30, ply: 2 },
+  { id: 'p-12', name: 'Toilet B-Grade', grade: 'B', gsm: 17, size: 10, ply: 3 },
+  { id: 'p-13', name: 'KT B-Grade', grade: 'B', gsm: 22, size: 20, ply: 1 },
 ];
 
 const DEFAULT_PARTIES: PartyItem[] = [
@@ -771,7 +781,23 @@ export function updateRawMaterialStock(
 
 // --- MASTER DATA ---
 export function getProducts(): ProductItem[] {
-  return getJSON<ProductItem[]>(KEYS.PRODUCTS, []);
+  const existing = getJSON<ProductItem[]>(KEYS.PRODUCTS, []);
+  if (!existing || existing.length === 0) {
+    setJSON(KEYS.PRODUCTS, DEFAULT_PRODUCTS);
+    return DEFAULT_PRODUCTS;
+  }
+  let modified = false;
+  const merged = [...existing];
+  DEFAULT_PRODUCTS.forEach(dp => {
+    if (!merged.some(p => p.id === dp.id || p.name.toLowerCase() === dp.name.toLowerCase())) {
+      merged.push(dp);
+      modified = true;
+    }
+  });
+  if (modified) {
+    setJSON(KEYS.PRODUCTS, merged);
+  }
+  return merged;
 }
 
 export function saveProduct(product: ProductItem): ProductItem {
@@ -1491,6 +1517,29 @@ export function savePackingSlip(slip: PackingSlip, user: string): PackingSlip {
     }
   } else {
     slips.push(slip);
+    if (slip.status === 'DISPATCHED' && slip.reelNos && slip.reelNos.length > 0) {
+      const parties = getParties();
+      const vehicles = getVehicles();
+      const party = parties.find(p => p.id === slip.partyId);
+      const vehicle = vehicles.find(v => v.id === slip.vehicleId);
+      const partyName = party ? party.name : 'Customer';
+      const vehicleNo = vehicle ? vehicle.vehicleNo : (slip.vehicleId || 'Truck');
+      const dispatchDate = slip.date || new Date().toISOString().substring(0, 10);
+
+      slip.reelNos.forEach(rNo => {
+        const reel = reels.find(r => r.reelNo === rNo);
+        if (reel) {
+          reel.status = 'DISPATCHED';
+          reel.dispatchDetails = {
+            partyName,
+            vehicleNo,
+            dispatchDate,
+            packingSlipNo: slip.slipNo,
+          };
+          reelsChanged = true;
+        }
+      });
+    }
   }
 
   if (reelsChanged) {

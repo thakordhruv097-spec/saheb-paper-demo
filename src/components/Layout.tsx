@@ -561,7 +561,7 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
                 <span className="text-xs sm:text-sm font-black text-slate-900 dark:text-white leading-none tracking-tight truncate font-heading">
                   Saheb Paper Pvt. Ltd.
                 </span>
-                <span className="px-1.5 py-0.2 rounded-full bg-[#EDE9FE] dark:bg-purple-950/60 text-[#6C4FE0] dark:text-purple-300 text-[8px] font-black uppercase shrink-0">
+                <span className="px-1.5 py-0.5 rounded-full bg-[#EDE9FE] dark:bg-purple-950/60 text-[#6C4FE0] dark:text-purple-300 text-[8px] font-black uppercase shrink-0 border border-purple-200/90 dark:border-purple-800/80">
                   ERP
                 </span>
               </div>
@@ -715,14 +715,14 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
             <div className="relative shrink-0">
               <div
                 onClick={toggleProfile}
-                className="bg-white dark:bg-[#131d38] rounded-full p-1 sm:pl-3 sm:pr-1.5 sm:py-1.5 flex items-center gap-2 shadow-[3px_3px_10px_rgba(163,163,196,0.18),-3px_-3px_10px_rgba(255,255,255,0.95)] dark:shadow-none cursor-pointer hover:scale-[1.02] transition-all select-none"
+                className="bg-white dark:bg-[#131d38] border border-slate-200/80 dark:border-slate-800 rounded-full p-1 sm:pl-3 sm:pr-1.5 sm:py-1.5 flex items-center gap-2 shadow-[3px_3px_10px_rgba(163,163,196,0.18),-3px_-3px_10px_rgba(255,255,255,0.95)] dark:shadow-none cursor-pointer hover:scale-[1.02] transition-all select-none"
                 title="Profile Settings"
               >
                 <div className="hidden sm:flex flex-col items-start justify-center text-left">
                   <span className="text-[12px] font-black text-slate-900 dark:text-white leading-none tracking-tight whitespace-nowrap">
                     {user.displayName}
                   </span>
-                  <span className="mt-0.5 px-1.5 py-0.2 rounded-full bg-[#EDE9FE] dark:bg-purple-950/60 text-[#6C4FE0] dark:text-purple-300 text-[8.5px] font-black uppercase tracking-wider leading-none">
+                  <span className="mt-1 px-2 py-0.5 rounded-full bg-[#EDE9FE] dark:bg-purple-950/60 text-[#6C4FE0] dark:text-purple-300 text-[8.5px] font-black uppercase tracking-wider leading-none border border-purple-200/90 dark:border-purple-800/80 shadow-[0_1px_2px_rgba(108,79,224,0.06)]">
                     {user.role}
                   </span>
                 </div>
@@ -817,7 +817,7 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
                   <span className="text-xs font-black text-slate-900 dark:text-white leading-none tracking-tight truncate font-heading">
                     Saheb Paper
                   </span>
-                  <span className="px-1.5 py-0.2 rounded-full bg-[#EDE9FE] dark:bg-purple-950/60 text-[#6C4FE0] dark:text-purple-300 text-[8.5px] font-black uppercase shrink-0">
+                  <span className="px-1.5 py-0.5 rounded-full bg-[#EDE9FE] dark:bg-purple-950/60 text-[#6C4FE0] dark:text-purple-300 text-[8.5px] font-black uppercase shrink-0 border border-purple-200/90 dark:border-purple-800/80">
                     ERP
                   </span>
                 </div>

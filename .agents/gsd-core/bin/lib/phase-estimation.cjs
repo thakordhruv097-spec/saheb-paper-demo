@@ -218,14 +218,23 @@ function applyCalibration(rawTokens, factor) {
  * Extract a two-space-indented scalar block (`estimate:` / `actuals:`) out of a
  * document's leading YAML frontmatter.
  *
- * Hand-rolled because gsd-core ships no external dependencies (CONTRIBUTING.md
- * "No external dependencies in core") — js-yaml is a devDependency and is not
- * available at runtime. Scope is deliberately narrow: the leading `---` block
- * only, so a `estimate:` line inside a fenced code block in the body cannot be
- * mistaken for frontmatter (the DEFECT.FRONTMATTER-SCALAR-BROAD-GREP class).
- *
- * Numeric-looking values are returned as numbers so parseEstimate/parseActuals
- * see the types they validate; everything else stays a string.
+ * Hand-rolled for its TYPE CONTRACT, not for dependency availability — js-yaml
+ * is vendored and available at runtime as of ADR-3473 §8.1 (#3881), which
+ * migrated `src/frontmatter.cts`'s `extractFrontmatter` onto it. That parser
+ * runs under js-yaml's FAILSAFE_SCHEMA, which resolves every scalar as a
+ * string, whereas this function deliberately returns numbers for
+ * numeric-looking values (`out[m[1]] = asNumber : rawValue`) so
+ * `parseEstimate`/`parseActuals` see the types they validate. A naive swap
+ * onto `extractFrontmatter` would turn `tokens: 5000` into `"5000"` and make
+ * `isPositiveInt` reject every estimate. Scope is deliberately narrow: the
+ * leading `---` block only, so an `estimate:` line inside a fenced code
+ * block in the body cannot be mistaken for frontmatter (the
+ * DEFECT.FRONTMATTER-SCALAR-BROAD-GREP class). Migrating this function onto
+ * the shared parser (with a typed coercion layer over its string-only
+ * output) is tracked as follow-on work under ADR-3473 §8.1, not done here —
+ * this module is calibration-critical and has a history of subtle numeric
+ * defects shipping past a large green suite (#2631 factor², #2632
+ * self-defeating loop).
  */
 function extractFrontmatterBlock(text, key) {
     if (typeof text !== 'string')

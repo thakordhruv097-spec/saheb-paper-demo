@@ -26,6 +26,9 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.LANE_UNAVAILABLE = void 0;
 exports.configString = configString;
 exports.normalizeHost = normalizeHost;
+exports.resolveLaneEffort = resolveLaneEffort;
+exports.resolveTimeoutMs = resolveTimeoutMs;
+exports.nativeTimeoutToken = nativeTimeoutToken;
 exports.isEmptyReview = isEmptyReview;
 exports.fileRefPrompt = fileRefPrompt;
 exports.resolveLanePlan = resolveLanePlan;
@@ -122,6 +125,73 @@ function normalizeHost(raw) {
     const pathPart = u.pathname.replace(/\/+$/, '');
     return `${scheme}//${host}${port ? `:${port}` : ''}${pathPart}`;
 }
+/** Levels GSD's effort axis accepts (#3533). `inherit` selects the no-argument path. */
+const EFFORT_LEVELS = new Set([
+    'minimal', 'low', 'medium', 'high', 'xhigh', 'max', 'inherit',
+]);
+/**
+ * Resolve one lane's reasoning effort from REVIEW configuration (#4255).
+ *
+ * Resolution order, highest first:
+ *   1. `lane.effortConfigKey` — the per-lane review effort the operator set
+ *   2. `lane.defaultEffort` — the lane's declared review default (`high` for prompt-fed,
+ *      source-grounded lanes)
+ *   3. nothing — no effort argument is emitted and the reviewer CLI's own configuration decides
+ *
+ * A configured `'inherit'` selects (3) explicitly. An unrecognized level is REFUSED rather than
+ * passed to the host: it falls back to the lane default, because forwarding a typo would render an
+ * argument the CLI rejects and kill the lane outright.
+ *
+ * What this function deliberately does NOT do is consult any agent's execution settings. Before
+ * #4255 the level came from `gsd-plan-checker`'s installed frontmatter through a hardcoded agent
+ * id, so every lane ran at a fast structural verifier's `low` — and, because the rendered argument
+ * is a CLI config override, it silently beat the effort the operator had configured for that CLI
+ * itself. A value inherited from an unrelated agent is worse than no value at all, which is why
+ * (3) emits nothing rather than falling back to some other agent's number.
+ *
+ * `renderArgv` is injected (the host table and the ADR-2481 surface negotiation live in
+ * `model-catalog` / `commands`, above this module's layer) so this stays a pure function of its
+ * inputs and the golden lane table can assert it without a spawn.
+ */
+function resolveLaneEffort(lane, configGet, renderArgv) {
+    const none = { argv: [], value: null, source: 'none' };
+    if (!lane || typeof lane !== 'object')
+        return none;
+    const configured = lane.effortConfigKey ? configString(configGet(lane.effortConfigKey)) : null;
+    const valid = configured !== null && EFFORT_LEVELS.has(configured) ? configured : null;
+    const level = valid ?? configString(lane.defaultEffort);
+    if (level === null || level === 'inherit')
+        return none;
+    const rendered = renderArgv(lane.slug, level);
+    const argv = (rendered.argv ?? []).filter((a) => typeof a === 'string' && a !== '');
+    if (argv.length === 0)
+        return none;
+    return {
+        argv,
+        value: configString(rendered.value) ?? level,
+        source: valid !== null ? 'config' : 'lane-default',
+    };
+}
+function resolveTimeoutMs(timeoutConfigKey, floorMs, configGet) {
+    const configuredSeconds = typeof timeoutConfigKey === 'string' ? configGet(timeoutConfigKey) : undefined;
+    return typeof configuredSeconds === 'number' && Number.isFinite(configuredSeconds) && configuredSeconds > 0
+        ? configuredSeconds * 1000
+        : floorMs;
+}
+/** Buffer (seconds) a lane's native inner timeout sits under its resolved outer wall-clock cap
+ * (#3274). Matches the shipped 600s outer / 540s native relationship exactly when unconfigured:
+ * floor(600000/1000) - 60 = 540. */
+const NATIVE_TIMEOUT_BUFFER_SECONDS = 60;
+/**
+ * Render the `{{nativeTimeout}}` argv placeholder from a lane's resolved outer timeout (#3274).
+ *
+ * Clamped to a 1-second floor so a very small configured (or, today, only-ever-default) outer
+ * timeout never produces a zero or negative duration string a CLI would reject or misinterpret.
+ */
+function nativeTimeoutToken(timeoutMs) {
+    const seconds = Math.max(1, Math.floor(timeoutMs / 1000) - NATIVE_TIMEOUT_BUFFER_SECONDS);
+    return `${seconds}s`;
+}
 /**
  * Classify a lane's output as a review or as empty.
  *
@@ -212,9 +282,10 @@ function resolveLanePlan(input) {
         return fail(exports.LANE_UNAVAILABLE.UNKNOWN_HANDLER, `lane '${slug}' names handler '${String(handler)}', which this GSD version does not provide`);
     }
     const { promptPath, reviewPath, errPath } = artifactPaths(input.runDir, slug);
-    const timeoutMs = typeof lane.timeoutFloorMs === 'number' && Number.isFinite(lane.timeoutFloorMs) && lane.timeoutFloorMs > 0
+    const floorMs = typeof lane.timeoutFloorMs === 'number' && Number.isFinite(lane.timeoutFloorMs) && lane.timeoutFloorMs > 0
         ? lane.timeoutFloorMs
         : 900_000;
+    const timeoutMs = resolveTimeoutMs(lane.timeoutConfigKey, floorMs, input.configGet);
     const emptyOutput = lane.emptyOutput === 'handler-owned' ? 'handler-owned' : 'stub-with-stderr';
     // #3194: only an EXACT 'diff-only' declaration exempts a lane from evidence verification.
     // Anything else — including a missing or garbage value on a third-party overlay body —
@@ -319,6 +390,7 @@ function resolveLanePlan(input) {
         '{{effort}}': effortExpansion,
         '{{output}}': outputExpansion,
         '{{prompt}}': promptExpansion,
+        '{{nativeTimeout}}': [nativeTimeoutToken(timeoutMs)],
     };
     const template = Array.isArray(inv.args)
         ? inv.args.filter((a) => typeof a === 'string')

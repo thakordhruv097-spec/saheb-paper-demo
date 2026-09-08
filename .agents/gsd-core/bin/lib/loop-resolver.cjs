@@ -40,7 +40,7 @@ const { resolveCapabilityRuntimeState } = capabilityStateModule;
 // ─── Capability-activation engine (single owner for config-key precedence) ────
 // eslint-disable-next-line @typescript-eslint/no-require-imports
 const capabilityActivationModule = require("./capability-activation.cjs");
-const { _getNestedConfigValue, _readRawConfigKey, _resolveActivationValue, resolveConfigKey } = capabilityActivationModule;
+const { _getNestedConfigValue, _readRawConfigKey, _resolveActivationValue, _resolvePointGate, resolveConfigKey } = capabilityActivationModule;
 // ─── Canonical points (derived from LOOP_HOST_CONTRACT — authoritative 12) ───
 // FIX 2: Derive the authoritative canonical set from LOOP_HOST_CONTRACT so it
 // cannot drift from the host contract. CANONICAL_POINTS_FALLBACK is kept as an
@@ -125,13 +125,15 @@ function resolveLoopHooks(input) {
     // Helper: check activation using single-key precedence resolver (FIX 1 + FIX 3)
     function isActive(hook) {
         const when = hook['when'];
-        // No `when` → unconditional hook, always active
-        if (when === undefined || when === null)
-            return true;
-        // FIX 3: `when` present but not a non-empty string → malformed registry data → INACTIVE
-        if (typeof when !== 'string' || when.length === 0)
-            return false;
-        return _resolveActivationValue(when, config, cwd, registry);
+        if (when !== undefined && when !== null) {
+            // FIX 3: `when` present but not a non-empty string → malformed registry data → INACTIVE
+            if (typeof when !== 'string' || when.length === 0)
+                return false;
+            if (!_resolveActivationValue(when, config, cwd, registry))
+                return false;
+        }
+        // #3661: optional point-selection gate — see capability-activation.cts.
+        return _resolvePointGate(hook['pointFrom'], point, config, cwd, registry);
     }
     function isCapabilityActive(capId) {
         if (!capabilityStatesById)
@@ -555,6 +557,10 @@ module.exports = {
     // Re-exported for identity parity guard (FIX 2: resolveConfigValues in this module
     // calls resolveConfigKey; exporting it here makes the single-owner contract testable).
     resolveConfigKey,
+    // #3661: re-exported for the same identity parity guard — isActive calls
+    // _resolvePointGate; exporting it here makes the single-owner contract testable
+    // (see tests/capability-precedence-parity.test.cjs's identity guard describe block).
+    _resolvePointGate,
     CANONICAL_POINTS_FALLBACK,
     CANONICAL_POINTS,
 };

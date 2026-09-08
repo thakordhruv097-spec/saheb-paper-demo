@@ -43,6 +43,9 @@ exports.projectTruths = projectTruths;
 exports.dispositionForUnverifiableTruth = dispositionForUnverifiableTruth;
 exports.runProbeCli = runProbeCli;
 const node_fs_1 = __importDefault(require("node:fs"));
+// eslint-disable-next-line @typescript-eslint/no-require-imports
+const cliExitModule = require("./cli-exit.cjs");
+const { ExitError } = cliExitModule;
 /** The LOCKED set of valid lifecycle statuses (the re-cut: no covered/backstop). */
 exports.VALID_STATUS = ['resolved', 'dismissed', 'unresolved'];
 function errMessage(e) {
@@ -497,7 +500,7 @@ function runProbeCli(analyze, options) {
     const readFile = options.readFile ?? ((p) => node_fs_1.default.readFileSync(p, 'utf8'));
     const write = options.write ?? ((s) => { process.stdout.write(s); });
     const writeErr = options.writeErr ?? ((s) => { process.stderr.write(s); });
-    const exit = options.exit ?? ((code) => { process.exit(code); });
+    const exit = options.exit ?? ((code) => { throw new ExitError(code); });
     const reqPath = argv[2];
     const resPath = argv[3];
     if (!reqPath) {

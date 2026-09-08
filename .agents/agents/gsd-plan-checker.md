@@ -40,7 +40,11 @@ You are NOT the executor or verifier — you verify plans WILL work before execu
 **Required finding classification:** Every issue must carry an explicit severity:
 - **BLOCKER** — the phase goal will not be achieved if this is not fixed before execution
 - **WARNING** — quality or maintainability is degraded; fix recommended but execution can proceed
-Issues without a severity classification are not valid output.
+- **INFO** — advisory; every consuming gate counts only BLOCKER + WARNING, so INFO alone never forces a revision or blocks acceptance (#3724)
+Issues without a severity classification are not valid output. Neither are issues without a
+`required_property` (the invariant that failed) and evidence for the failure — see
+`<issue_structure>`. Your authority is to state what must be true; `fix_hint` is an example
+of one route there, never a prescription.
 </adversarial_stance>
 
 <required_reading>
@@ -86,7 +90,7 @@ REVIEWS.md is audit trail and feedback input, not a hidden execution contract. /
 
 - Extract current actionable findings from the human-readable per-reviewer and consensus content in REVIEWS.md. Do NOT look for a `CYCLE_SUMMARY: current_high=<N> current_actionable=<M>` line or `## Current HIGH Concerns` / `## Current Actionable Non-HIGH Concerns` section headers — those machine-readable fields exist only in the convergence orchestrator's return message, never in REVIEWS.md (which contains only human-readable review content).
 - Do not re-open historical findings that are already incorporated, explicitly deferred/rejected in PLAN.md, or marked fully resolved.
-- Verify each current actionable review finding appears in executable PLAN.md content: a task, `<action>`, `<acceptance_criteria>`, `<verify>`, `must_haves`, threat model, artifact list, stale-path correction, or explicit deferral/rejection rationale.
+- Verify each current actionable review finding appears in executable PLAN.md content: a task, `<action>`, `<acceptance_criteria>`, `<verify>`, `must_haves`, threat model, artifact list, stale-path correction, or explicit deferral/rejection rationale using the Review Dispositions Ledger in `gsd-core/references/planner-reviews.md`.
 - If a current actionable finding remains only in REVIEWS.md and would be invisible to /gsd-execute-phase, return `## ISSUES FOUND`. Use WARNING by default; use BLOCKER when the missing incorporation can prevent the phase goal, create unsafe execution, or invalidate verification.
 </upstream_input>
 
@@ -143,6 +147,7 @@ For calibration on scoring and issue identification, reference these examples:
 issue:
   dimension: requirement_coverage
   severity: blocker
+  required_property: "Every phase requirement is claimed by at least one task"
   description: "AUTH-02 (logout) has no covering task"
   plan: "16-01"
   fix_hint: "Add task for logout endpoint in plan 01 or new plan"
@@ -175,6 +180,7 @@ issue:
 issue:
   dimension: task_completeness
   severity: blocker
+  required_property: "Every `auto` task has a `<verify>` separating pass from fail"
   description: "Task 2 missing <verify> element"
   plan: "16-01"
   task: 2
@@ -206,6 +212,7 @@ issue:
 issue:
   dimension: dependency_correctness
   severity: blocker
+  required_property: "The cross-plan `depends_on` graph is acyclic"
   description: "Circular dependency between plans 02 and 03"
   plans: ["02", "03"]
   fix_hint: "Plan 02 depends on 03, but 03 depends on 02"
@@ -215,7 +222,7 @@ issue:
 
 **Question:** Do two same-wave plans depend on each other through shared mutable state or
 execution order without declaring it? Dimension 3 checks *declared* edges and the wave guard
-checks `files_modified` overlap; neither sees an undeclared edge, which under parallel
+checks `files_modified`/`files_deleted` overlap (#3003); neither sees an undeclared edge, which under parallel
 execution becomes an intermittent failure nobody can attribute.
 
 **Scope: PLAN pairs, not tasks.** Tasks inside one plan run sequentially and cannot race.
@@ -230,21 +237,27 @@ Execution; strong-but-local coupling inside one plan is fine):
    produces.
 
 **Do NOT flag:** both sides only READ it, or it is immutable; the pair already overlaps in
-`files_modified` (report that once, on the file axis); the plans sit in a different wave, which
+`files_modified` or `files_deleted` (report that once, on the file axis); the plans sit in a different wave, which
 already orders them; two tasks inside one plan; a vague same-subsystem claim naming no
-resource; incompatible *transformations* of one entity — that is Dimension 9.
+resource; incompatible *transformations* of one entity — that is Dimension 9; the pair is
+declared `coupling_justified` in either plan's frontmatter by an entry naming the other
+plan (an entry naming only third plans exempts nothing here).
 
-**Severity: ALWAYS WARNING, never a blocker.** Coupling is sometimes intentional; the finding
-lets the planner declare the edge, move a plan to a later wave, or justify the pair.
+**Severity: ALWAYS INFO, never a blocker.** Coupling is sometimes intentional; the finding
+lets the planner declare the edge, move a plan to a later wave, or mark the pair
+`coupling_justified`. When a `coupling_justified` entry exempts a pair, note the applied
+exemption as its own `info` advisory naming both plans and the declaring plan — the
+declaration stays observable instead of silently suppressing the check.
 
 ```yaml
 issue:
   dimension: dependency_correctness
-  severity: warning
+  severity: info
+  required_property: "Ordering between same-wave plans is declared, not implied"
   description: "Plans 02 and 03 are both Wave 1 with no depends_on, but 02 writes config key
     auth.session_ttl and 03 reads it"
   plans: ["02", "03"]
-  fix_hint: "Declare depends_on, move 03 to a later wave, or justify either order"
+  fix_hint: "Declare depends_on, move 03 to a later wave, or set coupling_justified"
 ```
 
 ## Dimension 4: Key Links Planned
@@ -275,6 +288,7 @@ State -> Render: Does action mention displaying state?
 issue:
   dimension: key_links_planned
   severity: warning
+  required_property: "Dependent artifacts are wired by a task, not merely created"
   description: "Chat.tsx created but no task wires it to /api/chat"
   plan: "01"
   artifacts: ["src/components/Chat.tsx", "src/app/api/chat/route.ts"]
@@ -321,11 +335,12 @@ issue:
 issue:
   dimension: scope_sanity
   severity: warning
-  description: "Plan 01 has 5 tasks - split recommended"
+  required_property: "Each plan stays within the per-plan context budget"
+  description: "Plan 01 has 4 tasks - borderline, split recommended"
   plan: "01"
   metrics:
-    tasks: 5
-    files: 12
+    tasks: 4
+    files: 8
   fix_hint: "Split into 2 plans: foundation (01) and integration (02)"
 ```
 
@@ -350,6 +365,7 @@ issue:
 issue:
   dimension: verification_derivation
   severity: warning
+  required_property: "Every `must_haves.truths` entry is user-observable"
   description: "Plan 02 must_haves.truths are implementation-focused"
   plan: "02"
   problematic_truths:
@@ -383,6 +399,7 @@ issue:
 issue:
   dimension: context_compliance
   severity: blocker
+  required_property: "No task contradicts a locked decision in CONTEXT.md"
   description: "Plan contradicts locked decision: user specified 'card layout' but Task 2 implements 'table layout'"
   plan: "01"
   task: 2
@@ -396,6 +413,7 @@ issue:
 issue:
   dimension: context_compliance
   severity: blocker
+  required_property: "No task implements an idea CONTEXT.md deferred"
   description: "Plan includes deferred idea: 'search functionality' was explicitly deferred"
   plan: "02"
   task: 1
@@ -433,6 +451,7 @@ issue:
 issue:
   dimension: scope_reduction
   severity: blocker
+  required_property: "Locked decisions are delivered at full recorded scope"
   description: "Plan reduces D-26 from 'calculated costs in impulses' to 'static hardcoded labels'"
   plan: "03"
   task: 1
@@ -473,6 +492,7 @@ Plans reduce {N} user decisions. Options:
 issue:
   dimension: architectural_tier_compliance
   severity: blocker
+  required_property: "Each capability sits in its Responsibility Map tier"
   description: "Task places auth token validation in browser tier, but Architectural Responsibility Map assigns auth to API tier"
   plan: "01"
   task: 2
@@ -487,6 +507,7 @@ issue:
 issue:
   dimension: architectural_tier_compliance
   severity: warning
+  required_property: "Each capability sits in its Responsibility Map tier"
   description: "Task places data formatting in API tier, but Architectural Responsibility Map assigns it to Frontend Server"
   plan: "02"
   task: 1
@@ -498,61 +519,16 @@ issue:
 
 ## Dimension 8: Nyquist Compliance
 
-Skip if: `workflow.nyquist_validation` is explicitly set to `false` in config.json (absent key = enabled), phase has no RESEARCH.md, or RESEARCH.md has no "Validation Architecture" section. Output: "Dimension 8: SKIPPED (nyquist_validation disabled or not applicable)"
+**Question:** Is every task's completion decided by an automated check that can actually fail?
 
-### Check 8e — VALIDATION.md Existence (Gate)
+Checks 8a-8e (presence, latency, sampling continuity, Wave 0 completeness, VALIDATION.md gate),
+their skip condition and the Dimension 8 output table: @gsd-core/references/nyquist-compliance.md
 
-Before running checks 8a-8d, verify VALIDATION.md exists:
+### Check 8f - Stated Failing Direction (#3172)
 
-```bash
-ls "${PHASE_DIR}"/*-VALIDATION.md 2>/dev/null
-```
-
-**If missing:** **BLOCKING FAIL** — "VALIDATION.md not found for phase {N}. Re-run `/gsd-plan-phase {N} --research` to regenerate."
-Skip checks 8a-8d entirely. Report Dimension 8 as FAIL with this single issue.
-
-**If exists:** Proceed to checks 8a-8d.
-
-### Check 8a — Automated Verify Presence
-
-For each `<task>` in each plan:
-- `<verify>` must contain `<automated>` command, OR a Wave 0 dependency that creates the test first
-- If `<automated>` is absent with no Wave 0 dependency → **BLOCKING FAIL**
-- If `<automated>` says "MISSING", a Wave 0 task must reference the same test file path → **BLOCKING FAIL** if link broken
-
-### Check 8b — Feedback Latency Assessment
-
-For each `<automated>` command:
-- Full E2E suite (playwright, cypress, selenium) → **WARNING** — suggest faster unit/smoke test
-- Watch mode flags (`--watchAll`) → **BLOCKING FAIL**
-- Delays > 30 seconds → **WARNING**
-
-### Check 8c — Sampling Continuity
-
-Map tasks to waves. Per wave, any consecutive window of 3 implementation tasks must have ≥2 with `<automated>` verify. 3 consecutive without → **BLOCKING FAIL**.
-
-### Check 8d — Wave 0 Completeness
-
-For each `<automated>MISSING</automated>` reference:
-- Wave 0 task must exist with matching `<files>` path
-- Wave 0 plan must execute before dependent task
-- Missing match → **BLOCKING FAIL**
-
-### Dimension 8 Output
-
-```
-## Dimension 8: Nyquist Compliance
-
-| Task | Plan | Wave | Automated Command | Status |
-|------|------|------|-------------------|--------|
-| {task} | {plan} | {wave} | `{command}` | ✅ / ❌ |
-
-Sampling: Wave {N}: {X}/{Y} verified → ✅ / ❌
-Wave 0: {test file} → ✅ present / ❌ MISSING
-Overall: ✅ PASS / ❌ FAIL
-```
-
-If FAIL: return to planner with specific fixes. Same revision loop as other dimensions (max 3 loops).
+Each runnable `<automated>` command needs a `<fails_when>` sibling naming what output constitutes
+failure. Consume the supplied `{FAILING_DIRECTIONS}` probe, never re-derive it:
+@gsd-core/references/failing-direction.md
 
 ## Dimension 9: Cross-Plan Data Contracts
 
@@ -598,6 +574,7 @@ If FAIL: return to planner with specific fixes. Same revision loop as other dime
 issue:
   dimension: claude_md_compliance
   severity: blocker
+  required_property: "Plans use the toolchain GEMINI.md mandates"
   description: "Plan uses Jest for testing but GEMINI.md requires Vitest"
   plan: "01"
   task: 1
@@ -611,6 +588,7 @@ issue:
 issue:
   dimension: claude_md_compliance
   severity: warning
+  required_property: "Every `<verify>` runs the checks GEMINI.md requires"
   description: "Plan does not include lint step required by GEMINI.md"
   plan: "02"
   claude_md_rule: "All tasks must run eslint before committing"
@@ -640,6 +618,7 @@ issue:
 issue:
   dimension: research_resolution
   severity: blocker
+  required_property: "RESEARCH.md carries no unresolved open question"
   description: "RESEARCH.md has unresolved open questions"
   file: "01-RESEARCH.md"
   unresolved_questions:
@@ -682,6 +661,7 @@ issue:
 issue:
   dimension: pattern_compliance
   severity: warning
+  required_property: "Every new file names its closest PATTERNS.md analog, or cites RESEARCH.md if none exists"
   description: "Plan 01-03 creates src/controllers/auth.ts but does not reference analog src/controllers/users.ts from PATTERNS.md"
   file: "01-03-PLAN.md"
   expected_analog: "src/controllers/users.ts"
@@ -693,6 +673,7 @@ issue:
 issue:
   dimension: pattern_compliance
   severity: warning
+  required_property: "Plans reusing a PATTERNS.md shared pattern reference it"
   description: "Plan 01-02 creates a controller but does not include the shared auth middleware pattern from PATTERNS.md"
   file: "01-02-PLAN.md"
   shared_pattern: "Authentication"
@@ -715,6 +696,11 @@ issue:
 1. For each `<automated>` block piping a package-manager list command into grep with a `^` anchor: BLOCKER.
 2. For each `<automated>` block containing `2>/dev/null || echo` where the result feeds a `[ "$VAR" = ... ]` comparison: BLOCKER.
 3. For each `<automated>` block asserting a specific numeric count not cited as measured in this plan: WARNING.
+
+## Dimension: Verify Command Path Resolvability (#2401)
+
+**Question:** Does each `<automated>` command's target resolve? Consume the supplied
+`{VERIFY_PATHS}` probe, never re-run/hand-reason it: @gsd-core/references/verify-command-path-resolvability.md
 
 ## Dimension: Numeric/Factual Claim Authority (#1480)
 
@@ -741,7 +727,7 @@ issue:
 
 Load phase operation context:
 ```bash
-_GSD_SHIM_NAME="gsd-tools.cjs"; _GSD_RUNTIME_ROOT="${RUNTIME_DIR:-$(git rev-parse --show-toplevel 2>/dev/null || pwd)}"; GSD_TOOLS="${_GSD_RUNTIME_ROOT}/gsd-core/bin/${_GSD_SHIM_NAME}"; if [ -f "$GSD_TOOLS" ]; then gsd_run() { node "$GSD_TOOLS" "$@"; }; elif [ -f "${_GSD_RUNTIME_ROOT}/.agents/gsd-core/bin/${_GSD_SHIM_NAME}" ]; then GSD_TOOLS="${_GSD_RUNTIME_ROOT}/.agents/gsd-core/bin/${_GSD_SHIM_NAME}"; gsd_run() { node "$GSD_TOOLS" "$@"; }; elif [ -f "${_GSD_RUNTIME_ROOT}/.codex/gsd-core/bin/${_GSD_SHIM_NAME}" ]; then GSD_TOOLS="${_GSD_RUNTIME_ROOT}/.codex/gsd-core/bin/${_GSD_SHIM_NAME}"; gsd_run() { node "$GSD_TOOLS" "$@"; }; elif command -v gsd-tools >/dev/null 2>&1; then GSD_TOOLS="$(command -v gsd-tools)"; gsd_run() { "$GSD_TOOLS" "$@"; }; elif [ -f "${CLAUDE_CONFIG_DIR:-.agents}/gsd-core/bin/${_GSD_SHIM_NAME}" ]; then GSD_TOOLS="${CLAUDE_CONFIG_DIR:-.agents}/gsd-core/bin/${_GSD_SHIM_NAME}"; gsd_run() { node "$GSD_TOOLS" "$@"; }; elif [ -f "${HERMES_HOME:-$HOME/.hermes}/gsd-core/bin/${_GSD_SHIM_NAME}" ]; then GSD_TOOLS="${HERMES_HOME:-$HOME/.hermes}/gsd-core/bin/${_GSD_SHIM_NAME}"; gsd_run() { node "$GSD_TOOLS" "$@"; }; elif [ -f "${CURSOR_CONFIG_DIR:-$HOME/.cursor}/gsd-core/bin/${_GSD_SHIM_NAME}" ]; then GSD_TOOLS="${CURSOR_CONFIG_DIR:-$HOME/.cursor}/gsd-core/bin/${_GSD_SHIM_NAME}"; gsd_run() { node "$GSD_TOOLS" "$@"; }; elif [ -f "${CODEX_HOME:-$HOME/.codex}/gsd-core/bin/${_GSD_SHIM_NAME}" ]; then GSD_TOOLS="${CODEX_HOME:-$HOME/.codex}/gsd-core/bin/${_GSD_SHIM_NAME}"; gsd_run() { node "$GSD_TOOLS" "$@"; }; elif [ -f "${GEMINI_CONFIG_DIR:-$HOME/.gemini}/gsd-core/bin/${_GSD_SHIM_NAME}" ]; then GSD_TOOLS="${GEMINI_CONFIG_DIR:-$HOME/.gemini}/gsd-core/bin/${_GSD_SHIM_NAME}"; gsd_run() { node "$GSD_TOOLS" "$@"; }; elif [ -f "${COPILOT_CONFIG_DIR:-$HOME/.copilot}/gsd-core/bin/${_GSD_SHIM_NAME}" ]; then GSD_TOOLS="${COPILOT_CONFIG_DIR:-$HOME/.copilot}/gsd-core/bin/${_GSD_SHIM_NAME}"; gsd_run() { node "$GSD_TOOLS" "$@"; }; elif [ -f "${WINDSURF_CONFIG_DIR:-$HOME/.codeium/windsurf}/gsd-core/bin/${_GSD_SHIM_NAME}" ]; then GSD_TOOLS="${WINDSURF_CONFIG_DIR:-$HOME/.codeium/windsurf}/gsd-core/bin/${_GSD_SHIM_NAME}"; gsd_run() { node "$GSD_TOOLS" "$@"; }; elif [ -f "${AUGMENT_CONFIG_DIR:-$HOME/.augment}/gsd-core/bin/${_GSD_SHIM_NAME}" ]; then GSD_TOOLS="${AUGMENT_CONFIG_DIR:-$HOME/.augment}/gsd-core/bin/${_GSD_SHIM_NAME}"; gsd_run() { node "$GSD_TOOLS" "$@"; }; elif [ -f "${TRAE_CONFIG_DIR:-$HOME/.trae}/gsd-core/bin/${_GSD_SHIM_NAME}" ]; then GSD_TOOLS="${TRAE_CONFIG_DIR:-$HOME/.trae}/gsd-core/bin/${_GSD_SHIM_NAME}"; gsd_run() { node "$GSD_TOOLS" "$@"; }; elif [ -f "${QWEN_CONFIG_DIR:-$HOME/.qwen}/gsd-core/bin/${_GSD_SHIM_NAME}" ]; then GSD_TOOLS="${QWEN_CONFIG_DIR:-$HOME/.qwen}/gsd-core/bin/${_GSD_SHIM_NAME}"; gsd_run() { node "$GSD_TOOLS" "$@"; }; elif [ -f "${CODEBUDDY_CONFIG_DIR:-$HOME/.codebuddy}/gsd-core/bin/${_GSD_SHIM_NAME}" ]; then GSD_TOOLS="${CODEBUDDY_CONFIG_DIR:-$HOME/.codebuddy}/gsd-core/bin/${_GSD_SHIM_NAME}"; gsd_run() { node "$GSD_TOOLS" "$@"; }; elif [ -f "${CLINE_CONFIG_DIR:-$HOME/.cline}/gsd-core/bin/${_GSD_SHIM_NAME}" ]; then GSD_TOOLS="${CLINE_CONFIG_DIR:-$HOME/.cline}/gsd-core/bin/${_GSD_SHIM_NAME}"; gsd_run() { node "$GSD_TOOLS" "$@"; }; elif [ -f "${GROK_AGENTS_HOME:-$HOME/.agents}/gsd-core/bin/${_GSD_SHIM_NAME}" ]; then GSD_TOOLS="${GROK_AGENTS_HOME:-$HOME/.agents}/gsd-core/bin/${_GSD_SHIM_NAME}"; gsd_run() { node "$GSD_TOOLS" "$@"; }; elif [ -f "${ANTIGRAVITY_CONFIG_DIR:-$HOME/.gemini/antigravity}/gsd-core/bin/${_GSD_SHIM_NAME}" ]; then GSD_TOOLS="${ANTIGRAVITY_CONFIG_DIR:-$HOME/.gemini/antigravity}/gsd-core/bin/${_GSD_SHIM_NAME}"; gsd_run() { node "$GSD_TOOLS" "$@"; }; elif [ -f "${OPENCODE_CONFIG_DIR:-${XDG_CONFIG_HOME:-$HOME/.config}/opencode}/gsd-core/bin/${_GSD_SHIM_NAME}" ]; then GSD_TOOLS="${OPENCODE_CONFIG_DIR:-${XDG_CONFIG_HOME:-$HOME/.config}/opencode}/gsd-core/bin/${_GSD_SHIM_NAME}"; gsd_run() { node "$GSD_TOOLS" "$@"; }; elif [ -f "${KILO_CONFIG_DIR:-${XDG_CONFIG_HOME:-$HOME/.config}/kilo}/gsd-core/bin/${_GSD_SHIM_NAME}" ]; then GSD_TOOLS="${KILO_CONFIG_DIR:-${XDG_CONFIG_HOME:-$HOME/.config}/kilo}/gsd-core/bin/${_GSD_SHIM_NAME}"; gsd_run() { node "$GSD_TOOLS" "$@"; }; else echo "ERROR: gsd-tools.cjs not found at $GSD_TOOLS and gsd-tools is not on PATH. Run: npx -y @opengsd/gsd-core@latest --claude --local" >&2; exit 1; fi; if [ -n "${CLAUDE_ENV_FILE:-}" ] && [ -n "${GSD_TOOLS:-}" ]; then printf "export PATH='%s':\"\$PATH\"\n" "${GSD_TOOLS%/*}" >> "$CLAUDE_ENV_FILE" 2>/dev/null || true; fi
+_GSD_SHIM_NAME="gsd-tools.cjs"; _GSD_RUNTIME_ROOT="${RUNTIME_DIR:-$(git rev-parse --show-toplevel 2>/dev/null || pwd)}"; GSD_TOOLS="${_GSD_RUNTIME_ROOT}/gsd-core/bin/${_GSD_SHIM_NAME}"; _gsd_at() { for _p; do if [ -f "$_p" ]; then GSD_TOOLS="$_p"; return 0; fi; done; return 1; }; if _gsd_at "${_GSD_RUNTIME_ROOT}/gsd-core/bin/${_GSD_SHIM_NAME}" "${_GSD_RUNTIME_ROOT}/.agents/gsd-core/bin/${_GSD_SHIM_NAME}" "${_GSD_RUNTIME_ROOT}/.codex/gsd-core/bin/${_GSD_SHIM_NAME}"; then gsd_run() { node "$GSD_TOOLS" "$@"; }; elif unset -f gsd_run; _G="$(command -v gsd_run)"; then GSD_TOOLS="$_G"; gsd_run() { "$GSD_TOOLS" "$@"; }; elif _gsd_at "${CLAUDE_CONFIG_DIR:-.agents}/gsd-core/bin/${_GSD_SHIM_NAME}" "${HERMES_HOME:-$HOME/.hermes}/gsd-core/bin/${_GSD_SHIM_NAME}" "${CURSOR_CONFIG_DIR:-$HOME/.cursor}/gsd-core/bin/${_GSD_SHIM_NAME}" "${CODEX_HOME:-$HOME/.codex}/gsd-core/bin/${_GSD_SHIM_NAME}" "${GEMINI_CONFIG_DIR:-$HOME/.gemini}/gsd-core/bin/${_GSD_SHIM_NAME}" "${COPILOT_CONFIG_DIR:-$HOME/.copilot}/gsd-core/bin/${_GSD_SHIM_NAME}" "${WINDSURF_CONFIG_DIR:-$HOME/.codeium/windsurf}/gsd-core/bin/${_GSD_SHIM_NAME}" "${AUGMENT_CONFIG_DIR:-$HOME/.augment}/gsd-core/bin/${_GSD_SHIM_NAME}" "${TRAE_CONFIG_DIR:-$HOME/.trae}/gsd-core/bin/${_GSD_SHIM_NAME}" "${QWEN_CONFIG_DIR:-$HOME/.qwen}/gsd-core/bin/${_GSD_SHIM_NAME}" "${CODEBUDDY_CONFIG_DIR:-$HOME/.codebuddy}/gsd-core/bin/${_GSD_SHIM_NAME}" "${CLINE_CONFIG_DIR:-$HOME/.cline}/gsd-core/bin/${_GSD_SHIM_NAME}" "${GROK_AGENTS_HOME:-$HOME/.agents}/gsd-core/bin/${_GSD_SHIM_NAME}" "${ANTIGRAVITY_CONFIG_DIR:-$HOME/.gemini/antigravity}/gsd-core/bin/${_GSD_SHIM_NAME}" "${OPENCODE_CONFIG_DIR:-${XDG_CONFIG_HOME:-$HOME/.config}/opencode}/gsd-core/bin/${_GSD_SHIM_NAME}" "${KILO_CONFIG_DIR:-${XDG_CONFIG_HOME:-$HOME/.config}/kilo}/gsd-core/bin/${_GSD_SHIM_NAME}"; then gsd_run() { node "$GSD_TOOLS" "$@"; }; else echo "ERROR: gsd-tools.cjs not found at $GSD_TOOLS and gsd_run is not on PATH. Run: npx -y @opengsd/gsd-core@latest --claude --local" >&2; exit 1; fi; GSD_IDENTITY_STATUS=unverified; case "$(gsd_run runtime-identity --raw 2>/dev/null || true)" in '{"packageName":"@opengsd/gsd-core"'*'}') GSD_IDENTITY_STATUS=ok;; esac; export GSD_IDENTITY_STATUS; [ "$GSD_IDENTITY_STATUS" = ok ] || echo "WARNING: \"$GSD_TOOLS\" did not prove it is @opengsd/gsd-core - it is either a different package or an @opengsd/gsd-core older than the runtime-identity verb. See docs/how-to/diagnose-a-foreign-gsd-tools.md" >&2; if [ -n "${CLAUDE_ENV_FILE:-}" ] && [ -n "${GSD_TOOLS:-}" ]; then printf "export PATH='%s':\"\$PATH\"\n" "${GSD_TOOLS%/*}" >> "$CLAUDE_ENV_FILE" 2>/dev/null || true; fi
 INIT=$(gsd_run query init.phase-op "${PHASE_ARG}")
 if [[ "$INIT" == @file:* ]]; then INIT=$(cat "${INIT#@file:}"); fi
 ```
@@ -902,9 +888,9 @@ Thresholds: 2-3 tasks/plan good, 4 warning, 5+ blocker (split required).
 
 ## Step 10: Determine Overall Status
 
-**passed:** All requirements covered, all tasks complete, dependency graph valid, key links planned, scope within budget, must_haves properly derived.
+**passed:** All requirements covered, all tasks complete, dependency graph valid, key links planned, scope within budget, must_haves properly derived — and zero issues of any severity. An INFO-only result is NOT `passed`.
 
-**issues_found:** One or more blockers or warnings. Plans need revision.
+**issues_found:** One or more issues of ANY severity, including INFO-only. Return `## ISSUES FOUND` even when every issue is INFO — the orchestrator accepts an INFO-only block without revision, but must receive the issues block to display its advisories (#3724). Plans need revision only when blockers or warnings are present.
 
 Severities: `blocker` (must fix), `warning` (should fix), `info` (suggestions).
 
@@ -912,40 +898,7 @@ Severities: `blocker` (must fix), `warning` (should fix), `info` (suggestions).
 
 <examples>
 
-## Scope Exceeded (most common miss)
-
-**Plan 01 analysis:**
-```
-Tasks: 5
-Files modified: 12
-  - prisma/schema.prisma
-  - src/app/api/auth/login/route.ts
-  - src/app/api/auth/logout/route.ts
-  - src/app/api/auth/refresh/route.ts
-  - src/middleware.ts
-  - src/lib/auth.ts
-  - src/lib/jwt.ts
-  - src/components/LoginForm.tsx
-  - src/components/LogoutButton.tsx
-  - src/app/login/page.tsx
-  - src/app/dashboard/page.tsx
-  - src/types/auth.ts
-```
-
-5 tasks exceeds 2-3 target, 12 files is high, auth is complex domain → quality degradation risk.
-
-```yaml
-issue:
-  dimension: scope_sanity
-  severity: blocker
-  description: "Plan 01 has 5 tasks with 12 files - exceeds context budget"
-  plan: "01"
-  metrics:
-    tasks: 5
-    files: 12
-    estimated_context: "~80%"
-  fix_hint: "Split into: 01 (schema + API), 02 (middleware + lib), 03 (UI components)"
-```
+@.agents/gsd-core/references/plan-checker-examples.md
 
 </examples>
 
@@ -958,14 +911,29 @@ issue:
   plan: "16-01"              # Which plan (null if phase-level)
   dimension: "task_completeness"  # Which dimension failed
   severity: "blocker"        # blocker | warning | info
-  description: "..."
+  required_property: "..."   # BINDING — the invariant that must hold
+  description: "..."         # BINDING — evidence: what you observed proving it does not
   task: 2                    # Task number if applicable
-  fix_hint: "..."
+  fix_hint: "..."            # NON-BINDING — ONE example route to the property
 ```
+
+## Binding Payload vs Advisory Remediation
+
+`required_property` + `description` + `severity` are the binding payload: what must be true,
+the evidence it is not, and how hard that blocks. `fix_hint` is **one example** of a route to
+that property — never the only admissible route, never an instruction. A planner that reaches
+`required_property` by a smaller or different mechanism has addressed the issue in full.
+
+State it as the invariant, not the edit — "every `auto` task has a `<verify>` separating pass
+from fail", not "add a verify block". A finding you cannot state without naming your preferred
+edit is a preference, not a defect: drop it or file `info`. Never author a `fix_hint` you can
+see contradicts a locked decision, a GEMINI.md convention, or an active capability constraint. If
+every route you can name would, name NONE of them: say only that the property conflicts with that
+constraint. A hint carrying a forbidden route is applied by anyone who trusts hints.
 
 ## Severity Levels
 
-**blocker** - Must fix before execution
+**blocker** - The `required_property` must hold before execution (the property, never the hint)
 - Missing requirement coverage
 - Missing required task fields
 - Circular dependencies
@@ -1021,18 +989,27 @@ Plans verified. Run `/gsd-execute-phase {phase}` to proceed.
 **Plans checked:** {N}
 **Issues:** {X} blocker(s), {Y} warning(s), {Z} info
 
-### Blockers (must fix)
+### Blockers — these properties must hold ("must fix" is the property, never the example)
 
-**1. [{dimension}] {description}**
+**1. [{dimension}] {required_property}**
 - Plan: {plan}
 - Task: {task if applicable}
-- Fix: {fix_hint}
+- Evidence: {description}
+- Example fix (non-binding — any mechanism reaching the property counts): {fix_hint}
 
-### Warnings (should fix)
+### Warnings — these properties should hold
 
-**1. [{dimension}] {description}**
+**1. [{dimension}] {required_property}**
 - Plan: {plan}
-- Fix: {fix_hint}
+- Evidence: {description}
+- Example fix (non-binding): {fix_hint}
+
+### Advisories (info)
+
+**1. [{dimension}] {required_property}**
+- Plan: {plan}
+- Evidence: {description}
+- Example fix (non-binding): {fix_hint}
 
 ### Structured Issues
 
@@ -1040,7 +1017,8 @@ Plans verified. Run `/gsd-execute-phase {phase}` to proceed.
 
 ### Recommendation
 
-{N} blocker(s) require revision. Returning to planner with feedback.
+{N} blocker(s), {M} warning(s) require revision. Returning to planner with feedback.
+(When blockers and warnings are both 0, write instead: Advisory only — no revision required.)
 ```
 
 </structured_returns>
@@ -1085,7 +1063,8 @@ Plan verification complete when:
 - [ ] Architectural tier compliance checked (tasks match responsibility map tiers)
 - [ ] Cross-plan data contracts checked (no conflicting transforms on shared data)
 - [ ] GEMINI.md compliance checked (plans respect project conventions)
-- [ ] Structured issues returned (if any found)
+- [ ] Structured issues returned (if any found), each carrying a binding `required_property` +
+      evidence + severity, with `fix_hint` rendered as a non-binding example
 - [ ] Result returned to orchestrator
 
 </success_criteria>

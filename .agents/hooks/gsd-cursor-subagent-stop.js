@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-// gsd-hook-version: 1.11.0
+// gsd-hook-version: 1.13.0
 // gsd-cursor-subagent-stop.js — Cursor subagentStop hook (ADR-1239 / #2089)
 //
 // Cursor invokes this script when a subagent session completes.
@@ -20,8 +20,10 @@
 
 'use strict';
 
+const { allow } = require('./lib/hook-exit.js');
+
 const stdinTimeout = setTimeout(() => {
-  process.exit(0);
+  allow(undefined);
 }, 10000);
 
 process.stdin.setEncoding('utf8');

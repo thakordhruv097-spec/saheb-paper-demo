@@ -21,7 +21,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.CALIBRATION_FILENAME = void 0;
+exports.PhasesUnreadableError = exports.CALIBRATION_FILENAME = void 0;
 exports.readSmartZoneBudget = readSmartZoneBudget;
 exports.readCalibrationSamples = readCalibrationSamples;
 exports.parseTokensFlag = parseTokensFlag;
@@ -39,9 +39,15 @@ const estimation = require("./phase-estimation.cjs");
 const planningWorkspace = require("./planning-workspace.cjs");
 // eslint-disable-next-line @typescript-eslint/no-require-imports -- config-loader.cjs is an export= CommonJS module
 const configLoader = require("./config-loader.cjs");
+// eslint-disable-next-line @typescript-eslint/no-require-imports -- phase-locator.cjs is an export= CommonJS module
+const phaseLocator = require("./phase-locator.cjs");
+// eslint-disable-next-line @typescript-eslint/no-require-imports -- planning-scope.cjs is an export= CommonJS module
+const planningScopeMod = require("./planning-scope.cjs");
 const { output, error, ERROR_REASON } = io;
 const { planningDir } = planningWorkspace;
 const { CONFIG_DEFAULTS } = configLoader;
+const { listMilestonePhaseDirs } = phaseLocator;
+const { SCOPE } = planningScopeMod;
 // WIN-1 parity (DEFECT.WINDOWS-FS-OPS): on Windows a concurrent reader, indexer,
 // or AV scanner can transiently hold the rename target open. Retry the transient
 // errnos with backoff, matching the writeLedger / writeConsentStore idiom.
@@ -193,24 +199,49 @@ function cmdEstimateCheck(cwd, args, raw) {
     }, raw);
 }
 /**
+ * Thrown by `collectCalibrationSamples` when the phases directory EXISTS but
+ * could not be read (EACCES/EIO, `scope: SCOPE.UNREADABLE`). #3882/ADR-3473
+ * §8.5: that is a NON-answer, not "zero completed phases" — silently
+ * returning `[]` here would make an unreadable directory output-identical to
+ * a genuinely empty one, which is exactly the defect class §8.5 exists to
+ * end. `cmdEstimateCalibrate` catches this and refuses the rebuild instead
+ * of persisting a phantom empty calibration.
+ */
+class PhasesUnreadableError extends Error {
+    phasesRoot;
+    constructor(phasesRoot) {
+        super(`phases directory exists but could not be read: ${phasesRoot}`);
+        this.phasesRoot = phasesRoot;
+        this.name = 'PhasesUnreadableError';
+    }
+}
+exports.PhasesUnreadableError = PhasesUnreadableError;
+/**
  * Pair each completed phase's PLAN estimate with its SUMMARY actuals.
  *
  * A phase contributes a sample only when BOTH sides are present and well-formed.
  * A plan with no `estimate` block, a summary with no `actuals`, or a malformed
  * value is skipped rather than guessed — a fabricated sample would silently
  * steer every future estimate.
+ *
+ * #3882 (ADR-3473 §8.2): this used to hand-roll a raw `readdirSync` over the
+ * phases directory, treating every directory (including sentinel phases —
+ * milestone 0 / 999, SENTINEL_RANGES) as a completed phase. A sentinel's
+ * PLAN/SUMMARY pair then silently contributed a phantom sample to the
+ * CALIBRATION FACTOR applied to every future estimate. Routed through the
+ * canonical owner (`listMilestonePhaseDirs`, `src/phase-locator.cts`) called
+ * with NO `cwd` — that combination is already "all milestone windows,
+ * sentinels excluded", exactly what this caller needs; no new API was
+ * required for this half (see the design doc's §3, corrected after
+ * measurement). It also inherits the `scope` discriminator for free, so an
+ * unreadable phases directory is no longer indistinguishable from a real
+ * empty one.
  */
 function collectCalibrationSamples(cwd) {
     const phasesRoot = node_path_1.default.join(planningDir(cwd), 'phases');
-    let phases;
-    try {
-        phases = node_fs_1.default.readdirSync(phasesRoot, { withFileTypes: true })
-            .filter((d) => d.isDirectory())
-            .map((d) => d.name)
-            .sort();
-    }
-    catch {
-        return [];
+    const { value: phases, scope } = listMilestonePhaseDirs(phasesRoot);
+    if (scope === SCOPE.UNREADABLE) {
+        throw new PhasesUnreadableError(phasesRoot);
     }
     const readBlock = (file, key) => {
         let text;
@@ -277,7 +308,20 @@ function collectCalibrationSamples(cwd) {
  * next estimate reads the result.
  */
 function cmdEstimateCalibrate(cwd, _args, raw) {
-    const samples = collectCalibrationSamples(cwd);
+    let samples;
+    try {
+        samples = collectCalibrationSamples(cwd);
+    }
+    catch (err) {
+        if (err instanceof PhasesUnreadableError) {
+            // #3882/ADR-3473 §8.5: refuse rather than silently rebuild the
+            // calibration document from a phantom empty sample set — an
+            // unreadable phases directory must never look output-identical to a
+            // project with genuinely zero completed phases.
+            error(err.message, ERROR_REASON.ESTIMATE_PHASES_UNREADABLE);
+        }
+        throw err;
+    }
     const calibration = estimation.computeCalibration(samples);
     const target = node_path_1.default.join(planningDir(cwd), exports.CALIBRATION_FILENAME);
     let written = true;

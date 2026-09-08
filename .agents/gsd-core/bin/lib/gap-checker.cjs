@@ -23,7 +23,7 @@ const node_fs_1 = __importDefault(require("node:fs"));
 const node_path_1 = __importDefault(require("node:path"));
 // eslint-disable-next-line @typescript-eslint/no-require-imports
 const io = require("./io.cjs");
-const { output, error } = io;
+const { output, error, formatDiagnosticToken } = io;
 const pattern_cjs_1 = require("./pattern.cjs");
 // eslint-disable-next-line @typescript-eslint/no-require-imports
 const planningWorkspace = require("./planning-workspace.cjs");
@@ -36,6 +36,9 @@ const { scanPhasePlans } = planScanMod;
 // eslint-disable-next-line @typescript-eslint/no-require-imports
 const phaseIdMod = require("./phase-id.cjs");
 const { scopeToPhase } = phaseIdMod;
+// eslint-disable-next-line @typescript-eslint/no-require-imports
+const planningScopeMod = require("./planning-scope.cjs");
+const { SCOPE } = planningScopeMod;
 /**
  * Parse REQ-IDs from REQUIREMENTS.md content.
  *
@@ -54,6 +57,17 @@ function parseRequirements(reqMd) {
     // The **ID** is extracted from the bullet text caller-side — the seam provides
     // the raw text; we parse the bold-ID prefix from it here.
     const boldIdRe = new RegExp(`^\\*\\*(${ID_PATTERN})\\*\\*\\s*(.*)$`);
+    // The shipped template (gsd-core/templates/requirements.md) writes
+    // `- [ ] **AUTH-01**: User can sign up` — a single separator delimiter
+    // between the bold ID and the description. Strip AT MOST ONE leading
+    // delimiter (plus its surrounding whitespace) before the final `.trim()`,
+    // mirroring roadmap-parser.cts's `stripLeadingDelimiter` delimiter set
+    // (em dash, en dash, colon, hyphen) — that helper is not exported, and its
+    // own `+`-quantified strip removes an entire delimiter RUN, which would
+    // also eat a second, meaningful marker (`**X-01**: -- weird` must keep the
+    // `--`), so the set is mirrored here with a single-occurrence match instead
+    // of reused verbatim.
+    const ONE_LEADING_DELIMITER_RE = /^\s*[—–:-]\s*/;
     for (const bullet of (0, markdown_sectionizer_cjs_1.iterateBullets)(reqMd)) {
         if (bullet.marker !== 'checkbox-unchecked' && bullet.marker !== 'checkbox-checked')
             continue;
@@ -65,7 +79,8 @@ function parseRequirements(reqMd) {
             continue;
         if (!seen.has(id)) {
             seen.add(id);
-            out.push({ id, text: (m[2] || '').trim() });
+            const rawText = m[2] || '';
+            out.push({ id, text: rawText.replace(ONE_LEADING_DELIMITER_RE, '').trim() });
         }
     }
     // Pipe-table-row path and separator-row skip stay caller-side
@@ -290,6 +305,8 @@ function runGapAnalysis(cwd, phaseDir, options = {}) {
             table: '',
             summary: 'workflow.post_planning_gaps disabled — skipping post-planning gap analysis',
             counts: { total: 0, covered: 0, uncovered: 0 },
+            phase_dir_read_error: null,
+            phase_dir_scope: SCOPE.COMPLETE,
         };
     }
     const absPhaseDir = node_path_1.default.isAbsolute(phaseDir) ? phaseDir : node_path_1.default.join(cwd, phaseDir);
@@ -312,12 +329,20 @@ function runGapAnalysis(cwd, phaseDir, options = {}) {
     }
     // Read the phase directory once; reuse the listing for both context detection
     // and plan-file enumeration (avoids redundant readdirSync calls).
-    let phaseDirFiles = [];
-    try {
-        if (node_fs_1.default.existsSync(absPhaseDir))
-            phaseDirFiles = node_fs_1.default.readdirSync(absPhaseDir);
-    }
-    catch { /* unreadable */ }
+    //
+    // #4014 (epic #3473 B4): findContextMdIn's directory-string form now owns
+    // the listing + ENOENT-vs-other discrimination, retiring the local
+    // existsSync-guarded readdirSync try/catch — ENOENT (genuinely absent)
+    // and a successful-but-empty read both resolve to SCOPE.COMPLETE with an
+    // empty listing, exactly like the existsSync guard's short-circuit did.
+    const { files: phaseDirFiles, scope: phaseDirScope } = findContextMdIn(absPhaseDir);
+    // #3885 (ADR-3473 §8.5): `phaseDirReadError` stays additive for the
+    // shipped `phase_dir_read_error` JSON field — derived from `phaseDirScope`
+    // rather than from its own caught error, since findContextMdIn's
+    // directory-string form reports SCOPE, not the raw errno message.
+    const phaseDirReadError = phaseDirScope === SCOPE.UNREADABLE
+        ? `Could not read phase directory ${formatDiagnosticToken(absPhaseDir)}`
+        : null;
     // #3511-class: scope the raw listing to this phase dir before the
     // phase-numbered -CONTEXT.md predicate. `phaseDirFiles` itself stays raw —
     // it is also reused below only as a `.length > 0` guard ahead of
@@ -384,6 +409,8 @@ function runGapAnalysis(cwd, phaseDir, options = {}) {
                 table: formatGapTable(rows) + '\n' + coverageSummary + '\n\n' + mismatchMsg,
                 summary: coverageSummary + '; extracted 0 of N — possible format mismatch',
                 counts: { total: rows.length, covered, uncovered },
+                phase_dir_read_error: phaseDirReadError,
+                phase_dir_scope: phaseDirScope,
             };
         }
         return {
@@ -392,6 +419,8 @@ function runGapAnalysis(cwd, phaseDir, options = {}) {
             table: mismatchMsg,
             summary: 'extracted 0 of N — possible format mismatch',
             counts: { total: 0, covered: 0, uncovered: 0 },
+            phase_dir_read_error: phaseDirReadError,
+            phase_dir_scope: phaseDirScope,
         };
     }
     // #1365: if no items at all, surface a clean no-check message.
@@ -408,6 +437,8 @@ function runGapAnalysis(cwd, phaseDir, options = {}) {
             table: '## Post-Planning Gap Analysis\n\nNo requirements or decisions to check.\n',
             summary: 'no requirements or decisions to check',
             counts: { total: 0, covered: 0, uncovered: 0 },
+            phase_dir_read_error: phaseDirReadError,
+            phase_dir_scope: phaseDirScope,
         };
     }
     const rows = sortRows([
@@ -425,6 +456,8 @@ function runGapAnalysis(cwd, phaseDir, options = {}) {
         table: formatGapTable(rows) + '\n' + summary + '\n',
         summary,
         counts: { total: rows.length, covered, uncovered },
+        phase_dir_read_error: phaseDirReadError,
+        phase_dir_scope: phaseDirScope,
     };
 }
 function cmdGapAnalysis(cwd, args, raw) {

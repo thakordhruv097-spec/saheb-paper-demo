@@ -277,6 +277,9 @@ export interface Reel {
   qcGsmResult?: number;
   qcBrightness?: number;
   qcSoftness?: number;
+  shade?: string;
+  core?: number | string;
+  notes?: string;
   dispatchDetails?: {
     partyName: string;
     vehicleNo: string;

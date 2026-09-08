@@ -1,175 +1,354 @@
-import React, { useState, useMemo } from 'react';
-import { getReels } from '../../data/index';
-import { QRCodeSVG } from 'qrcode.react';
+import React, { useState, useMemo, useRef, useEffect } from 'react';
+import { createPortal } from 'react-dom';
+import { getReels, getProducts } from '../../data/index';
+import type { ProductItem, Reel } from '../../data/types';
 import {
   QrCode,
-  Box,
   Layers,
-  Sparkles,
   Printer,
   ChevronDown,
+  Search,
+  Plus,
+  Trash2,
+  Copy,
   Check,
+  X,
+  FileText,
+  AlertTriangle,
+  Database,
+  Edit3,
   Lock,
 } from 'lucide-react';
-import { COMPANY_CONFIG } from '../../config/company';
+import { ReelPrintLabel } from '../../components/ReelPrintLabel';
 import { useAuth } from '../auth/AuthContext';
+
+export interface LabelItemData {
+  id: string;
+  productTitle: string;
+  customDescription: string;
+  barcodeNo: string;
+  qrCodeEmbedValue: string;
+  gsm: string;
+  sizeWidth: string;
+  netWeightKg: string;
+  rollNo: string;
+  shade: string;
+  ply: string;
+  joint: string;
+  dia: string;
+  core: string;
+  qcStatus: string;
+  prodDateTime: string;
+  notesInstructions: string;
+  copies: number;
+}
+
+export interface StoredReelItem {
+  reelNo: string;
+  productName: string;
+  gsm: string;
+  width: string;
+  netWeightKg: string;
+  rollNo: string;
+  shade: string;
+  ply: string;
+  joint: string;
+  dia: string;
+  core: string;
+  qcStatus: string;
+  prodDateTime: string;
+  notesInstructions: string;
+  qrValue?: string;
+}
+
+const createEmptyLabel = (product?: ProductItem | null): LabelItemData => {
+  return {
+    id: `lbl-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
+    productTitle: product ? product.name : '',
+    customDescription: '',
+    barcodeNo: '',
+    qrCodeEmbedValue: '',
+    gsm: product && product.gsm ? String(product.gsm) : '',
+    sizeWidth: product && product.size ? `${product.size} cm` : '',
+    netWeightKg: '',
+    rollNo: '',
+    shade: 'Standard',
+    ply: product && product.ply ? `${product.ply} Ply` : '2 Ply',
+    joint: '0 (Seamless)',
+    dia: '1150 mm',
+    core: '76 mm (3")',
+    qcStatus: product && product.grade ? `Grade ${product.grade} - PASSED` : 'Grade A - PASSED',
+    prodDateTime: new Date().toISOString().substring(0, 10),
+    notesInstructions: '',
+    copies: 1,
+  };
+};
 
 export const LabelStudioView: React.FC = () => {
   const { isViewer } = useAuth();
-  const reelsList = useMemo(() => {
-    const all = getReels();
-    const seen = new Set<string>();
-    const unique = all.filter(r => {
-      if (!r.reelNo || seen.has(r.reelNo)) return false;
-      seen.add(r.reelNo);
-      return true;
-    });
-    // Most recent reel is 1st (newest date / highest reel sequence)
-    return unique.sort((a, b) => {
-      if (a.productionDate && b.productionDate && a.productionDate !== b.productionDate) {
-        return b.productionDate.localeCompare(a.productionDate);
-      }
-      return b.reelNo.localeCompare(a.reelNo, undefined, { numeric: true, sensitivity: 'base' });
-    });
+
+  // Label Size for Thermal Roll
+  const [labelSize, setLabelSize] = useState<'4x6' | '3x2' | 'a4' | 'auto'>('4x6');
+
+  // Real-time synchronization version
+  const [dataVersion, setDataVersion] = useState<number>(0);
+
+  useEffect(() => {
+    const handleDataUpdate = () => {
+      setDataVersion(v => v + 1);
+    };
+    window.addEventListener('storage', handleDataUpdate);
+    window.addEventListener('saheb_data_updated', handleDataUpdate);
+    return () => {
+      window.removeEventListener('storage', handleDataUpdate);
+      window.removeEventListener('saheb_data_updated', handleDataUpdate);
+    };
   }, []);
 
-  // Category Tabs State
-  const [activeTab, setActiveTab] = useState<'reel' | 'warehouse' | 'raw_material' | 'custom'>('reel');
+  // Products from single authoritative master database
+  const catalogProducts = useMemo<ProductItem[]>(() => {
+    return getProducts();
+  }, [dataVersion]);
 
-  // Form Fields State
-  const [selectedReelNo, setSelectedReelNo] = useState<string>(reelsList[0]?.reelNo || '260500571');
-  const [barcodeNo, setBarcodeNo] = useState('260500571');
-  const [qrCodeEmbedValue, setQrCodeEmbedValue] = useState('260500571');
-  const [productTitle, setProductTitle] = useState('Napkin Tissue (Virgin Pulp)');
-  const [gsm, setGsm] = useState('16.0');
-  const [sizeWidth, setSizeWidth] = useState('30.0 cm');
-  const [ply, setPly] = useState('2 Ply');
-  const [joint, setJoint] = useState('0 (Seamless)');
-  const [dia, setDia] = useState('1150 mm');
-  const [core, setCore] = useState('76 mm (3")');
-  const [netWeightKg, setNetWeightKg] = useState('1,200');
-  const [machine, setMachine] = useState('Rewinder #2');
-  const [shift, setShift] = useState('Shift A');
-  const [operator, setOperator] = useState('Operator Desk');
-  const [qcStatus, setQcStatus] = useState('Grade A - PASSED');
-  const [prodDateTime, setProdDateTime] = useState('2026-08-16');
-  const [notesInstructions, setNotesInstructions] = useState('Standard Tissue Reel · Wrap Sealed');
+  // Batch Labels Queue (Initialized with active master product, zero fake reel data)
+  const [labels, setLabels] = useState<LabelItemData[]>(() => {
+    const prods = getProducts();
+    return [createEmptyLabel(prods[0] || null)];
+  });
+  const [activeLabelIndex, setActiveLabelIndex] = useState<number>(0);
 
-  // Label Size, Print Copies, and System Mode (Test ID-only vs Old Full JSON)
-  const [labelSize, setLabelSize] = useState<'4x6' | '3x2'>('4x6');
-  const [copies, setCopies] = useState<number>(1);
-  const [qrEncodingMode, setQrEncodingMode] = useState<'id_only' | 'full_json'>('id_only');
+  // Print Mode State
+  const [printTarget, setPrintTarget] = useState<'current' | 'all'>('current');
 
-  // Handle Tab Switch Presets
-  const handleTabSwitch = (tab: 'reel' | 'warehouse' | 'raw_material' | 'custom') => {
-    setActiveTab(tab);
-    if (tab === 'reel') {
-      setBarcodeNo('260500571');
-      setQrCodeEmbedValue('260500571');
-      setProductTitle('Napkin Tissue (Virgin Pulp)');
-      setGsm('16.0');
-      setSizeWidth('30.0 cm');
-      setPly('2 Ply');
-      setJoint('0 (Seamless)');
-      setDia('1150 mm');
-      setCore('76 mm (3")');
-      setNetWeightKg('1,200');
-      setQcStatus('Grade A - PASSED');
-      setMachine('Rewinder #2');
-      setShift('Shift A');
-      setNotesInstructions('Standard Tissue Reel · Wrap Sealed');
-    } else if (tab === 'warehouse') {
-      setBarcodeNo('BAY-A1-04');
-      setQrCodeEmbedValue('LOCATION: BAY-A1-SECTION-04');
-      setProductTitle('Finished Stock Warehouse North');
-      setGsm('16 GSM');
-      setSizeWidth('30 cm');
-      setPly('2 Ply');
-      setJoint('24 Reels');
-      setDia('Bay Stack');
-      setCore('Rack #4');
-      setNetWeightKg('28,800');
-      setQcStatus('Bay A1 to A4 · Verified');
-      setMachine('Warehouse Main');
-      setShift('General');
-      setNotesInstructions('Warehouse Finished Stock Bay Tag');
-    } else if (tab === 'raw_material') {
-      setBarcodeNo('LOT-WASTE-202608');
-      setQrCodeEmbedValue('LOT-WASTE-202608');
-      setProductTitle('Indian Tissue Waste Grade A');
-      setGsm('85% Fiber');
-      setSizeWidth('Bale Set A');
-      setPly('Imported');
-      setJoint('52 Bales');
-      setDia('Bale Unit');
-      setCore('Moisture 7.2%');
-      setNetWeightKg('25,000');
-      setQcStatus('Vendor: Navkar · Accepted');
-      setMachine('Inward Yard');
-      setShift('General');
-      setNotesInstructions('Moisture Tested & QC Clearance Granted');
-    } else {
-      setBarcodeNo('CUST-TAG-2026');
-      setQrCodeEmbedValue('CUST-TAG-2026');
-      setProductTitle('Custom Identification Tag');
-      setGsm('Standard');
-      setSizeWidth('Custom');
-      setPly('N/A');
-      setJoint('N/A');
-      setDia('N/A');
-      setCore('Standard');
-      setNetWeightKg('500');
-      setQcStatus('VERIFIED');
-      setMachine('Plant Floor');
-      setShift('Shift A');
-      setNotesInstructions('General Purpose Plant Asset Sticker');
+  // Product Selection Dropdown State
+  const [isProductPickerOpen, setIsProductPickerOpen] = useState<boolean>(false);
+  const [productSearchQuery, setProductSearchQuery] = useState<string>('');
+  const productPickerRef = useRef<HTMLDivElement>(null);
+
+  // Reel Selection Dropdown State
+  const [isReelPickerOpen, setIsReelPickerOpen] = useState<boolean>(false);
+  const [reelSearchQuery, setReelSearchQuery] = useState<string>('');
+  const reelPickerRef = useRef<HTMLDivElement>(null);
+
+  // Manual Reel Entry Mode Toggle
+  const [isManualReelEntry, setIsManualReelEntry] = useState<boolean>(false);
+
+  // Active Label reference
+  const currentLabel = labels[activeLabelIndex] || labels[0] || createEmptyLabel(null);
+
+  // Helper to update active label
+  const updateCurrentLabel = (patch: Partial<LabelItemData>) => {
+    setLabels(prev =>
+      prev.map((item, idx) => (idx === activeLabelIndex ? { ...item, ...patch } : item))
+    );
+  };
+
+  // Close dropdowns on outside click
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (productPickerRef.current && !productPickerRef.current.contains(event.target as Node)) {
+        setIsProductPickerOpen(false);
+      }
+      if (reelPickerRef.current && !reelPickerRef.current.contains(event.target as Node)) {
+        setIsReelPickerOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, []);
+
+  // Filtered products based on search
+  const filteredProducts = useMemo(() => {
+    const q = productSearchQuery.trim().toLowerCase();
+    if (!q) return catalogProducts;
+    return catalogProducts.filter(
+      p =>
+        p.name.toLowerCase().includes(q) ||
+        (p.gsm && String(p.gsm).toLowerCase().includes(q)) ||
+        (p.ply && String(p.ply).toLowerCase().includes(q))
+    );
+  }, [catalogProducts, productSearchQuery]);
+
+  // Read live in-stock reels strictly from authoritative getReels() - ZERO mock fallbacks
+  const allStoredReels = useMemo<StoredReelItem[]>(() => {
+    try {
+      const liveReels: Reel[] = getReels();
+      // Only include valid in-stock / available reels (not dispatched/rejected)
+      const availableReels = liveReels.filter(r =>
+        r &&
+        r.reelNo &&
+        (r.status === 'IN_STOCK' || r.status === 'IN_STOCK_B' || !r.status || r.status === 'QC_PASSED')
+      );
+      return availableReels.map(r => ({
+        reelNo: r.reelNo,
+        productName: r.product || '',
+        gsm: r.gsm ? String(r.gsm) : '',
+        width: r.size ? `${r.size} cm` : '',
+        netWeightKg: r.weight ? r.weight.toLocaleString('en-IN') : '',
+        rollNo: r.parentRollNo ? r.parentRollNo.replace(/\D/g, '') || r.parentRollNo : '',
+        shade: r.shade || 'Standard',
+        ply: r.ply ? `${r.ply} Ply` : '2 Ply',
+        joint: r.joint !== undefined ? `${r.joint} Joints` : '0 (Seamless)',
+        dia: r.dia ? `${r.dia} mm` : '1150 mm',
+        core: r.core ? `${r.core} mm` : '76 mm (3")',
+        qcStatus: r.qcGrade ? `Grade ${r.qcGrade} - PASSED` : 'Grade A - PASSED',
+        prodDateTime: r.productionDate ? r.productionDate.substring(0, 10) : new Date().toISOString().substring(0, 10),
+        notesInstructions: r.notes || '',
+        qrValue: r.reelNo,
+      }));
+    } catch (e) {
+      console.error('Error fetching reels:', e);
+      return [];
+    }
+  }, [dataVersion]);
+
+  // Reels specifically available for the currently selected Product (ZERO fallback)
+  const availableReelsForProduct = useMemo(() => {
+    const pName = (currentLabel.productTitle || '').trim().toLowerCase();
+    if (!pName) return [];
+    return allStoredReels.filter(r => {
+      const rProd = r.productName.toLowerCase().trim();
+      return rProd === pName || rProd.includes(pName) || pName.includes(rProd);
+    });
+  }, [allStoredReels, currentLabel.productTitle]);
+
+  // Filtered reels based on search query
+  const filteredReels = useMemo(() => {
+    const q = reelSearchQuery.trim().toLowerCase();
+    if (!q) return availableReelsForProduct;
+    return availableReelsForProduct.filter(
+      r =>
+        r.reelNo.toLowerCase().includes(q) ||
+        r.rollNo.toLowerCase().includes(q) ||
+        r.gsm.toLowerCase().includes(q) ||
+        r.netWeightKg.toLowerCase().includes(q) ||
+        r.qcStatus.toLowerCase().includes(q)
+    );
+  }, [availableReelsForProduct, reelSearchQuery]);
+
+  // Handle Product Selection: Selects Product & Clears stale reel-specific fields immediately
+  const handleSelectProduct = (product: ProductItem) => {
+    updateCurrentLabel({
+      productTitle: product.name,
+      barcodeNo: '',
+      qrCodeEmbedValue: '',
+      netWeightKg: '',
+      rollNo: '',
+      notesInstructions: '',
+      gsm: product.gsm ? String(product.gsm) : currentLabel.gsm,
+      sizeWidth: product.size ? `${product.size} cm` : currentLabel.sizeWidth,
+      ply: product.ply ? `${product.ply} Ply` : currentLabel.ply,
+      qcStatus: product.grade ? `Grade ${product.grade} - PASSED` : currentLabel.qcStatus,
+    });
+    setIsProductPickerOpen(false);
+    setProductSearchQuery('');
+  };
+
+  // Handle Reel Selection: Auto-populates all 12+ real reel-specific parameters
+  const handleSelectReel = (reel: StoredReelItem) => {
+    updateCurrentLabel({
+      barcodeNo: reel.reelNo,
+      qrCodeEmbedValue: reel.qrValue || reel.reelNo,
+      gsm: reel.gsm || currentLabel.gsm,
+      sizeWidth: reel.width || currentLabel.sizeWidth,
+      netWeightKg: reel.netWeightKg,
+      rollNo: reel.rollNo,
+      shade: reel.shade || currentLabel.shade,
+      ply: reel.ply || currentLabel.ply,
+      joint: reel.joint || currentLabel.joint,
+      dia: reel.dia || currentLabel.dia,
+      core: reel.core || currentLabel.core,
+      qcStatus: reel.qcStatus || currentLabel.qcStatus,
+      prodDateTime: reel.prodDateTime || currentLabel.prodDateTime,
+      notesInstructions: reel.notesInstructions,
+    });
+    setIsReelPickerOpen(false);
+    setReelSearchQuery('');
+  };
+
+  // Duplicate Reel in Print Queue Check
+  const duplicateInQueue = useMemo(() => {
+    if (!currentLabel.barcodeNo) return null;
+    const matchIdx = labels.findIndex(
+      (l, idx) => idx !== activeLabelIndex && l.barcodeNo.trim() === currentLabel.barcodeNo.trim()
+    );
+    if (matchIdx !== -1) {
+      return {
+        labelNumber: matchIdx + 1,
+        reelNo: currentLabel.barcodeNo,
+      };
+    }
+    return null;
+  }, [labels, activeLabelIndex, currentLabel.barcodeNo]);
+
+  // Add Label to Batch (Clean start with active product, zero fake reel data)
+  const handleAddLabel = () => {
+    const selectedProd = catalogProducts.find(p => p.name === currentLabel.productTitle) || catalogProducts[0];
+    const newLabel = createEmptyLabel(selectedProd || null);
+    setLabels(prev => [...prev, newLabel]);
+    setActiveLabelIndex(labels.length);
+  };
+
+  // Duplicate Current Label
+  const handleDuplicateLabel = () => {
+    const cur = currentLabel;
+    const duplicated: LabelItemData = {
+      ...cur,
+      id: `lbl-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
+      copies: 1,
+    };
+    setLabels(prev => [...prev, duplicated]);
+    setActiveLabelIndex(labels.length);
+  };
+
+  // Remove Label from Batch
+  const handleRemoveLabel = (indexToRemove: number) => {
+    if (labels.length <= 1) return;
+    setLabels(prev => prev.filter((_, idx) => idx !== indexToRemove));
+    if (activeLabelIndex >= indexToRemove && activeLabelIndex > 0) {
+      setActiveLabelIndex(activeLabelIndex - 1);
     }
   };
 
-  const computedQrValue = useMemo(() => {
-    if (qrEncodingMode === 'full_json') {
-      return JSON.stringify({
-        mill: COMPANY_CONFIG.name,
-        reelNo: barcodeNo || '260500571',
-        product: productTitle || 'Napkin Tissue',
-        gsm: gsm || '16.0',
-        size: sizeWidth || '30.0',
-        weight: netWeightKg || '1200',
-        date: prodDateTime || '2026-08-16',
-      });
-    }
-    return qrCodeEmbedValue || barcodeNo || '260500571';
-  }, [qrEncodingMode, barcodeNo, qrCodeEmbedValue, productTitle, gsm, sizeWidth, netWeightKg, prodDateTime]);
-
-  // Handle Reel Select Change
-  const handleSelectReelFromStock = (reelNo: string) => {
-    setSelectedReelNo(reelNo);
-    const found = reelsList.find(r => r.reelNo === reelNo);
-    if (found) {
-      setBarcodeNo(found.reelNo);
-      setQrCodeEmbedValue(found.reelNo);
-      setProductTitle(found.product);
-      setGsm(String(found.gsm));
-      setSizeWidth(String(found.size));
-      setPly(`${found.ply || 2} Ply`);
-      setJoint(`${found.joint ?? 0} Joints`);
-      setDia(`${found.dia || 1150} mm`);
-      setCore('76 mm (3")');
-      setNetWeightKg(String(found.weight));
-      setQcStatus(found.status === 'QC_FAILED' ? 'Grade B - REJECTED' : `Grade ${found.qcGrade || 'A'} - PASSED`);
-      setProdDateTime(found.productionDate || new Date().toISOString().substring(0, 10));
-    }
-  };
-
-  const handlePrintLabel = () => {
+  // Print Handlers with strict live validation
+  const handlePrintCurrent = () => {
     if (isViewer) return;
-    window.print();
+    if (!currentLabel.barcodeNo) {
+      alert('Please select an available reel from warehouse inventory before printing.');
+      return;
+    }
+    setPrintTarget('current');
+    setTimeout(() => {
+      window.print();
+    }, 50);
   };
+
+  const handlePrintAll = () => {
+    if (isViewer) return;
+    const unselected = labels.some(l => !l.barcodeNo);
+    if (unselected) {
+      alert('Some labels in the queue do not have a reel selected. Please select a reel for each label before printing.');
+      return;
+    }
+    setPrintTarget('all');
+    setTimeout(() => {
+      window.print();
+    }, 50);
+  };
+
+  const activeQrCodeValue = currentLabel.qrCodeEmbedValue || currentLabel.barcodeNo || '';
+
+  // Compute total stickers to print in batch
+  const totalBatchStickers = useMemo(() => {
+    return labels.reduce((acc, item) => acc + (item.copies || 1), 0);
+  }, [labels]);
 
   return (
     <div className="space-y-6 p-4 sm:p-6 pb-24 text-slate-900 dark:text-slate-100 w-full max-w-7xl mx-auto font-sans">
       {/* 1. Header Card */}
-      <div className="bg-white dark:bg-[#131d38] rounded-2xl sm:rounded-3xl p-4 sm:p-5 text-slate-900 dark:text-white shadow-xs">
+      <div className="bg-white dark:bg-[#131d38] rounded-2xl sm:rounded-3xl p-4 sm:p-5 text-slate-900 dark:text-white shadow-xs border border-slate-200/80 dark:border-slate-800">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div className="flex items-center gap-3.5">
             <div className="p-2.5 sm:p-3 rounded-2xl bg-blue-50 dark:bg-blue-950/60 border border-blue-200/60 dark:border-blue-900/50 text-primary dark:text-blue-400 shadow-2xs shrink-0">
@@ -178,103 +357,397 @@ export const LabelStudioView: React.FC = () => {
             <div>
               <div className="flex flex-wrap items-center gap-2.5">
                 <h1 className="text-xl sm:text-2xl font-black tracking-tight font-heading text-slate-900 dark:text-white">
-                  QR Label Studio & Barcode Generator
+                  Paper Reel Label Studio
                 </h1>
+                <span className="px-2.5 py-0.5 rounded-full text-[11px] font-black uppercase tracking-wider bg-emerald-100 dark:bg-emerald-950 text-emerald-700 dark:text-emerald-400 border border-emerald-300 dark:border-emerald-800">
+                  Product → Reel Auto-Fill
+                </span>
               </div>
               <p className="text-xs sm:text-sm text-slate-500 dark:text-slate-400 font-medium mt-0.5">
-                Modernized industrial sticker print template for Paper Reels, Warehouse Bays, Raw Material Lots, and Assets.
+                Select Product and Reel to auto-populate stored specifications, QR code, and print 4x6 thermal stickers.
               </p>
+            </div>
+          </div>
+
+          {/* Quick Stats Pill */}
+          <div className="flex items-center gap-3 self-start sm:self-auto">
+            <div className="px-3.5 py-2 rounded-2xl bg-slate-50 dark:bg-[#0f2828] border border-slate-200 dark:border-[#2c4a4a] text-right">
+              <div className="text-[10px] font-black uppercase tracking-wider text-slate-400">Queue Total</div>
+              <div className="text-xs font-black text-slate-900 dark:text-white font-mono">
+                {labels.length} Label{labels.length > 1 ? 's' : ''} · {totalBatchStickers} Print{totalBatchStickers > 1 ? 's' : ''}
+              </div>
             </div>
           </div>
         </div>
       </div>
 
-      {/* 2. Top Category Tabs Bar */}
-      <div className="flex items-center gap-2 overflow-x-auto bg-slate-100 dark:bg-slate-800/80 p-2 rounded-2xl border border-slate-200/80 dark:border-slate-700 shadow-xs custom-scrollbar">
-        <button
-          onClick={() => handleTabSwitch('reel')}
-          className={`flex items-center gap-2 px-5 py-2.5 rounded-xl font-bold text-xs transition cursor-pointer shrink-0 ${
-            activeTab === 'reel'
-              ? 'bg-[#6C4FE0] text-white shadow-xs'
-              : 'text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white hover:bg-white/80 dark:hover:bg-slate-700/60'
-          }`}
-        >
-          <QrCode className="h-4 w-4" />
-          <span>Paper Reel Label</span>
-        </button>
+      {/* 2. Batch Labels Queue Strip */}
+      <div className="bg-white dark:bg-[#1a3535] border border-slate-200/90 dark:border-[#2c4a4a] rounded-3xl p-4 sm:p-5 shadow-xs">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-slate-200/70 dark:border-[#2c4a4a]">
+          <div className="flex items-center gap-2">
+            <Layers className="h-4 w-4 text-[#6C4FE0] dark:text-purple-400" />
+            <span className="text-xs font-black uppercase tracking-wider text-slate-700 dark:text-slate-200">
+              Print Queue ({labels.length} {labels.length === 1 ? 'Label' : 'Labels'})
+            </span>
+            <span className="text-[11px] font-bold text-slate-400">
+              · Editing Label #{activeLabelIndex + 1}
+            </span>
+          </div>
 
-        <button
-          onClick={() => handleTabSwitch('warehouse')}
-          className={`flex items-center gap-2 px-5 py-2.5 rounded-xl font-bold text-xs transition cursor-pointer shrink-0 ${
-            activeTab === 'warehouse'
-              ? 'bg-[#6C4FE0] text-white shadow-xs'
-              : 'text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white hover:bg-white/80 dark:hover:bg-slate-700/60'
-          }`}
-        >
-          <Box className="h-4 w-4" />
-          <span>Warehouse Bay / Stock Tag</span>
-        </button>
+          <div className="flex items-center gap-2">
+            <button
+              type="button"
+              onClick={handleDuplicateLabel}
+              title="Duplicate Current Label"
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl font-bold text-xs bg-slate-100 dark:bg-[#0f2828] border border-slate-200 dark:border-[#2c4a4a] text-slate-700 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-800 transition cursor-pointer"
+            >
+              <Copy className="h-3.5 w-3.5" />
+              <span>Duplicate</span>
+            </button>
 
-        <button
-          onClick={() => handleTabSwitch('raw_material')}
-          className={`flex items-center gap-2 px-5 py-2.5 rounded-xl font-bold text-xs transition cursor-pointer shrink-0 ${
-            activeTab === 'raw_material'
-              ? 'bg-[#6C4FE0] text-white shadow-xs'
-              : 'text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white hover:bg-white/80 dark:hover:bg-slate-700/60'
-          }`}
-        >
-          <Layers className="h-4 w-4" />
-          <span>Raw Material Lot</span>
-        </button>
+            {labels.length > 1 && (
+              <button
+                type="button"
+                onClick={() => handleRemoveLabel(activeLabelIndex)}
+                title="Remove Active Label"
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl font-bold text-xs bg-rose-50 dark:bg-rose-950/40 border border-rose-200 dark:border-rose-900/60 text-rose-700 dark:text-rose-400 hover:bg-rose-100 transition cursor-pointer"
+              >
+                <Trash2 className="h-3.5 w-3.5" />
+                <span>Remove</span>
+              </button>
+            )}
 
-        <button
-          onClick={() => handleTabSwitch('custom')}
-          className={`flex items-center gap-2 px-5 py-2.5 rounded-xl font-bold text-xs transition cursor-pointer shrink-0 ${
-            activeTab === 'custom'
-              ? 'bg-[#6C4FE0] text-white shadow-xs'
-              : 'text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white hover:bg-white/80 dark:hover:bg-slate-700/60'
-          }`}
-        >
-          <Sparkles className="h-4 w-4" />
-          <span>Custom / Free-form Sticker</span>
-        </button>
+            <button
+              type="button"
+              onClick={handleAddLabel}
+              className="flex items-center gap-1.5 px-4 py-1.5 rounded-xl font-black text-xs bg-[#6C4FE0] hover:bg-[#5a3ec8] text-white shadow-xs transition cursor-pointer"
+            >
+              <Plus className="h-3.5 w-3.5" />
+              <span>+ Add Label</span>
+            </button>
+          </div>
+        </div>
+
+        {/* Labels Tab Strip */}
+        <div className="flex items-center gap-2 overflow-x-auto pt-3 custom-scrollbar">
+          {labels.map((item, idx) => {
+            const isActive = idx === activeLabelIndex;
+            return (
+              <div
+                key={item.id}
+                onClick={() => setActiveLabelIndex(idx)}
+                className={`flex items-center gap-2 px-3.5 py-2 rounded-2xl border text-xs font-bold transition cursor-pointer shrink-0 ${
+                  isActive
+                    ? 'bg-[#6C4FE0] text-white border-[#6C4FE0] shadow-xs'
+                    : 'bg-slate-50 dark:bg-[#0f2828] border-slate-200 dark:border-[#2c4a4a] text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800'
+                }`}
+              >
+                <span className="font-mono text-[11px] opacity-80">#{idx + 1}</span>
+                <span className="truncate max-w-[130px] font-semibold">
+                  {item.productTitle || `Label ${idx + 1}`}
+                </span>
+                <span
+                  className={`text-[10px] px-1.5 py-0.5 rounded-md font-mono ${
+                    isActive ? 'bg-white/20 text-white' : 'bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-300'
+                  }`}
+                >
+                  {item.barcodeNo || item.rollNo}
+                </span>
+                {labels.length > 1 && (
+                  <button
+                    type="button"
+                    onClick={e => {
+                      e.stopPropagation();
+                      handleRemoveLabel(idx);
+                    }}
+                    className={`p-0.5 rounded-md transition hover:bg-white/20 ${
+                      isActive ? 'text-white/80 hover:text-white' : 'text-slate-400 hover:text-rose-600'
+                    }`}
+                  >
+                    <X className="h-3 w-3" />
+                  </button>
+                )}
+              </div>
+            );
+          })}
+        </div>
       </div>
 
       {/* 3. Main Studio 2-Column Grid */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
         {/* Left Column: Form Controls (7 cols) */}
         <div className="lg:col-span-7 space-y-4 bg-white dark:bg-[#1a3535] border border-slate-200/90 dark:border-[#2c4a4a] rounded-3xl p-5 sm:p-6 shadow-sm">
-          {/* LOAD EXISTING REEL FROM STOCK */}
-          <div>
-            <label className="block text-[11px] font-black uppercase tracking-wider text-slate-500 dark:text-slate-300 mb-1.5">
-              LOAD EXISTING REEL FROM STOCK
-            </label>
-            <div className="relative">
-              <select
-                value={selectedReelNo}
-                onChange={e => handleSelectReelFromStock(e.target.value)}
-                className="w-full p-3 bg-slate-50 dark:bg-[#0f2828] border border-slate-200 dark:border-[#2c4a4a] text-slate-900 dark:text-white rounded-2xl text-xs font-bold focus:ring-2 focus:ring-primary focus:outline-none cursor-pointer appearance-none pr-10 transition"
-              >
-                {reelsList.map(reel => (
-                  <option key={reel.reelNo} value={reel.reelNo}>
-                    {reel.reelNo} - {reel.product} ({reel.weight} kg)
-                  </option>
-                ))}
-              </select>
-              <ChevronDown className="absolute right-3.5 top-3.5 h-4 w-4 text-slate-400 pointer-events-none" />
+          
+          {/* 3A. PRODUCT & REEL SELECTION WORKFLOW (PRIMARY) */}
+          <div className="bg-slate-50 dark:bg-[#0f2828] border border-slate-200 dark:border-[#2c4a4a] rounded-2xl p-4 sm:p-5 space-y-4">
+            <div className="flex items-center justify-between border-b border-slate-200/80 dark:border-[#2c4a4a] pb-2.5">
+              <label className="text-xs font-black uppercase tracking-wider text-slate-800 dark:text-slate-100 flex items-center gap-2">
+                <Database className="h-4 w-4 text-primary dark:text-blue-400" />
+                <span>1. Select Product → 2. Select Stored Reel</span>
+              </label>
+              <span className="text-[10px] font-bold text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/60 px-2 py-0.5 rounded-md border border-emerald-200 dark:border-emerald-900/50">
+                Auto-fills 100% specs
+              </span>
+            </div>
+
+            {/* Grid of Step 1 (Product) and Step 2 (Reel) */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
+              {/* STEP 1: PRODUCT PICKER */}
+              <div className="space-y-1.5">
+                <label className="block text-[10px] font-black uppercase tracking-wider text-slate-600 dark:text-slate-300">
+                  Step 1 · Select Product
+                </label>
+                <div className="relative" ref={productPickerRef}>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setIsProductPickerOpen(prev => !prev);
+                      setIsReelPickerOpen(false);
+                    }}
+                    className="w-full flex items-center justify-between p-2.5 bg-white dark:bg-[#1a3535] border border-slate-200 dark:border-[#2c4a4a] rounded-xl text-xs font-bold text-slate-900 dark:text-white hover:border-primary transition cursor-pointer shadow-2xs text-left"
+                  >
+                    <div className="truncate pr-1">
+                      <div className="text-[10px] text-slate-400 font-semibold uppercase">Product</div>
+                      <div className="text-xs font-extrabold text-slate-900 dark:text-white truncate">
+                        {currentLabel.productTitle || 'Select Product'}
+                      </div>
+                    </div>
+                    <ChevronDown className="h-4 w-4 text-slate-400 shrink-0" />
+                  </button>
+
+                  {/* Product Search Popover */}
+                  {isProductPickerOpen && (
+                    <div className="absolute z-40 top-full left-0 right-0 mt-1.5 bg-white dark:bg-[#132323] border border-slate-200 dark:border-[#2c4a4a] rounded-2xl shadow-2xl p-3 space-y-2 max-h-80 overflow-hidden flex flex-col">
+                      <div className="relative">
+                        <Search className="h-3.5 w-3.5 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+                        <input
+                          type="text"
+                          autoFocus
+                          value={productSearchQuery}
+                          onChange={e => setProductSearchQuery(e.target.value)}
+                          placeholder="Search products..."
+                          className="w-full pl-8 pr-3 py-2 bg-slate-50 dark:bg-[#0a1818] border border-slate-200 dark:border-[#2c4a4a] text-slate-900 dark:text-white rounded-xl text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-primary transition"
+                        />
+                      </div>
+
+                      <div className="overflow-y-auto space-y-1 pr-1 custom-scrollbar">
+                        {filteredProducts.length === 0 ? (
+                          <div className="text-center py-4 text-xs font-bold text-slate-400">
+                            No products found
+                          </div>
+                        ) : (
+                          filteredProducts.map((p, idx) => {
+                            const isSelected = currentLabel.productTitle === p.name;
+                            return (
+                              <div
+                                key={idx}
+                                onClick={() => handleSelectProduct(p)}
+                                className={`p-2.5 rounded-xl cursor-pointer transition flex items-center justify-between text-xs ${
+                                  isSelected
+                                    ? 'bg-primary text-white font-black'
+                                    : 'hover:bg-slate-100 dark:hover:bg-[#1a3535] text-slate-800 dark:text-slate-200'
+                                }`}
+                              >
+                                <div className="truncate pr-2">
+                                  <div className="font-extrabold truncate">{p.name}</div>
+                                  <div
+                                    className={`text-[10px] font-mono mt-0.5 ${
+                                      isSelected ? 'text-white/80' : 'text-slate-400'
+                                    }`}
+                                  >
+                                    {p.gsm || '---'} GSM · {p.ply || 2} Ply · {p.size ? `${p.size} cm` : '---'}
+                                  </div>
+                                </div>
+                                {isSelected && <Check className="h-4 w-4 shrink-0 text-white" />}
+                              </div>
+                            );
+                          })
+                        )}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              {/* STEP 2: REEL NUMBER PICKER (FILTERED BY PRODUCT) */}
+              <div className="space-y-1.5">
+                <div className="flex items-center justify-between">
+                  <label className="block text-[10px] font-black uppercase tracking-wider text-slate-600 dark:text-slate-300">
+                    Step 2 · Select Stored Reel
+                  </label>
+                  <span
+                    className={`text-[10px] font-bold font-mono px-2 py-0.5 rounded-full ${
+                      availableReelsForProduct.length === 0
+                        ? 'bg-slate-100 dark:bg-slate-800 text-slate-500'
+                        : 'bg-blue-50 dark:bg-blue-950/60 text-blue-600 dark:text-blue-400'
+                    }`}
+                  >
+                    {availableReelsForProduct.length} Reel{availableReelsForProduct.length === 1 ? '' : 's'}
+                  </span>
+                </div>
+
+                <div className="relative" ref={reelPickerRef}>
+                  <button
+                    type="button"
+                    disabled={availableReelsForProduct.length === 0}
+                    onClick={() => {
+                      if (availableReelsForProduct.length === 0) return;
+                      setIsReelPickerOpen(prev => !prev);
+                      setIsProductPickerOpen(false);
+                    }}
+                    className={`w-full flex items-center justify-between p-2.5 bg-white dark:bg-[#1a3535] border border-slate-200 dark:border-[#2c4a4a] rounded-xl text-xs font-bold text-slate-900 dark:text-white transition shadow-2xs text-left ${
+                      availableReelsForProduct.length === 0
+                        ? 'opacity-60 cursor-not-allowed bg-slate-50 dark:bg-slate-900/40'
+                        : 'hover:border-primary cursor-pointer'
+                    }`}
+                  >
+                    <div className="truncate pr-1">
+                      <div className="text-[10px] text-slate-400 font-semibold uppercase">Reel Number</div>
+                      <div
+                        className={`text-xs font-black font-mono truncate ${
+                          availableReelsForProduct.length === 0
+                            ? 'text-slate-400'
+                            : currentLabel.barcodeNo
+                            ? 'text-primary dark:text-blue-400'
+                            : 'text-slate-500'
+                        }`}
+                      >
+                        {availableReelsForProduct.length === 0
+                          ? 'No reels available'
+                          : currentLabel.barcodeNo
+                          ? `Reel #${currentLabel.barcodeNo}`
+                          : 'Select Reel...'}
+                      </div>
+                    </div>
+                    <ChevronDown className="h-4 w-4 text-slate-400 shrink-0" />
+                  </button>
+
+                  {/* Reel Search & Selection Popover */}
+                  {isReelPickerOpen && availableReelsForProduct.length > 0 && (
+                    <div className="absolute z-40 top-full left-0 right-0 mt-1.5 bg-white dark:bg-[#132323] border border-slate-200 dark:border-[#2c4a4a] rounded-2xl shadow-2xl p-3 space-y-2 max-h-80 overflow-hidden flex flex-col">
+                      <div className="relative">
+                        <Search className="h-3.5 w-3.5 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+                        <input
+                          type="text"
+                          autoFocus
+                          value={reelSearchQuery}
+                          onChange={e => setReelSearchQuery(e.target.value)}
+                          placeholder="Search Reel No (e.g. 26050057)..."
+                          className="w-full pl-8 pr-3 py-2 bg-slate-50 dark:bg-[#0a1818] border border-slate-200 dark:border-[#2c4a4a] text-slate-900 dark:text-white rounded-xl text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-primary transition"
+                        />
+                      </div>
+
+                      <div className="overflow-y-auto space-y-1.5 pr-1 custom-scrollbar">
+                        {filteredReels.length === 0 ? (
+                          <div className="text-center py-4 text-xs font-bold text-slate-400">
+                            No stored reels found for this search
+                          </div>
+                        ) : (
+                          filteredReels.map((r, idx) => {
+                            const isSelected = currentLabel.barcodeNo === r.reelNo;
+                            return (
+                              <div
+                                key={idx}
+                                onClick={() => handleSelectReel(r)}
+                                className={`p-2.5 rounded-xl cursor-pointer transition flex items-center justify-between text-xs ${
+                                  isSelected
+                                    ? 'bg-primary text-white font-bold'
+                                    : 'hover:bg-slate-100 dark:hover:bg-[#1a3535] text-slate-800 dark:text-slate-200 border border-slate-100 dark:border-slate-800'
+                                }`}
+                              >
+                                <div className="truncate pr-2">
+                                  <div className="flex items-center gap-2">
+                                    <span className="font-black font-mono">{r.reelNo}</span>
+                                    <span
+                                      className={`text-[9.5px] px-1.5 py-0.5 rounded-md font-extrabold uppercase ${
+                                        isSelected
+                                          ? 'bg-white/20 text-white'
+                                          : 'bg-emerald-100 dark:bg-emerald-950 text-emerald-700 dark:text-emerald-400'
+                                      }`}
+                                    >
+                                      {r.qcStatus.split(' - ')[0] || 'Grade A'}
+                                    </span>
+                                  </div>
+                                  <div
+                                    className={`text-[10px] font-mono mt-1 ${
+                                      isSelected ? 'text-white/80' : 'text-slate-500 dark:text-slate-400'
+                                    }`}
+                                  >
+                                    GSM {r.gsm} · {r.netWeightKg} KG · Dia {r.dia} · Roll #{r.rollNo}
+                                  </div>
+                                </div>
+                                {isSelected && <Check className="h-4 w-4 shrink-0 text-white" />}
+                              </div>
+                            );
+                          })
+                        )}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
+
+            {/* Duplicate Queue Warning Badge */}
+            {duplicateInQueue && (
+              <div className="flex items-center gap-2 p-2.5 rounded-xl bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-900/60 text-amber-800 dark:text-amber-300 text-xs font-semibold">
+                <AlertTriangle className="h-4 w-4 text-amber-600 shrink-0" />
+                <span>
+                  Notice: Reel #{duplicateInQueue.reelNo} is already in Queue (Label #{duplicateInQueue.labelNumber}). You can print multiple copies below.
+                </span>
+              </div>
+            )}
+
+            {/* Editable Product Title & Additional Custom Description */}
+            <div className="space-y-3 pt-2 border-t border-slate-200/70 dark:border-[#2c4a4a]">
+              <div>
+                <label className="block text-[10px] font-black uppercase tracking-wider text-slate-500 dark:text-slate-300 mb-1">
+                  PRODUCT TITLE / NAME (EDITABLE)
+                </label>
+                <input
+                  type="text"
+                  value={currentLabel.productTitle}
+                  onChange={e => updateCurrentLabel({ productTitle: e.target.value })}
+                  placeholder="Product Name..."
+                  className="w-full p-2.5 bg-white dark:bg-[#1a3535] border border-slate-200 dark:border-[#2c4a4a] text-slate-900 dark:text-white rounded-xl text-xs font-bold focus:ring-2 focus:ring-primary focus:outline-none transition"
+                />
+              </div>
+
+              <div>
+                <label className="block text-[10px] font-black uppercase tracking-wider text-slate-500 dark:text-slate-300 mb-1">
+                  ADDITIONAL DESCRIPTION / CUSTOM TEXT
+                </label>
+                <input
+                  type="text"
+                  value={currentLabel.customDescription}
+                  onChange={e => updateCurrentLabel({ customDescription: e.target.value })}
+                  placeholder="e.g. Premium 2Ply - Light Tinted, Export Grade..."
+                  className="w-full p-2.5 bg-white dark:bg-[#1a3535] border border-slate-200 dark:border-[#2c4a4a] text-slate-900 dark:text-white rounded-xl text-xs font-bold focus:ring-2 focus:ring-primary focus:outline-none transition"
+                />
+              </div>
             </div>
           </div>
 
-          {/* Row 2: REEL / BARCODE NO & QR CODE EMBED VALUE */}
+          {/* 3B. REEL NUMBER, QR VALUE & MANUAL FALLBACK */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
             <div>
-              <label className="block text-[11px] font-black uppercase tracking-wider text-slate-500 dark:text-slate-300 mb-1.5">
-                REEL / BARCODE NO
-              </label>
+              <div className="flex items-center justify-between mb-1.5">
+                <label className="block text-[11px] font-black uppercase tracking-wider text-slate-500 dark:text-slate-300">
+                  REEL / BARCODE NO
+                </label>
+                <button
+                  type="button"
+                  onClick={() => setIsManualReelEntry(prev => !prev)}
+                  className="text-[10px] font-bold text-primary dark:text-blue-400 hover:underline cursor-pointer flex items-center gap-1"
+                >
+                  <Edit3 className="h-3 w-3" />
+                  <span>{isManualReelEntry ? 'Lock to Stored' : 'Custom Entry'}</span>
+                </button>
+              </div>
               <input
                 type="text"
-                value={barcodeNo}
-                onChange={e => setBarcodeNo(e.target.value)}
+                value={currentLabel.barcodeNo}
+                onChange={e => updateCurrentLabel({ barcodeNo: e.target.value, qrCodeEmbedValue: e.target.value })}
                 className="w-full p-2.5 bg-slate-50 dark:bg-[#0f2828] border border-slate-200 dark:border-[#2c4a4a] text-slate-900 dark:text-white rounded-xl text-xs font-bold font-mono focus:ring-2 focus:ring-primary focus:outline-none transition"
               />
             </div>
@@ -285,27 +758,14 @@ export const LabelStudioView: React.FC = () => {
               </label>
               <input
                 type="text"
-                value={qrCodeEmbedValue}
-                onChange={e => setQrCodeEmbedValue(e.target.value)}
+                value={currentLabel.qrCodeEmbedValue}
+                onChange={e => updateCurrentLabel({ qrCodeEmbedValue: e.target.value })}
                 className="w-full p-2.5 bg-slate-50 dark:bg-[#0f2828] border border-slate-200 dark:border-[#2c4a4a] text-slate-900 dark:text-white rounded-xl text-xs font-bold font-mono focus:ring-2 focus:ring-primary focus:outline-none transition"
               />
             </div>
           </div>
 
-          {/* Row 3: PRODUCT TITLE / DESCRIPTION */}
-          <div>
-            <label className="block text-[11px] font-black uppercase tracking-wider text-slate-500 dark:text-slate-300 mb-1.5">
-              PRODUCT TITLE / DESCRIPTION
-            </label>
-            <input
-              type="text"
-              value={productTitle}
-              onChange={e => setProductTitle(e.target.value)}
-              className="w-full p-2.5 bg-slate-50 dark:bg-[#0f2828] border border-slate-200 dark:border-[#2c4a4a] text-slate-900 dark:text-white rounded-xl text-xs font-bold focus:ring-2 focus:ring-primary focus:outline-none transition"
-            />
-          </div>
-
-          {/* Row 4: GSM, SIZE / WIDTH, NET WEIGHT (KG) */}
+          {/* 3C. GSM, SIZE / WIDTH, NET WEIGHT (KG) */}
           <div className="grid grid-cols-3 gap-3">
             <div>
               <label className="block text-[10px] font-black uppercase tracking-wider text-slate-500 dark:text-slate-300 mb-1">
@@ -313,8 +773,8 @@ export const LabelStudioView: React.FC = () => {
               </label>
               <input
                 type="text"
-                value={gsm}
-                onChange={e => setGsm(e.target.value)}
+                value={currentLabel.gsm}
+                onChange={e => updateCurrentLabel({ gsm: e.target.value })}
                 className="w-full p-2 bg-slate-50 dark:bg-[#0f2828] border border-slate-200 dark:border-[#2c4a4a] text-slate-900 dark:text-white rounded-xl text-xs font-bold font-mono focus:ring-2 focus:ring-primary focus:outline-none transition"
               />
             </div>
@@ -325,8 +785,8 @@ export const LabelStudioView: React.FC = () => {
               </label>
               <input
                 type="text"
-                value={sizeWidth}
-                onChange={e => setSizeWidth(e.target.value)}
+                value={currentLabel.sizeWidth}
+                onChange={e => updateCurrentLabel({ sizeWidth: e.target.value })}
                 className="w-full p-2 bg-slate-50 dark:bg-[#0f2828] border border-slate-200 dark:border-[#2c4a4a] text-slate-900 dark:text-white rounded-xl text-xs font-bold font-mono focus:ring-2 focus:ring-primary focus:outline-none transition"
               />
             </div>
@@ -337,14 +797,41 @@ export const LabelStudioView: React.FC = () => {
               </label>
               <input
                 type="text"
-                value={netWeightKg}
-                onChange={e => setNetWeightKg(e.target.value)}
+                value={currentLabel.netWeightKg}
+                onChange={e => updateCurrentLabel({ netWeightKg: e.target.value })}
                 className="w-full p-2 bg-slate-50 dark:bg-[#0f2828] border border-slate-200 dark:border-[#2c4a4a] text-slate-900 dark:text-white rounded-xl text-xs font-bold font-mono text-emerald-600 dark:text-emerald-400 focus:ring-2 focus:ring-primary focus:outline-none transition"
               />
             </div>
           </div>
 
-          {/* Row 5: PLY, JOINTS, DIAMETER */}
+          {/* 3D. ROLL NO & SHADE */}
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <label className="block text-[10px] font-black uppercase tracking-wider text-slate-500 dark:text-slate-300 mb-1">
+                ROLL NO
+              </label>
+              <input
+                type="text"
+                value={currentLabel.rollNo}
+                onChange={e => updateCurrentLabel({ rollNo: e.target.value })}
+                className="w-full p-2 bg-slate-50 dark:bg-[#0f2828] border border-slate-200 dark:border-[#2c4a4a] text-slate-900 dark:text-white rounded-xl text-xs font-bold font-mono focus:ring-2 focus:ring-primary focus:outline-none transition"
+              />
+            </div>
+
+            <div>
+              <label className="block text-[10px] font-black uppercase tracking-wider text-slate-500 dark:text-slate-300 mb-1">
+                SHADE
+              </label>
+              <input
+                type="text"
+                value={currentLabel.shade}
+                onChange={e => updateCurrentLabel({ shade: e.target.value })}
+                className="w-full p-2 bg-slate-50 dark:bg-[#0f2828] border border-slate-200 dark:border-[#2c4a4a] text-slate-900 dark:text-white rounded-xl text-xs font-bold focus:ring-2 focus:ring-primary focus:outline-none transition"
+              />
+            </div>
+          </div>
+
+          {/* 3E. PLY, JOINTS, DIAMETER */}
           <div className="grid grid-cols-3 gap-3">
             <div>
               <label className="block text-[10px] font-black uppercase tracking-wider text-slate-500 dark:text-slate-300 mb-1">
@@ -352,8 +839,8 @@ export const LabelStudioView: React.FC = () => {
               </label>
               <input
                 type="text"
-                value={ply}
-                onChange={e => setPly(e.target.value)}
+                value={currentLabel.ply}
+                onChange={e => updateCurrentLabel({ ply: e.target.value })}
                 className="w-full p-2 bg-slate-50 dark:bg-[#0f2828] border border-slate-200 dark:border-[#2c4a4a] text-slate-900 dark:text-white rounded-xl text-xs font-bold font-mono focus:ring-2 focus:ring-primary focus:outline-none transition"
               />
             </div>
@@ -364,8 +851,8 @@ export const LabelStudioView: React.FC = () => {
               </label>
               <input
                 type="text"
-                value={joint}
-                onChange={e => setJoint(e.target.value)}
+                value={currentLabel.joint}
+                onChange={e => updateCurrentLabel({ joint: e.target.value })}
                 className="w-full p-2 bg-slate-50 dark:bg-[#0f2828] border border-slate-200 dark:border-[#2c4a4a] text-slate-900 dark:text-white rounded-xl text-xs font-bold font-mono focus:ring-2 focus:ring-primary focus:outline-none transition"
               />
             </div>
@@ -376,94 +863,67 @@ export const LabelStudioView: React.FC = () => {
               </label>
               <input
                 type="text"
-                value={dia}
-                onChange={e => setDia(e.target.value)}
+                value={currentLabel.dia}
+                onChange={e => updateCurrentLabel({ dia: e.target.value })}
                 className="w-full p-2 bg-slate-50 dark:bg-[#0f2828] border border-slate-200 dark:border-[#2c4a4a] text-slate-900 dark:text-white rounded-xl text-xs font-bold font-mono focus:ring-2 focus:ring-primary focus:outline-none transition"
               />
             </div>
           </div>
 
-          {/* Row 6: QC Status, Date, Notes */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
+          {/* 3F. CORE, QC STATUS, PRODUCTION DATE */}
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+            <div>
+              <label className="block text-[10px] font-black uppercase tracking-wider text-slate-500 dark:text-slate-300 mb-1">
+                CORE SIZE
+              </label>
+              <input
+                type="text"
+                value={currentLabel.core}
+                onChange={e => updateCurrentLabel({ core: e.target.value })}
+                className="w-full p-2 bg-slate-50 dark:bg-[#0f2828] border border-slate-200 dark:border-[#2c4a4a] text-slate-900 dark:text-white rounded-xl text-xs font-bold font-mono focus:ring-2 focus:ring-primary focus:outline-none transition"
+              />
+            </div>
+
             <div>
               <label className="block text-[10px] font-black uppercase tracking-wider text-slate-500 dark:text-slate-300 mb-1">
                 QC STATUS / GRADE
               </label>
               <input
                 type="text"
-                value={qcStatus}
-                onChange={e => setQcStatus(e.target.value)}
+                value={currentLabel.qcStatus}
+                onChange={e => updateCurrentLabel({ qcStatus: e.target.value })}
                 className="w-full p-2 bg-slate-50 dark:bg-[#0f2828] border border-slate-200 dark:border-[#2c4a4a] text-slate-900 dark:text-white rounded-xl text-xs font-bold focus:ring-2 focus:ring-primary focus:outline-none transition"
               />
             </div>
 
             <div>
               <label className="block text-[10px] font-black uppercase tracking-wider text-slate-500 dark:text-slate-300 mb-1">
-                PRODUCTION DATE / TIME
+                PRODUCTION DATE
               </label>
               <input
                 type="text"
-                value={prodDateTime}
-                onChange={e => setProdDateTime(e.target.value)}
+                value={currentLabel.prodDateTime}
+                onChange={e => updateCurrentLabel({ prodDateTime: e.target.value })}
                 className="w-full p-2 bg-slate-50 dark:bg-[#0f2828] border border-slate-200 dark:border-[#2c4a4a] text-slate-900 dark:text-white rounded-xl text-xs font-bold font-mono focus:ring-2 focus:ring-primary focus:outline-none transition"
               />
             </div>
           </div>
 
+          {/* Directives / Instructions */}
           <div>
             <label className="block text-[10px] font-black uppercase tracking-wider text-slate-500 dark:text-slate-300 mb-1">
               INSTRUCTIONS / DIRECTIVES
             </label>
             <input
               type="text"
-              value={notesInstructions}
-              onChange={e => setNotesInstructions(e.target.value)}
+              value={currentLabel.notesInstructions}
+              onChange={e => updateCurrentLabel({ notesInstructions: e.target.value })}
               className="w-full p-2 bg-slate-50 dark:bg-[#0f2828] border border-slate-200 dark:border-[#2c4a4a] text-slate-900 dark:text-white rounded-xl text-xs font-bold focus:ring-2 focus:ring-primary focus:outline-none transition"
             />
           </div>
 
-          {/* Mode Toggle & Print Size Row */}
+          {/* Print Size & Copies Row */}
           <div className="space-y-3 pt-3 border-t border-slate-200/80 dark:border-[#2c4a4a]">
-            <div className="p-3 bg-blue-50/70 dark:bg-[#0f2828] border border-blue-200/80 dark:border-[#2c4a4a] rounded-2xl flex flex-col sm:flex-row items-center justify-between gap-3">
-              <div>
-                <span className="text-xs font-black text-slate-900 dark:text-white flex items-center gap-1.5">
-                  <span className="h-2 w-2 rounded-full bg-emerald-500 animate-pulse"></span>
-                  QR Encoding Mode:
-                </span>
-                <p className="text-[10px] text-slate-500 dark:text-slate-400 mt-0.5 font-medium">
-                  {qrEncodingMode === 'id_only'
-                    ? '⚡ Fast Scan ID: Encodes identifier for instant scanner lookup'
-                    : '📦 Full JSON: Encodes complete reel specs payload in QR code'}
-                </p>
-              </div>
-
-              <div className="flex items-center gap-1.5 shrink-0 bg-white dark:bg-[#1a3535] p-1 rounded-xl border border-slate-200 dark:border-[#2c4a4a] shadow-2xs">
-                <button
-                  type="button"
-                  onClick={() => setQrEncodingMode('id_only')}
-                  className={`px-3 py-1.5 rounded-lg text-[11px] font-bold transition cursor-pointer ${
-                    qrEncodingMode === 'id_only'
-                      ? 'bg-[#6C4FE0] text-white shadow-xs'
-                      : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
-                  }`}
-                >
-                  ⚡ Fast ID
-                </button>
-
-                <button
-                  type="button"
-                  onClick={() => setQrEncodingMode('full_json')}
-                  className={`px-3 py-1.5 rounded-lg text-[11px] font-bold transition cursor-pointer ${
-                    qrEncodingMode === 'full_json'
-                      ? 'bg-[#6C4FE0] text-white shadow-xs'
-                      : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
-                  }`}
-                >
-                  📦 Full JSON
-                </button>
-              </div>
-            </div>
-
             <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
               <div className="flex items-center gap-2.5">
                 <label className="text-xs font-bold text-slate-600 dark:text-slate-300">
@@ -474,20 +934,24 @@ export const LabelStudioView: React.FC = () => {
                   onChange={e => setLabelSize(e.target.value as any)}
                   className="p-1.5 bg-slate-50 dark:bg-[#0f2828] border border-slate-200 dark:border-[#2c4a4a] text-slate-900 dark:text-white rounded-xl text-xs font-bold cursor-pointer focus:outline-none transition"
                 >
-                  <option value="4x6">4" x 6" (Thermal Sticker 100x150mm)</option>
-                  <option value="3x2">3" x 2" (Standard Tag)</option>
+                  <option value="4x6">4" x 6" (Thermal Roll 100×150mm)</option>
+                  <option value="3x2">3" x 2" (Thermal Roll 75×50mm)</option>
+                  <option value="a4">A4 Sheet (Office Printer / Centered)</option>
+                  <option value="auto">Auto (Printer Driver Default)</option>
                 </select>
               </div>
 
               <div className="flex items-center gap-2">
-                <span className="text-xs font-bold text-slate-600 dark:text-slate-300">Copies:</span>
+                <span className="text-xs font-bold text-slate-600 dark:text-slate-300">
+                  Copies for Label #{activeLabelIndex + 1}:
+                </span>
                 {[1, 2, 4].map(c => (
                   <button
                     key={c}
                     type="button"
-                    onClick={() => setCopies(c)}
+                    onClick={() => updateCurrentLabel({ copies: c })}
                     className={`px-3 py-1 rounded-xl font-bold text-xs transition cursor-pointer ${
-                      copies === c
+                      currentLabel.copies === c
                         ? 'bg-[#6C4FE0] text-white shadow-xs'
                         : 'bg-slate-100 dark:bg-[#0f2828] border border-slate-200 dark:border-[#2c4a4a] text-slate-700 dark:text-slate-300 hover:bg-slate-200'
                     }`}
@@ -502,141 +966,42 @@ export const LabelStudioView: React.FC = () => {
 
         {/* Right Column: Live Thermal Sticker Preview (5 cols) */}
         <div className="lg:col-span-5 flex flex-col items-center">
-          <div className="text-[11px] font-black text-slate-400 uppercase tracking-wider mb-2 flex items-center gap-1">
-            <span>Live Sticker Preview</span>
-            <span className="text-[10px] text-blue-500 font-bold">({labelSize === '4x6' ? '4x6 inch Thermal' : '3x2 inch'})</span>
+          <div className="text-[11px] font-black text-slate-400 uppercase tracking-wider mb-2 flex items-center justify-between w-full max-w-[380px]">
+            <span>Live Sticker Preview (#{activeLabelIndex + 1})</span>
+            <span className="text-[10px] text-blue-500 font-bold">
+              {labelSize === '4x6' ? '4x6 inch Thermal' : labelSize === '3x2' ? '3x2 inch' : 'A4 Centered'}
+            </span>
           </div>
 
-          {/* THE MODERNIZED PRINTABLE STICKER CARD */}
-          <div
-            id="printable-label-card"
-            className="w-full bg-white text-slate-950 border-2 border-slate-900 rounded-2xl p-4 sm:p-5 shadow-2xl text-left select-none print:m-0 print:p-4 print:border-2 print:border-black print:shadow-none print:rounded-none"
-            style={{
-              fontFamily: "'Plus Jakarta Sans', sans-serif",
-              maxWidth: '400px',
-            }}
-          >
-            {/* 1. Header: SAHEB PAPER PVT. LTD. & Quality Badge */}
-            <div className="flex items-start justify-between border-b-2 border-slate-900 pb-2 mb-2.5">
-              <div>
-                <div className="text-xs font-black tracking-tight text-slate-950 uppercase leading-tight font-heading">
-                  {COMPANY_CONFIG.name}
-                </div>
-                <div className="text-[8px] font-bold text-slate-600 mt-0.5 uppercase tracking-wider">
-                  Plant: Chandisar, Palanpur
-                </div>
-              </div>
-              <div className="text-right shrink-0">
-                <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-slate-950 text-white text-[8px] font-black uppercase tracking-wider">
-                  <Check className="h-2.5 w-2.5 text-emerald-400" />
-                  <span>{qcStatus || 'QC PASSED'}</span>
-                </span>
-                <div className="text-[7.5px] font-extrabold text-slate-500 mt-0.5">ISO 9001:2015</div>
-              </div>
-            </div>
-
-            {/* 2. QR Code & Reel Code Section */}
-            <div className="flex items-center gap-3 bg-slate-50 border border-slate-300 rounded-xl p-2.5 mb-2.5">
-              <div className="p-1 bg-white border border-slate-900 rounded-lg shrink-0 shadow-2xs flex items-center justify-center">
-                <QRCodeSVG
-                  value={computedQrValue}
-                  size={84}
-                  level="M"
-                  includeMargin={false}
-                  bgColor="#ffffff"
-                  fgColor="#000000"
-                />
-              </div>
-              <div className="min-w-0 flex-1 space-y-0.5">
-                <div className="text-[8px] font-black text-slate-400 uppercase tracking-widest">
-                  REEL IDENTIFIER / QR CODE
-                </div>
-                <div className="text-base font-black font-mono tracking-tight text-slate-950 truncate">
-                  {barcodeNo}
-                </div>
-                <div className="text-[11px] font-black text-blue-800 line-clamp-1">
-                  {productTitle}
-                </div>
-                <div className="flex items-center gap-1.5 text-[8px] font-bold text-slate-500 pt-0.5">
-                  <span>{machine}</span>
-                  <span>&bull;</span>
-                  <span>{shift}</span>
-                </div>
-              </div>
-            </div>
-
-            {/* 3. 6-Box Technical Specs Matrix */}
-            <div className="grid grid-cols-3 gap-1.5 mb-2.5 text-center text-[10px]">
-              <div className="p-1.5 bg-slate-100/90 border border-slate-200 rounded-lg">
-                <span className="text-[7.5px] font-black text-slate-500 block uppercase tracking-wider">GSM</span>
-                <span className="font-black text-slate-950 font-mono text-[11px]">{gsm}</span>
-              </div>
-              <div className="p-1.5 bg-slate-100/90 border border-slate-200 rounded-lg">
-                <span className="text-[7.5px] font-black text-slate-500 block uppercase tracking-wider">SIZE</span>
-                <span className="font-black text-slate-950 font-mono text-[11px]">{sizeWidth}</span>
-              </div>
-              <div className="p-1.5 bg-slate-100/90 border border-slate-200 rounded-lg">
-                <span className="text-[7.5px] font-black text-slate-500 block uppercase tracking-wider">PLY</span>
-                <span className="font-black text-slate-950 font-mono text-[11px]">{ply}</span>
-              </div>
-              <div className="p-1.5 bg-slate-100/90 border border-slate-200 rounded-lg">
-                <span className="text-[7.5px] font-black text-slate-500 block uppercase tracking-wider">DIAMETER</span>
-                <span className="font-black text-slate-950 font-mono text-[11px]">{dia}</span>
-              </div>
-              <div className="p-1.5 bg-slate-100/90 border border-slate-200 rounded-lg">
-                <span className="text-[7.5px] font-black text-slate-500 block uppercase tracking-wider">CORE</span>
-                <span className="font-black text-slate-950 font-mono text-[11px]">{core}</span>
-              </div>
-              <div className="p-1.5 bg-slate-100/90 border border-slate-200 rounded-lg">
-                <span className="text-[7.5px] font-black text-slate-500 block uppercase tracking-wider">JOINTS</span>
-                <span className="font-black text-slate-950 font-mono text-[11px]">{joint}</span>
-              </div>
-            </div>
-
-            {/* 4. High Contrast Certified Net Weight Banner */}
-            <div className="bg-slate-950 text-white px-3 py-2 rounded-xl flex items-center justify-between mb-2">
-              <div>
-                <span className="text-[8px] font-black uppercase tracking-widest text-slate-400 block">
-                  CERTIFIED NET WEIGHT
-                </span>
-                <span className="text-[9px] font-bold text-slate-300">
-                  Gross / Tare Verified
-                </span>
-              </div>
-              <div className="text-right">
-                <span className="text-lg font-black font-mono tracking-tight text-emerald-400">
-                  {netWeightKg} <span className="text-xs font-normal text-white">KG</span>
-                </span>
-              </div>
-            </div>
-
-            {/* 5. Manufacturing & Packaging Info */}
-            <div className="flex items-center justify-between text-[8px] font-bold text-slate-600 bg-slate-50 border border-slate-200 rounded-lg px-2.5 py-1 mb-2">
-              <span>Mfg: <strong className="text-slate-900 font-mono">{prodDateTime}</strong></span>
-              <span>Operator: <strong className="text-slate-900">{operator}</strong></span>
-              <span className="text-emerald-700">Wrapped &amp; Sealed</span>
-            </div>
-
-            {/* 6. Notes / Directives */}
-            <div className="text-[7.5px] font-extrabold text-slate-500 text-center uppercase tracking-wider py-0.5 border-t border-slate-200">
-              <span>{notesInstructions || 'Handle With Care · Keep Dry · 100% Recyclable Paper'}</span>
-            </div>
-
-            {/* 7. Footer Company Identity */}
-            <div className="border-t-2 border-slate-900 mt-1 pt-1 text-center text-[7px] leading-tight text-slate-600">
-              <div className="font-extrabold text-slate-950 uppercase">{COMPANY_CONFIG.name}</div>
-              <div>{COMPANY_CONFIG.address}</div>
-              <div className="font-bold text-slate-700">Ph: {COMPANY_CONFIG.phone} &bull; {COMPANY_CONFIG.email} &bull; {COMPANY_CONFIG.website}</div>
+          <div className="w-full flex flex-col items-center">
+            <div id="printable-label-card" className="w-full flex justify-center">
+              <ReelPrintLabel
+                gsm={currentLabel.gsm}
+                width={currentLabel.sizeWidth}
+                dia={currentLabel.dia}
+                core={currentLabel.core}
+                ply={currentLabel.ply}
+                weight={currentLabel.netWeightKg ? `${currentLabel.netWeightKg} KG` : ''}
+                rollNo={currentLabel.rollNo}
+                quality={currentLabel.productTitle}
+                customDescription={currentLabel.customDescription}
+                shade={currentLabel.shade}
+                jointCount={currentLabel.joint}
+                reelNo={currentLabel.barcodeNo}
+                qrValue={activeQrCodeValue}
+                className="shadow-2xl"
+              />
             </div>
           </div>
 
-          {/* Action Buttons Below Preview */}
-          <div className="w-full mt-4 space-y-2" style={{ maxWidth: '400px' }}>
+          {/* Dual Action Buttons: Print Current & Print All */}
+          <div className="w-full mt-4 space-y-2.5" style={{ maxWidth: '380px' }}>
+            {/* Primary: Print Current Label */}
             <button
               type="button"
-              onClick={handlePrintLabel}
+              onClick={handlePrintCurrent}
               disabled={isViewer}
-              title={isViewer ? "Sticker printing is locked for Viewer (Read-Only Mode)" : `Print ${copies}x Thermal Sticker Now`}
+              title={isViewer ? "Sticker printing is locked for Viewer (Read-Only Mode)" : `Print ${currentLabel.copies || 1}x Thermal Sticker Now`}
               className={`w-full font-black py-3.5 px-4 rounded-2xl text-xs uppercase tracking-wider shadow-lg transition-all flex items-center justify-center gap-2 ${
                 isViewer
                   ? 'bg-slate-300 dark:bg-slate-700 text-slate-500 cursor-not-allowed shadow-none'
@@ -644,21 +1009,137 @@ export const LabelStudioView: React.FC = () => {
               }`}
             >
               {isViewer ? <Lock className="h-4 w-4 text-amber-500" /> : <Printer className="h-4 w-4" />}
-              <span>{isViewer ? 'Print Sticker (Locked for Viewer)' : `Print ${copies}x Thermal Sticker Now`}</span>
+              <span>
+                {isViewer ? 'Print Sticker (Locked for Viewer)' : `Print Current (${currentLabel.copies || 1}x Thermal Sticker)`}
+              </span>
             </button>
 
+            {/* Secondary: Print All Labels in Batch */}
             <button
               type="button"
-              onClick={() => window.history.back()}
-              className="w-full bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 font-bold py-2.5 px-4 rounded-2xl text-xs uppercase tracking-wider hover:bg-slate-200 transition cursor-pointer text-center"
+              onClick={handlePrintAll}
+              disabled={isViewer}
+              title={isViewer ? "Batch printing is locked for Viewer (Read-Only Mode)" : `Print All ${totalBatchStickers} Stickers`}
+              className={`w-full font-black py-3 px-4 rounded-2xl text-xs uppercase tracking-wider shadow-md transition-all flex items-center justify-center gap-2 ${
+                isViewer
+                  ? 'bg-slate-300 dark:bg-slate-700 text-slate-500 cursor-not-allowed shadow-none'
+                  : 'bg-[#6C4FE0] hover:bg-[#5a3ec8] text-white shadow-[#6C4FE0]/25 hover:scale-[1.01] active:scale-[0.99] cursor-pointer'
+              }`}
             >
-              Close Studio
+              <Layers className="h-4 w-4 text-white" />
+              <span>
+                Print All ({labels.length} {labels.length === 1 ? 'Label' : 'Labels'} · {totalBatchStickers} Total)
+              </span>
             </button>
           </div>
         </div>
       </div>
+
+      {/* Dedicated Print Portal: Renders onto document.body for native browser printing */}
+      {typeof document !== 'undefined' &&
+        createPortal(
+          <div id="printable-label-studio-output" className="hidden print:block">
+            <style>{`
+              @media print {
+                @page {
+                  size: ${
+                    labelSize === '4x6'
+                      ? '100mm 150mm'
+                      : labelSize === '3x2'
+                      ? '76mm 51mm'
+                      : labelSize === 'a4'
+                      ? 'A4 portrait'
+                      : 'auto'
+                  };
+                  margin: 0mm !important;
+                }
+                html, body {
+                  margin: 0 !important;
+                  padding: 0 !important;
+                  background: #ffffff !important;
+                  color: #000000 !important;
+                  height: auto !important;
+                  min-height: auto !important;
+                  overflow: visible !important;
+                }
+                #printable-label-studio-output {
+                  display: block !important;
+                  visibility: visible !important;
+                  width: 100% !important;
+                  margin: 0 auto !important;
+                  padding: 0 !important;
+                }
+                .print-label-page {
+                  width: 100% !important;
+                  max-width: ${labelSize === '3x2' ? '76mm' : labelSize === '4x6' ? '100mm' : '185mm'} !important;
+                  height: auto !important;
+                  max-height: ${labelSize === '4x6' ? '148mm' : labelSize === '3x2' ? '50mm' : 'none'} !important;
+                  display: flex !important;
+                  justify-content: center !important;
+                  align-items: center !important;
+                  margin: 0 auto !important;
+                  padding: 2mm 0 !important;
+                  box-sizing: border-box !important;
+                  page-break-after: always !important;
+                  break-after: page !important;
+                  page-break-inside: avoid !important;
+                  break-inside: avoid !important;
+                  overflow: hidden !important;
+                }
+                .print-label-page:last-child {
+                  page-break-after: auto !important;
+                  break-after: auto !important;
+                }
+                .print-label-page * {
+                  page-break-inside: avoid !important;
+                  break-inside: avoid !important;
+                }
+              }
+            `}</style>
+            {(printTarget === 'current' ? [currentLabel] : labels).flatMap((labelItem, labelIdx, arr) => {
+              const count = labelItem.copies || 1;
+              return Array.from({ length: count }).map((_, copyIdx) => {
+                const isVeryLastPage = labelIdx === arr.length - 1 && copyIdx === count - 1;
+                return (
+                  <div
+                    key={`${labelItem.id}-${copyIdx}`}
+                    className="print-label-page"
+                    style={{
+                      pageBreakAfter: isVeryLastPage ? 'auto' : 'always',
+                      breakAfter: isVeryLastPage ? 'auto' : 'page',
+                      display: 'flex',
+                      justifyContent: 'center',
+                      alignItems: 'center',
+                      padding: 0,
+                      margin: '0 auto',
+                      width: '100%',
+                    }}
+                  >
+                    <ReelPrintLabel
+                      gsm={labelItem.gsm}
+                      width={labelItem.sizeWidth}
+                      dia={labelItem.dia}
+                      core={labelItem.core}
+                      ply={labelItem.ply}
+                      weight={labelItem.netWeightKg ? `${labelItem.netWeightKg} KG` : ''}
+                      rollNo={labelItem.rollNo}
+                      quality={labelItem.productTitle}
+                      customDescription={labelItem.customDescription}
+                      shade={labelItem.shade}
+                      jointCount={labelItem.joint}
+                      reelNo={labelItem.barcodeNo}
+                      qrValue={labelItem.qrCodeEmbedValue || labelItem.barcodeNo}
+                    />
+                  </div>
+                );
+              });
+            })}
+          </div>,
+          document.body
+        )}
     </div>
   );
 };
 
 export default LabelStudioView;
+

@@ -956,6 +956,29 @@ function reanchorBaseline(prev, key, score, opts = {}) {
 // ─── Proposal render/parse ──────────────────────────────────────────────────
 const PROPOSAL_JSON_FENCE_OPEN = '````json';
 const PROPOSAL_JSON_FENCE_CLOSE = '````';
+// Reader-side fence tolerance (#3657 — same defect class as the WINDOWS.md
+// ledger): CommonMark formatters (Prettier et al.) narrow the written
+// 4-backtick fence to the shortest legal width (3) whenever the body holds no
+// backtick run, and a canonical-JSON candidates array never does. Locate the
+// block by a line-anchored 3+ fence and close on a run at least as wide
+// (CommonMark: a shorter run does not close). The writer above is unchanged.
+// This module is a leaf (CONTEXT.md — imports only node:fs/node:path), so the
+// span logic is local rather than imported from broken-windows.
+const PROPOSAL_FENCE_OPEN_RE = /^(`{3,})json[ \t]*\r?$/m;
+function locateProposalJsonBlock(text) {
+    const open = text.match(PROPOSAL_FENCE_OPEN_RE);
+    if (!open || open.index === undefined)
+        return null;
+    const width = open[1].length;
+    const bodyStart = open.index + open[0].length;
+    for (const close of text.slice(bodyStart).matchAll(/^(`{3,})[ \t]*\r?$/gm)) {
+        if (close[1].length < width)
+            continue;
+        const bodyEnd = close.index ?? 0;
+        return { jsonText: text.slice(bodyStart, bodyStart + bodyEnd).trim() };
+    }
+    return null;
+}
 function renderProposal(p) {
     const fm = [
         '---',
@@ -1012,13 +1035,10 @@ function parseProposal(text) {
                 return null;
             fm[m[1]] = m[2].trim();
         }
-        const jsonStart = text.indexOf(PROPOSAL_JSON_FENCE_OPEN);
-        if (jsonStart === -1)
+        const span = locateProposalJsonBlock(text);
+        if (span === null)
             return null;
-        const jsonEnd = text.indexOf(PROPOSAL_JSON_FENCE_CLOSE, jsonStart + PROPOSAL_JSON_FENCE_OPEN.length);
-        if (jsonEnd === -1)
-            return null;
-        const jsonText = text.slice(jsonStart + PROPOSAL_JSON_FENCE_OPEN.length, jsonEnd).trim();
+        const jsonText = span.jsonText;
         let candidates;
         try {
             candidates = JSON.parse(jsonText);

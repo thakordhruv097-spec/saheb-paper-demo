@@ -505,17 +505,20 @@ function acquireInstallMigrationLock(configDir, { timeoutMs = DEFAULT_LOCK_TIMEO
         let lockCreatedByUs = false;
         try {
             fd = node_fs_1.default.openSync(lockPath, 'wx');
-            // Close the open descriptor before writing so the file handle is
-            // released on Windows before the release closure unlinks it.
-            // Write payload via writeFileSync with the path (not the fd) so we
-            // don't hold an open fd across the lifetime of the lock.
-            node_fs_1.default.closeSync(fd);
-            fd = null;
             lockCreatedByUs = true; // we own the file; clean it up on any subsequent error
-            node_fs_1.default.writeFileSync(lockPath, JSON.stringify({
+            // Write the payload through the exclusively-created descriptor: a
+            // second open-by-path here would be a TOCTOU window (CWE-367) where a
+            // co-writer of the directory could symlink-swap the just-created empty
+            // lock file before the payload lands.
+            node_fs_1.default.writeFileSync(fd, JSON.stringify({
                 pid: process.pid,
                 acquiredAt: new Date().toISOString(),
             }) + '\n');
+            // Close before returning so no handle stays open across the lock's
+            // lifetime — Windows cannot unlink a file with an open handle when the
+            // release closure runs.
+            node_fs_1.default.closeSync(fd);
+            fd = null;
             lockCreatedByUs = false; // release closure owns cleanup from here
             return () => {
                 const failures = [];

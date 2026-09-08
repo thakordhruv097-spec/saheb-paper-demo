@@ -21,9 +21,13 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 };
 const node_fs_1 = __importDefault(require("node:fs"));
 const node_path_1 = __importDefault(require("node:path"));
+const node_child_process_1 = require("node:child_process");
 // eslint-disable-next-line @typescript-eslint/no-require-imports -- io.cjs is an export= CommonJS module
 const ioMod = require("./io.cjs");
-const { output, error, ERROR_REASON } = ioMod;
+const { output, error, ERROR_REASON, formatDiagnosticToken } = ioMod;
+// eslint-disable-next-line @typescript-eslint/no-require-imports
+const stateContract = require("./state-contract.cjs");
+const { publishStateContract } = stateContract;
 // eslint-disable-next-line @typescript-eslint/no-require-imports -- config-loader.cjs is an export= CommonJS module
 const configLoaderMod = require("./config-loader.cjs");
 const { loadConfig } = configLoaderMod;
@@ -34,7 +38,7 @@ const coreUtilsMod = require("./core-utils.cjs");
 // generative-fix divergence GEMINI.md warns about. Collapsed onto core-utils'
 // copy, which was already the leaf owner, so there is no second surface left to
 // drift and no parity test needed to police one.
-const { toPosixPath, generateSlugInternal, readSubdirectories, extractCanonicalPlanId, findUnsummarizedPlans, } = coreUtilsMod;
+const { toPosixPath, generateSlugInternal, readSubdirectories, extractCanonicalPlanId, findUnsummarizedPlans, normalizeLineEndings, } = coreUtilsMod;
 // eslint-disable-next-line @typescript-eslint/no-require-imports -- phase-id.cjs is an export= CommonJS module
 const phaseIdMod = require("./phase-id.cjs");
 const { normalizePhaseName, phaseMarkdownRegexSource, comparePhaseNum, matchPhaseDirs, isSentinelPhaseId, scopeToPhase, OPTIONAL_PROJECT_CODE_PREFIX_SOURCE, OPTIONAL_PHASE_TAG_SOURCE, PHASE_NUMBER_TOKEN_SOURCE, } = phaseIdMod;
@@ -71,9 +75,14 @@ const { readVerificationStatus } = verificationMod;
 // eslint-disable-next-line @typescript-eslint/no-require-imports -- plan-dependency-graph.cjs is an export= CommonJS module
 const planDependencyGraphMod = require("./plan-dependency-graph.cjs");
 const { computeHaltPropagation, buildSummaryFileIndex, isSummaryFileHalted, isSummaryFileBlocked } = planDependencyGraphMod;
-const { planningDir, withPlanningLock, listAvailableWorkstreams, peekActiveWorkstream, diagnoseUnresolvedActiveWorkstream, describeUnresolvedWorkstreamReason, } = planningWorkspace;
+// #612: `resolvePhaseIdConvention` selects the write-time milestone-scope
+// guard's terminator vocabulary (see assertDescriptionPreservesMilestoneScope).
+const { planningDir, withPlanningLock, listAvailableWorkstreams, peekActiveWorkstream, diagnoseUnresolvedActiveWorkstream, describeUnresolvedWorkstreamReason, resolvePhaseIdConvention, } = planningWorkspace;
 // eslint-disable-next-line @typescript-eslint/no-require-imports -- milestone-lock.cjs is an export= CommonJS module
 const milestoneLockMod = require("./milestone-lock.cjs");
+// eslint-disable-next-line @typescript-eslint/no-require-imports
+const planDocumentMod = require("./plan-document.cjs");
+const { parsePlanDocument, planIdFromFile } = planDocumentMod;
 const { extractFrontmatter } = frontmatterMod;
 const { readModifyWriteStateMd, stateExtractField, stateReplaceField, syncAndPreserveStateMd, withStateLock, updatePerformanceMetricsSection, } = stateMod;
 // Any .md file with PLAN anywhere in the basename — diagnostic net
@@ -378,6 +387,57 @@ function cmdPhaseMvpMode(cwd, args, raw) {
         cli_flag_present: cliFlagPresent,
     }, raw);
 }
+/**
+ * `phase.tdd-applicable <plan-file> [--cli-flag]` (#4273, Phase 1 of epic
+ * #4272) — resolves whether the TDD RED/GREEN/REFACTOR gate applies to a
+ * given plan, in strict precedence order: an explicit `--cli-flag` wins over
+ * the plan's own `type: tdd` frontmatter, which wins over any task in the
+ * plan carrying `tdd="true"` (the #4265 mixed-mode shape), which wins over
+ * the project-wide `workflow.tdd_mode` config default. Mirrors
+ * `cmdPhaseMvpMode`'s precedence-cascade shape immediately above.
+ */
+function cmdPhaseTddApplicable(cwd, args, raw) {
+    const planPath = args[0];
+    if (!planPath) {
+        error('Usage: phase.tdd-applicable <plan-file> [--cli-flag]', ERROR_REASON.USAGE);
+    }
+    const resolvedPath = node_path_1.default.isAbsolute(planPath) ? planPath : node_path_1.default.join(cwd, planPath);
+    if (!node_fs_1.default.existsSync(resolvedPath)) {
+        error(`Plan file not found: ${planPath}`, ERROR_REASON.PHASE_NOT_FOUND);
+    }
+    const cliFlagPresent = args.includes('--cli-flag');
+    const content = node_fs_1.default.readFileSync(resolvedPath, 'utf-8');
+    const doc = parsePlanDocument(content, resolvedPath);
+    const planType = doc.type;
+    const taskTddAttribute = doc.tasks.some((t) => t.tdd === 'true');
+    const config = loadConfig(cwd);
+    const configTddMode = Boolean(config.tdd_mode);
+    let applicable = false;
+    let source = 'none';
+    if (cliFlagPresent) {
+        applicable = true;
+        source = 'cli_flag';
+    }
+    else if (planType === 'tdd') {
+        applicable = true;
+        source = 'plan_frontmatter';
+    }
+    else if (taskTddAttribute) {
+        applicable = true;
+        source = 'task_attribute';
+    }
+    else if (configTddMode) {
+        applicable = true;
+        source = 'config';
+    }
+    output({
+        applicable,
+        source,
+        plan_type: planType,
+        config_tdd_mode: configTddMode,
+        cli_flag_present: cliFlagPresent,
+    }, raw);
+}
 function cmdFindPhase(cwd, phase, raw) {
     if (!phase) {
         error('phase identifier required');
@@ -504,23 +564,73 @@ function cmdFindPhase(cwd, phase, raw) {
     }
     output(notFound, raw, '');
 }
-function extractObjective(content) {
-    const m = content.match(/<objective>\s*\n?\s*(.+)/);
-    return m ? m[1].trim() : null;
-}
 /**
  * Resolve a raw `depends_on` token to the `RawPlan.id` it refers to
- * (case-folded exact match, falling back to canonical-id matching). Returns
+ * (case-folded exact match, falling back to canonical-id matching, falling
+ * back to the in-phase short-form plan number — #3897 rung 4). Returns
  * `null` when the token does not resolve to any plan in this phase (a typo
  * or a cross-phase reference) — every call site treats that as "ignore this
  * edge", never a throw. Shared by `computeDependencyLevels`'s DAG-edge
- * resolution, the `depends_on` display mapping, and (#2830) the
- * halt-propagation node resolution, so the three can never disagree about
- * which token resolves to which plan.
+ * resolution and (#2830) the halt-propagation node resolution, so the two can
+ * never disagree about which token resolves to which plan. NOT used by the
+ * `depends_on` display mapping (#3785/N3) — that stays a passthrough by
+ * design; see the comment at its call site.
+ *
+ * `shortFormToId` (#3897 rung 4, ADR-3473 §8.9) is the third tier, consulted
+ * only when neither `planMap` nor `canonicalToId` resolves the token. It is
+ * optional so any caller that has not been threaded through yet (there are
+ * none left in this file) degrades to the pre-#3897 two-tier behavior rather
+ * than throwing on a missing argument.
  */
-function resolveDependencyId(dep, planMap, canonicalToId) {
+function resolveDependencyId(dep, planMap, canonicalToId, shortFormToId) {
     const lower = dep.toLowerCase();
-    return planMap.has(lower) ? planMap.get(lower).id : (canonicalToId.get(lower) ?? null);
+    if (planMap.has(lower))
+        return planMap.get(lower).id;
+    if (canonicalToId.has(lower))
+        return canonicalToId.get(lower);
+    return shortFormToId?.get(lower) ?? null;
+}
+// #3897 rung 4 (ADR-3473 §8.9) — builds the third depends_on resolution tier:
+// a map from an in-phase BARE PLAN NUMBER (e.g. "01") to the plan id whose
+// canonical id ends with that number. Recovered from the retired SDK lineage
+// (sdk/src/query/phase.ts at 11918dcc3^) with ONE deliberate narrowing: the
+// lost implementation indexed ANY trailing dash-segment of a canonical id,
+// with no constraint that the segment be a plan NUMBER — so a phase
+// containing both `09-FIX-auth-PLAN.md` and `09-GAP-auth-PLAN.md` (canonical
+// id `09-FIX-auth`, trailing segment "auth") would silently bind
+// `depends_on: ["auth"]` to whichever sorted first, fabricating a
+// wave-affecting DAG edge with ZERO warning — a mis-resolved edge, which is
+// worse than a dropped one (found in isolated correctness review, #3897).
+// `docs/reference/plan-md.md` already documents this tier as resolving "the
+// bare plan number", so requiring `/^\d+$/` on the trailing segment is a
+// strict narrowing onto the tier's OWN documented contract, not a behavior
+// change for any legitimate input. Do NOT restore the unconstrained
+// lastDash-slice "to match the recovered original" — the original was wrong
+// here; this rung deliberately departs from it in this one respect, and only
+// this one. Everything else — the `lastDash` bound, first-write-wins,
+// lowercasing — is kept exactly as recovered:
+//   - first write wins, deterministic because rawPlans is passed in sorted
+//     plan-file order (D4/T44) and this loop iterates in that same order;
+//   - a canonical id with no dash (`lastDash === -1` or `lastDash === 0`,
+//     e.g. "24" or "-01") or a trailing dash (`lastDash === canonical.length
+//     - 1`, e.g. "09-") is never indexed (D5).
+// Exported so callers can build this map once and so tests assert against
+// this REAL implementation rather than a hand-rolled copy that could
+// silently disagree with it after a future change here (GEMINI.md's
+// generative-fix-divergence rule).
+function buildShortFormToId(rawPlans) {
+    const shortFormToId = new Map();
+    for (const p of rawPlans) {
+        const canonical = extractCanonicalPlanId(p.id);
+        const lastDash = canonical.lastIndexOf('-');
+        if (lastDash > 0 && lastDash < canonical.length - 1) {
+            const shortForm = canonical.slice(lastDash + 1).toLowerCase();
+            if (/^\d+$/.test(shortForm) && !shortFormToId.has(shortForm)) {
+                shortFormToId.set(shortForm, p.id);
+            }
+        }
+    }
+    return shortFormToId;
 }
 // O(V + E). Assigns each in-phase plan its longest-path topological level over the
 // in-phase dependsOn DAG (Kahn's algorithm). Returns { level: Map<id,number>, visited: number,
@@ -528,19 +638,32 @@ function resolveDependencyId(dep, planMap, canonicalToId) {
 // the exact dequeue order this pass already produces — a valid topological order — passed to
 // computeHaltPropagation as `precomputedOrder` so halt propagation does not re-run Kahn's
 // algorithm a second time over the same graph.
-function computeDependencyLevels(rawPlans, planMap, canonicalToId) {
+//
+// `shortFormToId` (#3897 rung 4, optional — see resolveDependencyId) is threaded through so a
+// bare in-phase plan-number token (`depends_on: ["01"]`) resolves as a real DAG edge instead of
+// being dropped and silently collapsing the dependent plan to wave 1 (D3).
+function computeDependencyLevels(rawPlans, planMap, canonicalToId, shortFormToId) {
     const level = new Map();
     const inDeg = new Map();
     const adj = new Map();
+    // #3427 / ADR-3473 §8.5: a depends_on token that resolves via NONE of the
+    // three tiers (planMap, canonicalToId, shortFormToId) is a dropped edge.
+    // Naming it here (rather than silently `continue`-ing past it) lets
+    // cmdPhasePlanIndex surface the token's own warning instead of
+    // manufacturing a wave-mismatch verdict from the resulting damaged graph
+    // (#3427).
+    const unresolved = [];
     for (const p of rawPlans) {
         if (!inDeg.has(p.id))
             inDeg.set(p.id, 0);
         if (!adj.has(p.id))
             adj.set(p.id, []);
         for (const dep of p.dependsOn) {
-            const resolvedDep = resolveDependencyId(dep, planMap, canonicalToId);
-            if (!resolvedDep)
+            const resolvedDep = resolveDependencyId(dep, planMap, canonicalToId, shortFormToId);
+            if (!resolvedDep) {
+                unresolved.push({ plan: p.id, token: String(dep) });
                 continue;
+            }
             if (!adj.has(resolvedDep))
                 adj.set(resolvedDep, []);
             adj.get(resolvedDep).push(p.id);
@@ -573,7 +696,7 @@ function computeDependencyLevels(rawPlans, planMap, canonicalToId) {
             }
         }
     }
-    return { level, visited, order: queue };
+    return { level, visited, order: queue, unresolved };
 }
 function cmdPhasePlanIndex(cwd, phase, raw) {
     if (!phase) {
@@ -677,46 +800,14 @@ function cmdPhasePlanIndex(cwd, phase, raw) {
     // ── Pass 1: parse each plan file ─────────────────────────────────────────
     const rawPlans = [];
     for (const planFile of planFiles) {
-        const planId = planFile.replace('-PLAN.md', '').replace('PLAN.md', '');
+        const planId = planIdFromFile(planFile);
         const planPath = node_path_1.default.join(phaseDir, planFile);
         const content = node_fs_1.default.readFileSync(planPath, 'utf-8');
-        // Pass planPath so a truncated PLAN.md names the file in the #1882 diagnostic.
-        const fm = extractFrontmatter(content, planPath);
-        const xmlTasks = content.match(/<task[\s>]/gi) || [];
-        const mdTasks = content.match(/##\s*Task\s*\d+/gi) || [];
-        const taskCount = xmlTasks.length || mdTasks.length;
-        const parsedWave = parseInt(fm['wave'], 10);
-        const declaredWave = Number.isNaN(parsedWave) ? null : parsedWave;
-        let dependsOn = [];
-        const fmDeps = fm['depends_on'];
-        if (Array.isArray(fmDeps)) {
-            dependsOn = fmDeps.map(String);
-        }
-        else if (typeof fmDeps === 'string' && fmDeps.trim() !== '') {
-            dependsOn = [fmDeps];
-        }
-        let autonomous = true;
-        if (fm['autonomous'] !== undefined) {
-            // eslint-disable-next-line @typescript-eslint/no-base-to-string -- FrontmatterValue comparison
-            autonomous = fm['autonomous'] === 'true' || String(fm['autonomous']) === 'true';
-        }
-        let filesModified = [];
-        const fmFiles = fm['files_modified'] || fm['files-modified'];
-        if (fmFiles) {
-            // eslint-disable-next-line @typescript-eslint/no-base-to-string -- FrontmatterValue scalar-to-string
-            filesModified = Array.isArray(fmFiles) ? fmFiles.map(String) : [String(fmFiles)];
-        }
-        // #1689: optional per-plan specialist executor hint. Read verbatim here; the
-        // orchestrator resolves it against the active runtime's agent dir at dispatch
-        // time (execute-phase.md -> `gsd_run query resolve-agent`), falling back to
-        // gsd-executor when the field is unset or the named agent does not resolve.
-        let agentHint = null;
-        const fmAgentHint = fm['agent_hint'];
-        if (fmAgentHint !== undefined) {
-            // eslint-disable-next-line @typescript-eslint/no-base-to-string -- FrontmatterValue scalar-to-string
-            const hintStr = String(fmAgentHint).trim();
-            agentHint = hintStr !== '' ? hintStr : null;
-        }
+        // #2790: plan-body parsing is owned by the shared Plan Document Module, so
+        // this command and the read-only `planning.inspect` query cannot drift on
+        // what a plan document says. planPath is still passed so a truncated
+        // PLAN.md names the file in the #1882 diagnostic.
+        const planDoc = parsePlanDocument(content, planPath);
         const hasSummary = !unsummarizedPlanFiles.has(planFile);
         // #2830: a plan can have a SUMMARY (hasSummary=true) and still be halted —
         // a designed stop still writes a completion record, just one whose status
@@ -728,13 +819,14 @@ function cmdPhasePlanIndex(cwd, phase, raw) {
             : false;
         rawPlans.push({
             id: planId,
-            declaredWave,
-            dependsOn,
-            autonomous,
-            objective: extractObjective(content) || fm['objective'] || null,
-            filesModified,
-            agentHint,
-            taskCount,
+            declaredWave: planDoc.declaredWave,
+            dependsOn: planDoc.dependsOn,
+            autonomous: planDoc.autonomous,
+            objective: planDoc.objective,
+            filesModified: planDoc.filesModified,
+            filesDeleted: planDoc.filesDeleted,
+            agentHint: planDoc.agentHint,
+            taskCount: planDoc.taskCount,
             hasSummary,
             halted,
         });
@@ -752,7 +844,15 @@ function cmdPhasePlanIndex(cwd, phase, raw) {
     }
     const planMap = new Map(rawPlans.map((p) => [p.id.toLowerCase(), p]));
     const canonicalToId = new Map(rawPlans.map((p) => [extractCanonicalPlanId(p.id).toLowerCase(), p.id]));
-    const { level, visited, order } = computeDependencyLevels(rawPlans, planMap, canonicalToId);
+    // #3897 rung 4 (ADR-3473 §8.9) — the third depends_on resolution tier.
+    // Resolves a bare in-phase plan-number short form (e.g. "01") to its owning
+    // plan id. In-phase only by construction (T49): the map is built from THIS
+    // phase's rawPlans alone, so a short form colliding with a different
+    // phase's plan can never be a candidate. See {@link buildShortFormToId}'s
+    // own comment for the numeric-only narrowing this rung applies on top of
+    // the recovered SDK-lineage algorithm.
+    const shortFormToId = buildShortFormToId(rawPlans);
+    const { level, visited, order, unresolved } = computeDependencyLevels(rawPlans, planMap, canonicalToId, shortFormToId);
     if (visited < rawPlans.length) {
         const cycleNodes = rawPlans.filter((p) => !level.has(p.id)).map((p) => p.id);
         error(`depends_on cycle detected in phase ${normalized} — cycle involves: ${cycleNodes.join(', ')}`);
@@ -766,7 +866,7 @@ function cmdPhasePlanIndex(cwd, phase, raw) {
     const haltNodes = rawPlans.map((p) => ({
         id: p.id,
         resolvedDependsOn: p.dependsOn
-            .map((dep) => resolveDependencyId(String(dep), planMap, canonicalToId))
+            .map((dep) => resolveDependencyId(String(dep), planMap, canonicalToId, shortFormToId))
             .filter((id) => id !== null),
         halted: p.halted,
     }));
@@ -780,6 +880,17 @@ function cmdPhasePlanIndex(cwd, phase, raw) {
     const runnable = [];
     let hasCheckpoints = false;
     const warnings = [];
+    // #3427 / ADR-3473 §8.5: name every dropped depends_on edge (plan AND
+    // token) rather than letting it silently collapse the plan to a DAG root.
+    // A plan with at least one unresolved token gets ITS OWN warning here and
+    // the wave-mismatch verdict below is suppressed for that plan ONLY — a
+    // plan with no dropped edges and a genuinely wrong `wave:` still warns
+    // (N3, D6, T25).
+    const plansWithUnresolvedTokens = new Set();
+    for (const { plan, token } of unresolved) {
+        plansWithUnresolvedTokens.add(plan);
+        warnings.push(`Plan ${plan}: depends_on token ${formatDiagnosticToken(token)} does not resolve to any plan in this phase — edge dropped, wave placement for this plan may be unreliable`);
+    }
     for (const rawPlan of rawPlans) {
         if (!rawPlan.autonomous) {
             hasCheckpoints = true;
@@ -796,7 +907,15 @@ function cmdPhasePlanIndex(cwd, phase, raw) {
         }
         const computedWave = (level.get(rawPlan.id) ?? 0) + levelOffset;
         const effectiveWave = computedWave;
-        if (rawPlan.declaredWave !== null && rawPlan.declaredWave !== computedWave) {
+        // #3427 (D5/N3): suppress the wave-mismatch verdict for a plan that has
+        // at least one unresolved depends_on token — its own dropped-edge
+        // warning above already explains the degraded wave placement, so the
+        // mismatch here would blame the author for a DAG the tool itself
+        // couldn't build. A plan with NO unresolved tokens still gets a genuine
+        // mismatch reported (N3, T25) — the suppression is per-plan, never blanket.
+        if (rawPlan.declaredWave !== null &&
+            rawPlan.declaredWave !== computedWave &&
+            !plansWithUnresolvedTokens.has(rawPlan.id)) {
             warnings.push(`Plan ${rawPlan.id}: declared wave: ${rawPlan.declaredWave} but depends_on DAG places it in wave ${computedWave}`);
         }
         const plan = {
@@ -816,6 +935,7 @@ function cmdPhasePlanIndex(cwd, phase, raw) {
             autonomous: rawPlan.autonomous,
             objective: rawPlan.objective,
             files_modified: rawPlan.filesModified,
+            files_deleted: rawPlan.filesDeleted,
             agent_hint: rawPlan.agentHint,
             task_count: rawPlan.taskCount,
             has_summary: rawPlan.hasSummary,
@@ -901,22 +1021,111 @@ function phaseEntryInsertOffset(rawContent, cwd) {
  * the edit-phase workflow's depends_on gate. The predicate itself
  * (`findMilestoneScopeHeadingLines`) is fence-aware and Phase-heading-exempt,
  * so ordinary descriptions and the phase's own numbered heading never trip it.
+ *
+ * #612: the predicate is convention-SELECTED, because the terminator
+ * vocabulary it mirrors is. On an opted-in bracket repo the ADR-canonical
+ * `## [GSD.09] Hidden` carries none of the markers listed above and yet
+ * terminates the window, so the blind call accepted the exact description the
+ * guard exists to reject — measured at this CLI seam, two `phase add` calls,
+ * the second phase silently outside the milestone phase set. Resolved through
+ * the same tolerant shape the read path uses (`planningDir` throws on a
+ * poisoned `GSD_PROJECT`/`GSD_WORKSTREAM` segment, and this guard runs BEFORE
+ * `loadConfig` and the ROADMAP existence check — an unresolvable convention
+ * must degrade to the pre-existing legacy vocabulary, never turn a rejection
+ * into a crash).
  */
-function assertDescriptionPreservesMilestoneScope(description, command) {
-    const offending = findMilestoneScopeHeadingLines(description);
+function assertDescriptionPreservesMilestoneScope(cwd, description, command) {
+    let convention = null;
+    try {
+        convention = resolvePhaseIdConvention(cwd);
+    }
+    catch { /* unresolvable convention → treat as not-configured (base behaviour) */ }
+    const offending = findMilestoneScopeHeadingLines(description, convention);
     if (offending.length === 0)
         return;
+    const markerList = convention === 'bracket'
+        ? `(a vN.N version token, a ✅/📋/🚧/🔄 marker, the word "Milestone", or — under the bracket convention — a "[CODE.NN] Name" milestone heading)`
+        : `(a vN.N version token, a ✅/📋/🚧/🔄 marker, or the word "Milestone")`;
     error(`${command}: description contains a milestone-scoping heading line — writing it to ROADMAP.md would terminate ` +
         `the current milestone window and silently drop later phases out of the milestone scope. ` +
         `Offending line(s): ${offending.map((line) => JSON.stringify(line)).join(', ')}. ` +
         `Rewrite the line so it is not a level 1-3 "#" heading carrying a milestone marker ` +
-        `(a vN.N version token, a ✅/📋/🚧/🔄 marker, or the word "Milestone").`);
+        markerList + `.`);
+}
+/**
+ * #3849 — widen "used phase numbers" beyond this checkout. Every sibling git
+ * worktree carries its own `.planning/` on its own branch, so a phase minted
+ * there is invisible to the cwd-scoped sources (headers, bullets, on-disk
+ * dirs). Scan each sibling's phase-directory names (cheap — dir names alone
+ * caught the real incident) and its WHOLE ROADMAP.md headers (a row can exist
+ * before any directory does; milestone-scoping is wrong here because a number
+ * used under any milestone on another branch is still taken).
+ *
+ * Widen, never refuse: a missing `.planning/`, an unreadable sibling, a
+ * non-git cwd, or an unavailable git binary each leave `used` untouched —
+ * allocation then behaves exactly as it did before this horizon existed.
+ * Sentinels reuse the canonical `isSentinelPhaseId`; the dir pattern is the
+ * same one the on-disk scan uses, so decimal sub-phases (`411.1-foo`) are
+ * correctly not integers.
+ */
+function collectSiblingWorktreePhaseNums(cwd, used) {
+    let porcelain;
+    try {
+        porcelain = (0, node_child_process_1.execFileSync)('git', ['worktree', 'list', '--porcelain'], {
+            cwd,
+            encoding: 'utf-8',
+            // Same subprocess band as the other git call sites (smart-entry, check-command-router):
+            // inside the 5-30s git window, hidden console window on Windows, bounded buffer.
+            timeout: 10_000,
+            windowsHide: true,
+            maxBuffer: 4 * 1024 * 1024,
+        });
+    }
+    catch {
+        return; // not a git repo / git unavailable — unchanged behavior
+    }
+    const dirNumPattern = /^(?:[A-Z][A-Z0-9]*-)?(\d+)-/;
+    // Same header shape the allocators scan locally (#1729 tag tolerance).
+    const headerPattern = /#{2,4}\s*Phase\s+(\d+)[A-Z]?(?:\.\d+)*(?:\s*\([^)\n]{0,200}\))?:/gi;
+    for (const line of porcelain.split('\n')) {
+        if (!line.startsWith('worktree '))
+            continue;
+        const wt = line.slice('worktree '.length).trim();
+        if (!wt || node_path_1.default.resolve(wt) === node_path_1.default.resolve(cwd))
+            continue;
+        try {
+            for (const entry of node_fs_1.default.readdirSync(node_path_1.default.join(wt, '.planning', 'phases'))) {
+                const match = entry.match(dirNumPattern);
+                if (!match)
+                    continue;
+                const num = parseInt(match[1], 10);
+                if (!isSentinelPhaseId(num))
+                    used.add(num);
+            }
+        }
+        catch {
+            /* worktree has no .planning — normal, contributes nothing */
+        }
+        try {
+            const content = node_fs_1.default.readFileSync(node_path_1.default.join(wt, '.planning', 'ROADMAP.md'), 'utf-8');
+            let m;
+            headerPattern.lastIndex = 0;
+            while ((m = headerPattern.exec(content)) !== null) {
+                const num = parseInt(m[1], 10);
+                if (!isSentinelPhaseId(num))
+                    used.add(num);
+            }
+        }
+        catch {
+            /* no roadmap in that worktree — normal, contributes nothing */
+        }
+    }
 }
 function cmdPhaseAdd(cwd, description, raw, customId) {
     if (!description) {
         error('description required for phase add');
     }
-    assertDescriptionPreservesMilestoneScope(description, 'phase add');
+    assertDescriptionPreservesMilestoneScope(cwd, description, 'phase add');
     const config = loadConfig(cwd);
     const roadmapPath = node_path_1.default.join(planningDir(cwd), 'ROADMAP.md');
     if (!node_fs_1.default.existsSync(roadmapPath)) {
@@ -980,6 +1189,9 @@ function cmdPhaseAdd(cwd, description, raw, customId) {
             // section headers, roadmap bullets, AND on-disk dirs above is what prevents the
             // #1229 collision (a bullet-only Phase N is now counted), so max+1 cannot reuse
             // an existing number.
+            // 4) Sibling git worktrees (#3849) — same max+1, wider horizon: a number
+            // taken on another branch is still taken.
+            collectSiblingWorktreePhaseNums(cwd, usedPhaseNums);
             const maxUsed = usedPhaseNums.size > 0 ? Math.max(...usedPhaseNums) : 0;
             _newPhaseId = maxUsed + 1;
             const paddedNum = String(_newPhaseId).padStart(2, '0');
@@ -1009,6 +1221,18 @@ function cmdPhaseAdd(cwd, description, raw, customId) {
     if (titleWarning)
         result['warning'] = titleWarning;
     output(result, raw, result['padded']);
+    // #3227 (design doc §40 row 26 / "Not-corruption" rule): every
+    // `publishStateContract` call site in this file is audited so a refreshed
+    // state.json `updated_at` always means something on disk actually moved —
+    // a stale-but-refreshed timestamp is worse than no refresh, because it
+    // reads as fresh to a downstream watcher. This site is unconditional
+    // because every reachable path either exits via `error()` (process.exit,
+    // never reaches here) or falls through to the unconditional
+    // `platformEnsureDir`/`platformWriteSync` pair above that always creates
+    // the phase directory and rewrites ROADMAP.md — there is no code path that
+    // reaches this line without having just written to disk. Best-effort —
+    // cannot throw, cannot change this command's exit code or output.
+    publishStateContract(cwd);
 }
 function cmdPhaseAddBatch(cwd, descriptions, raw) {
     if (!Array.isArray(descriptions) || descriptions.length === 0) {
@@ -1018,7 +1242,7 @@ function cmdPhaseAddBatch(cwd, descriptions, raw) {
     // all-or-nothing, so one offending description must reject the whole batch
     // with no ROADMAP write and no phase directories created.
     for (const description of descriptions) {
-        assertDescriptionPreservesMilestoneScope(description, 'phase add-batch');
+        assertDescriptionPreservesMilestoneScope(cwd, description, 'phase add-batch');
     }
     const config = loadConfig(cwd);
     const roadmapPath = node_path_1.default.join(planningDir(cwd), 'ROADMAP.md');
@@ -1032,12 +1256,23 @@ function cmdPhaseAddBatch(cwd, descriptions, raw) {
         const content = extractCurrentMilestone(rawContent, cwd);
         let maxPhase = 0;
         if (config.phase_naming !== 'custom') {
+            // Same three cwd-scoped sources as cmdPhaseAdd (#1229): headers, roadmap
+            // bullets, on-disk dirs. The bullet scan was missing here — a bullet-only
+            // `Phase N` row was invisible to batch allocation (#3849 secondary).
             // #1729: `(?:\s*\([^)\n]{0,200}\))?` tolerates a pre-colon ( ) tag (literal mirror of OPTIONAL_PHASE_TAG_SOURCE).
             const phasePattern = /#{2,4}\s*Phase\s+(\d+)[A-Z]?(?:\.\d+)*(?:\s*\([^)\n]{0,200}\))?:/gi;
+            const bulletPattern = /^[ \t]*-[ \t]*\[[^\]]{0,200}\][ \t]*\*{0,2}Phase[ \t]+(\d+)(?=[:.\s*]|$)/gim;
             let m;
             while ((m = phasePattern.exec(content)) !== null) {
                 const num = parseInt(m[1], 10);
                 // #3185: canonical sentinel predicate (SENTINEL_RANGES [0,999]) — this was a local 999-only literal that admitted Phase 0.
+                if (isSentinelPhaseId(num))
+                    continue;
+                if (num > maxPhase)
+                    maxPhase = num;
+            }
+            while ((m = bulletPattern.exec(content)) !== null) {
+                const num = parseInt(m[1], 10);
                 if (isSentinelPhaseId(num))
                     continue;
                 if (num > maxPhase)
@@ -1057,6 +1292,13 @@ function cmdPhaseAddBatch(cwd, descriptions, raw) {
                     if (num > maxPhase)
                         maxPhase = num;
                 }
+            }
+            // 4) Sibling git worktrees (#3849) — same max+1, wider horizon.
+            const siblingNums = new Set();
+            collectSiblingWorktreePhaseNums(cwd, siblingNums);
+            for (const num of siblingNums) {
+                if (num > maxPhase)
+                    maxPhase = num;
             }
         }
         const added = [];
@@ -1095,12 +1337,17 @@ function cmdPhaseAddBatch(cwd, descriptions, raw) {
         return added;
     });
     output({ phases: results, count: results.length }, raw);
+    // #3227: unconditional here because `platformWriteSync(roadmapPath, rawContent)`
+    // above always rewrites ROADMAP.md for every description in the batch before
+    // this line is reached; the only refusal path is the `error('ROADMAP.md not
+    // found')` above, which terminates the process and never reaches here.
+    publishStateContract(cwd);
 }
 function cmdPhaseInsert(cwd, afterPhase, description, raw) {
     if (!afterPhase || !description) {
         error('after-phase and description required for phase insert');
     }
-    assertDescriptionPreservesMilestoneScope(description, 'phase insert');
+    assertDescriptionPreservesMilestoneScope(cwd, description, 'phase insert');
     const roadmapPath = node_path_1.default.join(planningDir(cwd), 'ROADMAP.md');
     if (!node_fs_1.default.existsSync(roadmapPath)) {
         error('ROADMAP.md not found');
@@ -1242,6 +1489,11 @@ function cmdPhaseInsert(cwd, afterPhase, description, raw) {
         directory: toPosixPath(node_path_1.default.join(node_path_1.default.relative(cwd, planningDir(cwd)), 'phases', dirName)),
     };
     output(result, raw, decimalPhase);
+    // #3227: unconditional here because `platformWriteSync(roadmapPath, updatedContent)`
+    // above always rewrites ROADMAP.md with the inserted phase before this line is
+    // reached; every refusal along the way (bad args, missing ROADMAP.md, unresolved
+    // target bullet/header) exits via `error()`, which terminates the process.
+    publishStateContract(cwd);
 }
 function renameDecimalPhases(phasesDir, baseInt, removedDecimal) {
     const renamedDirs = [];
@@ -1455,9 +1707,17 @@ function findDataRowLine(sectionText, dataRowIndex) {
     }
     return null;
 }
+// #3685: mirror requirementsUpdated's diff-tracking contract — the caller
+// (cmdPhaseRemove) used to report `roadmap_updated: true` unconditionally,
+// hardcoded regardless of whether this transform actually changed
+// ROADMAP.md's content. Returning a real before/after comparison here lets
+// the caller report accurately, the same fix #3685 applied to
+// `cmdPhaseComplete` and #2640/#2974 already applied to this same function's
+// sibling `stateUpdated` flag a few lines below in `cmdPhaseRemove`.
 function updateRoadmapAfterPhaseRemoval(roadmapPath, targetPhase, isDecimal, removedInt, cwd) {
-    withPlanningLock(cwd, () => {
-        let content = node_fs_1.default.readFileSync(roadmapPath, 'utf-8');
+    return withPlanningLock(cwd, () => {
+        const originalContent = node_fs_1.default.readFileSync(roadmapPath, 'utf-8');
+        let content = originalContent;
         const escaped = (0, pattern_cjs_1.escapeRegex)(targetPhase);
         // #3572: ROADMAP headings and rows carry the normalized (zero-padded) form
         // of a decimal id — `phase insert 1` writes `### Phase 01.1:` while the
@@ -1615,6 +1875,14 @@ function updateRoadmapAfterPhaseRemoval(roadmapPath, targetPhase, isDecimal, rem
             content = content.replace(/(Depends on:\*\*\s*Phase\s+)(\d+(?:\.\d+)?)\b/gi, (_match, prefix, num) => `${prefix}${decrementRoadmapPhaseToken(num, removedInt)}`);
         }
         (0, shell_command_projection_cjs_1.platformWriteSync)(roadmapPath, content);
+        // #3685 / #3691: compare NORMALIZED bytes (what platformWriteSync actually
+        // persists), not the raw pre-normalize `content` string, against the raw
+        // pre-mutation `originalContent` read above — a raw `!==` here reports a
+        // false `true` whenever this transform's regenerated output takes a
+        // different-but-equivalent shape than the already-normalized on-disk
+        // original (same normalization-order artifact #3685 fixed at
+        // cmdMilestoneComplete; see contentChangedAfterNormalize's own doc).
+        return (0, shell_command_projection_cjs_1.contentChangedAfterNormalize)(roadmapPath, originalContent, content);
     });
 }
 /**
@@ -1718,7 +1986,7 @@ function cmdPhaseRemove(cwd, targetPhase, options, raw) {
         const msg = e instanceof Error ? e.message : String(e);
         error(`Failed to renumber phase directories after removing phase ${targetPhase}: ${msg}`);
     }
-    updateRoadmapAfterPhaseRemoval(roadmapPath, targetPhase, isDecimal, parseInt(normalized, 10), cwd);
+    const roadmapUpdated = updateRoadmapAfterPhaseRemoval(roadmapPath, targetPhase, isDecimal, parseInt(normalized, 10), cwd);
     const statePath = node_path_1.default.join(planningDir(cwd), 'STATE.md');
     let stateUpdated = false;
     if (node_fs_1.default.existsSync(statePath)) {
@@ -1791,10 +2059,27 @@ function cmdPhaseRemove(cwd, targetPhase, options, raw) {
         renamed_directories: renamedDirs,
         renamed_files: renamedFiles,
         renamed_file_collisions: renamedFileCollisions,
-        roadmap_updated: true,
+        // #3685: mirror requirementsUpdated's diff-tracking contract — true only
+        // when updateRoadmapAfterPhaseRemoval's content diff detected a real
+        // change, not hardcoded regardless of whether ROADMAP.md's content
+        // actually changed.
+        roadmap_updated: roadmapUpdated,
         state_updated: stateUpdated,
     }, raw);
+    // #3227: unconditional here because `updateRoadmapAfterPhaseRemoval` above
+    // always rewrites ROADMAP.md before this line is reached; every refusal path
+    // (bad target, missing ROADMAP.md, --force-required, renumber failure) exits
+    // via `error()`, and the ambiguous-match case exits via an earlier `return`
+    // before any file is touched.
+    publishStateContract(cwd);
 }
+/**
+ * #3227: returns the count of writes actually applied (entries whose
+ * `before` differed from `after` and were therefore written to disk) — the
+ * caller (`cmdPhaseComplete`) uses this as its publish-gate signal, since a
+ * re-run against an already-completed phase can produce a `writes[]` array
+ * where every entry is byte-identical to what's already on disk.
+ */
 function writePlanningFileSet(writes) {
     const applied = [];
     try {
@@ -1824,6 +2109,7 @@ function writePlanningFileSet(writes) {
         }
         throw err;
     }
+    return applied.length;
 }
 function phaseDisplayNameFromRoadmap(roadmapContent, phaseNum) {
     if (!roadmapContent || !phaseNum)
@@ -1840,6 +2126,640 @@ function phaseDisplayNameFromSlug(slug) {
         return null;
     const name = slug.replace(/-/g, ' ').trim();
     return name || null;
+}
+// A range operator, enumerated. CENSUS (round 3): the domain is "separator
+// spellings an author can put between two REQ-IDs", which is open, so the
+// enumeration draws a boundary rather than covering it. Reached: ASCII `..`+,
+// the seven Unicode dashes that are the SAME operator at different codepoints
+// (U+2010 hyphen, U+2011 non-breaking hyphen, U+2012 figure dash, U+2013 en,
+// U+2014 em, U+2015 horizontal bar, U+2212 minus) plus ASCII `-`, U+2026
+// ellipsis, and the words `to`/`thru`/`through`. NOT reached, and the
+// consequence is a silent under-selection — #3697's own defect — for that
+// spelling: `→`, `~`, `..=`, `..<`, `until`, and `up to` (two tokens, so it
+// cannot be one operator token at all). Those stay out deliberately: each is a
+// symbol or word with an independent non-range use between two IDs, which is
+// the over-warning class #2334 cost three rounds. The Unicode dashes DO carry
+// the ASCII hyphen's date/sub-number collision — an earlier round-3 commit
+// claimed they did not, and was wrong — so they take the strict arm with it;
+// see the rule below.
+const REQ_RANGE_DASHES = '\\u2010\\u2011\\u2012\\u2013\\u2014\\u2015\\u2212';
+// EVERY DASH IS STRICT — one rule, whatever the codepoint. `PREFIX-\d+ <dash>
+// \d+` is also a date (`FY-2026-08`) and a sub-numbered ID (`API-2-01`), and
+// that ambiguity is a property of the SHAPE, not of which dash key was pressed.
+// The design already chose strictness for ASCII `-` on exactly this trade: a
+// bare-hyphen tight range must carry a full ID on BOTH sides. Until round 3 the
+// other dashes sat in the loose arm, so `RANGE-01 (target FY-2026<en-dash>08)`
+// warned while its all-ASCII twin — pinned silent by #3697-4 — did not. That
+// inconsistency predates this PR for U+2013/U+2014; round 3 briefly widened it
+// to five more codepoints before this commit closed it for all seven.
+// The cost is symmetric and already accepted: `RANGE-01, RANGE-02<dash>05`
+// goes silent, exactly as `RANGE-01, RANGE-02-05` already does today. A bare
+// `RANGE-02<dash>05` still warns — it selects nothing, so R3 catches it.
+// LOOSE stays loose: `..`, `…` and the word operators have no date or
+// sub-number reading between two numbers, so they keep the numeric endpoint.
+const REQ_RANGE_OP = `(?:\\.{2,}|\\u2026|[${REQ_RANGE_DASHES}]|-|to|thru|through)`;
+const REQ_RANGE_OP_LOOSE = `(?:\\.{2,}|\\u2026|to|thru|through)`;
+const REQ_RANGE_OP_SYMBOL = `(?:\\.{2,}|\\u2026|[${REQ_RANGE_DASHES}]|-)`;
+const REQ_RANGE_TOKEN_RE = new RegExp(`^([A-Z][A-Z0-9]*)-(?:\\d+)\\s*(?:${REQ_RANGE_OP_LOOSE}\\s*(?:\\1-)?|[-${REQ_RANGE_DASHES}]\\s*\\1-)\\d+$`, 'i');
+const REQ_PURE_RANGE_OP_RE = new RegExp(`^${REQ_RANGE_OP}$`, 'i');
+const REQ_GLUED_RANGE_LEAD_RE = new RegExp(`^${REQ_RANGE_OP_SYMBOL}([A-Z][A-Z0-9]*-\\d+)$`, 'i');
+const REQ_GLUED_RANGE_TRAIL_RE = new RegExp(`^([A-Z][A-Z0-9]*-\\d+)${REQ_RANGE_OP}$`, 'i');
+const REQ_ID_SUBSTRING_RE = /[A-Z][A-Z0-9]*-\d+/i;
+const REQ_ID_SHAPE_RE = /^[A-Z][A-Z0-9]*-\d+$/i;
+const REQ_ID_PARTS_RE = /^([A-Z][A-Z0-9]*)-(\d+)$/i;
+// `LETTERS-\d+-\d+` — a date (`FY-2026-08`) or a sub-numbered ID (`API-2-01`).
+// REQ_RANGE_TOKEN_RE's strict-dash arm exists precisely to keep this shape
+// silent, because nothing at token level can tell the three readings apart.
+// Round 4 review Minor 2: the skipped-text rider re-reported it through the
+// side door — `REQ_ID_SUBSTRING_RE` is unanchored, so `FY-2026-08` matches as
+// `FY-2026` and landed in `unselectedIdShaped`. Whenever any OTHER rule fired
+// on a line carrying a date annotation, the warning then told the author to
+// "check whether any of it is a requirement" about a date. Not a false
+// warning — the line was warning anyway — but false CONTENT, and it is the
+// #2334 voice.
+// `PREFIX-<digits>-<digits>` — the shape the strict-dash range rule refuses to
+// act on because it is equally a date (`FY-2026-08`) and a sub-numbered id
+// (`API-2-01`). NO regex separates those: `API-2026-08` is a legal requirement
+// id and `FY-26-08` is a date, and both filters that tried scored a miss in
+// each direction under the pre-push review's continuation.
+//
+// So the rider stops adjudicating and starts DISCLOSING. Round 4 Minor 2's
+// real complaint was that the rider told the author to check whether a DATE
+// was a requirement; the fix is to name the ambiguity rather than to guess at
+// it — which is the same thing the two warning voices already do about a
+// range separator.
+const REQ_AMBIGUOUS_NUMERIC_RE = /^[A-Z][A-Z0-9]*(?:-\d+){2,}$/i;
+// The token-length cap. It bounds REQ_ID_SUBSTRING_RE, the one UNANCHORED
+// regex here, which backtracks quadratically on a pathological token. Round 3
+// review Nit 6 objected that the anchored regexes were left uncapped on the
+// strength of a comment asserting they scan linearly; they are applied through
+// the same cap now, so the claim is enforced rather than asserted. No real
+// REQ-ID-carrying token approaches this bound.
+const REQ_TOKEN_SCAN_LIMIT = 2048;
+/**
+ * The Requirements-line warning KINDS, as a stable machine vocabulary (round 4
+ * review Major 3).
+ *
+ * Before this, the kind existed only in the prose of the message, so every
+ * consumer and every test had to regex an English sentence — and rewording a
+ * message silently un-asserted the tests that pinned it. The repo already had
+ * the settled seam for exactly these semantics: `diffLiveConfig` emits
+ * `kind:'unverified'` for a truncated scan (`CONTEXT.md`), and
+ * `WAVE_CLEANUP_WARNING` carries codes in `src/worktree-safety.cts`.
+ *
+ * Carried ALONGSIDE the prose, never instead of it. `warnings[]` is a
+ * documented `string[]` in `phase complete`'s JSON output, rendered by
+ * execute-phase.md's "If has_warnings is true" step, so changing its element
+ * shape would be a breaking output-contract change for a shipped command. The
+ * code is emitted as its own additive `requirements_line_warning` field.
+ */
+const REQ_LINE_WARNING_CODE = {
+    /** ID-shaped content was demonstrably not selected — the line failed to parse. */
+    misparse: 'req-line-misparse',
+    /** A range READING is at stake; every endpoint the rule fired on was selected. */
+    rangeReading: 'req-line-range-reading',
+    /** A token past the scan cap means the line was not classified — never that it is clean. */
+    unverified: 'req-line-unverified',
+};
+// R4 — a full ID with a trailing statement delimiter glued to it. ANCHORED on
+// both ends, so it is linear and needs no cap of its own beyond the token
+// length guard its caller applies.
+// Zero-width, bidi-control, joiner and variation-selector codepoints. INVISIBLE
+// to the author, and the pre-push review's continuation drove the consequence
+// from both sides: a line of only these warned with nothing on screen to
+// explain it, AND stripping them wholesale from the detector made
+// `REQ-01<ZWSP>, REQ-02` go SILENT while the selector really did drop REQ-01 —
+// #3697's own defect, introduced by the fix for its mirror image. So they are
+// never stripped from the line: they are DECORATION on a token (R4 below) and
+// absence-of-content for the empty test (visibleContent), which are two
+// different questions about the same character.
+const REQ_INVISIBLE_RE = /[\u00AD\u200B-\u200F\u2060-\u2064\u2066-\u2069\uFE0F\uFEFF]/g;
+// The wrappers R4 shaves. Emphasis, quotes and backticks, because the SELECTOR
+// shaves none of them — `**REQ-01**` is genuinely not selected and is a real,
+// silent drop.
+//
+// PARENTHESES ARE DELIBERATELY ABSENT, and this is load-bearing. A parenthesis
+// is this rule's citation MARKER, not decoration to shave: `(REQ-02)` and
+// `(ADR-7)` are the same shape and the rule declines both. Including them here
+// made `REQ-01, (REQ-02), REQ-03 — REQ-05` report a glued delimiter that was
+// never there, and broke #3697-9d's channel routing with it — caught by the
+// suite immediately after the widening.
+const REQ_WRAPPER_RE = /^["'`*_~“”‘’]+|["'`*_~“”‘’]+$/g;
+// An id with a list delimiter glued to EITHER end, once styling is removed.
+// The capture is the bare id; a match means the delimiter was ADJACENT to it.
+const REQ_DELIMITED_ID_RE = /^[;:]*([A-Z][A-Z0-9]*-\d+)[;:]*$/i;
+/**
+ * CENSUS (round 4): the domain is "separators an author writes between two
+ * REQ-IDs INSTEAD of a comma" — distinct from the range-operator domain
+ * censused above, and it had no census at all before this round.
+ *
+ * ROUND 4'S CENSUS WAS WRONG, AND THE WAY IT WAS WRONG IS THE LESSON. It swept
+ * 26 spellings and concluded "exactly two — `; ` and `: `". It reached that
+ * answer because it swept the ONE-SIDED form (`REQ-01; REQ-02`) for the
+ * semicolon and colon, and only the BARE and SYMMETRIC forms (`|`, ` | `) for
+ * every other separator. Different members of the domain were tested in
+ * different shapes, so the conclusion could not have come out any other way.
+ *
+ * Re-swept round 5, fully crossed: 21 separators x {bare, trailing-space,
+ * leading-space, both-spaces} = 84 combinations, driven through the built
+ * artifact. 26 select both IDs, 24 under-select and already warn, and
+ * 34 UNDER-SELECT SILENTLY. All 34 are the same shape — a separator glued to
+ * exactly ONE of the two IDs, e.g. `REQ-01/ REQ-02` or `REQ-01 /REQ-02` — for
+ * every punctuation except `,` (the real delimiter) and `;` / `:` (R4).
+ * Measured silent: | / + & \ > . ! ? • · ؛ ； ， － ~ and the word operators
+ * `and` / `plus` in trailing-space form.
+ *
+ * So the honest statement is that R4 covers TWO CHARACTERS of a domain that is
+ * wide open, not that the domain has two members. The round-4 review
+ * hand-listed the semicolon; the colon is its sibling and fails identically;
+ * everything else in that list is disclosed here and NOT caught. Widening the
+ * delimiter class is a small change and deliberately not made at the end of a
+ * round: three successive cuts of this rule fired on a citation.
+ *
+ * THE GATE IS ADJACENCY, and it is the part to read. Styling is stripped, then
+ * the delimiter must be touching the id: `REQ-01;`, `;REQ-02`, `**REQ-01;**`
+ * and the backticked form all qualify. `**REQ-01**;` does NOT — outside the
+ * styling a `;` is sentence punctuation, which is why `REQ-01, see **REQ-7**;
+ * next topic` is a citation and not a drop. An INVISIBLE anywhere in the token
+ * qualifies without an adjacency test, because nobody types one on purpose, so
+ * it is corruption rather than intent.
+ *
+ * Markdown styling on its own is NOT a trigger and NOT reported. It reaches
+ * the skipped-text rider, which names the id without asserting a drop — but a
+ * rider only exists inside a MESSAGE, and a message only exists when some rule
+ * set `warn`. On a line where nothing else fires, `REQ-01, **REQ-02**` is
+ * wholly silent. Saying it is "left to the rider" reads as coverage and is
+ * not; #3697-19m pins the silence so this comment cannot drift back.
+ *
+ * NOT reached, stated rather than fixed, and the second member is WIDER than
+ * this comment first claimed:
+ *   - anything inside a parenthetical. A parenthesis is this rule's citation
+ *     MARKER, never decoration to shave — `(REQ-02)` and `(ADR-7)` are the
+ *     same shape and the rule declines both.
+ *   - a decorated id whose prefix is on NO selected id: `REQ-01, FOO-02: x`
+ *     stays silent even when FOO-02 is real. Prefix agreement is what
+ *     separates a drop from a bare citation — `REQ-01, see ADR-7: section 3`
+ *     carries `ADR-7:` in exactly `REQ-01;`'s shape — and it is the module's
+ *     own idiom, not a new heuristic (reqEndpointsImplyInterior already
+ *     requires an agreeing prefix). The gate is NOT complete: a citation that
+ *     DOES share a selected prefix (`ADR-01, see ADR-7: sec 3`) still fires,
+ *     and nothing at token level separates that from a real drop. Saying so is
+ *     the honest position; a prose heuristic on "see" is exactly the free-text
+ *     detector this module exists to avoid.
+ * The trade, plainly: an under-report on a rare shape over an over-report on a
+ * common one — the same call the strict-dash rule makes.
+ */
+function reqDelimiterDroppedIds(rawLine, selected, cap) {
+    // MATCHED parenthetical spans are removed OUTRIGHT, not tracked as a depth.
+    //
+    // Two bugs died here. A running depth counter let an unbalanced `(` stay open
+    // to end-of-line and swallow every real drop after it. Promoting a whole
+    // token to immune because it CONTAINED a matched character then leaked the
+    // other way: `REQ-01, REQ-02;(note) REQ-03` is one whitespace token, so the
+    // parenthetical conferred immunity on the `REQ-02;` sitting outside it.
+    // Deleting the span states what is actually meant — for this rule a citation
+    // is not on the line — while an UNMATCHED paren is a typo and confers
+    // nothing.
+    //
+    // Square brackets go too, exactly as the SELECTOR strips them: `[REQ-01;
+    // REQ-02]` is the documented form and was silently dropping REQ-01.
+    //
+    // INVISIBLES STAY. They are the evidence this rule reads; the tokenizer
+    // strips them for the classification rules, and the two sites answer two
+    // different questions about the same character.
+    const chars = [...String(rawLine).replace(/<!--[\s\S]*?-->/g, ' ')];
+    const openStack = [];
+    for (let i = 0; i < chars.length; i += 1) {
+        if (chars[i] === '(')
+            openStack.push(i);
+        else if (chars[i] === ')' && openStack.length > 0) {
+            const open = openStack.pop();
+            for (let j = open; j <= i; j += 1)
+                chars[j] = ' ';
+        }
+    }
+    const line = chars.join('').replace(/[[\]]/g, '');
+    // The prefixes actually SELECTED on this line. A dropped id must agree with
+    // one of them — that is what separates a delimiter typo from a citation,
+    // since `REQ-01, see ADR-7: sec 3` carries `ADR-7:` in exactly `REQ-01;`'s
+    // shape. Same-prefix agreement is the module's own idiom, not a new
+    // heuristic (see reqEndpointsImplyInterior).
+    const selectedPrefixes = new Set();
+    for (const id of selected) {
+        const m = REQ_ID_PARTS_RE.exec(id);
+        if (m)
+            selectedPrefixes.add(m[1].toUpperCase());
+    }
+    const hits = [];
+    for (const raw of line.split(/[,\s]+/)) {
+        if (!raw || raw.length > cap)
+            continue;
+        // Strip STYLING only. What survives is the id plus whatever was glued
+        // directly to it.
+        const core = raw.replace(REQ_INVISIBLE_RE, '').replace(REQ_WRAPPER_RE, '');
+        const m = REQ_DELIMITED_ID_RE.exec(core);
+        if (!m)
+            continue;
+        const bare = m[1];
+        // ADJACENCY IS THE WHOLE RULE. A `;`/`:` touching the id is a list
+        // separator someone meant; the same character OUTSIDE the styling is
+        // sentence punctuation — `see **REQ-7**; next topic` cites a requirement
+        // while `**REQ-01;** REQ-02` fails to list one, and only the delimiter's
+        // POSITION separates them. An INVISIBLE needs no adjacency test: nobody
+        // types one on purpose, so anywhere in the token it is corruption rather
+        // than intent.
+        const hadAdjacentDelimiter = core !== bare;
+        REQ_INVISIBLE_RE.lastIndex = 0;
+        const hadInvisible = REQ_INVISIBLE_RE.test(raw);
+        REQ_INVISIBLE_RE.lastIndex = 0;
+        if (!hadAdjacentDelimiter && !hadInvisible)
+            continue;
+        if (selected.has(bare.toUpperCase()))
+            continue;
+        const parts = REQ_ID_PARTS_RE.exec(bare);
+        if (parts && selectedPrefixes.has(parts[1].toUpperCase()))
+            hits.push(bare);
+    }
+    return [...new Set(hits)];
+}
+/** Endpoints imply a dropped interior only on an AGREEING prefix and a gap > 1. */
+function reqEndpointsImplyInterior(a, b) {
+    const ma = REQ_ID_PARTS_RE.exec(a);
+    const mb = REQ_ID_PARTS_RE.exec(b);
+    if (!ma || !mb)
+        return false;
+    if (ma[1].toUpperCase() !== mb[1].toUpperCase())
+        return false;
+    // BigInt keeps the gap exact for numbers past 2^53.
+    const gap = BigInt(mb[2]) - BigInt(ma[2]);
+    return gap > 1n || gap < -1n;
+}
+function analyzeRequirementsLine(rawLine) {
+    const line = typeof rawLine === 'string' ? rawLine : '';
+    // SELECTOR — byte-identical to the pre-extraction expression.
+    const citedReqIds = line
+        .replace(/[\[\]]/g, '')
+        .split(/[,\s]+/)
+        .map((r) => r.trim())
+        .filter(Boolean)
+        .filter((r) => REQ_ID_SHAPE_RE.test(r));
+    // DETECTOR tokenization. A token with NO alphanumerics is shaved of brackets
+    // ONLY, so `(..)` surfaces its operator while a bare `..` is not shaved to
+    // nothing by the punctuation classes. A trailing run of 2+ dots is a glued
+    // range operator (`REQ-01.. REQ-05`), not sentence punctuation — keep it.
+    const tokens = line
+        .replace(/<!--[\s\S]*?-->/g, ' ')
+        // Invisibles are removed HERE, for the classification rules — an operator
+        // spelled `<ZWSP>..<ZWSP>` is still the range operator, and a line of only
+        // invisibles yields no tokens at all. R4 works on the RAW line and does
+        // NOT strip them, because there they are the evidence of a dropped id.
+        // Removing them in both places is what made `REQ-01<ZWSP>, REQ-02` silent;
+        // removing them in neither is what made `REQ-01 <ZWSP>..<ZWSP> REQ-05`
+        // silent. The two questions have two different answers.
+        .replace(REQ_INVISIBLE_RE, '')
+        .split(/[,\s]+/)
+        .map((t) => {
+        const trimmed = t.trim();
+        if (!/[A-Za-z0-9]/.test(trimmed)) {
+            return trimmed.replace(/^[[({]+/, '').replace(/[\])}]+$/, '');
+        }
+        if (/\.{2,}$/.test(trimmed)) {
+            return trimmed.replace(/^[[({"'`*_~“”‘’]+/, '');
+        }
+        return trimmed.replace(/^[[({"'`*_~“”‘’]+/, '').replace(/[\])}.;:"'`*_~“”‘’]+$/, '');
+    })
+        .filter(Boolean);
+    // Every predicate below is applied through the scan limit (Nit 6): a token
+    // past the bound is not classified at all rather than classified expensively.
+    const short = (t) => t.length <= REQ_TOKEN_SCAN_LIMIT;
+    const rangeTokens = tokens.filter((t) => short(t) && REQ_RANGE_TOKEN_RE.test(t));
+    const spacedRangePairs = [];
+    tokens.forEach((t, i) => {
+        const left = tokens[i - 1] ?? '';
+        const right = tokens[i + 1] ?? '';
+        if (
+        // EVERY participant is capped, not just the operator. Capping the operator
+        // alone left `<2049-char ID> .. <2049-char ID>` running REQ_ID_SHAPE_RE and
+        // BigInt over both neighbours unbounded — the cap read as uniform and was
+        // not (found by the round's pre-push review).
+        short(t) &&
+            short(left) &&
+            short(right) &&
+            REQ_PURE_RANGE_OP_RE.test(t) &&
+            i > 0 &&
+            i < tokens.length - 1 &&
+            REQ_ID_SHAPE_RE.test(left) &&
+            REQ_ID_SHAPE_RE.test(right) &&
+            reqEndpointsImplyInterior(left, right)) {
+            spacedRangePairs.push([left, right]);
+        }
+    });
+    const hasSpacedRange = spacedRangePairs.length > 0;
+    // A half-spaced range splits at the tokenizer, so R1's own `\s*` never sees
+    // it. SYMBOL operators only on the LEAD arm: a word operator glued to an ID
+    // is an ID — `TORANGE-05` is a valid prefix-agnostic REQ-ID. The TRAIL arm
+    // keeps the word operators, because a valid ID must end in digits, so
+    // `REQ-01through` can only be a glued typo.
+    const hasGluedRangeFragment = tokens.some((t, i) => {
+        // Neighbours capped for the same reason as R2 above.
+        if (!short(t))
+            return false;
+        const before = tokens[i - 1] ?? '';
+        const after = tokens[i + 1] ?? '';
+        const lead = REQ_GLUED_RANGE_LEAD_RE.exec(t);
+        if (lead &&
+            i > 0 &&
+            short(before) &&
+            REQ_ID_SHAPE_RE.test(before) &&
+            reqEndpointsImplyInterior(before, lead[1])) {
+            return true;
+        }
+        const trail = REQ_GLUED_RANGE_TRAIL_RE.exec(t);
+        return Boolean(trail &&
+            i < tokens.length - 1 &&
+            short(after) &&
+            REQ_ID_SHAPE_RE.test(after) &&
+            reqEndpointsImplyInterior(trail[1], after));
+    });
+    const leadToken = (tokens[0] ?? '').toUpperCase();
+    // CENSUS (round 3, review finding Minor 4): the placeholder domain is what
+    // GSD itself seeds plus what an author writes for "deliberately empty".
+    // Reached: `TBD` — the ONLY machine-written seed, at the three phase.add /
+    // -batch / -insert sites — and `None`, the author convention. NOT reached:
+    // `N/A`, `Deferred`, `Pending`, `TBA`, `-`. Consequence, and it is now
+    // ENFORCED rather than asserted: such a line selects zero IDs and warns
+    // through R3b below, which is what #3697's acceptance criterion asks for
+    // ("when it selects zero IDs from a line that is non-empty and is not the
+    // `TBD` placeholder"). Round 3 shipped this same paragraph while R3's
+    // ID-shape gate made it false for all five words — bare `Deferred` was
+    // silent, `Deferred (see ADR-7)` warned — and the claim sat in three
+    // artifacts with no test in either direction. Inferring placeholder-ness
+    // from arbitrary prose is still the free-text heuristic this detector
+    // avoids: R3b keys on the SELECTION being empty, never on what the prose
+    // means.
+    const placeholderLed = leadToken === 'TBD' || leadToken === 'NONE';
+    const inertIdShaped = citedReqIds.length === 0 && !placeholderLed
+        ? tokens.filter((t) => short(t) && t.includes('-') && REQ_ID_SUBSTRING_RE.test(t))
+        : [];
+    // R3b — the acceptance criterion's own narrow form. `tokens.length > 0` is
+    // what keeps an empty line and a comment-only line silent: the tokenizer
+    // strips `<!-- ... -->` before splitting, so `<!-- fill in -->` yields no
+    // tokens and cannot reach this rule. Every other zero-selection,
+    // non-placeholder line warns.
+    const zeroSelectionInert = citedReqIds.length === 0 && !placeholderLed && tokens.length > 0;
+    // R2 is the ONLY ambiguous rule — a tight range, a glued fragment and R3
+    // residue each implicate ID-shaped text the selector demonstrably did not
+    // take, so any of them means the line really did fail to parse. R2 is
+    // ambiguous only when its OWN endpoints were selected: the detector shaves
+    // brackets and the selector does not, so R2 can fire on a `(RANGE-02)` that
+    // was never selected — a real drop, and the assertive channel is right there.
+    // A token past the cap is NOT classified — and must therefore not be
+    // silently discarded. Round 3's first cut of the uniform cap did exactly
+    // that: a 2049-char range token warned before the round and went silent
+    // after it, which is #3697's own defect introduced by the fix for a nit
+    // (found by the round's pre-push review). The cap bounds the WORK, not the
+    // warning — so an over-cap token that could carry an ID is reported as
+    // unclassified. The test is `includes('-')`, a linear scan, never the
+    // unanchored regex the cap exists to keep off these tokens.
+    // ANY over-cap token, not just one carrying `-`. The first cut filtered on
+    // `includes('-')` and therefore missed an over-cap OPERATOR:
+    // `REQ-01 <2049 dots> REQ-05` warned before this round (R2 was uncapped) and
+    // went silent after it. A token we could not examine makes the line
+    // unverified whatever characters it happens to contain. Computed below,
+    // where the selected set is available.
+    // ID-shaped tokens the selector did not take, ANYWHERE on the line. This is
+    // reported as a fact, never used to pick the channel: `(ADR-7)` and
+    // `(REQ-02)` are indistinguishable by shape, so routing on it would put the
+    // false "could not be parsed" claim back on a line carrying a citation.
+    // Naming them lets the author see what the tokenizer skipped without the
+    // warning asserting a verdict it cannot support in either direction.
+    const selected = new Set(citedReqIds.map((id) => id.toUpperCase()));
+    // A token the SELECTOR took has had its own SELECTION verified — the selector
+    // is uncapped and anchored, so it examined the whole token. That is not the
+    // same as "no rule was suppressed by it", and conflating the two was the
+    // second continuation review's CLAIM J/K: two over-cap valid IDs either side
+    // of `..` are both selected, both exempted, and R2 is capped — so a line that
+    // warned before this round went silent, which is the very regression the
+    // field exists to close, arriving through the fix for its own over-report.
+    //
+    // The exemption therefore applies only when nothing could have been
+    // suppressed: an over-cap token that was selected AND has no neighbour that
+    // could pair with it into a range. Everything else is unexaminable and is
+    // reported as such.
+    const couldPairIntoRange = (i) => {
+        for (const n of [tokens[i - 1], tokens[i + 1]]) {
+            if (n === undefined)
+                continue;
+            if (!short(n))
+                return true;
+            if (REQ_PURE_RANGE_OP_RE.test(n))
+                return true;
+            if (REQ_GLUED_RANGE_LEAD_RE.test(n) || REQ_GLUED_RANGE_TRAIL_RE.test(n))
+                return true;
+        }
+        return false;
+    };
+    const oversizedTokens = tokens.filter((t, i) => !short(t) && (!selected.has(t.toUpperCase()) || couldPairIntoRange(i)));
+    const unselectedIdShaped = tokens.filter((t) => short(t) && REQ_ID_SUBSTRING_RE.test(t) && !selected.has(t.toUpperCase()));
+    // R4 runs on the RAW line, not on `tokens`: the shave that makes `REQ-01;`
+    // look like a clean `REQ-01` is exactly the evidence this rule needs, so it
+    // has to see the character the tokenizer removed.
+    const delimiterDroppedIds = reqDelimiterDroppedIds(rawLine, selected, REQ_TOKEN_SCAN_LIMIT);
+    const nothingDemonstrablyDropped = rangeTokens.length === 0 &&
+        !hasGluedRangeFragment &&
+        inertIdShaped.length === 0 &&
+        // R4 is a DEMONSTRATED drop, so neither non-assertive voice — one claiming
+        // nothing was dropped, the other that nothing could be checked — may speak
+        // for a line carrying one.
+        delimiterDroppedIds.length === 0 &&
+        // R2 firing on an endpoint the selector did NOT take is itself a
+        // demonstrated drop, and the assertive channel is right there. Vacuously
+        // true when no spaced range fired, which is what makes this a strict
+        // superset of the `!hasSpacedRange` guard the over-cap channel used to
+        // carry — that channel's behaviour on a line with no spaced range is
+        // unchanged, byte for byte.
+        spacedRangePairs.every(([a, b]) => selected.has(a.toUpperCase()) && selected.has(b.toUpperCase()));
+    const rangeReadingOnly = hasSpacedRange &&
+        nothingDemonstrablyDropped &&
+        // The cap bounds the WORK, never the warning. An over-cap token is not
+        // classified by ANY rule (R1-R4 all skip it), so the voice whose entire
+        // claim is that nothing was dropped has no basis to speak for this line.
+        // It falls to the over-cap channel below instead — `unverified`, because
+        // the line was not CHECKED; not `misparse`, because nothing on it
+        // demonstrably failed to parse either. Round 7 review, Minor 1.
+        oversizedTokens.length === 0;
+    // Named rather than inlined into the return literal (round 3 review Minor 3):
+    // this disjunction is the module's single most important predicate, and in
+    // the literal a later edit that reordered a local below the `return` would be
+    // a TDZ ReferenceError at runtime rather than an error at the reader's eye
+    // level. R3b joins it here — see its field docs above for why it is not
+    // gated on ID shape.
+    const warn = rangeTokens.length > 0 ||
+        hasSpacedRange ||
+        hasGluedRangeFragment ||
+        inertIdShaped.length > 0 ||
+        zeroSelectionInert ||
+        delimiterDroppedIds.length > 0 ||
+        oversizedTokens.length > 0;
+    return {
+        citedReqIds,
+        tokens,
+        rangeTokens,
+        hasSpacedRange,
+        hasGluedRangeFragment,
+        inertIdShaped,
+        zeroSelectionInert,
+        placeholderLed,
+        spacedRangePairs,
+        nothingDemonstrablyDropped,
+        rangeReadingOnly,
+        delimiterDroppedIds,
+        oversizedTokens,
+        unselectedIdShaped,
+        warn,
+    };
+}
+/**
+ * Render the warning, or null when the line is clean.
+ *
+ * TWO CHANNELS, and the split is round 3's fix for review finding Major 3. The
+ * detector cannot distinguish `RANGE-02 — RANGE-05` meaning a range from the
+ * same text meaning an annotation separator; they are textually identical and
+ * no token-level rule separates them. What the old single-channel message did
+ * was resolve that ambiguity by ASSERTION — it told the author the line "could
+ * not be parsed" and to rewrite it, on a line where every ID present had in
+ * fact been selected and nothing had been dropped. That is a false statement
+ * under the annotation reading and the #2334 over-warning class.
+ *
+ * Going silent instead is not available: the range reading is equally live, and
+ * staying quiet on it re-opens the exact silent under-selection #3697 is about.
+ * So the ambiguity is DISCLOSED rather than decided —
+ *
+ *   * any rule other than R2 fired, or R2 fired on an endpoint that was not
+ *     selected → something ID-shaped was demonstrably NOT taken. The line did
+ *     fail to parse; say so plainly, as before.
+ *   * R2 alone fired and both its endpoints were selected → nothing was
+ *     dropped. State both readings and let the author pick; never claim a parse
+ *     failure that did not occur.
+ */
+function formatRequirementsLineWarning(phaseNum, rawLine, analysis) {
+    if (!analysis.warn)
+        return null;
+    const shown = String(rawLine).trim();
+    const rangeRuleFired = analysis.rangeTokens.length > 0 || analysis.hasSpacedRange || analysis.hasGluedRangeFragment;
+    // Tokens the selector skipped, stated as a fact in EITHER channel. `(ADR-7)`
+    // and `(REQ-02)` are the same shape, so no rule can say which one matters —
+    // but the author can, and only if the warning tells them. Round 3's first
+    // cut instead let this drive the channel, which put the false "could not be
+    // parsed" claim back on a line carrying a citation.
+    // Names only what the rule-specific clauses did NOT already name, so the
+    // assertive voice can carry it too without repeating itself.
+    const alreadyNamed = new Set([...analysis.rangeTokens, ...analysis.inertIdShaped, ...analysis.delimiterDroppedIds].map((t) => t.toUpperCase()));
+    const skippedNames = analysis.unselectedIdShaped.filter((t) => !alreadyNamed.has(t.toUpperCase()));
+    // Named, then qualified. The `PREFIX-N-N` shape is the one the range rules
+    // deliberately decline to act on, so the rider says WHY it might not be a
+    // requirement instead of silently deciding it is not.
+    const ambiguousNamed = skippedNames.filter((t) => REQ_AMBIGUOUS_NUMERIC_RE.test(t));
+    const skipped = skippedNames.length > 0
+        ? ` ID-shaped text on the line that was NOT selected: ${skippedNames.join(', ')}` +
+            ` (parentheses are not stripped, unlike square brackets) — check whether any of it is a` +
+            ` requirement.` +
+            (ambiguousNamed.length > 0
+                ? ` ${ambiguousNamed.join(', ')} may equally be a date or a sub-numbered id, which is` +
+                    ` why the range rules do not act on that shape.`
+                : '')
+        : '';
+    // R4's clause. Named separately from the generic skipped-text rider because
+    // this one is not a "check whether any of it is a requirement" hedge — the
+    // token IS an ID, the selector demonstrably did not take it, and the cause
+    // is nameable.
+    const delimiterDropped = analysis.delimiterDroppedIds.length > 0
+        ? ` ${analysis.delimiterDroppedIds.join(', ')} ${analysis.delimiterDroppedIds.length === 1 ? 'was' : 'were'}` +
+            ` NOT selected: a \`;\` or \`:\` is glued to the ID, or it carries an invisible character, and` +
+            ` the line is split on commas and whitespace only. Write each requirement as a bare ID` +
+            ` separated by a comma.`
+        : '';
+    const oversized = analysis.oversizedTokens.length > 0
+        ? ` One or more tokens exceed the ${REQ_TOKEN_SCAN_LIMIT}-character scan limit and were NOT` +
+            ` classified, so this line may carry more than is reported here.`
+        : '';
+    if (analysis.rangeReadingOnly) {
+        // AMBIGUOUS channel — the RANGE reading is what is at stake, not a parse
+        // failure: every endpoint the range rule fired on was selected.
+        //
+        // What this voice must NOT do is claim the whole LINE is correct. It has
+        // no basis for that: an unrelated `(REQ-02)` elsewhere on the line is
+        // dropped by the selector and invisible to every rule, so "nothing needs
+        // to change" is an affirmative false statement on exactly the input the
+        // rule-scoped discriminator was built to reach. It speaks about the
+        // SEPARATOR, and defers the rest to the skipped-text clause above.
+        return {
+            code: REQ_LINE_WARNING_CODE.rangeReading,
+            message: `ROADMAP Phase ${phaseNum} **Requirements** line (\`${shown}\`) contains what reads as a range ` +
+                `between two cited REQ-IDs. Range forms are not expanded, so no interior IDs were selected; ` +
+                `the line selected: ${analysis.citedReqIds.join(', ')}. If a range was intended, rewrite it ` +
+                `naming every requirement explicitly (e.g. \`REQ-01, REQ-02, REQ-03\`); if that separator is ` +
+                `an annotation rather than a range, it selected nothing to expand and needs no change.` +
+                delimiterDropped +
+                skipped +
+                oversized,
+        };
+    }
+    if (analysis.oversizedTokens.length > 0 && analysis.nothingDemonstrablyDropped) {
+        // A DEMONSTRATED drop outranks this voice, whose whole claim is that
+        // NOTHING could be checked — both cannot be true at once. `REQ-01,
+        // REQ-02: <over-cap token>` names REQ-02 in `delimiterDroppedIds` and
+        // then reported `req-line-unverified`, whose message never mentions it:
+        // the concrete, actionable finding masked by the token beside it. That
+        // exclusion now lives in `nothingDemonstrablyDropped`, shared verbatim
+        // with `rangeReadingOnly` above rather than duplicated here — the
+        // duplication is what let the two drift (round 7 review, Minor 1). The
+        // assertive channel already appends the over-cap rider, so routing a
+        // demonstrated drop there loses nothing about the cap.
+        // OVER-CAP channel — no rule could run, so no rule may be diagnosed. Say
+        // exactly that: the line was not classified, rather than not a problem.
+        return {
+            code: REQ_LINE_WARNING_CODE.unverified,
+            message: `ROADMAP Phase ${phaseNum} **Requirements** line (\`${shown.slice(0, 200)}…\`) could not be ` +
+                `checked: one or more tokens exceed the ${REQ_TOKEN_SCAN_LIMIT}-character scan limit, so the ` +
+                `REQ-ID selection on this line is unverified. Rewrite it as a comma-separated list ` +
+                `(e.g. \`REQ-01, REQ-02, REQ-03\`).`,
+        };
+    }
+    // ASSERTIVE channel — ID-shaped content was demonstrably not selected.
+    // Deliberately says "selected", NOT "marked complete": a range whose
+    // endpoints are themselves unregistered selects them and marks nothing, and a
+    // warning that overclaims the write is a warning the reader learns to
+    // distrust.
+    const selectedDesc = analysis.citedReqIds.length > 0
+        ? `the only REQ-ID(s) selected from it were: ${analysis.citedReqIds.join(', ')}`
+        : 'it selected NO REQ-IDs at all, so nothing was marked';
+    const unparsed = [...new Set([...analysis.rangeTokens, ...analysis.inertIdShaped])];
+    // Only diagnose "range" when a range rule actually fired — an R3 warning on
+    // non-range ID text must not claim one was written. And on the R3 path the
+    // residue is ID-SHAPED TEXT, which is not the same claim as "a requirement we
+    // failed to parse" (round 3 review finding Minor 4: `Deferred (see ADR-7)`
+    // reported `ADR-7` as missed requirement content when it is a citation). Name
+    // what it is, and name the placeholder escape the author actually has.
+    const advice = rangeRuleFired
+        ? ' Range forms are not expanded; rewrite the line naming every requirement explicitly ' +
+            '(e.g. `REQ-01, REQ-02, REQ-03`).'
+        : ' If these are requirements, name them explicitly (e.g. `REQ-01, REQ-02, REQ-03`); if the line ' +
+            'is deliberately empty, write `TBD` or `None` — any other wording selects nothing and warns.';
+    return {
+        code: REQ_LINE_WARNING_CODE.misparse,
+        message: `ROADMAP Phase ${phaseNum} **Requirements** line could not be parsed as a comma-separated REQ-ID list ` +
+            `(\`${shown}\`) - ${selectedDesc}.` +
+            (unparsed.length > 0
+                ? rangeRuleFired
+                    ? ` Unparsed text: ${unparsed.join(', ')}.`
+                    : ` ID-shaped text that was not selected: ${unparsed.join(', ')}.`
+                : '') +
+            advice +
+            delimiterDropped +
+            skipped +
+            oversized,
+    };
 }
 function cmdPhaseComplete(cwd, phaseNum, raw) {
     if (!phaseNum) {
@@ -1890,7 +2810,18 @@ function cmdPhaseComplete(cwd, phaseNum, raw) {
         ? phaseInfo['summaries'].length
         : 0;
     let requirementsUpdated = false;
+    // #3685: mirror requirementsUpdated's diff-tracking contract at the
+    // writes.push({filePath, before, after}) sites below, rather than
+    // reporting via fs.existsSync (which is true whenever the file merely
+    // exists, not when the transaction actually wrote a change).
+    let roadmapUpdated = false;
+    let stateUpdated = false;
     const warnings = [];
+    // The machine kind of the Requirements-line warning, carried out to the JSON
+    // result as its own field (round 4 review Major 3). Declared HERE, in the
+    // same scope as `warnings[]`, because the assignment happens inside
+    // withPlanningLock and the emission happens after it.
+    let reqLineWarningCode;
     // ADR-3408 §8.5 / D2 (#3374): "liberal but visible" — when the write-seam
     // composition's preservation stage restores a curated frontmatter value
     // over a disagreeing derived one, that divergence is surfaced here rather
@@ -1994,7 +2925,12 @@ function cmdPhaseComplete(cwd, phaseNum, raw) {
         }
         for (const file of scopeToPhase(phaseFiles.filter((f) => f.includes('-VERIFICATION') && f.endsWith('.md')), phaseFullDirBaseName)) {
             const verificationFilePath = node_path_1.default.join(phaseFullDir, file);
-            const content = node_fs_1.default.readFileSync(verificationFilePath, 'utf-8');
+            // #3707-CR follow-up MINOR: normalize line endings at this read boundary
+            // (same fix as src/verification.cts's readVerificationStatus) so a
+            // lone-CR VERIFICATION.md's `---\r...\r---` frontmatter fence still
+            // matches extractFrontmatter's byte-0 check instead of silently
+            // dropping the human_needed/gaps_found advisory warning below.
+            const content = normalizeLineEndings(node_fs_1.default.readFileSync(verificationFilePath, 'utf-8'));
             // #1159 (Defect A): read ONLY the frontmatter `status` key to avoid false positives
             // from historical metadata in the file body (e.g. `previous_status: gaps_found`).
             // A full-text regex like /status: gaps_found/ matches the substring inside
@@ -2060,6 +2996,14 @@ function cmdPhaseComplete(cwd, phaseNum, raw) {
     // warnings[] entry below (same parity pattern as
     // verification_stale_check_indeterminate).
     let milestoneConflict = null;
+    // #3227: set inside `runPhaseCompleteTransaction` below from
+    // `writePlanningFileSet`'s applied-count return — the transaction always
+    // RUNS (verification passed, the lock was taken, `writes[]` was built),
+    // but a re-run against a phase whose ROADMAP/STATE bytes already reflect
+    // completion produces a `writes[]` where every entry is byte-identical to
+    // disk, so `writePlanningFileSet` applies none of them. That must not
+    // still refresh state.json's `updated_at` (design doc §40 row 26).
+    let anyPlanningWrite = false;
     const verificationBlocked = withPlanningLock(cwd, () => {
         // #3311: completing a phase while a live milestone claim (phase + session)
         // holds a DIFFERENT phase means two sessions are working two phases against
@@ -2251,6 +3195,12 @@ function cmdPhaseComplete(cwd, phaseNum, raw) {
                     before: originalRoadmapContent,
                     after: roadmapContent,
                 });
+                // #3685 / #3691: normalize both sides before comparing — see
+                // contentChangedAfterNormalize's doc (shell-command-projection.cts).
+                // A raw `!==` here false-positives whenever this phase-complete
+                // roadmap mutation regenerates a section in a different-but-
+                // equivalent raw shape than the already-normalized on-disk original.
+                roadmapUpdated = (0, shell_command_projection_cjs_1.contentChangedAfterNormalize)(roadmapPath, originalRoadmapContent, roadmapContent);
                 const reqPath = node_path_1.default.join(planningDir(cwd), 'REQUIREMENTS.md');
                 if (node_fs_1.default.existsSync(reqPath)) {
                     const phaseEsc = phaseMarkdownRegexSource(phaseNum);
@@ -2275,27 +3225,22 @@ function cmdPhaseComplete(cwd, phaseNum, raw) {
                     // `else`, discarding this fact silently instead of surfacing it.
                     const traceabilityWriteMisses = [];
                     if (reqMatch) {
-                        // #2334 HIGH 3: filter the tokenized capture to the REQ-ID SHAPE —
-                        // the SAME shape bodyReqIds (`\*\*([A-Z][A-Z0-9]*-\d+)\*\*`, below)
-                        // and tableReqIds (`([A-Z][A-Z0-9]*-\d+)`, below) already require —
-                        // so the ghost-ID / unregistered comparisons stay shape-symmetric.
-                        // Without this, `[^\n]+` split on `[,\s]+` turned EVERY word after
-                        // the ID list into a "cited REQ-ID": the shipped
-                        // `templates/roadmap.md:32` line
-                        // `**Requirements**: [REQ-01, REQ-02]  <!-- brackets optional, ... -->`
-                        // warned to register `<!--`, `brackets`, `optional`, `-->`, etc., and
-                        // `**Requirements:** None` warned to register the literal word
-                        // `None`. This subsumes the `TBD` placeholder special-case (`TBD`
-                        // does not match the REQ-ID shape either); `isPlaceholderReqId` is
-                        // kept below as a defensive no-op for any caller that still hands
-                        // it a raw token.
-                        const REQ_ID_SHAPE_RE = /^[A-Z][A-Z0-9]*-\d+$/i;
-                        citedReqIds = reqMatch[1]
-                            .replace(/[\[\]]/g, '')
-                            .split(/[,\s]+/)
-                            .map((r) => r.trim())
-                            .filter(Boolean)
-                            .filter((r) => REQ_ID_SHAPE_RE.test(r));
+                        // #2334 HIGH 3 + #3697: selection and under-selection detection both
+                        // live in `analyzeRequirementsLine` (module scope, above), extracted in
+                        // round 3 so the parser is directly testable — a closure in here is
+                        // reachable only by spawning the CLI, which no fast-check property test
+                        // can do. `citedReqIds` is byte-identical to the expression that stood
+                        // here; nothing about what phase-complete MARKS has changed.
+                        const reqLineAnalysis = analyzeRequirementsLine(reqMatch[1]);
+                        citedReqIds = reqLineAnalysis.citedReqIds;
+                        const reqLineWarning = formatRequirementsLineWarning(phaseNum, reqMatch[1], reqLineAnalysis);
+                        if (reqLineWarning) {
+                            warnings.push(reqLineWarning.message);
+                            // Carried out to the JSON result as its own field — see
+                            // REQ_LINE_WARNING_CODE for why it is not folded into
+                            // `warnings[]`.
+                            reqLineWarningCode = reqLineWarning.code;
+                        }
                         for (const reqId of citedReqIds) {
                             const reqEscaped = (0, pattern_cjs_1.escapeRegex)(reqId);
                             // Surface 1 — the checkbox: - [ ] **REQ-ID** → - [x] **REQ-ID**.
@@ -2537,9 +3482,43 @@ function cmdPhaseComplete(cwd, phaseNum, raw) {
                     // diff-tracking pattern used for the ROADMAP write above. A phase
                     // whose citations match nothing (ghost REQ-IDs only) must report
                     // `false`, not a bare "the file was present" `true`.
-                    requirementsUpdated = reqContent !== originalReqContent;
+                    // #3685 / #3691: normalize both sides before comparing — same
+                    // false-positive shape as the sibling roadmapUpdated/stateUpdated
+                    // flags in this same transaction; all three must agree by
+                    // construction (see contentChangedAfterNormalize's doc).
+                    requirementsUpdated = (0, shell_command_projection_cjs_1.contentChangedAfterNormalize)(reqPath, originalReqContent, reqContent);
                 }
             }
+            // #3701 — the ROADMAP decides WHICH phase is next; the disk decides only HOW it
+            // is spelled. Both scans select the numerically lowest phase above N.
+            //
+            // Both scans below are unchanged in what they match; what changed is that
+            // the roadmap is no longer gated behind "the disk found nothing". It used
+            // to be (`if (isLastPhase && roadmapContent !== null)`), which made a wrong
+            // disk answer uncorrectable: phase directories are created lazily, but
+            // `phase insert` scaffolds an inserted phase's directory immediately, so an
+            // inserted decimal is routinely the ONLY directory above N and outranked
+            // every phase preceding it in the roadmap. Observed: roadmap `1, 2, 02.1,
+            // 3` with directories for 01 and 02.1 only reported `next_phase: "02.1"`
+            // after completing 1 — and PERSISTED it to STATE.md — while
+            // `roadmap.analyze` correctly said `2`.
+            //
+            // #3581 fixed exactly this at `init.progress` and named the rule: "the
+            // frontier is ROADMAP ORDER, not artifact presence". This call site was not
+            // in that change's scope.
+            //
+            // Why the disk scan survives, rather than being replaced:
+            //   1. It is the only resolver when there is no ROADMAP.md, or when its
+            //      phase rows do not parse.
+            //   2. When both agree, it carries the SPELLING the output has always used
+            //      — the zero-padded directory token and the on-disk slug (`02`/`beta`),
+            //      where the roadmap would give `2` and a slugified title. Promoting the
+            //      roadmap without this would silently change the reported value on
+            //      every aligned project, which is the majority case.
+            let diskNextNum = null;
+            let diskNextName = null;
+            let roadmapNextNum = null;
+            let roadmapNextName = null;
             try {
                 // #3185 (ADR-3180 Decision 1): "which phase directories belong to
                 // the CURRENT milestone" — routed through the canonical owner
@@ -2555,11 +3534,15 @@ function cmdPhaseComplete(cwd, phaseNum, raw) {
                         // #3185: canonical sentinel predicate (SENTINEL_RANGES [0,999]) — this was a local 999-only literal that admitted Phase 0.
                         if (isSentinelPhaseId(dm[1]))
                             continue;
-                        if (comparePhaseNum(dm[1], phaseNum) > 0) {
-                            nextPhaseNum = dm[1];
-                            nextPhaseName = dm[2] || null;
-                            isLastPhase = false;
-                            break;
+                        // Numeric MINIMUM above N, not "first encountered". `listMilestonePhaseDirs`
+                        // does sort by `comparePhaseNum`, so a `break` on the first hit happens to be
+                        // correct today — but that makes this scan's correctness depend on an
+                        // upstream sort nothing here states. Selecting the minimum explicitly costs
+                        // one comparison and removes the hidden coupling.
+                        if (comparePhaseNum(dm[1], phaseNum) > 0
+                            && (diskNextNum === null || comparePhaseNum(dm[1], diskNextNum) < 0)) {
+                            diskNextNum = dm[1];
+                            diskNextName = dm[2] || null;
                         }
                     }
                 }
@@ -2573,7 +3556,7 @@ function cmdPhaseComplete(cwd, phaseNum, raw) {
                  * derives the same information independently from ROADMAP.md content
                  * — not a silent data-loss path. */
             }
-            if (isLastPhase && roadmapContent !== null) {
+            if (roadmapContent !== null) {
                 try {
                     const roadmapForPhases = extractCurrentMilestone(roadmapContent, cwd);
                     // #1591: match BOTH heading-style phases (`### Phase N:`) AND
@@ -2591,23 +3574,55 @@ function cmdPhaseComplete(cwd, phaseNum, raw) {
                     // #1729: `(?:\s*\([^)\n]{0,200}\))?` after the number tolerates a pre-colon
                     // ( ) tag (literal mirror of OPTIONAL_PHASE_TAG_SOURCE) so
                     // `### Phase N (Cluster B): X` resolves. Captures are unchanged.
-                    const phasePattern = new RegExp(`(?:#{2,4}|-\\s*\\[[ xX]\\])\\s*(?:\\*\\*|__)?\\s*Phase\\s+(${PHASE_NUMBER_TOKEN_SOURCE})(?:\\s*\\([^)\\n]{0,200}\\))?\\s*:\\s*([^\\n*]+)`, 'gi');
+                    //
+                    // #4078: the checkbox branch's separator is no longer colon-only. The
+                    // canonical phase lookup has accepted the bullet-house dash grammar
+                    // (`- [ ] **Phase N — Name**`, em/en-dash/hyphen/colon) since #2199
+                    // (`BULLET_PHASE_LINE_PATTERN`, roadmap-parser.cjs), but this scan still
+                    // required `:`, so on a roadmap whose original rows use the dash grammar
+                    // the ONLY parseable row above N was typically a later phase.add-ingested
+                    // colon-form phase — positionally last — and it won the numeric-minimum
+                    // vote it should never have been alone in (observed: 18 of 18 selected,
+                    // phases 2–17 skipped). The heading branch stays colon-only, mirroring
+                    // `findRoadmapPhaseInContent`'s heading grammar exactly; only the
+                    // checkbox branch widens, and only to the separators #2199 already
+                    // accepts. The two branches keep separate capture groups, normalized
+                    // just below the loop.
+                    const phasePattern = new RegExp(`(?:#{2,4}\\s*(?:\\*\\*|__)?\\s*Phase\\s+(${PHASE_NUMBER_TOKEN_SOURCE})(?:\\s*\\([^)\\n]{0,200}\\))?\\s*:\\s*([^\\n*]+)` +
+                        `|-\\s*\\[[ xX]\\]\\s*(?:\\*\\*|__)?\\s*Phase\\s+(${PHASE_NUMBER_TOKEN_SOURCE})(?:\\s*\\([^)\\n]{0,200}\\))?\\s*[—–:\\-]\\s*([^\\n*]+))`, 'gi');
                     let pm;
                     while ((pm = phasePattern.exec(roadmapForPhases)) !== null) {
+                        // #4078: normalize the two alternation branches' captures (heading
+                        // branch → groups 1/2, widened checkbox branch → groups 3/4).
+                        const pmNum = pm[1] ?? pm[3];
+                        const pmName = pm[2] ?? pm[4];
                         // #2786: skip sentinel phase ids (999.x backlog, 0.x drafts) — stage 1
                         // already skips sentinel dirs on disk via isSentinelPhaseId (#3185);
                         // stage 2's heading scan must not advance into backlog headings either.
-                        if (isSentinelPhaseId(pm[1]))
+                        if (isSentinelPhaseId(pmNum))
                             continue;
-                        if (comparePhaseNum(pm[1], phaseNum) > 0) {
-                            nextPhaseNum = pm[1];
-                            nextPhaseName = pm[2]
+                        // #3701 review: the numeric MINIMUM above N, not the first row above N in
+                        // DOCUMENT order. This scan walks raw roadmap text, and one global regex
+                        // sweeps both the `## Phases` checklist and the `## Phase Details`
+                        // headings, so "first match" is a statement about where a line sits in the
+                        // file — not about which phase comes next.
+                        //
+                        // It mattered only once this scan started deciding the answer. Before, it
+                        // ran solely when the disk scan found nothing; now it outranks the disk, so
+                        // a roadmap listing rows out of numeric sequence (`1, 3, 2`) reported
+                        // `next_phase: 3` and PERSISTED it, skipping Phase 2 — on an input the
+                        // pre-#3701 code got right, because the disk scan is numerically sorted.
+                        // Phase NUMBERS define sequence here, exactly as `comparePhaseNum` does for
+                        // the disk scan and for #2028's lowest-outstanding override; the roadmap
+                        // defines which phases EXIST and which milestone they belong to.
+                        if (comparePhaseNum(pmNum, phaseNum) > 0
+                            && (roadmapNextNum === null || comparePhaseNum(pmNum, roadmapNextNum) < 0)) {
+                            roadmapNextNum = pmNum;
+                            roadmapNextName = pmName
                                 .replace(/\(INSERTED\)/i, '')
                                 .trim()
                                 .toLowerCase()
                                 .replace(/\s+/g, '-');
-                            isLastPhase = false;
-                            break;
                         }
                     }
                 }
@@ -2617,6 +3632,25 @@ function cmdPhaseComplete(cwd, phaseNum, raw) {
                      * isLastPhase as stage 1 left it; stage 3 (#2028) below runs next
                      * regardless and provides a further, independent override. */
                 }
+            }
+            // Resolve. The roadmap wins on identity; the disk wins on spelling when it
+            // is talking about the same phase.
+            if (roadmapNextNum !== null) {
+                // Same comparator both scans already use to order phases, so "the disk
+                // and the roadmap mean the same phase" cannot drift from "N is above the
+                // one just completed". `02` and `2` compare equal, which is the whole
+                // point — they are the same phase spelled two ways.
+                const diskAgrees = diskNextNum !== null && comparePhaseNum(diskNextNum, roadmapNextNum) === 0;
+                nextPhaseNum = diskAgrees ? diskNextNum : roadmapNextNum;
+                nextPhaseName = diskAgrees ? diskNextName : roadmapNextName;
+                isLastPhase = false;
+            }
+            else if (diskNextNum !== null) {
+                // No usable roadmap (absent, unreadable, or no parseable phase rows) —
+                // the disk is all there is. Unchanged from the pre-#3701 behaviour.
+                nextPhaseNum = diskNextNum;
+                nextPhaseName = diskNextName;
+                isLastPhase = false;
             }
             // #2028: don't stamp "All phases complete" when a LOWER-numbered phase is
             // still outstanding. The two blocks above only clear isLastPhase when a
@@ -2645,7 +3679,12 @@ function cmdPhaseComplete(cwd, phaseNum, raw) {
             if (roadmapContent !== null) {
                 try {
                     const milestoneScope = extractCurrentMilestone(roadmapContent, cwd);
-                    const cbPattern = new RegExp(`-\\s*\\[(x| )\\]\\s*(?:\\*\\*|__)?\\s*Phase\\s+(${PHASE_NUMBER_TOKEN_SOURCE})(?:\\s*\\([^)\\n]{0,200}\\))?\\s*:\\s*([^\\n*]+)`, 'gi');
+                    // #4078: the separator class here mirrors stage 2's widened checkbox
+                    // branch (and #2199's BULLET_PHASE_LINE_PATTERN): em/en-dash/hyphen/colon.
+                    // Without it, this lowest-outstanding override was blind to dash-grammar
+                    // rows and could not correct an out-of-order completion on the same
+                    // mixed-grammar roadmaps that broke stage 2.
+                    const cbPattern = new RegExp(`-\\s*\\[(x| )\\]\\s*(?:\\*\\*|__)?\\s*Phase\\s+(${PHASE_NUMBER_TOKEN_SOURCE})(?:\\s*\\([^)\\n]{0,200}\\))?\\s*[—–:\\-]\\s*([^\\n*]+)`, 'gi');
                     let cbm;
                     let lowestOutstanding = null;
                     while ((cbm = cbPattern.exec(milestoneScope)) !== null) {
@@ -2767,8 +3806,14 @@ function cmdPhaseComplete(cwd, phaseNum, raw) {
                     preservationWarnings.push({ field, reason: 'preserved-over-disagreeing-derived' });
                 }
                 writes.push({ filePath: statePath, before: originalStateContent, after: stateContent });
+                // #3685 / #3691: normalize both sides before comparing (same
+                // transitionCore-regenerated-section artifact cmdMilestoneComplete
+                // hit — see contentChangedAfterNormalize's doc). Reported "not
+                // exposed" by a previous agent; the reviewer disproved that by
+                // inspection and this branch closes it.
+                stateUpdated = (0, shell_command_projection_cjs_1.contentChangedAfterNormalize)(statePath, originalStateContent, stateContent);
             }
-            writePlanningFileSet(writes);
+            anyPlanningWrite = writePlanningFileSet(writes) > 0;
         };
         if (node_fs_1.default.existsSync(statePath)) {
             withStateLock(statePath, runPhaseCompleteTransaction);
@@ -2826,17 +3871,27 @@ function cmdPhaseComplete(cwd, phaseNum, raw) {
         next_phase_name: nextPhaseName,
         is_last_phase: isLastPhase,
         date: today,
-        roadmap_updated: node_fs_1.default.existsSync(roadmapPath),
-        state_updated: node_fs_1.default.existsSync(statePath),
+        roadmap_updated: roadmapUpdated,
+        state_updated: stateUpdated,
         requirements_updated: requirementsUpdated,
         auto_pruned: autoPruned,
         warnings,
         has_warnings: warnings.length > 0,
+        // ADDITIVE, never a change to `warnings[]`'s element shape — that array is
+        // a documented string[] consumed by execute-phase.md, so re-typing it
+        // would break a shipped output contract. Absent when the line is clean.
+        ...(reqLineWarningCode ? { requirements_line_warning: { code: reqLineWarningCode } } : {}),
         verification_stale_check_indeterminate: staleCheckIndeterminate,
         milestone_conflict: milestoneConflict,
         preservation_warnings: preservationWarnings,
     };
     output(result, raw);
+    // #3227: gate on `anyPlanningWrite` (whether `writePlanningFileSet`
+    // actually wrote anything), not on reaching this line — reaching here only
+    // means verification passed and the transaction ran, not that ROADMAP.md
+    // or STATE.md bytes changed (see the `anyPlanningWrite` declaration above).
+    if (anyPlanningWrite)
+        publishStateContract(cwd);
 }
 function cmdPhaseUatPassed(cwd, phaseNum, raw, opts = {}) {
     if (!phaseNum) {
@@ -2887,10 +3942,15 @@ module.exports = {
     cmdPhaseAdd,
     cmdPhaseAddBatch,
     cmdPhaseMvpMode,
+    cmdPhaseTddApplicable,
     cmdPhaseInsert,
     cmdPhaseRemove,
     cmdPhaseComplete,
+    analyzeRequirementsLine,
+    formatRequirementsLineWarning,
+    REQ_LINE_WARNING_CODE,
     cmdPhaseUatPassed,
     cmdPhaseListPlans,
     computeDependencyLevels,
+    buildShortFormToId,
 };

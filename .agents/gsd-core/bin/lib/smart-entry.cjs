@@ -43,6 +43,10 @@ const node_fs_1 = __importDefault(require("node:fs"));
 const node_path_1 = __importDefault(require("node:path"));
 const node_child_process_1 = require("node:child_process");
 const markdown_sectionizer_cjs_1 = require("./markdown-sectionizer.cjs");
+// #3696: the calendar-validity predicate moved to the STATE.md document module
+// so `state validate` can assert the same `last_activity` invariant this reader
+// already enforces (ADR-227). Two copies would let the two surfaces disagree
+// about whether a STATE.md is usable — which is the defect #3696 reports.
 // eslint-disable-next-line @typescript-eslint/no-require-imports
 const ioMod = require("./io.cjs");
 const { output } = ioMod;
@@ -60,7 +64,7 @@ const stateDocument = require("./state-document.cjs");
 const { stateFieldValue } = stateDocument;
 // eslint-disable-next-line @typescript-eslint/no-require-imports
 const phaseId = require("./phase-id.cjs");
-const { comparePhaseNum, extractPhaseToken, matchPhaseDirs, normalizePhaseName, stripProjectCodePrefix } = phaseId;
+const { comparePhaseNum, extractPhaseToken, matchPhaseDirs, normalizePhaseName, parsePhaseFromProse, stripProjectCodePrefix } = phaseId;
 // eslint-disable-next-line @typescript-eslint/no-require-imports
 const stateMod = require("./state.cjs");
 const { readStateHeadFreshness } = stateMod;
@@ -160,26 +164,6 @@ const ISO_LEADING_RE = /^(\d{4})-(\d{2})-(\d{2})((?:[T ]\d{2}:\d{2}(?::\d{2}(?:\
  * failed open on every letter-led description and re-opened #2570.
  */
 const ZONE_DESIGNATOR_RE = /^\s*[A-Z]{2,5}(?![A-Za-z])/;
-/**
- * True only when y/m/d name a date that actually exists on the calendar.
- *
- * `Date.parse` validates shape but not value: it rolls an out-of-range day
- * FORWARD rather than rejecting it (`2026-02-30` -> `2026-03-02`,
- * `2026-04-31` -> `2026-05-01`). Shape-only validation would therefore
- * propagate a different, wrong instant instead of failing safe — precisely
- * what ADR-227 ("validate shape AND value; on failure of either layer coerce
- * to the contract's safe default, never propagate") exists to prevent. A
- * round-trip through Date.UTC detects the rollover: any component the
- * constructor normalised comes back changed.
- */
-function isRealCalendarDate(year, month, day) {
-    if (month < 1 || month > 12 || day < 1 || day > 31)
-        return false;
-    const probe = new Date(Date.UTC(year, month - 1, day));
-    return (probe.getUTCFullYear() === year &&
-        probe.getUTCMonth() === month - 1 &&
-        probe.getUTCDate() === day);
-}
 function parseActivityTimestamp(raw) {
     if (!raw)
         return null;
@@ -190,7 +174,7 @@ function parseActivityTimestamp(raw) {
         // Reject an impossible calendar date outright rather than letting
         // Date.parse substitute a rolled-forward one. null = "no activity signal",
         // the safe default staleActivity already fails open on.
-        if (!isRealCalendarDate(Number(year), Number(month), Number(day)))
+        if (!stateDocument.isRealCalendarDate(Number(year), Number(month), Number(day)))
             return null;
         // The date is real, so stay as liberal as before (Postel): a whole-string
         // parse still wins when the engine can make sense of the value. Reading the
@@ -249,10 +233,7 @@ function readGitSignals(cwd) {
 }
 /** Leading numeric phase token from a STATE.md scalar or body `Phase:` value. */
 function phaseTokenFromState(raw) {
-    if (!raw?.trim())
-        return null;
-    const match = raw.trim().match(/^(\d+(?:[A-Z])?(?:\.\d+)*)/i);
-    return match ? match[1] : null;
+    return parsePhaseFromProse(raw).phase;
 }
 /**
  * Detect whether the current phase's verify report indicates failure. The
@@ -445,7 +426,7 @@ function detectSignals(cwd, now = Date.now) {
     const stateHeadRaw = stateFieldValue(fm, body, 'state_head', 'State Head').value;
     const freshness = readStateHeadFreshness(cwd, stateHeadRaw);
     return {
-        current_phase: parseIntOrNull(currentPhaseRaw),
+        current_phase: phaseTokenFromState(currentPhaseRaw),
         total_phases: parseIntOrNull(totalPhasesRaw),
         status: (statusRaw || '').toLowerCase(),
         progress: parseIntOrNull(progressRaw),
@@ -488,11 +469,12 @@ function isComplete(s) {
             return false;
     }
     else {
-        // Legacy path: STATE.md comparison. Still subject to the two-scale bug,
-        // but only fires when ROADMAP.md is absent or has no Progress table.
+        // Legacy path: STATE.md comparison. It only fires when ROADMAP.md is
+        // absent or has no Progress table, and uses canonical phase-id ordering
+        // so dotted phase ids are never coerced to JavaScript numbers.
         if (s.total_phases === null || s.current_phase === null)
             return false;
-        if (s.current_phase < s.total_phases)
+        if (comparePhaseNum(s.current_phase, s.total_phases) < 0)
             return false;
     }
     // Status regex: require milestone-level completion language. The pre-fix
@@ -542,7 +524,13 @@ function classify(s) {
         return 'planning';
     if (/\bexecut(e|ing)|active|in.progress|building\b/i.test(s.status))
         return 'executing';
-    if (/\bverify|review|needs.review|pending.review\b/i.test(s.status))
+    // #3864: `verif` (not `verify`) — the same stem state-document's
+    // normalizeStateStatus matches. "verified" and "verification" contain no
+    // "verify" substring, so the exact word left them falling through to
+    // `unknown` (or idle-stranded on a clean unpushed tree — differently
+    // wrong). verify_failed is tested above, so a failed verification still
+    // wins over this branch.
+    if (/\bverif|review|needs.review|pending.review\b/i.test(s.status))
         return 'verify-pending';
     if (isIdleStranded(s))
         return 'idle-stranded';

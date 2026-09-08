@@ -23,12 +23,19 @@ const stateMod = require("./state.cjs");
 const modelProfilesMod = require("./model-profiles.cjs");
 // eslint-disable-next-line @typescript-eslint/no-require-imports -- plan-scan.cjs is an export= CommonJS module
 const planScanMod = require("./plan-scan.cjs");
+// eslint-disable-next-line @typescript-eslint/no-require-imports -- verification.cjs is an export= CommonJS module
+const verificationMod = require("./verification.cjs");
 // eslint-disable-next-line @typescript-eslint/no-require-imports -- core-utils.cjs is an export= CommonJS module
 const coreUtilsMod = require("./core-utils.cjs");
 const { findOrphanSummaries, findUnsummarizedPlans } = coreUtilsMod;
 // eslint-disable-next-line @typescript-eslint/no-require-imports -- planning-scope.cjs is an export= CommonJS module
 const planningScopeMod = require("./planning-scope.cjs");
 const { SCOPE } = planningScopeMod;
+// eslint-disable-next-line @typescript-eslint/no-require-imports -- worktree-safety.cjs is an export= CommonJS module
+const worktreeSafetyMod = require("./worktree-safety.cjs");
+// Single owner of git C-quoted-path decoding (see #4081 note at the
+// codebase-drift --name-status parse loop).
+const { decodeGitQuotedPath } = worktreeSafetyMod;
 const shell_command_projection_cjs_1 = require("./shell-command-projection.cjs");
 const security_cjs_1 = require("./security.cjs");
 const runtime_slash_cjs_1 = require("./runtime-slash.cjs");
@@ -37,7 +44,7 @@ const markdown_sectionizer_cjs_1 = require("./markdown-sectionizer.cjs");
 const pattern_cjs_1 = require("./pattern.cjs");
 // eslint-disable-next-line @typescript-eslint/no-require-imports -- agent-install-check.cjs is an export= CommonJS module
 const agentInstallCheck = require("./agent-install-check.cjs");
-const { checkAgentsInstalled, checkCodexModelPosture } = agentInstallCheck;
+const { checkAgentsInstalled, checkCodexModelPosture, checkCodexSandboxPosture } = agentInstallCheck;
 // eslint-disable-next-line @typescript-eslint/no-require-imports
 const ioMod = require("./io.cjs");
 const { output, error } = ioMod;
@@ -56,7 +63,8 @@ const { SEVERITY: HEALTH_SEVERITY, REMEDY_ACTION, REMEDY_RISK, evaluateRules, ev
 // eslint-disable-next-line @typescript-eslint/no-require-imports -- planning-snapshot.cjs is an export= CommonJS module
 const planningSnapshotMod = require("./planning-snapshot.cjs");
 const { buildPlanningSnapshot } = planningSnapshotMod;
-const { planningDir, planningRoot } = planningWorkspace;
+const { planningDir } = planningWorkspace;
+const { defaultPhaseCleanCommitTimesMs } = verificationMod;
 const { extractFrontmatter, parseMustHavesBlock } = frontmatterMod;
 const { readStateHeadFreshness } = stateMod;
 /**
@@ -262,15 +270,78 @@ function cmdVerifySummary(cwd, summaryPath, checkFileCount, raw) {
  * verify gate fails on the comment echo rather than a real regression. Conservative:
  * errors only on a confidently-extracted QUOTED literal; ambiguous (bareword) → warning.
  */
+/**
+ * Decode entity-escaped ampersands (&amp; → &) — #3611. Planners emit
+ * <automated> bodies with `&amp;&amp;` as the chain operator (66 occurrences
+ * vs 0 literal in the reporting repo), and the executing agent reads the
+ * decoded (rendered) form. Every downstream scan — segment split,
+ * zero-comparison, literal harvest, echo matching — must operate on the same
+ * decoded text or a negative clause (`= 0`) poisons the literals of a
+ * POSITIVE clause (-ge 3) joined to it. Shared by both plan-discipline
+ * scanners so the two gates cannot drift apart again.
+ */
+function decodeEntityAmps(s) {
+    return s.replace(/&amp;/g, '&');
+}
+/**
+ * Split one shell line into &&/|| segments, QUOTE-AWARE (#3611 adversarial
+ * review): an operator inside a quoted literal (`grep -c 'a&&b'`) is part of
+ * the pattern, not a chain operator — a quote-blind split destroys the
+ * literal and silently disarms the gate for exactly the plans that spell
+ * patterns with ampersands. Backslash escapes count inside double quotes
+ * (POSIX single quotes have none, and over-staying a single-quoted span can
+ * only miss a split, never invent one).
+ */
+function splitShellSegments(line) {
+    const segments = [];
+    let current = '';
+    let quote = null;
+    for (let i = 0; i < line.length; i++) {
+        const ch = line[i];
+        if (quote === "'") {
+            if (ch === "'")
+                quote = null;
+            current += ch;
+            continue;
+        }
+        if (quote === '"') {
+            if (ch === '\\') {
+                current += ch + (line[i + 1] ?? '');
+                i++;
+                continue;
+            }
+            if (ch === '"')
+                quote = null;
+            current += ch;
+            continue;
+        }
+        if (ch === "'" || ch === '"') {
+            quote = ch;
+            current += ch;
+            continue;
+        }
+        if ((ch === '&' && line[i + 1] === '&') || (ch === '|' && line[i + 1] === '|')) {
+            segments.push(current.trim());
+            current = '';
+            i++;
+            continue;
+        }
+        current += ch;
+    }
+    segments.push(current.trim());
+    return segments.filter((s) => s !== '');
+}
 function scanNegativeGrepCommentEcho(content) {
     const errors = [];
     const warnings = [];
     // Normalize newlines; join backslash line-continuations so a verify command wrapped
     // across lines (grep ... \ <newline> == 0) is still seen as one segment.
-    const text = (content || '')
+    // #3611: decode entity-escaped ampersands (see decodeEntityAmps) so every
+    // downstream scan reads the same decoded text the executing agent reads.
+    const text = decodeEntityAmps((content || '')
         .replace(/\r\n/g, '\n')
         .replace(/\r/g, '\n')
-        .replace(/\\\n/g, ' ');
+        .replace(/\\\n/g, ' '));
     // 1. Allowlisted literals: <!-- planner-discipline-allow: LIT -->
     const allow = new Set();
     const allowRe = /<!--\s*planner-discipline-allow:\s*(.+?)\s*-->/g;
@@ -313,7 +384,7 @@ function scanNegativeGrepCommentEcho(content) {
     //    poisoning a negative gate (`== 0`) sharing the same physical line.
     const seenErr = new Set();
     const seenWarn = new Set();
-    const segments = text.split('\n').flatMap((line) => line.split(/\s*(?:&&|\|\|)\s*/));
+    const segments = text.split('\n').flatMap(splitShellSegments);
     for (const seg of segments) {
         if (!/grep(?:\s+-{1,2}[A-Za-z])/.test(seg) || !zeroCmp(seg))
             continue;
@@ -362,10 +433,13 @@ function scanNegativeGrepCommentEcho(content) {
 function scanFileWideNegativeGateConflict(content) {
     const warnings = [];
     // Normalize newlines; join backslash line-continuations (same as #429).
-    const text = (content || '')
+    // #3611: the SAME entity decode as the #429 scanner — the two gates share
+    // the caller and the input; a decode on one side only let an entity-escaped
+    // chain poison this detector's harvest exactly the same way.
+    const text = decodeEntityAmps((content || '')
         .replace(/\r\n/g, '\n')
         .replace(/\r/g, '\n')
-        .replace(/\\\n/g, ' ');
+        .replace(/\\\n/g, ' '));
     // Allowlisted patterns: <!-- planner-region-allow: PAT -->
     const allow = new Set();
     const allowRe = /<!--\s*planner-region-allow:\s*(.+?)\s*-->/g;
@@ -499,8 +573,8 @@ function scanFileWideNegativeGateConflict(content) {
     // For each task A, scan gate text for file-wide negative grep bans.
     for (let ai = 0; ai < tasks.length; ai++) {
         const taskA = tasks[ai];
-        // Split gate text into shell segments (split on && / || within lines).
-        const segments = taskA.gateText.split('\n').flatMap(line => line.split(/\s*(?:&&|\|\|)\s*/));
+        // Split gate text into shell segments (quote-aware, shared with #429 — #3611).
+        const segments = taskA.gateText.split('\n').flatMap(splitShellSegments);
         for (const seg of segments) {
             if (!/grep/.test(seg))
                 continue;
@@ -627,6 +701,189 @@ function scanFileWideNegativeGateConflict(content) {
     }
     // This detector is warn-only: it never sets valid=false.
     return { warnings, valid: true };
+}
+/**
+ * Issue #4024 — quantitative-criteria trap-shape scanner, the third plan-discipline
+ * gate in this family (after #429's comment-echo gate and #968's file-wide
+ * negative-gate conflict detector). #429/#968 judge `grep -c … == 0` shapes; this
+ * scanner judges the OTHER quantitative criterion shapes that are provably traps
+ * at HEAD, so a plan whose criteria are unsatisfiable-or-vacuous before any
+ * executor touches them no longer passes `verify plan-structure` clean.
+ *
+ * Scope: criteria text only — `<acceptance_criteria>`, `<automated>`, and
+ * `<verify>` blocks. Prose elsewhere in the plan (e.g. an explanatory
+ * `<action>`) is not judged (fail-open; see the negative-space section of the
+ * #4024 diagnosis).
+ *
+ * Ban list, each rule with a corrected arm asserted in tests (a rule that fires
+ * on its own fix is a refusal, not a rule):
+ *   R1 (error) exact count out of `grep -c` with N ≥ 2 — `grep -c` counts LINES,
+ *       not matches. Hedged counts (`>=`, "at least"), `== 0` (the #429/#968
+ *       family) and the `== 1` presence idiom stay clean.
+ *   R2 (error) bulk observed-failing claims — "all N tests … observed failing" /
+ *       "tests N through M … each … observed failing". A test asserting a
+ *       non-change cannot go red before the change exists. Per-test
+ *       "discriminates" wording and subset claims stay clean.
+ *   R3 (error) `$VAR` unquoted in command position — zsh does not word-split an
+ *       unquoted expansion, the command exits 127, and any arm reading its
+ *       status passes vacuously.
+ *   R4 (warn)  a fallible command (`git …`) in a non-final pipeline stage — the
+ *       pipeline reports the LAST stage's status, so the failure is swallowed.
+ *       Warn-only: the shape is ambiguous unless the criterion reads the status.
+ *   R5 (error) `wc` output compared by string equality (`… | wc -l | grep -x 0`)
+ *       — BSD `wc` pads its output, so the comparison never matches.
+ *   R6 (error) `git diff`/`git log` with a relative `HEAD~N` anchor — it names
+ *       whatever commit happened to land (another session's). Bare `git diff`
+ *       with no range is a WARNING: a committed change produces no output and
+ *       the check passes, but an uncommitted-tree check is a legitimate idiom.
+ *
+ * Legitimate exit: `<!-- plan-criteria-allow: R# - reason -->` (house style of
+ * `planner-discipline-allow`); the reason must be non-empty. Fail open: no
+ * criteria zones → no findings; every parse is text-only, nothing executes.
+ */
+function scanQuantitativeCriteria(content) {
+    const errors = [];
+    const warnings = [];
+    // Criteria zones: <acceptance_criteria>, <automated>, <verify>. A <verify>
+    // block contains its <automated> child, so the same segment may be harvested
+    // twice — dedupe findings by message below.
+    const zones = [];
+    for (const tag of ['acceptance_criteria', 'automated', 'verify']) {
+        for (const block of (0, markdown_sectionizer_cjs_1.extractTaggedBlocks)(content || '', tag)) {
+            zones.push({ text: block, prose: tag === 'acceptance_criteria' });
+        }
+    }
+    if (zones.length === 0)
+        return { errors, warnings };
+    // Allow markers may sit anywhere in the plan (same as the sibling scanners).
+    // The reason must be non-empty: `R1 - -->` is not an auditable exit.
+    const allow = new Set();
+    const allowRe = /<!--\s*plan-criteria-allow:\s*(R[1-6])\s+-\s+([^>]*\S)\s*-->/g;
+    let am;
+    while ((am = allowRe.exec(content || '')) !== null)
+        allow.add(am[1]);
+    const record = (bucket, rule, message, seen) => {
+        if (allow.has(rule) || seen.has(message))
+            return;
+        seen.add(message);
+        bucket.push(message);
+    };
+    // A count-grep invocation (grep with -c / --count), per the #429 idiom.
+    const countGrepRe = /grep((?:\s+-{1,2}[A-Za-z][A-Za-z-]*)+)\s+(?:'[^']*'|"[^"]*"|[^\s|>&;]+)/g;
+    const optsHaveCount = (opts) => /(?:^|\s)-[A-Za-z]*c[A-Za-z]*(?=\s|$)/.test(opts) || /--count\b/.test(opts);
+    const hasCountGrep = (s) => {
+        countGrepRe.lastIndex = 0;
+        let m;
+        while ((m = countGrepRe.exec(s)) !== null) {
+            if (optsHaveCount(m[1]))
+                return true;
+        }
+        return false;
+    };
+    const seenErr = new Set();
+    const seenWarn = new Set();
+    for (const zone of zones) {
+        // Same normalization as the sibling scanners (#3611): newline join,
+        // backslash continuation join, entity-amp decode.
+        const text = decodeEntityAmps(zone.text
+            .replace(/\r\n/g, '\n')
+            .replace(/\r/g, '\n')
+            .replace(/\\\n/g, ' '));
+        // R2 — bulk observed-failing prose (acceptance_criteria only). The gap
+        // [^\n.]{0,120} keeps the subject and the claim adjacent within one
+        // sentence, so the corrected arm (a subset claim, or "each test
+        // discriminates") never fires.
+        if (zone.prose) {
+            const bulkRedRes = [
+                /\ball\s+(?:\d+|one|two|three|four|five|six|seven|eight|nine|ten|eleven|twelve)\s+tests\b[^\n.]{0,120}?observed\s+fail/i,
+                /\btests\s+\d+\s+through\s+\d+\b[^\n.]{0,120}?observed\s+fail/i,
+            ];
+            for (const re of bulkRedRes) {
+                if (re.test(text)) {
+                    record(errors, 'R2', '[plan-criteria R2] A bulk "all N tests / tests N through M were observed failing" criterion is ' +
+                        'unsatisfiable whenever any of the N tests asserts a non-change, which cannot go red before the ' +
+                        'change exists. Say "each test discriminates" (fails before the change, passes after), and attach a ' +
+                        'mutation record for any test that cannot be seen red.', seenErr);
+                }
+            }
+        }
+        for (const seg of text.split('\n').flatMap(splitShellSegments)) {
+            // R1 — exact count out of `grep -c` (N ≥ 2). Spaced `==`/`-eq` (the
+            // #429 zeroCmp idiom, excluding assignments and >=/<=/!=), or the prose
+            // "returns exactly N".
+            if (hasCountGrep(seg)) {
+                const exact = [];
+                let m;
+                const shellCmp = /\s==?\s*(\d+)\b/g;
+                while ((m = shellCmp.exec(seg)) !== null)
+                    exact.push(parseInt(m[1], 10));
+                const eqCmp = /-eq\s+(\d+)\b/g;
+                while ((m = eqCmp.exec(seg)) !== null)
+                    exact.push(parseInt(m[1], 10));
+                const proseCmp = /\breturns?\s+exactly\s+(\d+)\b/gi;
+                while ((m = proseCmp.exec(seg)) !== null)
+                    exact.push(parseInt(m[1], 10));
+                if (exact.some((n) => n >= 2)) {
+                    record(errors, 'R1', '[plan-criteria R1] An exact count out of `grep -c` is a trap: `grep -c` counts LINES, not matches, ' +
+                        'so the criterion can be false at HEAD before any executor touches it. Use `>= 1`, `== 0`, or ' +
+                        '`grep -n` and read the line numbers.', seenErr);
+                }
+            }
+            // R3 — unquoted $VAR in command position (zsh does not word-split; the
+            // command exits 127 and any arm reading its status passes vacuously).
+            // The anchor tolerates a markdown list bullet and/or an inline-code
+            // backtick before the command — criteria are prose lines like
+            // "- `$NOKEY npx tsx x.ts` exits 0" — but nothing else: the expansion
+            // must still be the FIRST token of the command itself.
+            if (/^(?:[-*]\s*)?\u0060?\$[A-Z_][A-Z0-9_]*\s/.test(seg)) {
+                record(errors, 'R3', '[plan-criteria R3] `$VAR` unquoted in command position does not word-split under zsh — the shell ' +
+                    'looks for a command literally named by the whole expansion and exits 127, so any arm reading its ' +
+                    'status passes vacuously. Write the prefix inline or use a shell function.', seenErr);
+            }
+            // R4 — a fallible `git …` in a non-final pipeline stage: the pipeline
+            // reports the LAST stage's status, so git's failure is swallowed.
+            // Warn-only: without a status assertion the shape is ambiguous.
+            // Not a markdown table: the negated-pipe class matches a SHELL pipeline
+            // stage boundary (git before the next `|`), the same shape the
+            // #429/#968 scanners use; there is no table row to parse.
+            // allow-adhoc-markdown: shell pipeline stage boundary, not a table cell (#4024)
+            if (/\bgit\s+[a-z][^\n|]*\|/.test(seg)) {
+                record(warnings, 'R4', '[plan-criteria R4] A fallible `git` in a non-final pipeline stage is swallowed — the pipeline reports ' +
+                    'the last stage\'s status, so a broken command reads as clean. Capture the status first.', seenWarn);
+            }
+            // R5 — `wc` output compared by string equality: BSD `wc` pads its output
+            // (seven spaces then the number), so `grep -x 0` can never match.
+            if (/\bwc\b/.test(seg) && /\bgrep\s+(?:-{1,2}[A-Za-z]*x[A-Za-z]*|--line-regexp)\s+['"]?\d+['"]?/.test(seg)) {
+                record(errors, 'R5', '[plan-criteria R5] `wc` output compared by string equality is unsatisfiable on BSD `wc`, which pads ' +
+                    'its output before the number. Compare numerically: `test "$n" -eq 0`, or `tr -d \' \'` first.', seenErr);
+            }
+            // R6 — relative HEAD~N anchors name whatever commit happened to land;
+            // a bare `git diff` with no range makes a committed change invisible.
+            if (/\bgit\s+(?:diff|log)\b[^\n|;&]*\bHEAD~\d+/.test(seg)) {
+                record(errors, 'R6', '[plan-criteria R6] `git diff`/`git log` with a relative `HEAD~N` anchor names whatever commit ' +
+                    'happened to land last — in a repository with parallel sessions that is another session\'s commit. ' +
+                    'Pin an explicit range: `<sha>^..<sha>`.', seenErr);
+            }
+            else {
+                // The argument span ends at the closing backtick of an inline-code
+                // span ("`git diff` shows ..."), at a redirection, or at a chain
+                // operator — trailing prose must never read as diff arguments.
+                const bareDiff = /\bgit\s+diff\b([^\u0060\n|;&<>]*)/.exec(seg);
+                if (bareDiff) {
+                    const rest = bareDiff[1].trim();
+                    // Bare or flags-only (no rev, range, or path): ambiguous between an
+                    // uncommitted-tree check (legitimate) and a committed-change check
+                    // (vacuously clean) — warn, never error.
+                    if (rest === '' || /^-{1,2}[A-Za-z-]+$/.test(rest)) {
+                        record(warnings, 'R6', '[plan-criteria R6] Bare `git diff` with no revision range produces no output for a COMMITTED ' +
+                            'change, so the criterion passes vacuously. Pin an explicit range (`<sha>^..<sha>`) unless the ' +
+                            'check is intentionally about the uncommitted tree.', seenWarn);
+                    }
+                }
+            }
+        }
+    }
+    return { errors, warnings };
 }
 /**
  * Single pass over `<task ...>…</task>` blocks. The body pattern is
@@ -838,6 +1095,12 @@ function cmdVerifyPlanStructure(cwd, filePath, raw) {
     warnings.push(...echoScan.warnings);
     const conflictScan = scanFileWideNegativeGateConflict(content);
     warnings.push(...conflictScan.warnings);
+    // #4024: quantitative-criteria trap shapes (exact grep -c counts, bulk
+    // observed-failing claims, $VAR command position, swallowed pipeline
+    // stages, wc string-equality, relative git anchors).
+    const quantScan = scanQuantitativeCriteria(content);
+    errors.push(...quantScan.errors);
+    warnings.push(...quantScan.warnings);
     output({
         valid: errors.length === 0,
         errors,
@@ -1014,12 +1277,19 @@ function cmdVerifyArtifacts(cwd, planFilePath, raw) {
         results.push(check);
     }
     const passed = results.filter((r) => r['passed']).length;
+    // Positive-evidence floor (#3956): a non-empty artifacts block whose items are
+    // all bare strings / path-less objects is item-by-item skipped, leaving results
+    // empty; `passed === results.length` would then be `0 === 0` → a vacuous GREEN
+    // over zero checks. Require at least one checked artifact, mirroring the
+    // no-vacuous-pass rule at src/uat-predicate.cts. The fully-empty block is still
+    // caught earlier by the `artifacts.length === 0` guard and returns its error.
+    const allPassed = results.length > 0 && passed === results.length;
     output({
-        all_passed: passed === results.length,
+        all_passed: allPassed,
         passed,
         total: results.length,
         artifacts: results,
-    }, raw, passed === results.length ? 'valid' : 'invalid');
+    }, raw, allPassed ? 'valid' : 'invalid');
 }
 /**
  * Returns a Set of file paths (relative to cwd) that are promised by plans in
@@ -1233,7 +1503,17 @@ function cmdVerifyKeyLinks(cwd, planFilePath, raw) {
     // A pending link (from: file promised by a same-or-later-wave plan) is not a
     // hard failure — it should not count against the all_verified gate (#1202).
     const hardFailed = results.filter((r) => !r['verified'] && !r['pending']).length;
-    const allVerified = hardFailed === 0;
+    // Positive-evidence floor (#3956): an all-bare-string key_links block skips
+    // every item (only `typeof link === 'string'` items are continue-skipped
+    // above), leaving results empty; `hardFailed === 0` would then be a vacuous
+    // GREEN over zero checks. Require at least one checked link. (A `from:`-less
+    // object is NOT skipped, unlike a path-less object on the artifacts side — it
+    // falls through to a `verified: false` result and hard-fails, so it was never
+    // part of the vacuous-pass surface; only the all-bare-string case is.) A
+    // pending link IS pushed to results (with pending: true), so an all-pending
+    // block still satisfies results.length > 0 and its #1202 non-hard-failing
+    // semantics are unchanged — the floor only rejects the zero-result case.
+    const allVerified = results.length > 0 && hardFailed === 0;
     output({
         all_verified: allVerified,
         verified,
@@ -1241,30 +1521,6 @@ function cmdVerifyKeyLinks(cwd, planFilePath, raw) {
         total: results.length,
         links: results,
     }, raw, allVerified ? 'valid' : 'invalid');
-}
-function listMilestoneArchiveDirs(planBase) {
-    const milestonesDir = node_path_1.default.join(planBase, 'milestones');
-    try {
-        return node_fs_1.default
-            .readdirSync(milestonesDir, { withFileTypes: true })
-            .filter((e) => e.isDirectory() && validate_cjs_1.MILESTONE_ARCHIVE_DIR_RE.test(e.name))
-            .map((e) => node_path_1.default.join(milestonesDir, e.name))
-            .sort((a, b) => node_path_1.default.basename(a).localeCompare(node_path_1.default.basename(b), undefined, { numeric: true }));
-    }
-    catch (err) {
-        // #1883: distinguish genuine absence from a permission/I-O failure. ENOENT
-        // (no milestones/ dir yet) keeps the long-standing [] contract callers of
-        // this function depend on for "no archives"; every other error (EACCES,
-        // EIO, …) must propagate — otherwise an unreadable milestones/ dir is
-        // silently reported as "no archives" and archived-phase resolution
-        // misbehaves. As of Phase 12 (#3310), `cmdValidateConsistency`'s own
-        // caller of this function (`collectPhaseRoots` -> `getActiveMilestoneArchiveDir`)
-        // was migrated onto `buildPlanningSnapshot` and deleted; this function is
-        // retained solely for its `_listMilestoneArchiveDirs` test seam below.
-        if (err.code === 'ENOENT')
-            return [];
-        throw err;
-    }
 }
 /**
  * Wrapper-level fix-text table for `cmdValidateHealth`'s migrated
@@ -1397,8 +1653,10 @@ function cmdValidateHealth(cwd, options, raw) {
         }, raw);
         return;
     }
-    // rootBase always resolves to .planning/ (shared root — PROJECT.md, config.json live here)
-    const rootBase = planningRoot(cwd);
+    // rootBase resolves to the PROJECT-scoped planning root (`.planning[/<project>]`
+    // — PROJECT.md, config.json live here; #3749). Workstream-free by construction:
+    // planningDir(cwd, null) honors GSD_PROJECT and suppresses GSD_WORKSTREAM.
+    const rootBase = planningDir(cwd, null);
     const _slashRuntime = (0, runtime_slash_cjs_1.resolveRuntime)(cwd);
     const slash = (name) => (0, runtime_slash_cjs_1.formatGsdSlash)(name, _slashRuntime);
     // Second (and last) pre-check that stays OUTSIDE the rule table entirely
@@ -1523,6 +1781,21 @@ function cmdValidateAgents(cwd, raw) {
     // model or an orphaned reasoning-effort pin in a Codex agent .toml), not just
     // presence. checkAgentsInstalled above is untouched.
     const codexPosture = checkCodexModelPosture(runtime, cwd);
+    // #3897 rung 3 (ADR-3473 §8.3 criterion 3) — sibling posture check, additive
+    // alongside codex_posture (never nested inside it, never replacing it): a
+    // TOML's `sandbox_mode` disagreeing with its role's derived expectation is a
+    // different defect class than an Anthropic-flavored model. Same short-circuits,
+    // same read-only posture as checkCodexModelPosture above; checkAgentsInstalled
+    // and codex_posture are both left untouched.
+    //
+    // Failure semantics: matches the checkCodexModelPosture precedent exactly.
+    // Neither posture check makes `validate agents` exit non-zero on its own —
+    // both are report-only fields inspected by the caller (or a human) via the
+    // JSON payload. A `validate` verb whose two posture checks disagreed on
+    // fatality would be its own defect (#3897 dispatch note); this keeps them
+    // consistent rather than inventing new exit-code behavior for only one of
+    // the two siblings.
+    const sandboxPosture = checkCodexSandboxPosture(runtime, cwd);
     output({
         agents_dir: agentStatus.agents_dir,
         agents_found: agentStatus.agents_installed,
@@ -1531,6 +1804,122 @@ function cmdValidateAgents(cwd, raw) {
         incomplete: agentStatus.incomplete_agents,
         expected,
         codex_posture: codexPosture,
+        sandbox_posture: sandboxPosture,
+    }, raw);
+}
+// ─── Context drift (#3348) ───────────────────────────────────────────────────
+/**
+ * Resolve a phase directory under `phasesDir` from a user-supplied `phaseArg`,
+ * via the canonical phase-directory matcher (phase-id.cjs::matchPhaseDirs) rather
+ * than a naive substring test — a bare `.includes(phaseArg)` lets a non-existent
+ * phase silently match a different phase whose directory name merely contains the
+ * requested token (e.g. "1" matching "11-expansion"). Falls back to an exact
+ * directory-name match. Returns null if neither resolves. (#1571, #2528)
+ */
+function resolvePhaseDirByToken(phasesDir, phaseArg) {
+    const normalizedPhase = normalizePhaseName(phaseArg);
+    const dirEntries = node_fs_1.default.readdirSync(phasesDir, { withFileTypes: true });
+    const dirNames = dirEntries.filter((e) => e.isDirectory()).map((e) => e.name);
+    const matched = matchPhaseDirs(dirNames, normalizedPhase).matches[0];
+    if (matched)
+        return node_path_1.default.join(phasesDir, matched);
+    const check = (0, security_cjs_1.validatePath)(phaseArg, phasesDir);
+    if (check.safe && node_fs_1.default.existsSync(check.resolved))
+        return check.resolved;
+    return null;
+}
+/**
+ * Pure comparator: which of `entries` have an effective last-changed time
+ * STRICTLY BEFORE `contextEffectiveMs` (CONTEXT.md's own effective time)? Strict
+ * `<` is "stale" (matches findStaleVerificationSummary's own strict `>` convention
+ * for "newer than" elsewhere in this codebase — an artifact committed in the SAME
+ * commit/second as CONTEXT.md is in sync, not stale).
+ */
+function computeContextDrift(contextEffectiveMs, entries) {
+    return entries.filter((e) => e.effectiveMs < contextEffectiveMs).map((e) => e.file);
+}
+function buildContextDriftMessage(staleArtifacts, phaseArg) {
+    const parts = [`CONTEXT.md decisions are newer than: ${staleArtifacts.join(', ')}.`];
+    if (staleArtifacts.some((f) => f.endsWith('-RESEARCH.md'))) {
+        parts.push(`Regenerate research: /gsd-plan-phase ${phaseArg} --research.`);
+    }
+    if (staleArtifacts.some((f) => f.endsWith('-PATTERNS.md'))) {
+        parts.push('Regenerate patterns: delete the PATTERNS.md file, then re-run /gsd-plan-phase.');
+    }
+    if (staleArtifacts.some((f) => f.endsWith('-VALIDATION.md') || (f.endsWith('-SPEC.md') && !f.endsWith('-AI-SPEC.md') && !f.endsWith('-UI-SPEC.md')))) {
+        parts.push('Regenerate or manually reconcile VALIDATION.md / SPEC.md against the current decisions.');
+    }
+    parts.push('Do not hand-inject the newer decisions into a prompt as a substitute for regenerating — that carries the staleness forward.');
+    return parts.join(' ');
+}
+function cmdVerifyContextDrift(cwd, phaseArg, raw) {
+    if (!phaseArg) {
+        error('Usage: verify context-drift <phase>');
+        return;
+    }
+    const pDir = planningDir(cwd);
+    const phasesDir = node_path_1.default.join(pDir, 'phases');
+    const emitSkip = (reason, message = '') => {
+        output({ block: false, skipped: true, reason, stale_artifacts: [], message }, raw);
+    };
+    if (!node_fs_1.default.existsSync(phasesDir)) {
+        emitSkip('phase-not-found', `Phase directory not found: ${phaseArg}`);
+        return;
+    }
+    // Same phase-directory resolution rule cmdVerifySchemaDrift uses (#1571, #2528):
+    // matchPhaseDirs, never a naive substring test.
+    const phaseDir = resolvePhaseDirByToken(phasesDir, phaseArg);
+    if (!phaseDir) {
+        emitSkip('phase-not-found', `Phase directory not found: ${phaseArg}`);
+        return;
+    }
+    let phaseFiles;
+    try {
+        phaseFiles = node_fs_1.default.readdirSync(phaseDir).slice().sort();
+    }
+    catch {
+        emitSkip('phase-not-found', `Phase directory not found: ${phaseArg}`);
+        return;
+    }
+    const contextFile = phaseFiles.find((f) => f.endsWith('-CONTEXT.md'));
+    if (!contextFile) {
+        emitSkip('no-context-md');
+        return;
+    }
+    const researchFile = phaseFiles.find((f) => f.endsWith('-RESEARCH.md'));
+    const patternsFile = phaseFiles.find((f) => f.endsWith('-PATTERNS.md'));
+    const validationFile = phaseFiles.find((f) => f.endsWith('-VALIDATION.md'));
+    const specFile = phaseFiles.find((f) => f.endsWith('-SPEC.md') && !f.endsWith('-AI-SPEC.md') && !f.endsWith('-UI-SPEC.md'));
+    const upstreamFiles = [researchFile, patternsFile, validationFile, specFile].filter((f) => !!f);
+    if (upstreamFiles.length === 0) {
+        emitSkip('no-upstream-artifacts');
+        return;
+    }
+    const allFiles = [contextFile, ...upstreamFiles];
+    const cleanCommitMs = defaultPhaseCleanCommitTimesMs(phaseDir, allFiles);
+    const effectiveTimeMs = (file) => cleanCommitMs.has(file)
+        ? cleanCommitMs.get(file)
+        : node_fs_1.default.statSync(node_path_1.default.join(phaseDir, file)).mtimeMs;
+    const contextMs = effectiveTimeMs(contextFile);
+    const driftEntries = upstreamFiles.map((f) => ({ file: f, effectiveMs: effectiveTimeMs(f) }));
+    const staleArtifacts = computeContextDrift(contextMs, driftEntries);
+    let wf;
+    try {
+        const rawCfg = JSON.parse(node_fs_1.default.readFileSync(node_path_1.default.join(pDir, 'config.json'), 'utf-8'));
+        wf = rawCfg['workflow'];
+    }
+    catch {
+        wf = undefined;
+    }
+    const action = wf?.context_drift_action === 'block' ? 'block' : 'warn';
+    const block = staleArtifacts.length > 0 && action === 'block';
+    const message = staleArtifacts.length > 0 ? buildContextDriftMessage(staleArtifacts, phaseArg) : '';
+    output({
+        block,
+        skipped: false,
+        stale_artifacts: staleArtifacts,
+        action,
+        message,
     }, raw);
 }
 function cmdVerifySchemaDrift(cwd, phaseArg, skipFlag, raw) {
@@ -1551,18 +1940,7 @@ function cmdVerifySchemaDrift(cwd, phaseArg, skipFlag, raw) {
     // matching "11-expansion"), making the drift gate inspect the wrong phase.
     // This shares the one selection rule with find-phase / verify
     // phase-completeness rather than restating it. (#1571, #2528)
-    let phaseDir = null;
-    const normalizedPhase = normalizePhaseName(phaseArg);
-    const entries = node_fs_1.default.readdirSync(phasesDir, { withFileTypes: true });
-    const dirNames = entries.filter((e) => e.isDirectory()).map((e) => e.name);
-    const drift = matchPhaseDirs(dirNames, normalizedPhase).matches[0];
-    if (drift)
-        phaseDir = node_path_1.default.join(phasesDir, drift);
-    if (!phaseDir) {
-        const exact = node_path_1.default.join(phasesDir, phaseArg);
-        if (node_fs_1.default.existsSync(exact))
-            phaseDir = exact;
-    }
+    const phaseDir = resolvePhaseDirByToken(phasesDir, phaseArg);
     if (!phaseDir) {
         output({ block: false, drift_detected: false, blocking: false, message: `Phase directory not found: ${phaseArg}` }, raw);
         return;
@@ -1688,7 +2066,16 @@ function cmdVerifyCodebaseDrift(cwd, raw) {
             if (!m)
                 continue;
             const status = m[1];
-            const file = m[3] || m[2];
+            // execGit sets no core.quotepath config, so git's default `true` applies:
+            // any path containing non-ASCII bytes (or `"`, `\`, control bytes) is
+            // C-quoted — `"docs/\350\256\276…/overview.md"`. Capturing that verbatim
+            // garbles affected_paths/elements and makes isPathMapped compare the
+            // quoted prefix (`"docs`) against STRUCTURE.md, misclassifying DOCUMENTED
+            // directories as new_dir (#4081). Decode with the single owner of the
+            // git C-quote seam (worktree-safety.cjs); a non-quoted value — the plain
+            // ASCII common case — passes through untouched. Both capture groups are
+            // decoded: R/C lines carry old AND new paths, either may be quoted.
+            const file = decodeGitQuotedPath(m[3] || m[2]);
             if (status === 'A' || status === 'R' || status === 'C')
                 added.push(file);
             else if (status === 'M')
@@ -1751,6 +2138,7 @@ function cmdVerifyCodebaseDrift(cwd, raw) {
 module.exports = {
     scanNegativeGrepCommentEcho,
     scanFileWideNegativeGateConflict,
+    scanQuantitativeCriteria,
     cmdVerifySummary,
     verifySummaryCore,
     cmdVerifyPlanStructure,
@@ -1764,10 +2152,7 @@ module.exports = {
     cmdValidateAgents,
     cmdVerifySchemaDrift,
     cmdVerifyCodebaseDrift,
+    computeContextDrift,
+    cmdVerifyContextDrift,
     STATE_HEAD_ADVISORY_COMMITS,
-    // Test seam (#1883): listMilestoneArchiveDirs is private and exercised through
-    // the validate command, which runs in a subprocess — an fs monkeypatch in the
-    // test process cannot reach it. Exposed under a leading underscore so the
-    // permission-error path can be unit-tested directly (no chmod 0o000).
-    _listMilestoneArchiveDirs: listMilestoneArchiveDirs,
 };

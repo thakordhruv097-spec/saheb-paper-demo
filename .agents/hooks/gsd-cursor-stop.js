@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-// gsd-hook-version: 1.11.0
+// gsd-hook-version: 1.13.0
 // gsd-cursor-stop.js — Cursor stop hook (ADR-1239 / #2089)
 //
 // Cursor invokes this script when the agent stops responding.
@@ -21,6 +21,7 @@
 'use strict';
 
 const fs = require('fs');
+const { allow } = require('./lib/hook-exit.js');
 
 // Workspace resolution is shared across the Cursor hooks (#2587) — see
 // hooks/lib/cursor-workspace.js. Staged next to these scripts by
@@ -29,7 +30,7 @@ const { resolveStatePath } = require('./lib/cursor-workspace.js');
 
 let raw = '';
 const stdinTimeout = setTimeout(() => {
-  process.exit(0);
+  allow(undefined);
 }, 10000);
 
 process.stdin.setEncoding('utf8');

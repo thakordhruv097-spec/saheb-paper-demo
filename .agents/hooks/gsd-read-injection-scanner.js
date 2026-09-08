@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-// gsd-hook-version: 1.11.0
+// gsd-hook-version: 1.13.0
 // GSD Read Injection Scanner — PostToolUse hook (#2201)
 // Pattern-based pre-filter / blocklist: scans content returned by Read, WebFetch,
 // and WebSearch for known prompt-injection patterns (regex + heuristic rules).
@@ -23,6 +23,13 @@
 
 const path = require('path');
 const fs = require('fs');
+const { HOOK_ON_CRASH, allow, crash } = require('./lib/hook-exit.js');
+
+// This is a PostToolUse advisory scanner over content the tool call already
+// returned; a crash while scanning must not retroactively block that Read/
+// WebFetch/WebSearch result from reaching the agent — losing the injection
+// check is safer than failing the tool call it is only observing (#3911).
+const ON_CRASH = HOOK_ON_CRASH.ALLOW;
 
 // Summarisation-specific patterns (novel — not in gsd-prompt-guard.js).
 // These target instructions specifically designed to survive context compression.
@@ -75,7 +82,7 @@ const MARKDOWN_LINK_PATTERNS = [
 // Standard injection patterns — shared with gsd-prompt-guard.js via
 // hooks/lib/injection-patterns.js so the two surfaces cannot drift (#3504).
 // Staging of the lib helper is allowlisted in GSD_HOOK_LIB_FILES (bin/install.js).
-const { INJECTION_PATTERNS } = require('./lib/injection-patterns.js');
+const { INJECTION_PATTERNS, describePattern } = require('./lib/injection-patterns.js');
 
 const ALL_PATTERNS = [...INJECTION_PATTERNS, ...SUMMARISATION_PATTERNS];
 
@@ -213,7 +220,7 @@ function normalizeKimiPayload(data) {
 }
 
 let inputBuf = '';
-const stdinTimeout = setTimeout(() => process.exit(0), 5000);
+const stdinTimeout = setTimeout(() => allow(undefined), 5000);
 process.stdin.setEncoding('utf8');
 process.stdin.on('data', chunk => { inputBuf += chunk; });
 process.stdin.on('end', () => {
@@ -224,7 +231,7 @@ process.stdin.on('end', () => {
     const toolName = data.tool_name;
     const SCANNED_TOOLS = new Set(['Read', 'WebFetch', 'WebSearch']);
     if (!SCANNED_TOOLS.has(toolName)) {
-      process.exit(0);
+      allow(undefined);
     }
 
     // Source label + path-exclusion (path-exclusion applies to file reads only)
@@ -235,8 +242,8 @@ process.stdin.on('end', () => {
       source = typeof data.tool_input?.file_path === 'string'
         ? data.tool_input.file_path
         : '';
-      if (!source) process.exit(0);
-      if (isExcludedPath(source)) process.exit(0);
+      if (!source) allow(undefined);
+      if (isExcludedPath(source)) allow(undefined);
     } else if (toolName === 'WebFetch') {
       source = data.tool_input?.url || 'web';
     } else { // WebSearch
@@ -261,7 +268,7 @@ process.stdin.on('end', () => {
     }
 
     if (!content || content.length < 20) {
-      process.exit(0);
+      allow(undefined);
     }
 
     // Typed findings IR — single source of truth for both the machine-readable
@@ -272,10 +279,10 @@ process.stdin.on('end', () => {
 
     for (const pattern of ALL_PATTERNS) {
       if (pattern.test(content)) {
-        // Trim pattern source for readable output
+        // Trim pattern source for readable output (shared with gsd-prompt-guard.js)
         findings.push({
           ruleId: RULE_IDS.INJECTION_PATTERN,
-          match: pattern.source.replace(/\\s\+/g, '-').replace(/[()\\]/g, '').substring(0, 50),
+          match: describePattern(pattern),
         });
       }
     }
@@ -307,7 +314,7 @@ process.stdin.on('end', () => {
     }
 
     if (findings.length === 0) {
-      process.exit(0);
+      allow(undefined);
     }
 
     // Renders one finding back into the exact prose fragment the advisory has
@@ -344,12 +351,14 @@ process.stdin.on('end', () => {
     const output = blocking
       ? { decision: 'block',
           reason: `Prompt-injection blocked (${toolName}). ${advisory}`,
-          hookSpecificOutput: { hookEventName: 'PostToolUse', additionalContext: advisory, findings } }
-      : { hookSpecificOutput: { hookEventName: 'PostToolUse', additionalContext: advisory, findings } };
+          hookSpecificOutput: { hookEventName: 'PostToolUse', additionalContext: advisory, findings, severity, source } }
+      : { hookSpecificOutput: { hookEventName: 'PostToolUse', additionalContext: advisory, findings, severity, source } };
 
     process.stdout.write(JSON.stringify(output));
   } catch {
-    // Silent fail — never block tool execution
-    process.exit(0);
+    // Silent fail — never block tool execution.
+    // ON_CRASH is declared ALLOW at module top: this preserves today's
+    // exit(0) fail-open behavior exactly (#3911).
+    crash(ON_CRASH, undefined);
   }
 });

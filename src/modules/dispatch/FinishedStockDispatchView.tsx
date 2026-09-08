@@ -5,7 +5,7 @@ import { FinishStockView } from '../finish-stock/FinishStockView';
 import { DispatchView } from './DispatchView';
 import { QRScannerView } from '../rewinder/QRScannerView';
 import { PrintLabelModal } from '../../components/PrintLabelModal';
-import { Package, Truck, QrCode, Printer, Lock } from 'lucide-react';
+import { Package, Truck, QrCode } from 'lucide-react';
 import { WorkflowStepBadge, WORKFLOW_STEPS } from '../../components/WorkflowStepBadge';
 
 export const FinishedStockDispatchView: React.FC = () => {
@@ -58,32 +58,17 @@ export const FinishedStockDispatchView: React.FC = () => {
                 </h1>
               </div>
               <p className="text-xs sm:text-sm text-slate-500 dark:text-slate-400 font-medium mt-0.5">
-                Grade A / B stock categorization, warehouse vault &amp; label printing.
+                Grade A / B stock categorization &amp; warehouse vault.
               </p>
             </div>
           </div>
 
-          {/* Action Buttons: Print Label Studio (Universal) + Scanner Quick Button (Mobile Only) */}
-          <div className="flex items-center gap-2 shrink-0">
-            <button
-              onClick={() => !isViewer && handleOpenPrintStudio()}
-              disabled={isViewer}
-              className={`px-3.5 py-2 rounded-xl text-xs font-bold transition flex items-center gap-1.5 ${
-                isViewer
-                  ? 'bg-slate-200 dark:bg-slate-800 text-slate-400 dark:text-slate-500 cursor-not-allowed border border-slate-300 dark:border-slate-700 shadow-none'
-                  : 'bg-primary hover:bg-primary-dark text-white shadow-xs cursor-pointer'
-              }`}
-              title={isViewer ? "Label printing is locked for Viewer (Read-Only Mode)" : "Print Universal QR & Thermal Sticker Label"}
-            >
-              {isViewer ? <Lock className="h-4 w-4 text-amber-500" /> : <Printer className="h-4 w-4" />}
-              <span>{isViewer ? 'Print Labels (Locked)' : 'Print Labels'}</span>
-            </button>
-
-            {/* Scanner Button (Visible ONLY on Mobile) */}
-            {canAccessScanner && (
+          {/* Action Buttons: Scanner Quick Button (Mobile Only) */}
+          {canAccessScanner && (
+            <div className="flex md:hidden items-center gap-2 shrink-0">
               <button
                 onClick={() => setActiveTab('qr_scanner')}
-                className={`px-3 py-2 rounded-xl text-xs font-bold transition cursor-pointer flex md:hidden items-center gap-1.5 shadow-xs ${activeTab === 'qr_scanner'
+                className={`px-3 py-2 rounded-xl text-xs font-bold transition cursor-pointer flex items-center gap-1.5 shadow-xs ${activeTab === 'qr_scanner'
                     ? 'bg-emerald-600 text-white ring-2 ring-emerald-300'
                     : 'bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-700'
                   }`}
@@ -92,8 +77,8 @@ export const FinishedStockDispatchView: React.FC = () => {
                 <QrCode className="h-4 w-4" />
                 <span>Scan</span>
               </button>
-            )}
-          </div>
+            </div>
+          )}
         </div>
       </div>
 

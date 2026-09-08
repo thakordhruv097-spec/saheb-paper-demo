@@ -41,11 +41,23 @@ core finding that the spec layer is the measured weak point:
 
 ## Inputs
 
-A list of requirements, each a `{ id, text, shapes? }` record where `text` is a testable
-statement and `shapes` is an optional author-supplied override of the data/behavior shape.
-The five shapes are: `numeric-range`, `collection`, `text`, `stateful`, `io`. When
-`shapes` is absent, a heuristic classifier proposes them from the requirement prose
-(propose-then-confirm) — the author may correct the shape.
+A list of requirements, each a `{ id, text, text_en?, shapes? }` record where `text` is a
+testable statement, `text_en` is an optional English translation of `text`, and `shapes` is an
+optional author-supplied override of the data/behavior shape. The five shapes are:
+`numeric-range`, `collection`, `text`, `stateful`, `io`. When `shapes` is absent, a heuristic
+classifier proposes them from the requirement prose — reading `text_en` in preference to
+`text` when present (`text_en ?? text`) — (propose-then-confirm); the author may correct the
+shape.
+
+**The classifier reads English; `text` does not have to be.** The heuristic cues (`SHAPE_CUES`)
+are English word-boundary patterns, so a requirement whose `text` is not English classifies to
+zero shapes unless `text_en` supplies a faithful English translation. A project running with
+`response_language` set should populate `text_en` for every requirement; `text` keeps its own
+meaning — the requirement's own text, in whatever language the SPEC uses — and is never
+translated or overwritten. `text_en` is engine input, not part of the SPEC. `id` is never
+translated. Prose that matches no cue in either field surfaces as `unclassified` (#1110) — the
+probe contributes nothing for that requirement. Where a requirement carries no cue even in
+English, author `shapes` explicitly rather than leaning on the classifier.
 
 ## Taxonomy (8 categories)
 

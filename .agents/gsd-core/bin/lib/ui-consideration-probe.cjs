@@ -32,6 +32,9 @@ exports.analyzeCoverage = analyzeCoverage;
 exports.proposeElements = proposeElements;
 exports.autoResolve = autoResolve;
 const probe_core_cjs_1 = require("./probe-core.cjs");
+// eslint-disable-next-line @typescript-eslint/no-require-imports
+const cliExitModule = require("./cli-exit.cjs");
+const { runMain } = cliExitModule;
 /**
  * Word-boundary cues mapping element prose -> UI element kind.
  * Heuristic and intentionally lossy; an authored `elements` array overrides it. Every pattern is a
@@ -245,5 +248,10 @@ function autoResolve(items) {
  * so it runs only when the compiled `.cjs` is executed directly.
  */
 if (require.main === module) {
-    (0, probe_core_cjs_1.runProbeCli)((elements, resolutions) => analyzeCoverage(elements, resolutions), { usage: 'ui-consideration-probe.cjs <elements.json> [resolutions.json]' });
+    // runProbeCli's default `exit` now throws ExitError (src/probe-core.cts) rather
+    // than calling process.exit directly, so this entry point must run under
+    // runMain to translate that throw into process.exitCode.
+    runMain(() => {
+        (0, probe_core_cjs_1.runProbeCli)((elements, resolutions) => analyzeCoverage(elements, resolutions), { usage: 'ui-consideration-probe.cjs <elements.json> [resolutions.json]' });
+    });
 }

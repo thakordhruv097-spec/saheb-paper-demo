@@ -19,6 +19,7 @@ exports.PATH_ACTION_REASON = void 0;
 exports.toPosixPath = toPosixPath;
 exports.toNativePath = toNativePath;
 exports.posixNormalize = posixNormalize;
+exports.toComparablePathKey = toComparablePathKey;
 exports.hookCommandNeedsPowerShellCallOperator = hookCommandNeedsPowerShellCallOperator;
 exports.formatHookCommandForRuntime = formatHookCommandForRuntime;
 exports.shellHookOmitsBashRunner = shellHookOmitsBashRunner;
@@ -43,6 +44,7 @@ exports.projectPersistentPathExportActions = projectPersistentPathExportActions;
 exports.isSpawnTimeout = isSpawnTimeout;
 exports.execGit = execGit;
 exports.execNpm = execNpm;
+exports.envGet = envGet;
 exports.resolveExecutableBinary = resolveExecutableBinary;
 exports.projectSpawnInvocation = projectSpawnInvocation;
 exports.execTool = execTool;
@@ -50,6 +52,7 @@ exports.resolveGsdToolsPath = resolveGsdToolsPath;
 exports.dispatchGsdCommand = dispatchGsdCommand;
 exports.probeTty = probeTty;
 exports.normalizeContent = normalizeContent;
+exports.contentChangedAfterNormalize = contentChangedAfterNormalize;
 exports.retryRenameSync = retryRenameSync;
 exports.platformWriteSync = platformWriteSync;
 exports.platformReadSync = platformReadSync;
@@ -94,6 +97,20 @@ function toNativePath(p) {
  */
 function posixNormalize(p) {
     return p.replace(/\\/g, '/');
+}
+/**
+ * #3663 — comparison key for a path that must equal another path regardless
+ * of spelling: separator form (forward slashes via posixNormalize), relative
+ * segments and trailing separators (path.resolve + strip), and — ONLY on
+ * win32's case-insensitive filesystem — letter casing. POSIX stays
+ * case-sensitive: differently-cased paths are genuinely different
+ * directories there. This module owns the platform-conditional fold so the
+ * policy lives at the seam instead of accreting per-call-site copies (the
+ * class init.cts's normalizeForCompare/toComparableRaw predate).
+ */
+function toComparablePathKey(p, platform = process.platform) {
+    const normalized = posixNormalize(node_path_1.default.resolve(p)).replace(/\/+$/g, '');
+    return platform === 'win32' ? normalized.toLowerCase() : normalized;
 }
 /**
  * Return true when a managed hook command must be prefixed with PowerShell's
@@ -218,6 +235,15 @@ const MANAGED_HOOK_BASENAMES_BY_SURFACE = {
         'gsd-read-injection-scanner.js',
         'gsd-update-banner.js',
         'gsd-workflow-guard.js',
+        // #3662: the three PreToolUse guards are GSD-managed JS hooks (registered
+        // only-if-absent by applySettingsJsonHooks) but sat outside this set, so
+        // the #2979 runner rewriter never reached them — the issue's reported
+        // mixed state lived on exactly these hooks.
+        'gsd-write-guard.js',
+        'gsd-agent-isolation-guard.js',
+        'gsd-worktree-path-guard.js',
+        // #4221: secret-file read guard (Read|Grep|Bash).
+        'gsd-secret-read-guard.js',
     ]),
     'codex-toml': new Set([
         'gsd-check-update.js',
@@ -237,6 +263,16 @@ const MANAGED_HOOK_COMMAND_BASENAMES_BY_SURFACE = {
         'gsd-session-state.sh',
         'gsd-validate-commit.sh',
         'gsd-phase-boundary.sh',
+        // #3662: same three guards as MANAGED_HOOK_BASENAMES_BY_SURFACE above —
+        // their absence here meant isManagedHookCommand never recognized them, so
+        // the settings.json→settings.local.json migration filter (and uninstall
+        // cleanup) skipped GSD's own guard entries. Folded-in fix, surfaced by the
+        // #3662 issue thread.
+        'gsd-write-guard.js',
+        'gsd-agent-isolation-guard.js',
+        'gsd-worktree-path-guard.js',
+        // #4221: secret-file read guard (Read|Grep|Bash).
+        'gsd-secret-read-guard.js',
     ]),
     'codex-toml': new Set([
         'gsd-check-update.js',
@@ -330,9 +366,15 @@ const ANCHORED_HOOK_SCRIPT_TOKEN = /^"\$[A-Za-z_][A-Za-z0-9_]*"\//;
  * Non-Windows keeps the original script token shape when provided (single
  * quote / bareword / quoted), while Windows normalizes to double-quoted
  * forward-slash path tokens for stable cross-shell behavior.
+ *
+ * #3662: `runnerToken` is the runner the current install would emit — since
+ * #3662 that is the runtime-resolving chain token (see
+ * buildNodeRunnerChainToken), not a bare absolute path, so re-projected
+ * entries converge onto a runner that resolves in every environment sharing
+ * the config root.
  */
-function projectLegacySettingsHookCommand({ absoluteRunner, scriptPath, scriptToken, runtime = 'generic', platform = process.platform, }) {
-    if (!absoluteRunner || !scriptPath)
+function projectLegacySettingsHookCommand({ runnerToken, scriptPath, scriptToken, runtime = 'generic', platform = process.platform, }) {
+    if (!runnerToken || !scriptPath)
         return null;
     const normalizedScriptPath = platform === 'win32' ? posixNormalize(scriptPath) : scriptPath;
     // #1693: a script path already carrying a `"$CLAUDE_PROJECT_DIR"`-anchored
@@ -351,7 +393,7 @@ function projectLegacySettingsHookCommand({ absoluteRunner, scriptPath, scriptTo
             : JSON.stringify(normalizedScriptPath))
         : (scriptToken || JSON.stringify(normalizedScriptPath));
     return projectShellCommandText({
-        runnerToken: absoluteRunner,
+        runnerToken,
         argTokens: [commandScriptToken],
         runtime,
         platform,
@@ -628,8 +670,12 @@ function _isFile(candidate, requireExecutable = false, platform = process.platfo
  *
  * Exact match wins when present, so a caller who sets the canonical name pays
  * no scan.
+ *
+ * Exported so callers outside this seam can route an exact-case-sensitive env
+ * read through it instead of accessing a non-`process.env` object directly
+ * (see `local/no-exact-case-env-access`).
  */
-function _envGet(env, name) {
+function envGet(env, name) {
     const exact = env[name];
     if (exact !== undefined)
         return exact;
@@ -728,7 +774,7 @@ function resolveExecutableBinary(name, opts = {}) {
         return _isFile(name, requireExecutable, platform) ? name : null;
     }
     const env = opts.env ?? process.env;
-    const rawPath = opts.pathOverride !== undefined ? opts.pathOverride : (_envGet(env, 'PATH') || '');
+    const rawPath = opts.pathOverride !== undefined ? opts.pathOverride : (envGet(env, 'PATH') || '');
     const pathSegments = String(rawPath).split(node_path_1.default.delimiter).filter(Boolean);
     const segments = [...(opts.prependPaths ?? []), ...pathSegments];
     if (platform !== 'win32') {
@@ -739,7 +785,7 @@ function resolveExecutableBinary(name, opts = {}) {
         }
         return null;
     }
-    const exts = String(_envGet(env, 'PATHEXT') || DEFAULT_PATHEXT).split(';').filter(Boolean);
+    const exts = String(envGet(env, 'PATHEXT') || DEFAULT_PATHEXT).split(';').filter(Boolean);
     // A name already ending in a PATHEXT-listed extension is an address, not a stem:
     // probing `foo.exe` as `foo.exe.EXE` would miss the file sitting right there.
     // Compared case-insensitively because PATHEXT casing is not guaranteed.
@@ -840,7 +886,7 @@ function projectSpawnInvocation(command, args = [], opts = {}) {
         return resolved ? { command: resolved, args, resolved } : { command, args, resolved: null };
     }
     return {
-        command: String(_envGet(env, 'ComSpec') || 'cmd.exe'),
+        command: String(envGet(env, 'ComSpec') || 'cmd.exe'),
         args: ['/d', '/s', '/c', _buildVerbatimCmdLine(target, args)],
         resolved,
         windowsVerbatimArguments: true,
@@ -1022,7 +1068,11 @@ function _normalizeMd(content) {
             if (i === 0 || !insideFence[i - 1])
                 result.push('');
         }
-        if (/^(\s*[-*+]\s|\s*\d+\.\s)/.test(line) && i > 0 && prevTrimmed !== '' && !/^(\s*[-*+]\s|\s*\d+\.\s)/.test(prev) && prevTrimmed !== '---')
+        // #3854: the `!/^\s/.test(prev)` guard mirrors the after-a-bullet rule below —
+        // an indented non-bullet line is a CONTINUATION of the previous list item, not a
+        // preceding paragraph, so no separating blank may be injected before this bullet
+        // (that injection converted every tight multi-line list to a loose one on write).
+        if (/^(\s*[-*+]\s|\s*\d+\.\s)/.test(line) && i > 0 && prevTrimmed !== '' && !/^(\s*[-*+]\s|\s*\d+\.\s)/.test(prev) && !/^\s/.test(prev) && prevTrimmed !== '---')
             result.push('');
         result.push(line);
         if (/^#{1,6}\s/.test(trimmed) && i < lines.length - 1 && (lines[i + 1] ?? '').trimEnd() !== '')
@@ -1051,6 +1101,23 @@ function normalizeContent(filePath, content, opts = {}) {
         normalized = (content ?? '').replace(/\r\n/g, '\n').replace(/\n*$/, '\n');
     }
     return { content: normalized, encoding };
+}
+/**
+ * True iff persisting `after` via `platformWriteSync` would land different
+ * on-disk bytes than `before` already has (or would have, normalized the
+ * same way). `platformWriteSync` runs Markdown normalization (CRLF strip,
+ * blank-line-run collapse, single trailing newline) before writing, so a
+ * caller comparing raw pre-normalize strings (`after !== before`) can report
+ * `true` even when the persisted bytes are byte-identical — e.g. a
+ * transform that regenerates a section fresh on every call, including a
+ * genuine no-op re-run, in a different-but-equivalent raw shape than the
+ * already-normalized on-disk original (#3685 / #3691). Any "did this write
+ * change the file?" flag MUST go through this seam (or an equivalent
+ * post-write re-read of the actual on-disk bytes) instead of a raw `!==` —
+ * do not simplify this back to a direct string comparison.
+ */
+function contentChangedAfterNormalize(filePath, before, after) {
+    return normalizeContent(filePath, after).content !== normalizeContent(filePath, before).content;
 }
 // Rename errnos that are transient on Windows: a concurrent reader (or an AV
 // scanner / indexer) holding the target open makes renameSync fail briefly.

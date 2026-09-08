@@ -117,7 +117,11 @@ function listPlanningDocCandidates(cwd) {
     return [...candidates].sort();
 }
 function listCodebaseMapFiles(cwd) {
-    const codebaseDir = node_path_1.default.join(planningRoot(cwd), 'codebase');
+    // #3964: project-scoped, agreeing with init's map-codebase surface and
+    // verify.cts's codebase drift check — a flat-root read made
+    // has_codebase_map/needs_codebase_map answer for the wrong project under
+    // GSD_PROJECT.
+    const codebaseDir = node_path_1.default.join(planningDir(cwd), 'codebase');
     if (!node_fs_1.default.existsSync(codebaseDir))
         return [];
     return REQUIRED_CODEBASE_MAP_FILES.filter((file) => node_fs_1.default.existsSync(node_path_1.default.join(codebaseDir, file)));

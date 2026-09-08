@@ -14,6 +14,14 @@ const node_path_1 = __importDefault(require("node:path"));
 // eslint-disable-next-line @typescript-eslint/no-require-imports
 const ioMod = require("./io.cjs");
 const { output, error, ERROR_REASON } = ioMod;
+// eslint-disable-next-line @typescript-eslint/no-require-imports
+const planDocumentMod = require("./plan-document.cjs");
+const { parsePlanDocument } = planDocumentMod;
+// eslint-disable-next-line @typescript-eslint/no-require-imports
+const capabilityLoaderMod = require("./capability-loader.cjs");
+// eslint-disable-next-line @typescript-eslint/no-require-imports
+const taskContentResolutionMod = require("./task-content-resolution.cjs");
+const { resolveTaskContent, ResolverAmbiguousError, ResolverFailedError, ResolverTimeoutError, ResolverMalformedOutputError, } = taskContentResolutionMod;
 // ─── Implementation ───────────────────────────────────────────────────────────
 function isBehaviorAddingTaskContent(content) {
     const tddTrue = /\btdd\s*=\s*["']true["']/i.test(content);
@@ -52,10 +60,111 @@ function isBehaviorAddingTaskContent(content) {
         reason: isBehaviorAdding ? null : `Not behavior-adding: ${missing.join('; ')}`,
     };
 }
+/**
+ * Default (production) capability loader for `resolve-content`: the merged
+ * first-party + validated-installed-overlay registry (ADR-1244 D2), the
+ * established runtime read path for "installed capabilities including
+ * third-party" — as opposed to `capability-loader.cts`'s heavier build-time
+ * validation entry points or the static `capability-registry.cjs` alone
+ * (first-party only, would miss a third-party capability's
+ * `taskContentResolver` declaration entirely).
+ */
+function defaultLoadCapabilities(cwd) {
+    const registry = capabilityLoaderMod.loadRegistry({ includeInstalled: true, cwd });
+    return Object.values(registry.capabilities ?? {});
+}
+function parseResolveContentArgs(args) {
+    let plan = null;
+    let taskId = null;
+    for (let i = 2; i < args.length; i++) {
+        if (args[i] === '--plan') {
+            plan = args[i + 1] ?? null;
+            i++;
+        }
+        else if (args[i] === '--task-id') {
+            taskId = args[i + 1] ?? null;
+            i++;
+        }
+    }
+    return { plan, taskId };
+}
+/**
+ * `task resolve-content --plan <PLAN.md path> --task-id <tracker-id value> --raw`
+ * (ADR-3646 Decision 2). Resolves one task's content from the external
+ * tracker its `tracker-id` attribute names, via `task-content-resolution.cts`.
+ *
+ * HARD-HALT CONTRACT: a thrown `ResolverAmbiguousError` / `ResolverFailedError`
+ * / `ResolverTimeoutError` / `ResolverMalformedOutputError` from
+ * `resolveTaskContent` is turned into this CLI's own non-zero exit via
+ * `error()` — never swallowed into a `{resolved: false}` JSON answer. Any
+ * other thrown error is not one of the four documented resolver-error
+ * classes and is allowed to propagate uncaught.
+ */
+function routeResolveContent({ args, cwd, raw }, deps = {}) {
+    const usage = 'Usage: task resolve-content --plan <path> --task-id <tracker-id> --raw';
+    const { plan, taskId } = parseResolveContentArgs(args);
+    if (!plan || !taskId) {
+        error(usage, ERROR_REASON.USAGE);
+        return;
+    }
+    const projectRoot = node_path_1.default.resolve(cwd || process.cwd());
+    const resolvedPlanPath = node_path_1.default.resolve(projectRoot, plan);
+    const rel = node_path_1.default.relative(projectRoot, resolvedPlanPath);
+    if (rel === '..' || rel.startsWith(`..${node_path_1.default.sep}`)) {
+        error(`Plan file is outside project scope: ${plan}`, ERROR_REASON.USAGE);
+        return;
+    }
+    if (!node_fs_1.default.existsSync(resolvedPlanPath)) {
+        error(`Plan file not found: ${plan}`, ERROR_REASON.USAGE);
+        return;
+    }
+    const planContent = node_fs_1.default.readFileSync(resolvedPlanPath, 'utf-8');
+    const parsedPlan = parsePlanDocument(planContent, resolvedPlanPath);
+    const task = (parsedPlan.tasks ?? []).find((t) => t.trackerId === taskId);
+    if (!task) {
+        error(`No task with tracker-id '${taskId}' found in plan: ${plan}`, ERROR_REASON.USAGE);
+        return;
+    }
+    const loadCapabilities = deps.loadCapabilities ?? defaultLoadCapabilities;
+    const capabilities = loadCapabilities(projectRoot);
+    const resolveFn = deps.resolveTaskContentFn ?? resolveTaskContent;
+    let result;
+    try {
+        result = resolveFn({ trackerId: task.trackerId, capabilities });
+    }
+    catch (err) {
+        if (err instanceof ResolverAmbiguousError ||
+            err instanceof ResolverFailedError ||
+            err instanceof ResolverTimeoutError ||
+            err instanceof ResolverMalformedOutputError) {
+            error(err.message, ERROR_REASON.UNKNOWN);
+            return;
+        }
+        throw err;
+    }
+    switch (result.kind) {
+        case 'not-applicable':
+            output({ resolved: false }, raw, undefined);
+            return;
+        case 'no-resolver':
+            output({ resolved: false, reason: 'no-resolver' }, raw, undefined);
+            return;
+        case 'empty':
+            output({ resolved: false, reason: 'empty' }, raw, undefined);
+            return;
+        case 'resolved':
+            output({ resolved: true, content: result.content }, raw, undefined);
+            return;
+    }
+}
 function routeTaskCommand({ args, cwd, raw }) {
     const subcommand = args[1];
+    if (subcommand === 'resolve-content') {
+        routeResolveContent({ args, cwd, raw });
+        return;
+    }
     if (subcommand !== 'is-behavior-adding') {
-        error('Unknown task subcommand. Available: is-behavior-adding', ERROR_REASON.SDK_UNKNOWN_COMMAND);
+        error('Unknown task subcommand. Available: is-behavior-adding, resolve-content', ERROR_REASON.SDK_UNKNOWN_COMMAND);
     }
     let content = null;
     if (args[2] === '--task-content') {
@@ -82,4 +191,5 @@ function routeTaskCommand({ args, cwd, raw }) {
 module.exports = {
     isBehaviorAddingTaskContent,
     routeTaskCommand,
+    routeResolveContent,
 };

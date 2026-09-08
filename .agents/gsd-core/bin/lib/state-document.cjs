@@ -9,6 +9,11 @@
  */
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.KNOWN_STATUS_PATTERNS = exports.KNOWN_TEMPLATE_DEFAULTS = void 0;
+exports.toFiniteNumber = toFiniteNumber;
+exports.isUnfilledFieldValue = isUnfilledFieldValue;
+exports.leadingCalendarDate = leadingCalendarDate;
+exports.isRealCalendarDate = isRealCalendarDate;
+exports.stateFieldContinuation = stateFieldContinuation;
 exports.stateExtractField = stateExtractField;
 exports.stateFieldValue = stateFieldValue;
 exports.stateCurrentPositionSlice = stateCurrentPositionSlice;
@@ -28,6 +33,15 @@ const pattern_cjs_1 = require("./pattern.cjs");
 // eslint-disable-next-line @typescript-eslint/no-require-imports -- planning-scope.cjs is an export= CommonJS module
 const planningScopeMod = require("./planning-scope.cjs");
 const { SCOPE } = planningScopeMod;
+/**
+ * Coerce an arbitrary frontmatter scalar to a finite number, or `null` if it
+ * is not one. Exported per ADR-3473 §8.6: `state-transition.cts`'s
+ * progress-ratchet unmeasured-scan check ("is this derived total a real
+ * measurement?") must ask through the SAME coercion this module already uses
+ * for `existingProgressExceedsDerived`, rather than growing a second private
+ * copy. This matters because frontmatter scalars arrive as STRINGS
+ * (`"0"`, not `0`) — a raw `=== 0` test is wrong at both call sites.
+ */
 function toFiniteNumber(value) {
     const number = Number(value);
     return Number.isFinite(number) ? number : null;
@@ -208,6 +222,178 @@ function locateFieldRow(content, fieldName) {
     }
     return null;
 }
+/**
+ * True only when y/m/d name a date that actually exists on the calendar.
+ *
+ * `Date.parse` validates shape but not value: it rolls an out-of-range day
+ * FORWARD rather than rejecting it (`2026-02-30` -> `2026-03-02`,
+ * `2026-04-31` -> `2026-05-01`). Shape-only validation would therefore
+ * propagate a different, wrong instant instead of failing safe — precisely
+ * what ADR-227 ("validate shape AND value; on failure of either layer coerce
+ * to the contract's safe default, never propagate") exists to prevent. A
+ * round-trip through Date.UTC detects the rollover: any component the
+ * constructor normalised comes back changed.
+ *
+ * #3696: this predicate previously lived privately inside `smart-entry.cts`,
+ * where it gated `parseActivityTimestamp`. `state validate` needed the same
+ * answer to assert the `last_activity` invariant (S008), and a second copy is
+ * the "generative fix divergence" class outright — two surfaces that disagree
+ * about whether a STATE.md is usable is the defect #3696 opens with, so a
+ * parity test over two copies would be codifying the bug rather than fixing
+ * it. It moves here because this module is already the designated owner of
+ * STATE.md field semantics (ADR-3180 §7.7) and `smart-entry.cts` imports no
+ * peer that would make the reverse direction a cycle.
+ */
+/**
+ * True when a field carries no value a writer ever supplied: absent, blank, or
+ * still holding the shipped template's bracket placeholder.
+ *
+ * `templates/state.md:35` ships `Last activity: [YYYY-MM-DD] — [What happened]`,
+ * so EVERY freshly-initialized project has this exact string until something
+ * records activity. #3696's first cut only spared the ABSENT form, which made
+ * S008 fire on the shipped template itself — caught by the pre-existing
+ * "template-equivalent phase identities remain clean without disk drift" test,
+ * which is precisely what it is there for.
+ *
+ * The placeholder test is anchored at the START rather than "contains a bracket
+ * anywhere", so a real description that happens to cite one — `2026-08-19 — fixed
+ * [#123] parsing` — is still a filled-in value. That keeps the rule from
+ * silently swallowing genuine drift.
+ *
+ * Distinct from `isStateTemplateDefault`, which answers a different question
+ * ("may a later handler overwrite this?") and deliberately returns true for a
+ * bare ISO date — a perfectly valid value here.
+ */
+function isUnfilledFieldValue(value) {
+    if (value === null || value === undefined)
+        return true;
+    const trimmed = value.trim();
+    return trimmed === '' || trimmed.startsWith('[');
+}
+/**
+ * The `YYYY-MM-DD` prefix of `value`, but only when it names a date that
+ * actually exists. `null` for anything else — no leading date token at all, or
+ * a token that is shape-valid and calendar-impossible.
+ *
+ * #3696 review: this is deliberately a LEADING-TOKEN test, not the fully
+ * anchored prose grammar `parseProseLastActivityField` uses. That function
+ * requires the whole value to be `date` or `date <separator> description`, and
+ * returns `{date: <the entire raw string>}` when it does not match — a shape
+ * that reads like success. Asserting the S008 invariant through it therefore
+ * rejected values the real reader accepts: `smart-entry`'s
+ * `parseActivityTimestamp` needs only a leading date and reconstructs the
+ * instant even when the suffix carries no dash, so
+ * `Last activity: 2026-08-24 Shipped feature X` parses fine there while S008
+ * called it unreadable. That is the same two-surfaces-disagree defect #3696
+ * exists to close, merely pointing the other way.
+ *
+ * So the invariant asserted is the one the readers actually share: a leading
+ * ISO date token that is a real calendar date.
+ */
+function leadingCalendarDate(value) {
+    if (!value)
+        return null;
+    const match = /^(\d{4})-(\d{2})-(\d{2})(?![\d-])/.exec(value.trim());
+    if (!match)
+        return null;
+    return isRealCalendarDate(Number(match[1]), Number(match[2]), Number(match[3]))
+        ? `${match[1]}-${match[2]}-${match[3]}`
+        : null;
+}
+function isRealCalendarDate(year, month, day) {
+    if (month < 1 || month > 12 || day < 1 || day > 31)
+        return false;
+    const probe = new Date(Date.UTC(year, month - 1, day));
+    return (probe.getUTCFullYear() === year &&
+        probe.getUTCMonth() === month - 1 &&
+        probe.getUTCDate() === day);
+}
+/**
+ * Markdown structure that can legitimately follow a single-line field. A line
+ * matching any of these is the NEXT construct, never a continuation of the
+ * field above it.
+ *
+ * BREADTH IS THE POINT, and the failure direction is deliberate: a missed
+ * truncation costs a diagnostic nobody sees, while a false S009 reports drift on
+ * a well-formed STATE.md — a gate that fires on valid documents is worse than no
+ * gate. When a shape is ambiguous, it belongs here.
+ *
+ * #3696 review round 2 added the last three arms after all three were shown to
+ * produce false S009 fires on well-formed content: an indented code block, an
+ * HTML block, and a setext underline (`===`, which the `[-*_]{3,}` rule does not
+ * cover — it only knows `-`, `*` and `_`).
+ */
+const MD_STRUCTURE_LINE_RE = /^(?:#{1,6}\s|\||>|```|~~~|[-*_]{3,}\s*$|=+\s*$|[-*+]\s|\d+[.)]\s|\[[^\]]+\]:|<|(?: {4}|\t))/;
+/**
+ * A setext heading's underline — `===` or `---` on its own line. The line ABOVE
+ * one of these is a heading TITLE, which is indistinguishable from prose on its
+ * own, so the scan must look ahead by one line rather than consume it. Without
+ * this, `Last activity: …\nMy Heading\n===` reported "My Heading ===" as dropped
+ * continuation text (#3696 review round 2).
+ */
+const SETEXT_UNDERLINE_RE = /^(?:=+|-+)\s*$/;
+const STATE_SIBLING_FIELD_LINE_RE = /^\*{0,2}[A-Za-z][A-Za-z0-9 _-]*\*{0,2}:{1,2}\*{0,2}(?:\s|$)/;
+/**
+ * Return the prose that FOLLOWS a single-line field but plainly belongs to it —
+ * i.e. the remainder `stateExtractField` silently drops when a writer emits a
+ * value long enough to wrap.
+ *
+ * `stateExtractField`'s `(.+)` is newline-excluding, so
+ *
+ *     Last activity: 2026-08-19 — Project initialized from ingest; PROJECT.md,
+ *     REQUIREMENTS.md, ROADMAP.md written
+ *
+ * yields only the first line and the rest is lost with no diagnostic (#3696).
+ * `templates/state.md` prescribes a single-line field, so the DOCUMENT is what
+ * is wrong here, not the reader — this function exists so `state validate` can
+ * SAY so, not so the reader can start guessing at a multi-line grammar the
+ * template does not sanction.
+ *
+ * That is also why the fix is not in `stateExtractField` itself: it has 20
+ * direct callers and a CRITICAL blast radius (ADR-3180 §7.7, Rejected #1), and
+ * joining continuations there would apply to every field — `Status:` would
+ * swallow the line beneath it.
+ *
+ * Returns `null` when the field is absent, is a pipe-table row (a table cell
+ * cannot wrap), or is followed by end-of-file, a blank line, Markdown
+ * structure, or a sibling field.
+ */
+function stateFieldContinuation(content, fieldName) {
+    const escaped = (0, pattern_cjs_1.escapeRegex)(fieldName);
+    // Same two single-line grammars stateExtractField uses, in the same order, so
+    // this locates exactly the line whose value it returned. The pipe-table rung
+    // is deliberately absent: a `| Field | value |` row is bounded by its closing
+    // pipe and cannot wrap.
+    const match = new RegExp(`\\*\\*${escaped}:\\*\\*[ \\t]*(.+)`, 'i').exec(content) ??
+        new RegExp(`^${escaped}:[ \\t]*(.+)`, 'im').exec(content);
+    if (!match)
+        return null;
+    // `(.+)` stops at the line terminator, so the field's line ends where the
+    // match does. JS `.` excludes \r as well as \n, so on a CRLF document the \r
+    // sits just AFTER the match rather than inside it — hence the strip below
+    // before testing for the newline.
+    const afterValue = match.index + match[0].length;
+    const rest = content.slice(afterValue).replace(/^\r/, '');
+    if (!rest.startsWith('\n'))
+        return null; // end of file: nothing follows
+    const lines = rest.slice(1).split('\n').map((line) => line.replace(/\r$/, ''));
+    const continuation = [];
+    for (let i = 0; i < lines.length; i++) {
+        const line = lines[i];
+        if (!line.trim())
+            break;
+        if (MD_STRUCTURE_LINE_RE.test(line))
+            break;
+        if (STATE_SIBLING_FIELD_LINE_RE.test(line))
+            break;
+        // Look ahead one line: a setext underline below makes THIS line a heading
+        // title, so stop before consuming it rather than after.
+        if (i + 1 < lines.length && SETEXT_UNDERLINE_RE.test(lines[i + 1]))
+            break;
+        continuation.push(line.trim());
+    }
+    return continuation.length ? continuation.join(' ') : null;
+}
 function stateExtractField(content, fieldName) {
     const escaped = (0, pattern_cjs_1.escapeRegex)(fieldName);
     // Bold inline format: **FieldName:** value
@@ -326,17 +512,42 @@ function stateCurrentPositionSlice(body) {
     const section = (0, markdown_sectionizer_cjs_1.collectSection)(body, isCurrentPosition, { levelBounded: true });
     return section ? section.body : null;
 }
+/**
+ * Join a matched `**Field:**`/`Field:` label prefix to its new value, inserting a
+ * single space when the prefix does not already end in same-line whitespace.
+ *
+ * On an empty field the same-line `[ \t]*` gap (below) captures nothing, so the
+ * bare `prefix + value` would glue the value to the label (`**Status:**value`);
+ * this inserts the missing separator. A non-empty field whose label-to-value
+ * separator is ordinary space/tab keeps that separator in the prefix, so `[ \t]$`
+ * is true and the output stays byte-identical to prior behaviour. The one
+ * exception is a non-empty field written with NO separator at all (a hand-edited
+ * `**Status:**value`): the narrowed gap captures nothing, `[ \t]$` is false, and a
+ * single space is inserted — an intentional normalization, not byte-identical, and
+ * with no GSD-template trigger. An empty new value inserts no separator, avoiding a
+ * dangling trailing space. See #4010.
+ */
+function joinFieldReplacement(prefix, newValue) {
+    const value = `${newValue}`;
+    const needsSeparator = value.length > 0 && !/[ \t]$/.test(prefix);
+    return `${prefix}${needsSeparator ? ' ' : ''}${value}`;
+}
 function stateReplaceField(content, fieldName, newValue) {
     const escaped = (0, pattern_cjs_1.escapeRegex)(fieldName);
     // Bold inline format: **FieldName:** value
-    const boldPattern = new RegExp(`(\\*\\*${escaped}:\\*\\*\\s*)(.*)`, 'i');
+    // The label-to-value gap is same-line whitespace only (`[ \t]*`, mirroring the
+    // read side at stateExtractField). `\s*` here matched `\n`, so on an empty field
+    // `(.*)` captured the following line and the rebuild discarded it — the #4010
+    // data-loss. ADR-3180 §7.7 makes stateExtractField the same-line-confined owner;
+    // this aligns the writer to it.
+    const boldPattern = new RegExp(`(\\*\\*${escaped}:\\*\\*[ \\t]*)(.*)`, 'i');
     if (boldPattern.test(content)) {
-        return content.replace(boldPattern, (_match, prefix) => `${prefix}${newValue}`);
+        return content.replace(boldPattern, (_match, prefix) => joinFieldReplacement(prefix, newValue));
     }
-    // Plain line-start format: FieldName: value
-    const plainPattern = new RegExp(`(^${escaped}:\\s*)(.*)`, 'im');
+    // Plain line-start format: FieldName: value (same same-line confinement as above)
+    const plainPattern = new RegExp(`(^${escaped}:[ \\t]*)(.*)`, 'im');
     if (plainPattern.test(content)) {
-        return content.replace(plainPattern, (_match, prefix) => `${prefix}${newValue}`);
+        return content.replace(plainPattern, (_match, prefix) => joinFieldReplacement(prefix, newValue));
     }
     // Pipe-table format: | FieldName | value |
     // Preserve the surrounding pipe/whitespace structure; only swap the value cell.

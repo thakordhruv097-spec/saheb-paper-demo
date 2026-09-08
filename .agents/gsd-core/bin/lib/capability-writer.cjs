@@ -184,6 +184,7 @@ function setCapabilityState(cwd, runtimeConfigDir, desired, opts) {
         };
     }
     // ── Step 4: APPLY PASS ────────────────────────────────────────────────────
+    let pendingSurfaceForCommit;
     // ── Surface writes ────────────────────────────────────────────────────────
     if (needsSurface && (idsToDisable.length > 0 || idsToEnable.length > 0)) {
         const existing = readSurface(resolvedConfigDir);
@@ -242,12 +243,18 @@ function setCapabilityState(cwd, runtimeConfigDir, desired, opts) {
             }
         }
         if (surfaceChanged) {
-            writeSurface(resolvedConfigDir, pendingSurface);
+            pendingSurfaceForCommit = pendingSurface;
         }
     }
     // ── Config writes (once, batched) ─────────────────────────────────────────
     if (pendingGateWrites.length > 0) {
         setConfigValues(cwd, pendingGateWrites);
+    }
+    // State-only callers preserve the existing direct-write behavior. A caller
+    // that requests materialization lets applySurface publish the candidate only
+    // after every artifact kind has staged and synchronized successfully.
+    if (pendingSurfaceForCommit && !opts?.materialize) {
+        writeSurface(resolvedConfigDir, pendingSurfaceForCommit);
     }
     // ── Materialize (optional) ────────────────────────────────────────────────
     if (opts?.materialize) {
@@ -274,9 +281,12 @@ function setCapabilityState(cwd, runtimeConfigDir, desired, opts) {
             // folded:issue-1575-agent-descriptor-parity describe block in
             // tests/golden-parity-single-source.test.cjs).
             // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
-            applySurface(resolvedConfigDir, layout, manifest, undefined, registry, opts?.materialize?.resolveAttribution
-                ? { resolveAttribution: opts.materialize.resolveAttribution }
-                : undefined);
+            applySurface(resolvedConfigDir, layout, manifest, undefined, registry, {
+                ...(pendingSurfaceForCommit ? { surfaceState: pendingSurfaceForCommit } : {}),
+                ...(opts.materialize.resolveAttribution
+                    ? { resolveAttribution: opts.materialize.resolveAttribution }
+                    : {}),
+            });
         }
         catch (err) {
             const msg = err instanceof Error ? err.message : String(err);

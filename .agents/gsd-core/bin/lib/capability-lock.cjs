@@ -350,10 +350,16 @@ function lockBodyToken(body) {
  * and the whole thing is a BOUNDED iterative loop.
  */
 function acquireLock(lockPath, opts) {
-    try {
-        node_fs_1.default.mkdirSync(node_path_1.default.dirname(lockPath), { recursive: true });
-    }
-    catch { /* best-effort */ }
+    // A genuine failure here (EACCES/ENOSPC/EROFS) MUST surface immediately, matching the #1884
+    // fix (0c43d853e / PR #3472) for withPlanningLock's identical shape. The prior
+    // `catch { /* best-effort */ }` swallowed it, and the subsequent `fs.openSync(lockPath, 'wx')`
+    // below then failed with ENOENT (parent dir missing) — which is NOT 'EEXIST', so the
+    // `if (code !== 'EEXIST') return null;` branch laundered a fatal filesystem error into an
+    // ordinary "lock unavailable" (null) result, indistinguishable from another live process
+    // legitimately holding the lock (#3987). `mkdirSync(recursive:true)` does not throw when the
+    // directory already exists, so the normal path (dir already present) is unaffected; only real
+    // creation failures propagate.
+    node_fs_1.default.mkdirSync(node_path_1.default.dirname(lockPath), { recursive: true });
     const maxAttempts = (opts && Number.isInteger(opts.maxAttempts) && opts.maxAttempts > 0)
         ? opts.maxAttempts
         : LOCK_MAX_ATTEMPTS;

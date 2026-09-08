@@ -556,9 +556,7 @@ html.dark .dashboard-main-scrollbar::-webkit-scrollbar-corner,
   body:has(#printable-receipt-modal) #root,
   body:has(#printable-receipt-modal) main,
   body:has(#printable-label-studio-output) #root,
-  body:has(#printable-label-studio-output) main,
-  body:has(#printable-label-card) #root,
-  body:has(#printable-label-card) main {
+  body:has(#printable-label-studio-output) main {
     display: none !important;
     visibility: hidden !important;
     height: 0 !important;
