@@ -1,11 +1,13 @@
 import React, { useState, useMemo } from 'react';
-import { useAuth } from '../auth/AuthContext';
+import { Navigate } from 'react-router-dom';
+import { useAuth, getFirstAccessibleRoute } from '../auth/AuthContext';
 import { getUsers, saveUser, deactivateUser, addLog, deleteUser } from '../../data/index';
 import type { User, UserRole } from '../../data/types';
 import {
   Users,
   Plus,
   Shield,
+  ShieldAlert,
   Search,
   UserCheck,
   UserX,
@@ -69,7 +71,7 @@ const ROLE_LABELS: Record<string, string> = {
 };
 
 export const UserManagementView: React.FC = () => {
-  const { user: currentUser } = useAuth();
+  const { user: currentUser, isSimulating } = useAuth();
 
   const [users, setUsers] = useState<User[]>(() => getUsers());
   const [searchTerm, setSearchTerm] = useState('');
@@ -256,6 +258,23 @@ export const UserManagementView: React.FC = () => {
       return matchSearch && matchRole;
     });
   }, [users, searchTerm, filterRole]);
+
+  if (currentUser?.role !== 'Admin' && currentUser?.username.toLowerCase() !== 'admin') {
+    if (isSimulating) {
+      return <Navigate to={getFirstAccessibleRoute(currentUser)} replace />;
+    }
+    return (
+      <div className="p-8 text-center bg-white dark:bg-slate-900 rounded-3xl border border-red-200 dark:border-red-800 space-y-3 max-w-md mx-auto my-12">
+        <div className="w-12 h-12 rounded-2xl bg-red-100 dark:bg-red-950/50 text-red-600 dark:text-red-400 mx-auto flex items-center justify-center">
+          <ShieldAlert className="h-6 w-6" />
+        </div>
+        <h3 className="text-base font-black text-slate-900 dark:text-white">Access Restricted</h3>
+        <p className="text-xs text-slate-500 dark:text-slate-400 font-medium max-w-md mx-auto">
+          User Management is strictly restricted to Super Admin only.
+        </p>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-4 font-sans pb-12 text-left">

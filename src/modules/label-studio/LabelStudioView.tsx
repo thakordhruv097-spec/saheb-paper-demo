@@ -9,10 +9,13 @@ import {
   Printer,
   ChevronDown,
   Check,
+  Lock,
 } from 'lucide-react';
 import { COMPANY_CONFIG } from '../../config/company';
+import { useAuth } from '../auth/AuthContext';
 
 export const LabelStudioView: React.FC = () => {
+  const { isViewer } = useAuth();
   const reelsList = useMemo(() => {
     const all = getReels();
     const seen = new Set<string>();
@@ -159,6 +162,7 @@ export const LabelStudioView: React.FC = () => {
   };
 
   const handlePrintLabel = () => {
+    if (isViewer) return;
     window.print();
   };
 
@@ -631,10 +635,16 @@ export const LabelStudioView: React.FC = () => {
             <button
               type="button"
               onClick={handlePrintLabel}
-              className="w-full bg-[#008163] hover:bg-[#006e54] text-white font-black py-3.5 px-4 rounded-2xl text-xs uppercase tracking-wider shadow-lg shadow-[#008163]/25 transition-all hover:scale-[1.01] active:scale-[0.99] cursor-pointer flex items-center justify-center gap-2"
+              disabled={isViewer}
+              title={isViewer ? "Sticker printing is locked for Viewer (Read-Only Mode)" : `Print ${copies}x Thermal Sticker Now`}
+              className={`w-full font-black py-3.5 px-4 rounded-2xl text-xs uppercase tracking-wider shadow-lg transition-all flex items-center justify-center gap-2 ${
+                isViewer
+                  ? 'bg-slate-300 dark:bg-slate-700 text-slate-500 cursor-not-allowed shadow-none'
+                  : 'bg-[#008163] hover:bg-[#006e54] text-white shadow-[#008163]/25 hover:scale-[1.01] active:scale-[0.99] cursor-pointer'
+              }`}
             >
-              <Printer className="h-4 w-4" />
-              <span>Print {copies}x Thermal Sticker Now</span>
+              {isViewer ? <Lock className="h-4 w-4 text-amber-500" /> : <Printer className="h-4 w-4" />}
+              <span>{isViewer ? 'Print Sticker (Locked for Viewer)' : `Print ${copies}x Thermal Sticker Now`}</span>
             </button>
 
             <button

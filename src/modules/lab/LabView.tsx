@@ -563,12 +563,20 @@ export const LabView: React.FC = () => {
                       <td className="py-2.5 px-2 sm:px-3 text-right whitespace-nowrap">
                         <div className="inline-flex items-center justify-end gap-1.5">
                           <button
-                            onClick={() => printPaperTestReport(report)}
-                            className="px-2.5 py-1 rounded-xl bg-purple-600 hover:bg-purple-700 text-white font-black transition text-[10px] cursor-pointer inline-flex items-center gap-1 shadow-xs leading-none whitespace-nowrap"
-                            title="Print PDF Certificate"
+                            onClick={() => {
+                              if (isViewer) return;
+                              printPaperTestReport(report);
+                            }}
+                            disabled={isViewer}
+                            className={`px-2.5 py-1 rounded-xl font-black transition text-[10px] inline-flex items-center gap-1 shadow-xs leading-none whitespace-nowrap ${
+                              isViewer
+                                ? 'bg-slate-200 dark:bg-slate-800 text-slate-400 dark:text-slate-500 cursor-not-allowed border border-slate-300 dark:border-slate-700'
+                                : 'bg-purple-600 hover:bg-purple-700 text-white cursor-pointer'
+                            }`}
+                            title={isViewer ? "Printing is locked for Viewer (Read-Only Mode)" : "Print PDF Certificate"}
                           >
-                            <Printer className="h-3 w-3 shrink-0" />
-                            <span>Print PDF</span>
+                            {isViewer ? <Lock className="h-3 w-3 shrink-0 text-amber-500" /> : <Printer className="h-3 w-3 shrink-0" />}
+                            <span>{isViewer ? 'Print Locked' : 'Print PDF'}</span>
                           </button>
 
                           {user?.role === 'Admin' && (

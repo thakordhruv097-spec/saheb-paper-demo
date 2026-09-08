@@ -2,6 +2,19 @@ import type { PaperTestReport } from '../data/types';
 import { COMPANY_CONFIG } from '../config/company';
 
 export function printPaperTestReport(report: PaperTestReport): void {
+  try {
+    const sessionData = localStorage.getItem('erp_active_session');
+    if (sessionData) {
+      const session = JSON.parse(sessionData);
+      if (session?.role === 'Viewer' || session?.username === 'viewer' || session?.roles?.includes('Viewer')) {
+        alert('Printing test certificate is locked for Viewer (Read-Only Mode).');
+        return;
+      }
+    }
+  } catch {
+    // ignore
+  }
+
   const printWindow = window.open('', '_blank');
   if (!printWindow) {
     alert('Please allow popups to print/download the Paper Test Report PDF.');

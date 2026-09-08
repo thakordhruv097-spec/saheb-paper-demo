@@ -28,6 +28,37 @@ interface SessionData {
   simulatedBy?: string;
 }
 
+export const getFirstAccessibleRoute = (targetUser?: User | null): string => {
+  if (!targetUser) return '/login';
+  const modules = targetUser.customModules || [];
+  if (modules.includes('dashboard') || targetUser.role === 'Admin') return '/';
+  if (modules.includes('raw_material_stock')) return '/raw-material-stock';
+  if (modules.includes('pulp_mill_operations')) return '/pulp-mill-operations';
+  if (modules.includes('machine_production')) return '/machine-production';
+  if (modules.includes('rewinding_reel_conversion')) return '/rewinding-reel-conversion';
+  if (modules.includes('boiler')) return '/utilities-&-etp/boiler-operations';
+  if (modules.includes('etp') || modules.includes('etp_chemicals')) return '/utilities-&-etp/etp-water-&-chemicals';
+  if (modules.includes('electricity')) return '/utilities-&-etp/electricity-&-power-grid';
+  if (modules.includes('orders')) return '/orders';
+  if (modules.includes('finished_stock_dispatch')) return '/stock-categorization';
+  if (modules.includes('dispatch') || modules.includes('dispatch_receipt')) return '/dispatch-receipt/draft-packing-slip';
+  if (modules.includes('spareparts_management')) return '/spareparts-management';
+  if (modules.includes('monthly_yearly_reporting')) return '/monthly-yearly-reporting';
+
+  // Role-based smart fallback when customModules has not been configured yet
+  const role = (targetUser.role || '').toLowerCase();
+  const uname = (targetUser.username || '').toLowerCase();
+  if (role.includes('pulp') || uname.includes('pulper') || role.includes('lab')) return '/pulp-mill-operations';
+  if (role.includes('plant') || role.includes('machine') || uname.includes('manager')) return '/machine-production';
+  if (role.includes('dispatch')) return '/dispatch-receipt/draft-packing-slip';
+  if (role.includes('shop') || role.includes('store')) return '/spareparts-management';
+  if (role.includes('boiler')) return '/utilities-&-etp/boiler-operations';
+  if (role.includes('etp')) return '/utilities-&-etp/etp-water-&-chemicals';
+  if (role.includes('view')) return '/monthly-yearly-reporting';
+
+  return '/profile';
+};
+
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
@@ -48,6 +79,31 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     user && (user.role === 'Viewer' || (user.roles && user.roles.includes('Viewer')) || user.username.toLowerCase() === 'viewer')
   );
   const canEdit = !isViewer;
+
+  // Global lockdown of all print actions for Viewer mode
+  useEffect(() => {
+    if (!isViewer) return;
+
+    // Block keyboard print shortcuts (Ctrl+P / Cmd+P)
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'p') {
+        e.preventDefault();
+        e.stopPropagation();
+      }
+    };
+
+    // Intercept window.print calls
+    const originalPrint = window.print;
+    window.print = () => {
+      console.warn('[Security] Printing is locked for Viewer mode.');
+    };
+
+    window.addEventListener('keydown', handleKeyDown, true);
+    return () => {
+      window.removeEventListener('keydown', handleKeyDown, true);
+      window.print = originalPrint;
+    };
+  }, [isViewer]);
 
   const clearSession = () => {
     setUser(null);
@@ -259,10 +315,16 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const hasAccess = (moduleName: string): boolean => {
     if (!user) return false;
 
-    // Super Admin has master authority across all endpoints
-    if (user.role === 'Admin') return true;
+    // Admin Masters / User Management / System Audit is STRICTLY restricted to Super Admin only.
+    // No other user, viewer, or operator profile can EVER access Admin Masters.
+    if (moduleName === 'admin_panel_audit' || moduleName === 'admin_masters' || moduleName === 'user_management') {
+      return user.role === 'Admin' || (user.roles && user.roles.includes('Admin')) || user.username.toLowerCase() === 'admin';
+    }
 
-    // Viewer has observational access across ALL 13 ERP modules
+    // Super Admin has master authority across all endpoints
+    if (user.role === 'Admin' || (user.roles && user.roles.includes('Admin')) || user.username.toLowerCase() === 'admin') return true;
+
+    // Viewer has observational access across ALL 13 operational ERP modules (excluding Admin Masters)
     if (user.role === 'Viewer' || (user.roles && user.roles.includes('Viewer')) || user.username.toLowerCase() === 'viewer') {
       return true;
     }
@@ -314,7 +376,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     if (moduleName === 'spareparts_management') return custom.includes('spareparts_management');
     if (moduleName === 'label_studio') return custom.includes('label_studio');
     if (moduleName === 'monthly_yearly_reporting') return custom.includes('monthly_yearly_reporting');
-    if (moduleName === 'admin_panel_audit') return custom.includes('admin_panel_audit');
+    if (moduleName === 'admin_panel_audit' || moduleName === 'admin_masters') {
+      return false;
+    }
     if (moduleName === 'profile') return true;
 
     // STRICT DENIAL: If a module is NOT enabled in Role Management, DENY ACCESS!

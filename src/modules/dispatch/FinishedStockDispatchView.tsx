@@ -5,12 +5,12 @@ import { FinishStockView } from '../finish-stock/FinishStockView';
 import { DispatchView } from './DispatchView';
 import { QRScannerView } from '../rewinder/QRScannerView';
 import { PrintLabelModal } from '../../components/PrintLabelModal';
-import { Package, Truck, QrCode, Printer } from 'lucide-react';
+import { Package, Truck, QrCode, Printer, Lock } from 'lucide-react';
 import { WorkflowStepBadge, WORKFLOW_STEPS } from '../../components/WorkflowStepBadge';
 
 export const FinishedStockDispatchView: React.FC = () => {
   const { t } = useTranslation();
-  const { user } = useAuth();
+  const { user, isViewer } = useAuth();
 
   const isUserAdmin = user?.role === 'Admin' || (user?.roles && user.roles.includes('Admin'));
 
@@ -27,6 +27,7 @@ export const FinishedStockDispatchView: React.FC = () => {
   const [selectedCodeForPrint, setSelectedCodeForPrint] = useState<string>('');
 
   const handleOpenPrintStudio = (reel?: any, code?: string) => {
+    if (isViewer) return;
     setSelectedReelForPrint(reel || null);
     setSelectedCodeForPrint(code || (reel ? reel.reelNo : ''));
     setShowPrintLabelModal(true);
@@ -65,12 +66,17 @@ export const FinishedStockDispatchView: React.FC = () => {
           {/* Action Buttons: Print Label Studio (Universal) + Scanner Quick Button (Mobile Only) */}
           <div className="flex items-center gap-2 shrink-0">
             <button
-              onClick={() => handleOpenPrintStudio()}
-              className="px-3.5 py-2 rounded-xl text-xs font-bold transition cursor-pointer flex items-center gap-1.5 bg-primary hover:bg-primary-dark text-white shadow-xs"
-              title="Print Universal QR &amp; Thermal Sticker Label"
+              onClick={() => !isViewer && handleOpenPrintStudio()}
+              disabled={isViewer}
+              className={`px-3.5 py-2 rounded-xl text-xs font-bold transition flex items-center gap-1.5 ${
+                isViewer
+                  ? 'bg-slate-200 dark:bg-slate-800 text-slate-400 dark:text-slate-500 cursor-not-allowed border border-slate-300 dark:border-slate-700 shadow-none'
+                  : 'bg-primary hover:bg-primary-dark text-white shadow-xs cursor-pointer'
+              }`}
+              title={isViewer ? "Label printing is locked for Viewer (Read-Only Mode)" : "Print Universal QR & Thermal Sticker Label"}
             >
-              <Printer className="h-4 w-4" />
-              <span>Print Labels</span>
+              {isViewer ? <Lock className="h-4 w-4 text-amber-500" /> : <Printer className="h-4 w-4" />}
+              <span>{isViewer ? 'Print Labels (Locked)' : 'Print Labels'}</span>
             </button>
 
             {/* Scanner Button (Visible ONLY on Mobile) */}

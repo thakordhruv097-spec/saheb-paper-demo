@@ -918,6 +918,7 @@ export const DispatchView: React.FC<DispatchViewProps> = ({ initialTab = 'orders
   };
 
   const handlePrintSlip = (slip: PackingSlip) => {
+    if (isViewer) return;
     setDirectPrintSlip(slip);
     document.body.classList.add('printing-challan');
 
@@ -935,6 +936,7 @@ export const DispatchView: React.FC<DispatchViewProps> = ({ initialTab = 'orders
   };
 
   const handlePrintChallan = () => {
+    if (isViewer) return;
     document.body.classList.add('printing-challan');
     window.print();
     setTimeout(() => {
@@ -2388,11 +2390,19 @@ export const DispatchView: React.FC<DispatchViewProps> = ({ initialTab = 'orders
                                         </button>
                                         <button
                                           type="button"
-                                          onClick={() => handlePrintSlip(slip)}
-                                          title="Print Official Dispatch Receipt & Gate Pass"
-                                          className="p-1.5 text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-950/30 rounded-lg border border-blue-200 dark:border-blue-900/80 cursor-pointer transition flex items-center justify-center"
+                                          onClick={() => {
+                                            if (isViewer) return;
+                                            handlePrintSlip(slip);
+                                          }}
+                                          disabled={isViewer}
+                                          title={isViewer ? "Printing locked for Viewer (Read-Only)" : "Print Official Dispatch Receipt & Gate Pass"}
+                                          className={`p-1.5 rounded-lg border flex items-center justify-center transition ${
+                                            isViewer
+                                              ? 'opacity-50 cursor-not-allowed text-slate-400 border-slate-200 dark:border-slate-800'
+                                              : 'text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-950/30 border-blue-200 dark:border-blue-900/80 cursor-pointer'
+                                          }`}
                                         >
-                                          <Printer className="h-3.5 w-3.5" />
+                                          {isViewer ? <Lock className="h-3.5 w-3.5 text-amber-500" /> : <Printer className="h-3.5 w-3.5" />}
                                         </button>
                                       </>
                                     )}
@@ -2521,11 +2531,19 @@ export const DispatchView: React.FC<DispatchViewProps> = ({ initialTab = 'orders
                                 </button>
                                 <button
                                   type="button"
-                                  onClick={() => handlePrintSlip(slip)}
-                                  title="Print Official Dispatch Receipt & Gate Pass"
-                                  className="p-1.5 text-blue-600 rounded-lg border border-blue-200 dark:border-blue-800"
+                                  onClick={() => {
+                                    if (isViewer) return;
+                                    handlePrintSlip(slip);
+                                  }}
+                                  disabled={isViewer}
+                                  title={isViewer ? "Printing locked for Viewer (Read-Only)" : "Print Official Dispatch Receipt & Gate Pass"}
+                                  className={`p-1.5 rounded-lg border flex items-center justify-center transition ${
+                                    isViewer
+                                      ? 'opacity-50 cursor-not-allowed text-slate-400 border-slate-200 dark:border-slate-800'
+                                      : 'text-blue-600 border-blue-200 dark:border-blue-800 cursor-pointer'
+                                  }`}
                                 >
-                                  <Printer className="h-3.5 w-3.5" />
+                                  {isViewer ? <Lock className="h-3.5 w-3.5 text-amber-500" /> : <Printer className="h-3.5 w-3.5" />}
                                 </button>
                               </>
                             )}
@@ -2587,15 +2605,22 @@ export const DispatchView: React.FC<DispatchViewProps> = ({ initialTab = 'orders
                       >
                         <button
                           type="button"
+                          disabled={isViewer}
                           onClick={() => {
+                            if (isViewer) return;
                             setOpenMenuSlipId(null);
                             setMenuPos(null);
                             handlePrintSlip(currentSlip);
                           }}
-                          className="w-full px-3 py-2 text-left text-xs font-bold text-blue-700 dark:text-blue-300 hover:bg-blue-50 dark:hover:bg-blue-950/40 rounded-xl transition cursor-pointer flex items-center gap-2"
+                          className={`w-full px-3 py-2 text-left text-xs font-bold rounded-xl transition flex items-center gap-2 ${
+                            isViewer
+                              ? 'opacity-50 cursor-not-allowed text-slate-400'
+                              : 'text-blue-700 dark:text-blue-300 hover:bg-blue-50 dark:hover:bg-blue-950/40 cursor-pointer'
+                          }`}
+                          title={isViewer ? "Printing locked for Viewer (Read-Only)" : undefined}
                         >
-                          <Printer className="h-3.5 w-3.5 text-blue-500" />
-                          <span>Print Receipt &amp; Gate Pass</span>
+                          {isViewer ? <Lock className="h-3.5 w-3.5 text-amber-500" /> : <Printer className="h-3.5 w-3.5 text-blue-500" />}
+                          <span>{isViewer ? 'Print Receipt (Locked)' : 'Print Receipt & Gate Pass'}</span>
                         </button>
 
                         <button
@@ -3579,11 +3604,17 @@ export const DispatchView: React.FC<DispatchViewProps> = ({ initialTab = 'orders
                     {/* Action Button */}
                     <button
                       type="button"
+                      disabled={isViewer}
                       onClick={handlePrintChallan}
-                      className="btn-primary-gradient px-4 py-2 text-xs uppercase tracking-wider flex items-center gap-1.5 cursor-pointer"
+                      title={isViewer ? "Printing locked for Viewer (Read-Only)" : undefined}
+                      className={`px-4 py-2 text-xs uppercase tracking-wider flex items-center gap-1.5 rounded-xl font-bold transition ${
+                        isViewer
+                          ? 'bg-slate-200 dark:bg-slate-800 text-slate-400 dark:text-slate-500 cursor-not-allowed border border-slate-300 dark:border-slate-700'
+                          : 'btn-primary-gradient cursor-pointer'
+                      }`}
                     >
-                      <Printer className="h-4 w-4" />
-                      <span>Print All Pages ({totalPages})</span>
+                      {isViewer ? <Lock className="h-4 w-4 text-amber-500" /> : <Printer className="h-4 w-4" />}
+                      <span>{isViewer ? 'Print Pages (Locked)' : `Print All Pages (${totalPages})`}</span>
                     </button>
                   </div>
                 </div>

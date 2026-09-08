@@ -1,9 +1,10 @@
 import React, { useState, useMemo, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { useAuth } from '../auth/AuthContext';
+import { useNavigate, Navigate } from 'react-router-dom';
+import { useAuth, getFirstAccessibleRoute } from '../auth/AuthContext';
 import { getUsers, updateUserModules } from '../../data/index';
 import type { User, ModuleDefinition } from '../../data/types';
 import { sortUsersByHierarchy } from '../../data/types';
+export { getFirstAccessibleRoute };
 import {
   ShieldCheck,
   ShieldAlert,
@@ -42,36 +43,6 @@ const isModuleActive = (user: User, moduleKey: string): boolean => {
     return activeModules.includes('etp') || activeModules.includes('etp_chemicals');
   }
   return activeModules.includes(moduleKey);
-};
-
-const getFirstAccessibleRoute = (targetUser: User): string => {
-  const modules = targetUser.customModules || [];
-  if (modules.includes('dashboard') || targetUser.role === 'Admin') return '/';
-  if (modules.includes('raw_material_stock')) return '/raw-material-stock';
-  if (modules.includes('pulp_mill_operations')) return '/pulp-mill-operations';
-  if (modules.includes('machine_production')) return '/machine-production';
-  if (modules.includes('rewinding_reel_conversion')) return '/rewinding-reel-conversion';
-  if (modules.includes('boiler')) return '/utilities-&-etp/boiler-operations';
-  if (modules.includes('etp') || modules.includes('etp_chemicals')) return '/utilities-&-etp/etp-water-&-chemicals';
-  if (modules.includes('electricity')) return '/utilities-&-etp/electricity-&-power-grid';
-  if (modules.includes('orders')) return '/orders';
-  if (modules.includes('finished_stock_dispatch')) return '/stock-categorization';
-  if (modules.includes('dispatch') || modules.includes('dispatch_receipt')) return '/dispatch-receipt/draft-packing-slip';
-  if (modules.includes('spareparts_management')) return '/spareparts-management';
-  if (modules.includes('monthly_yearly_reporting')) return '/monthly-yearly-reporting';
-
-  // Role-based smart fallback when customModules has not been configured yet
-  const role = (targetUser.role || '').toLowerCase();
-  const uname = (targetUser.username || '').toLowerCase();
-  if (role.includes('pulp') || uname.includes('pulper') || role.includes('lab')) return '/pulp-mill-operations';
-  if (role.includes('plant') || role.includes('machine') || uname.includes('manager')) return '/machine-production';
-  if (role.includes('dispatch')) return '/dispatch-receipt/draft-packing-slip';
-  if (role.includes('shop') || role.includes('store')) return '/spareparts-management';
-  if (role.includes('boiler')) return '/utilities-&-etp/boiler-operations';
-  if (role.includes('etp')) return '/utilities-&-etp/etp-water-&-chemicals';
-  if (role.includes('view')) return '/monthly-yearly-reporting';
-
-  return '/profile';
 };
 
 export const RoleManagementView: React.FC = () => {
@@ -113,36 +84,7 @@ export const RoleManagementView: React.FC = () => {
 
   if (currentUser?.role !== 'Admin') {
     if (isSimulating) {
-      return (
-        <div className="p-8 text-center bg-white dark:bg-[#131d38] rounded-3xl border border-amber-300 dark:border-amber-600/50 space-y-4 shadow-sm max-w-xl mx-auto my-8">
-          <div className="w-12 h-12 rounded-2xl bg-amber-100 dark:bg-amber-950/60 text-amber-600 dark:text-amber-400 mx-auto flex items-center justify-center">
-            <Zap className="h-6 w-6" />
-          </div>
-          <h3 className="text-lg font-black text-slate-900 dark:text-white">Active Worker Simulation</h3>
-          <p className="text-xs text-slate-500 dark:text-slate-400 font-medium max-w-md mx-auto">
-            You are currently simulating <strong>{currentUser?.displayName}</strong> ({currentUser?.designation || currentUser?.role}).
-            Role management is only accessible in Admin mode.
-          </p>
-          <div className="flex items-center justify-center gap-3 pt-2">
-            <button
-              onClick={async () => {
-                await exitSimulation();
-                navigate('/admin-panel-audit?tab=roles', { state: { tab: 'roles' } });
-              }}
-              className="px-5 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold transition shadow-sm cursor-pointer flex items-center gap-2"
-            >
-              <UserCheck className="h-4 w-4" />
-              <span>Exit Simulation &amp; Return to Admin</span>
-            </button>
-            <button
-              onClick={() => navigate('/')}
-              className="px-4 py-2.5 rounded-xl bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 text-xs font-bold transition cursor-pointer"
-            >
-              Go to Dashboard
-            </button>
-          </div>
-        </div>
-      );
+      return <Navigate to={getFirstAccessibleRoute(currentUser)} replace />;
     }
 
     return (
@@ -219,11 +161,11 @@ export const RoleManagementView: React.FC = () => {
       return;
     }
 
+    const targetRoute = getFirstAccessibleRoute(targetUser);
+    navigate(targetRoute, { replace: true });
     const success = await simulateWorkerLogin(targetUser.username);
     if (success) {
       triggerToast(`Simulating active worker session: ${targetUser.displayName} (${targetUser.designation || targetUser.role})`);
-      const targetRoute = getFirstAccessibleRoute(targetUser);
-      navigate(targetRoute);
     }
   };
 

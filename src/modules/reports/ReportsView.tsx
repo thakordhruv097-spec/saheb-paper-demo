@@ -14,9 +14,11 @@ import { DataFilterBar, type FilterField } from '../../components/DataFilterBar'
 import { useDateFilter } from '../../context/DateFilterContext';
 import * as XLSX from 'xlsx';
 import { COMPANY_CONFIG } from '../../config/company';
+import { useAuth } from '../auth/AuthContext';
 import {
   FileSpreadsheet,
   Printer,
+  Lock,
   BarChart2,
   Calendar,
   Search,
@@ -66,6 +68,7 @@ type ReportType =
 
 export const ReportsView: React.FC = () => {
   const { t } = useTranslation();
+  const { isViewer } = useAuth();
 
   const [selectedReport, setSelectedReport] = useState<ReportType>('daily_prod');
   const [reportsSearchQuery, setReportsSearchQuery] = useState('');
@@ -758,6 +761,7 @@ export const ReportsView: React.FC = () => {
   };
 
   const handlePrint = () => {
+    if (isViewer) return;
     window.print();
   };
 
@@ -810,10 +814,16 @@ export const ReportsView: React.FC = () => {
             <button
               type="button"
               onClick={handlePrint}
-              className="flex items-center gap-2 px-3.5 py-2 bg-primary hover:bg-primary-dark text-white rounded-xl text-xs font-bold shadow-xs transition cursor-pointer"
+              disabled={isViewer}
+              title={isViewer ? "Printing is locked for Viewer (Read-Only Mode)" : "Print PDF"}
+              className={`flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs font-bold shadow-xs transition ${
+                isViewer
+                  ? 'bg-slate-200 dark:bg-slate-800 text-slate-400 dark:text-slate-500 cursor-not-allowed border border-slate-300 dark:border-slate-700 shadow-none'
+                  : 'bg-primary hover:bg-primary-dark text-white cursor-pointer'
+              }`}
             >
-              <Printer className="h-4 w-4" />
-              <span>Print PDF</span>
+              {isViewer ? <Lock className="h-4 w-4 text-amber-500" /> : <Printer className="h-4 w-4" />}
+              <span>{isViewer ? 'Print PDF (Locked)' : 'Print PDF'}</span>
             </button>
           </div>
         </div>

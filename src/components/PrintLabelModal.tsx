@@ -13,7 +13,9 @@ import {
   RotateCcw,
   FileText,
   Building,
+  Lock,
 } from 'lucide-react';
+import { useAuth } from '../modules/auth/AuthContext';
 import { getReels, getProducts } from '../data/index';
 import type { Reel } from '../data/types';
 import { COMPANY_CONFIG } from '../config/company';
@@ -35,6 +37,7 @@ export const PrintLabelModal: React.FC<PrintLabelModalProps> = ({
   initialCode,
   initialType = 'REEL',
 }) => {
+  const { isViewer } = useAuth();
   useBodyScrollLock(isOpen);
   const stockReels = React.useMemo(() => {
     const all = getReels();
@@ -149,6 +152,7 @@ export const PrintLabelModal: React.FC<PrintLabelModalProps> = ({
   };
 
   const handlePrint = () => {
+    if (isViewer) return;
     window.print();
   };
 
@@ -609,10 +613,16 @@ export const PrintLabelModal: React.FC<PrintLabelModalProps> = ({
               <button
                 type="button"
                 onClick={handlePrint}
-                className="w-full bg-[#008163] hover:bg-[#006e54] text-white font-black py-3.5 px-4 rounded-2xl text-xs uppercase tracking-wider shadow-lg shadow-[#008163]/25 transition-all hover:scale-[1.01] active:scale-[0.99] cursor-pointer flex items-center justify-center gap-2"
+                disabled={isViewer}
+                title={isViewer ? "Printing labels is locked for Viewer (Read-Only Mode)" : `Print ${copies}x Label Now`}
+                className={`w-full font-black py-3.5 px-4 rounded-2xl text-xs uppercase tracking-wider shadow-lg transition-all flex items-center justify-center gap-2 ${
+                  isViewer
+                    ? 'bg-slate-300 dark:bg-slate-700 text-slate-500 cursor-not-allowed shadow-none'
+                    : 'bg-[#008163] hover:bg-[#006e54] text-white shadow-[#008163]/25 hover:scale-[1.01] active:scale-[0.99] cursor-pointer'
+                }`}
               >
-                <Printer className="h-4 w-4" />
-                <span>Print {copies}x Label Now</span>
+                {isViewer ? <Lock className="h-4 w-4 text-amber-500" /> : <Printer className="h-4 w-4" />}
+                <span>{isViewer ? 'Print Label (Locked for Viewer)' : `Print ${copies}x Label Now`}</span>
               </button>
 
               <button

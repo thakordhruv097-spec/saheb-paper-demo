@@ -1,6 +1,6 @@
 import React from 'react';
 import { Navigate, useNavigate } from 'react-router-dom';
-import { useAuth } from './AuthContext';
+import { useAuth, getFirstAccessibleRoute } from './AuthContext';
 
 interface ProtectedRouteProps {
   children: React.ReactNode;
@@ -16,6 +16,12 @@ export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children, module
   }
 
   if (!hasAccess(moduleName)) {
+    // If worker simulation is active, immediately redirect to the worker's accessible route
+    // to prevent any jarring "Access Denied" flash on route switches
+    if (isSimulating) {
+      return <Navigate to={getFirstAccessibleRoute(user)} replace />;
+    }
+
     return (
       <div className="min-h-screen bg-[#F8FAFC] dark:bg-[#0F172A] flex items-center justify-center p-6 text-center">
         <div className="bg-white dark:bg-slate-800 p-8 rounded-2xl shadow-xl max-w-md w-full border border-red-200 dark:border-red-900/50 space-y-4">

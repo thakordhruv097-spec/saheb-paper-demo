@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useMemo, useRef } from 'react';
-import { useAuth } from '../auth/AuthContext';
+import { useAuth, getFirstAccessibleRoute } from '../auth/AuthContext';
 import { useTranslation } from 'react-i18next';
-import { useLocation } from 'react-router-dom';
+import { useLocation, Navigate } from 'react-router-dom';
 import {
   getProducts,
   saveProduct,
@@ -45,7 +45,7 @@ import { COMPANY_CONFIG } from '../../config/company';
 
 export const AdminMasters: React.FC = () => {
   const { t } = useTranslation();
-  const { user } = useAuth();
+  const { user, isSimulating } = useAuth();
   const location = useLocation();
 
   const [activeTab, setActiveTab] = useState<'products' | 'raw_materials' | 'parties' | 'vendors' | 'users' | 'roles' | 'backup' | 'logs'>(() => {
@@ -748,6 +748,23 @@ export const AdminMasters: React.FC = () => {
     XLSX.utils.book_append_sheet(workbook, worksheet, "System Logs");
     XLSX.writeFile(workbook, `Saheb_Paper_System_Logs_${new Date().toISOString().substring(0, 10)}.xlsx`);
   };
+
+  if (user?.role !== 'Admin' && user?.username.toLowerCase() !== 'admin') {
+    if (isSimulating) {
+      return <Navigate to={getFirstAccessibleRoute(user)} replace />;
+    }
+    return (
+      <div className="p-8 text-center bg-white dark:bg-slate-900 rounded-3xl border border-red-200 dark:border-red-800 space-y-3 max-w-md mx-auto my-12">
+        <div className="w-12 h-12 rounded-2xl bg-red-100 dark:bg-red-950/50 text-red-600 dark:text-red-400 mx-auto flex items-center justify-center">
+          <ShieldAlert className="h-6 w-6" />
+        </div>
+        <h3 className="text-base font-black text-slate-900 dark:text-white">Access Restricted</h3>
+        <p className="text-xs text-slate-500 dark:text-slate-400 font-medium max-w-md mx-auto">
+          Admin Masters is strictly restricted to Super Admin only.
+        </p>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6 font-sans pb-12">

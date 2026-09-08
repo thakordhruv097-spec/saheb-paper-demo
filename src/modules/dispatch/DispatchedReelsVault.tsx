@@ -1,5 +1,6 @@
 import React, { useState, useMemo } from 'react';
 import type { Reel, PackingSlip, Party, Vehicle } from '../../data/types';
+import { useAuth } from '../auth/AuthContext';
 import {
   Search,
   Truck,
@@ -42,6 +43,7 @@ export const DispatchedReelsVault: React.FC<DispatchedReelsVaultProps> = ({
   vehicles,
   onViewChallan,
 }) => {
+  const { isViewer } = useAuth();
   const [searchTerm, setSearchTerm] = useState('');
   const [productFilter, setProductFilter] = useState('ALL');
   const [gradeFilter, setGradeFilter] = useState('ALL');
@@ -395,10 +397,10 @@ export const DispatchedReelsVault: React.FC<DispatchedReelsVaultProps> = ({
                             type="button"
                             onClick={() => onViewChallan(rec.slip!)}
                             className="px-3 py-1.5 rounded-xl bg-primary hover:bg-primary-dark text-white font-bold text-[10px] uppercase tracking-wider shadow-xs transition cursor-pointer inline-flex items-center gap-1.5 active:scale-95"
-                            title="View & Print Delivery Challan PDF"
+                            title={isViewer ? "View Delivery Challan (Print Locked for Viewer)" : "View & Print Delivery Challan PDF"}
                           >
-                            <Printer className="h-3 w-3" />
-                            <span>Challan PDF</span>
+                            {isViewer ? <Eye className="h-3 w-3" /> : <Printer className="h-3 w-3" />}
+                            <span>{isViewer ? 'View Challan' : 'Challan PDF'}</span>
                           </button>
                         ) : (
                           <span className="text-[10px] text-slate-400 font-medium italic">

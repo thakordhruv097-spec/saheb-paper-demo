@@ -486,6 +486,7 @@ export const RewinderView: React.FC = () => {
   };
 
   const handlePrintAllToday = () => {
+    if (isViewer) return;
     const todayStr = new Date().toISOString().substring(0, 10);
     const todaysReels = reels.filter(r => r.productionDate.startsWith(todayStr));
     if (todaysReels.length === 0) {
@@ -497,6 +498,7 @@ export const RewinderView: React.FC = () => {
   };
 
   const handlePrint = () => {
+    if (isViewer) return;
     let bodyClass = '';
     let pageSize = '';
 
@@ -625,10 +627,16 @@ export const RewinderView: React.FC = () => {
           <div className="flex items-center gap-2 sm:gap-3 shrink-0">
             <button
               onClick={handlePrintAllToday}
-              className="flex items-center justify-center gap-2 px-4 py-2.5 rounded-2xl bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 text-slate-700 dark:text-slate-200 font-bold text-xs transition cursor-pointer border border-slate-200 dark:border-slate-700 whitespace-nowrap"
+              disabled={isViewer}
+              title={isViewer ? "Printing QR labels is locked for Viewer (Read-Only Mode)" : "Print QR Labels"}
+              className={`flex items-center justify-center gap-2 px-4 py-2.5 rounded-2xl font-bold text-xs transition border whitespace-nowrap ${
+                isViewer
+                  ? 'bg-slate-100 dark:bg-slate-800 text-slate-400 dark:text-slate-500 border-slate-200 dark:border-slate-700 cursor-not-allowed shadow-none'
+                  : 'bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 text-slate-700 dark:text-slate-200 border-slate-200 dark:border-slate-700 cursor-pointer'
+              }`}
             >
-              <Printer className="h-4 w-4 text-slate-500" />
-              <span>Print QR Labels ({reels.length})</span>
+              {isViewer ? <Lock className="h-4 w-4 text-amber-500" /> : <Printer className="h-4 w-4 text-slate-500" />}
+              <span>{isViewer ? `Print QR Labels (${reels.length}) [Locked]` : `Print QR Labels (${reels.length})`}</span>
             </button>
 
             <button
@@ -1527,10 +1535,16 @@ export const RewinderView: React.FC = () => {
               </button>
               <button
                 onClick={handlePrint}
-                className="px-5 py-2 rounded-xl bg-primary hover:bg-primary-dark text-white font-extrabold text-xs shadow-md flex items-center gap-2"
+                disabled={isViewer}
+                title={isViewer ? "Printing is locked for Viewer (Read-Only Mode)" : "Print Labels"}
+                className={`px-5 py-2 rounded-xl font-extrabold text-xs shadow-md flex items-center gap-2 ${
+                  isViewer
+                    ? 'bg-slate-200 dark:bg-slate-700 text-slate-400 dark:text-slate-500 cursor-not-allowed shadow-none'
+                    : 'bg-primary hover:bg-primary-dark text-white cursor-pointer'
+                }`}
               >
-                <Printer className="h-4 w-4" />
-                <span>Print Labels</span>
+                {isViewer ? <Lock className="h-4 w-4 text-amber-500" /> : <Printer className="h-4 w-4" />}
+                <span>{isViewer ? 'Print Labels (Locked)' : 'Print Labels'}</span>
               </button>
             </div>
           </div>

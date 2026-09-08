@@ -713,11 +713,20 @@ export const RawMaterialView: React.FC = () => {
             </div>
 
             <button
-              onClick={() => window.print()}
-              className="btn-primary-gradient w-full py-3 text-xs uppercase tracking-wider cursor-pointer flex items-center justify-center gap-2"
+              onClick={() => {
+                if (isViewer) return;
+                window.print();
+              }}
+              disabled={isViewer}
+              title={isViewer ? "Printing is locked for Viewer (Read-Only Mode)" : "Print Batch Barcode / QR Label"}
+              className={`w-full py-3 text-xs uppercase tracking-wider flex items-center justify-center gap-2 rounded-xl font-bold transition ${
+                isViewer
+                  ? 'bg-slate-200 dark:bg-slate-800 text-slate-400 dark:text-slate-500 cursor-not-allowed border border-slate-300 dark:border-slate-700 shadow-none'
+                  : 'btn-primary-gradient cursor-pointer'
+              }`}
             >
-              <Printer className="h-4 w-4" />
-              <span>PRINT BATCH BARCODE/QR</span>
+              {isViewer ? <Lock className="h-4 w-4 text-amber-500" /> : <Printer className="h-4 w-4" />}
+              <span>{isViewer ? 'PRINT BARCODE/QR (LOCKED)' : 'PRINT BATCH BARCODE/QR'}</span>
             </button>
           </div>
         </div>
