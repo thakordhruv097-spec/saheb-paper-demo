@@ -7,13 +7,13 @@ import type { MachineRoll } from '../../data/types';
 import { CustomDatePickerModal } from '../../components/CustomDatePickerModal';
 import { DataFilterBar } from '../../components/DataFilterBar';
 import { CustomSearchableSelect } from '../../components/CustomSearchableSelect';
-import { Cog, Plus, Info, Search, Calendar, Clock, AlertTriangle, X } from 'lucide-react';
+import { Cog, Plus, Info, Search, Calendar, Clock, AlertTriangle, X, Lock } from 'lucide-react';
 
 import { WorkflowStepBadge, WORKFLOW_STEPS } from '../../components/WorkflowStepBadge';
  
 export const MachineView: React.FC = () => {
   const { t } = useTranslation();
-  const { user } = useAuth();
+  const { user, isViewer } = useAuth();
   const navigate = useNavigate();
 
   const [rolls, setRolls] = useState<MachineRoll[]>(() => getRolls());
@@ -218,6 +218,11 @@ export const MachineView: React.FC = () => {
     e.preventDefault();
     setSuccessMsg('');
     setErrorMsg('');
+
+    if (isViewer) {
+      setErrorMsg('Viewer Mode: Production roll logging is locked. You have read-only access.');
+      return;
+    }
 
     const targetRollNo = rollNo.trim() || autoRollNo;
     const prod = products.find(p => p.id === selectedProductId);
@@ -728,9 +733,16 @@ export const MachineView: React.FC = () => {
 
             <button
               type="submit"
-              className="btn-primary-gradient w-full py-3.5 text-xs uppercase tracking-wider cursor-pointer"
+              disabled={isViewer}
+              title={isViewer ? 'Viewer Mode: Production logging is locked (Read-Only)' : 'Submit Machine Production Log'}
+              className={`w-full py-3.5 text-xs uppercase tracking-wider flex items-center justify-center gap-2 rounded-2xl font-black transition ${
+                isViewer
+                  ? 'bg-slate-200 dark:bg-slate-800 text-slate-400 dark:text-slate-500 cursor-not-allowed border border-slate-300 dark:border-slate-700 shadow-none'
+                  : 'btn-primary-gradient cursor-pointer'
+              }`}
             >
-              Submit Machine Production Log
+              {isViewer ? <Lock className="h-4 w-4 text-amber-500" /> : null}
+              <span>{isViewer ? 'Submit Machine Production Log (Locked)' : 'Submit Machine Production Log'}</span>
             </button>
           </form>
         </div>

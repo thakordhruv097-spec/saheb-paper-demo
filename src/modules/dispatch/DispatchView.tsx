@@ -52,6 +52,7 @@ import {
   Check,
   Pencil,
   MoreVertical,
+  Lock,
 } from 'lucide-react';
 
 import { WorkflowStepBadge, WORKFLOW_STEPS } from '../../components/WorkflowStepBadge';
@@ -66,7 +67,7 @@ interface DispatchViewProps {
 
 export const DispatchView: React.FC<DispatchViewProps> = ({ initialTab = 'orders', hideTabs = false, hideHeader = false, onOpenScanner }) => {
   const { t } = useTranslation();
-  const { user } = useAuth();
+  const { user, isViewer } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
 
@@ -522,6 +523,11 @@ export const DispatchView: React.FC<DispatchViewProps> = ({ initialTab = 'orders
     setSuccessMsg('');
     setErrorMsg('');
 
+    if (isViewer) {
+      setErrorMsg('Viewer Mode: Booking customer orders is locked. You have read-only access.');
+      return;
+    }
+
     if (!selectedPartyId || !selectedProductId || (!orderQty && !orderTons) || !orderReceiveDate) {
       setErrorMsg('Please select Customer Party, Product, Quantity and Receive Date');
       return;
@@ -572,6 +578,11 @@ export const DispatchView: React.FC<DispatchViewProps> = ({ initialTab = 'orders
     e.preventDefault();
     setSuccessMsg('');
     setErrorMsg('');
+
+    if (isViewer) {
+      setErrorMsg('Viewer Mode: Creating packing slips is locked. You have read-only access.');
+      return;
+    }
 
     const targetSlipNo = slipNo.trim() || autoSlipNo;
 
@@ -817,6 +828,11 @@ export const DispatchView: React.FC<DispatchViewProps> = ({ initialTab = 'orders
     setSuccessMsg('');
     setErrorMsg('');
 
+    if (isViewer) {
+      setErrorMsg('Viewer Mode: Confirming dispatch is locked. You have read-only access.');
+      return;
+    }
+
     try {
       confirmDispatch(slipId, user?.displayName || 'System');
       // Refresh local lists
@@ -831,6 +847,10 @@ export const DispatchView: React.FC<DispatchViewProps> = ({ initialTab = 'orders
 
   // Handle Delete Challan
   const handleDeleteSlip = (slip: PackingSlip) => {
+    if (isViewer) {
+      setErrorMsg('Viewer Mode: Deleting challans is locked.');
+      return;
+    }
     if (window.confirm(`Are you sure you want to delete Delivery Challan #${slip.slipNo}? Any reels linked to this challan will be restored to warehouse finished stock.`)) {
       deletePackingSlip(slip.id, user?.displayName || 'Admin');
       setSlips(getPackingSlips());
@@ -1328,9 +1348,16 @@ export const DispatchView: React.FC<DispatchViewProps> = ({ initialTab = 'orders
 
               <button
                 type="submit"
-                className="btn-primary-gradient w-full py-3 text-xs uppercase tracking-wider cursor-pointer font-black shadow-lg"
+                disabled={isViewer}
+                title={isViewer ? 'Viewer Mode: Booking customer orders is locked (Read-Only)' : 'Book Customer Order'}
+                className={`w-full py-3 text-xs uppercase tracking-wider rounded-2xl font-black transition flex items-center justify-center gap-2 ${
+                  isViewer
+                    ? 'bg-slate-200 dark:bg-slate-800 text-slate-400 dark:text-slate-500 cursor-not-allowed border border-slate-300 dark:border-slate-700 shadow-none'
+                    : 'btn-primary-gradient cursor-pointer font-black shadow-lg'
+                }`}
               >
-                Book Customer Order
+                {isViewer ? <Lock className="h-4 w-4 text-amber-500" /> : null}
+                <span>{isViewer ? 'Book Customer Order (Locked)' : 'Book Customer Order'}</span>
               </button>
             </form>
           </div>
@@ -1567,10 +1594,16 @@ export const DispatchView: React.FC<DispatchViewProps> = ({ initialTab = 'orders
 
                 <button
                   type="submit"
-                  className="btn-primary-gradient py-3 px-6 text-xs uppercase tracking-wider flex items-center justify-center gap-2 cursor-pointer"
+                  disabled={isViewer}
+                  title={isViewer ? 'Viewer Mode: Dispatch is locked (Read-Only)' : 'Print Gate Pass & Dispatch'}
+                  className={`py-3 px-6 text-xs uppercase tracking-wider flex items-center justify-center gap-2 rounded-2xl font-black transition ${
+                    isViewer
+                      ? 'bg-slate-200 dark:bg-slate-800 text-slate-400 dark:text-slate-500 cursor-not-allowed border border-slate-300 dark:border-slate-700 shadow-none'
+                      : 'btn-primary-gradient cursor-pointer'
+                  }`}
                 >
-                  <Truck className="h-4 w-4" />
-                  <span>Print Gate Pass &amp; Dispatch</span>
+                  {isViewer ? <Lock className="h-4 w-4 text-amber-500" /> : <Truck className="h-4 w-4" />}
+                  <span>{isViewer ? 'Print Gate Pass & Dispatch (Locked)' : 'Print Gate Pass & Dispatch'}</span>
                 </button>
               </div>
             </div>
@@ -2045,10 +2078,16 @@ export const DispatchView: React.FC<DispatchViewProps> = ({ initialTab = 'orders
 
                 <button
                   type="submit"
-                  className="w-full sm:w-auto btn-primary-gradient py-3 px-6 text-xs uppercase tracking-wider flex items-center justify-center gap-2 cursor-pointer shadow-md"
+                  disabled={isViewer}
+                  title={isViewer ? 'Viewer Mode: Confirming dispatch is locked (Read-Only)' : 'Confirm Dispatch & Issue Gate Pass'}
+                  className={`w-full sm:w-auto py-3 px-6 text-xs uppercase tracking-wider flex items-center justify-center gap-2 rounded-2xl font-black transition ${
+                    isViewer
+                      ? 'bg-slate-200 dark:bg-slate-800 text-slate-400 dark:text-slate-500 cursor-not-allowed border border-slate-300 dark:border-slate-700 shadow-none'
+                      : 'btn-primary-gradient cursor-pointer shadow-md'
+                  }`}
                 >
-                  <Truck className="h-4 w-4" />
-                  <span>Confirm Dispatch &amp; Issue Gate Pass</span>
+                  {isViewer ? <Lock className="h-4 w-4 text-amber-500" /> : <Truck className="h-4 w-4" />}
+                  <span>{isViewer ? 'Confirm Dispatch & Issue Gate Pass (Locked)' : 'Confirm Dispatch & Issue Gate Pass'}</span>
                 </button>
               </div>
 
@@ -2325,10 +2364,16 @@ export const DispatchView: React.FC<DispatchViewProps> = ({ initialTab = 'orders
                                     {slip.status === 'DRAFT' ? (
                                       <button
                                         type="button"
+                                        disabled={isViewer}
                                         onClick={() => handleConfirmDispatch(slip.id)}
-                                        className="px-3 py-1.5 bg-[#008163] hover:bg-[#006e54] text-white rounded-lg text-[10px] font-black uppercase tracking-wider shadow-xs shadow-[#008163]/25 transition cursor-pointer flex items-center gap-1"
+                                        title={isViewer ? 'Viewer Mode: Dispatch confirmation is locked (Read-Only)' : 'Confirm Dispatch'}
+                                        className={`px-3 py-1.5 rounded-lg text-[10px] font-black uppercase tracking-wider transition flex items-center gap-1 ${
+                                          isViewer
+                                            ? 'bg-slate-200 dark:bg-slate-800 text-slate-400 dark:text-slate-500 cursor-not-allowed border border-slate-300 dark:border-slate-700 shadow-none'
+                                            : 'bg-[#008163] hover:bg-[#006e54] text-white shadow-xs shadow-[#008163]/25 cursor-pointer'
+                                        }`}
                                       >
-                                        <Check className="h-3 w-3" />
+                                        {isViewer ? <Lock className="h-3 w-3 text-amber-500" /> : <Check className="h-3 w-3" />}
                                         <span>Confirm</span>
                                       </button>
                                     ) : (
@@ -2453,10 +2498,16 @@ export const DispatchView: React.FC<DispatchViewProps> = ({ initialTab = 'orders
                             {slip.status === 'DRAFT' ? (
                               <button
                                 type="button"
+                                disabled={isViewer}
                                 onClick={() => handleConfirmDispatch(slip.id)}
-                                className="px-3 py-1.5 bg-[#008163] hover:bg-[#006e54] text-white rounded-xl text-[10px] font-black uppercase tracking-wider shadow-xs shadow-[#008163]/25 flex items-center gap-1"
+                                title={isViewer ? 'Viewer Mode: Dispatch confirmation is locked (Read-Only)' : 'Confirm Dispatch'}
+                                className={`px-3 py-1.5 rounded-xl text-[10px] font-black uppercase tracking-wider transition flex items-center gap-1 ${
+                                  isViewer
+                                    ? 'bg-slate-200 dark:bg-slate-800 text-slate-400 dark:text-slate-500 cursor-not-allowed border border-slate-300 dark:border-slate-700 shadow-none'
+                                    : 'bg-[#008163] hover:bg-[#006e54] text-white shadow-xs shadow-[#008163]/25 flex items-center gap-1 cursor-pointer'
+                                }`}
                               >
-                                <Check className="h-3 w-3" />
+                                {isViewer ? <Lock className="h-3 w-3 text-amber-500" /> : <Check className="h-3 w-3" />}
                                 <span>Confirm</span>
                               </button>
                             ) : (
@@ -2791,10 +2842,16 @@ export const DispatchView: React.FC<DispatchViewProps> = ({ initialTab = 'orders
                 </button>
                 <button
                   type="submit"
-                  className="px-6 py-2.5 bg-[#008163] hover:bg-[#006e54] text-white font-black rounded-xl text-xs uppercase tracking-wider shadow-md shadow-[#008163]/25 transition cursor-pointer flex items-center gap-1.5"
+                  disabled={isViewer}
+                  title={isViewer ? 'Viewer Mode: Saving challan changes is locked (Read-Only)' : 'Save Challan Changes'}
+                  className={`px-6 py-2.5 font-black rounded-xl text-xs uppercase tracking-wider transition flex items-center gap-1.5 ${
+                    isViewer
+                      ? 'bg-slate-200 dark:bg-slate-800 text-slate-400 dark:text-slate-500 cursor-not-allowed border border-slate-300 dark:border-slate-700 shadow-none'
+                      : 'bg-[#008163] hover:bg-[#006e54] text-white shadow-md shadow-[#008163]/25 cursor-pointer'
+                  }`}
                 >
-                  <Check className="h-4 w-4" />
-                  <span>Save Challan Changes</span>
+                  {isViewer ? <Lock className="h-4 w-4 text-amber-500" /> : <Check className="h-4 w-4" />}
+                  <span>{isViewer ? 'Save Challan Changes (Locked)' : 'Save Challan Changes'}</span>
                 </button>
               </div>
             </form>

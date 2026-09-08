@@ -12,7 +12,9 @@ import {
   Plus,
   Check,
   UserCheck,
-  Zap
+  Zap,
+  Lock,
+  Eye,
 } from 'lucide-react';
 
 const ERP_MODULES: ModuleDefinition[] = [
@@ -76,6 +78,39 @@ export const RoleManagementView: React.FC = () => {
   const { user: currentUser, simulateWorkerLogin, exitSimulation, isSimulating, updateUserProfile } = useAuth();
   const navigate = useNavigate();
 
+  const [users, setUsers] = useState<User[]>(() => sortUsersByHierarchy(getUsers()));
+  const [searchTerm, setSearchTerm] = useState('');
+  const [toastMsg, setToastMsg] = useState('');
+
+  const triggerToast = (msg: string) => {
+    setToastMsg(msg);
+    setTimeout(() => setToastMsg(''), 3000);
+  };
+
+  useEffect(() => {
+    const handleSync = () => {
+      setUsers(sortUsersByHierarchy(getUsers()));
+    };
+    window.addEventListener('saheb_data_updated', handleSync);
+    window.addEventListener('storage', handleSync);
+    return () => {
+      window.removeEventListener('saheb_data_updated', handleSync);
+      window.removeEventListener('storage', handleSync);
+    };
+  }, []);
+
+  const filteredUsers = useMemo(() => {
+    const filtered = users.filter(u => {
+      const matchSearch =
+        u.displayName.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        u.username.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        (u.empId && u.empId.toLowerCase().includes(searchTerm.toLowerCase())) ||
+        (u.designation && u.designation.toLowerCase().includes(searchTerm.toLowerCase()));
+      return matchSearch;
+    });
+    return sortUsersByHierarchy(filtered);
+  }, [users, searchTerm]);
+
   if (currentUser?.role !== 'Admin') {
     if (isSimulating) {
       return (
@@ -123,28 +158,12 @@ export const RoleManagementView: React.FC = () => {
     );
   }
 
-  const [users, setUsers] = useState<User[]>(() => sortUsersByHierarchy(getUsers()));
-  const [searchTerm, setSearchTerm] = useState('');
-  const [toastMsg, setToastMsg] = useState('');
-
-  const triggerToast = (msg: string) => {
-    setToastMsg(msg);
-    setTimeout(() => setToastMsg(''), 3000);
-  };
-
-  useEffect(() => {
-    const handleSync = () => {
-      setUsers(sortUsersByHierarchy(getUsers()));
-    };
-    window.addEventListener('saheb_data_updated', handleSync);
-    window.addEventListener('storage', handleSync);
-    return () => {
-      window.removeEventListener('saheb_data_updated', handleSync);
-      window.removeEventListener('storage', handleSync);
-    };
-  }, []);
-
   const handleToggleModule = (targetUser: User, moduleKey: string) => {
+    if (targetUser.role === 'Admin' || targetUser.username.toLowerCase() === 'admin') {
+      triggerToast("Super Admin permissions cannot be modified. All 13 modules are permanently active & locked.");
+      return;
+    }
+
     const currentModules = targetUser.customModules && Array.isArray(targetUser.customModules)
       ? [...targetUser.customModules]
       : ERP_MODULES.map(m => m.key);
@@ -207,18 +226,6 @@ export const RoleManagementView: React.FC = () => {
       navigate(targetRoute);
     }
   };
-
-  const filteredUsers = useMemo(() => {
-    const filtered = users.filter(u => {
-      const matchSearch =
-        u.displayName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        u.username.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        (u.empId && u.empId.toLowerCase().includes(searchTerm.toLowerCase())) ||
-        (u.designation && u.designation.toLowerCase().includes(searchTerm.toLowerCase()));
-      return matchSearch;
-    });
-    return sortUsersByHierarchy(filtered);
-  }, [users, searchTerm]);
 
   return (
     <div className="space-y-4 font-sans pb-12 w-full text-left">
@@ -312,9 +319,21 @@ export const RoleManagementView: React.FC = () => {
 
                 {/* RIGHT ACTIONS: COUNTER & SIMULATE BUTTON */}
                 <div className="flex items-center gap-3 self-start md:self-auto">
-                  <div className="px-3.5 py-1.5 rounded-[14px] bg-[#F4F7FC] dark:bg-slate-900 text-slate-700 dark:text-slate-200 text-xs font-bold tracking-wide shadow-[inset_1px_1px_2px_rgba(180,195,230,0.2)]">
-                    {activeCount} / {ERP_MODULES.length} Modules Active
-                  </div>
+                  {u.role === 'Admin' || u.username.toLowerCase() === 'admin' ? (
+                    <div className="px-3.5 py-1.5 rounded-[14px] bg-emerald-50 dark:bg-emerald-950/50 text-emerald-700 dark:text-emerald-300 text-xs font-bold tracking-wide border border-emerald-200/80 dark:border-emerald-800/60 flex items-center gap-1.5 shadow-[inset_1px_1px_2px_rgba(180,195,230,0.2)]">
+                      <Lock className="h-3.5 w-3.5 text-emerald-600 dark:text-emerald-400" />
+                      <span>13 / 13 Modules (Permanent Super Admin - Locked)</span>
+                    </div>
+                  ) : u.role === 'Viewer' || u.username.toLowerCase() === 'viewer' ? (
+                    <div className="px-3.5 py-1.5 rounded-[14px] bg-blue-50 dark:bg-blue-950/50 text-blue-700 dark:text-blue-300 text-xs font-bold tracking-wide border border-blue-200/80 dark:border-blue-800/60 flex items-center gap-1.5 shadow-[inset_1px_1px_2px_rgba(180,195,230,0.2)]">
+                      <Eye className="h-3.5 w-3.5 text-blue-600 dark:text-blue-400" />
+                      <span>13 / 13 Modules (Read-Only Viewer Access)</span>
+                    </div>
+                  ) : (
+                    <div className="px-3.5 py-1.5 rounded-[14px] bg-[#F4F7FC] dark:bg-slate-900 text-slate-700 dark:text-slate-200 text-xs font-bold tracking-wide shadow-[inset_1px_1px_2px_rgba(180,195,230,0.2)]">
+                      {activeCount} / {ERP_MODULES.length} Modules Active
+                    </div>
+                  )}
 
                   <button
                     onClick={() => handleSimulateLogin(u)}
@@ -347,26 +366,53 @@ export const RoleManagementView: React.FC = () => {
               </div>
 
               {/* TOGGLE SUBHEADER */}
-              <div className="text-xs font-bold text-slate-500 dark:text-slate-400 font-sans">
-                Module Permissions for {u.displayName}:
+              <div className="flex items-center gap-2 flex-wrap text-xs font-bold text-slate-500 dark:text-slate-400 font-sans">
+                <span>Module Permissions for {u.displayName}:</span>
+                {(u.role === 'Admin' || u.username.toLowerCase() === 'admin') && (
+                  <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-amber-50 dark:bg-amber-950/50 text-amber-700 dark:text-amber-400 text-[11px] font-bold border border-amber-200 dark:border-amber-800/50">
+                    <Lock className="h-3 w-3" />
+                    Roles &amp; Permissions Locked (All 13 Modules Permanent)
+                  </span>
+                )}
+                {(u.role === 'Viewer' || u.username.toLowerCase() === 'viewer') && (
+                  <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-blue-50 dark:bg-blue-950/50 text-blue-700 dark:text-blue-400 text-[11px] font-bold border border-blue-200 dark:border-blue-800/50">
+                    <Eye className="h-3 w-3" />
+                    Read-Only Watcher (All 13 Modules Accessible)
+                  </span>
+                )}
               </div>
 
               {/* ERP MODULE CHIPS GRID */}
               <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-2.5">
                 {ERP_MODULES.map(mod => {
                   const isActive = isModuleActive(u, mod.key);
+                  const isUserAdmin = u.role === 'Admin' || u.username.toLowerCase() === 'admin';
 
                   return (
                     <button
                       key={mod.key}
-                      onClick={() => handleToggleModule(u, mod.key)}
-                      className={`px-3 py-2 rounded-[14px] text-xs font-bold transition-all cursor-pointer flex items-center gap-2 select-none active:scale-95 truncate ${
-                        isActive
-                          ? 'bg-[#E8F0FE] text-[#1D4ED8] dark:bg-blue-950/60 dark:text-blue-300 shadow-[2px_2px_5px_rgba(180,195,230,0.25),-2px_-2px_5px_rgba(255,255,255,0.95)] dark:shadow-none'
-                          : 'bg-[#F4F7FC] hover:bg-[#EDF2F9] dark:bg-slate-800/80 dark:hover:bg-slate-800 text-slate-600 dark:text-slate-300 shadow-[2px_2px_5px_rgba(170,185,220,0.15),-2px_-2px_5px_rgba(255,255,255,0.9)] dark:shadow-none'
+                      onClick={() => {
+                        if (isUserAdmin) {
+                          triggerToast("Super Admin permissions cannot be modified. All 13 modules are permanently locked active.");
+                          return;
+                        }
+                        handleToggleModule(u, mod.key);
+                      }}
+                      disabled={isUserAdmin}
+                      title={isUserAdmin ? "Super Admin permissions are permanently active and locked." : undefined}
+                      className={`px-3 py-2 rounded-[14px] text-xs font-bold transition-all flex items-center gap-2 select-none active:scale-95 truncate ${
+                        isUserAdmin
+                          ? 'bg-emerald-50 text-emerald-800 dark:bg-emerald-950/40 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800/50 cursor-not-allowed opacity-95 shadow-xs'
+                          : isActive
+                          ? 'bg-[#E8F0FE] text-[#1D4ED8] dark:bg-blue-950/60 dark:text-blue-300 shadow-[2px_2px_5px_rgba(180,195,230,0.25),-2px_-2px_5px_rgba(255,255,255,0.95)] dark:shadow-none cursor-pointer'
+                          : 'bg-[#F4F7FC] hover:bg-[#EDF2F9] dark:bg-slate-800/80 dark:hover:bg-slate-800 text-slate-600 dark:text-slate-300 shadow-[2px_2px_5px_rgba(170,185,220,0.15),-2px_-2px_5px_rgba(255,255,255,0.9)] dark:shadow-none cursor-pointer'
                       }`}
                     >
-                      {isActive ? (
+                      {isUserAdmin ? (
+                        <div className="w-4 h-4 rounded-full bg-emerald-600 text-white flex items-center justify-center shrink-0 shadow-xs">
+                          <Lock className="h-2.5 w-2.5 stroke-[2.5]" />
+                        </div>
+                      ) : isActive ? (
                         <div className="w-4 h-4 rounded-full bg-[#2563EB] text-white flex items-center justify-center shrink-0 shadow-xs">
                           <Check className="h-2.5 w-2.5 stroke-[3]" />
                         </div>

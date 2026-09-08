@@ -170,7 +170,10 @@ const DEFAULT_USERS: User[] = [
     securityAnswer: 'blue',
     empId: 'EMP-006',
     designation: 'Read-Only Viewer',
-    customModules: ['dashboard', 'monthly_yearly_reporting']
+    customModules: [
+      'dashboard', 'raw_material_stock', 'pulp_mill_operations', 'machine_production', 'rewinding_reel_conversion',
+      'boiler', 'etp', 'electricity', 'orders', 'finished_stock_dispatch', 'dispatch', 'spareparts_management', 'monthly_yearly_reporting'
+    ]
   },
 ];
 
@@ -424,6 +427,44 @@ export function initializeStorage() {
     }
     localStorage.setItem('saheb_clean_13_modules_v3', 'true');
   }
+
+  // Migration v4: Grant Viewer all 13 modules & permanently lock Admin with all 13 modules
+  if (!localStorage.getItem('saheb_viewer_admin_lock_v4')) {
+    try {
+      const rawUsers = getJSON<User[]>(KEYS.USERS, DEFAULT_USERS);
+      const validKeys = [
+        'dashboard', 'raw_material_stock', 'pulp_mill_operations', 'machine_production', 'rewinding_reel_conversion',
+        'boiler', 'etp', 'electricity', 'orders', 'finished_stock_dispatch', 'dispatch', 'spareparts_management', 'monthly_yearly_reporting'
+      ];
+      const migrated = rawUsers.map(u => {
+        const uname = (u.username || '').toLowerCase();
+        if (u.role === 'Admin' || uname === 'admin') {
+          return { ...u, customModules: [...validKeys] };
+        }
+        if (u.role === 'Viewer' || uname === 'viewer') {
+          return { ...u, customModules: [...validKeys] };
+        }
+        return u;
+      });
+      setJSON(KEYS.USERS, sortUsersByHierarchy(migrated));
+
+      const rawSession = localStorage.getItem('saheb_session');
+      if (rawSession) {
+        const session = JSON.parse(rawSession);
+        if (session.user) {
+          const uname = (session.user.username || '').toLowerCase();
+          if (session.user.role === 'Admin' || uname === 'admin' || session.user.role === 'Viewer' || uname === 'viewer') {
+            session.user.customModules = [...validKeys];
+            localStorage.setItem('saheb_session', JSON.stringify(session));
+            localStorage.setItem('saheb_active_user', JSON.stringify(session.user));
+          }
+        }
+      }
+    } catch (e) {
+      console.error(e);
+    }
+    localStorage.setItem('saheb_viewer_admin_lock_v4', 'true');
+  }
 }
 
 // Ensure execution on import
@@ -540,6 +581,11 @@ export function updateUserModules(username: string, customModules: string[], ope
   const users = getUsers();
   const user = users.find(u => u.username.toLowerCase() === username.toLowerCase());
   if (user) {
+    // Admin roles & permissions are permanently locked to all 13 modules; cannot be modified
+    if (user.role === 'Admin' || user.username.toLowerCase() === 'admin') {
+      console.warn('[Security] Super Admin permissions are permanently locked and cannot be modified.');
+      return false;
+    }
     const VALID_13_KEYS = [
       'dashboard', 'raw_material_stock', 'pulp_mill_operations', 'machine_production', 'rewinding_reel_conversion',
       'boiler', 'etp', 'electricity', 'orders', 'finished_stock_dispatch', 'dispatch', 'spareparts_management', 'monthly_yearly_reporting'

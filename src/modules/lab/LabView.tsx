@@ -27,12 +27,13 @@ import {
   Clock,
   Gauge,
   X,
+  Lock,
 } from 'lucide-react';
 import { WorkflowStepBadge, WORKFLOW_STEPS } from '../../components/WorkflowStepBadge';
 import { useBodyScrollLock } from '../../hooks/useBodyScrollLock';
 
 export const LabView: React.FC = () => {
-  const { user } = useAuth();
+  const { user, isViewer } = useAuth();
   const { t } = useTranslation();
 
   const [reports, setReports] = useState<PaperTestReport[]>(() => getLabReports());
@@ -232,6 +233,11 @@ export const LabView: React.FC = () => {
     setSuccessMsg('');
     setErrorMsg('');
 
+    if (isViewer) {
+      setErrorMsg('Viewer Mode: Saving lab test reports is locked (Read-Only)');
+      return;
+    }
+
     if (!rollNo.trim()) {
       setErrorMsg('Roll Number is required');
       return;
@@ -282,6 +288,10 @@ export const LabView: React.FC = () => {
 
   const handleDeleteReport = (id: string, e: React.MouseEvent) => {
     e.stopPropagation();
+    if (isViewer) {
+      alert('Viewer Mode: Deleting lab records is locked (Read-Only)');
+      return;
+    }
     if (window.confirm('Are you sure you want to delete this lab report record?')) {
       deleteLabReport(id, user?.displayName || 'System');
       setReports(getLabReports());
@@ -352,7 +362,7 @@ export const LabView: React.FC = () => {
             </div>
           </div>
 
-          {(user?.role === 'Admin' || user?.role === 'PlantManager' || user?.role === 'LabOperator') && (
+          {(user?.role === 'Admin' || user?.role === 'PlantManager' || user?.role === 'LabOperator' || isViewer) && (
             <div className="flex items-center gap-2 self-start sm:self-auto">
               <button
                 onClick={() => {
@@ -360,10 +370,14 @@ export const LabView: React.FC = () => {
                   setErrorMsg('');
                   setIsModalOpen(true);
                 }}
-                className="btn-primary-gradient px-4 py-2.5 text-xs uppercase tracking-wider cursor-pointer active:scale-95 flex items-center justify-center gap-2"
+                className={`px-4 py-2.5 text-xs uppercase tracking-wider flex items-center justify-center gap-2 rounded-2xl font-black transition ${
+                  isViewer
+                    ? 'bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400 border border-slate-200 dark:border-slate-700 cursor-pointer'
+                    : 'btn-primary-gradient cursor-pointer active:scale-95'
+                }`}
               >
-                <Plus className="h-4 w-4" />
-                <span>Create New Report</span>
+                {isViewer ? <Lock className="h-4 w-4 text-amber-500" /> : <Plus className="h-4 w-4" />}
+                <span>{isViewer ? 'New Report Form (Read-Only)' : 'Create New Report'}</span>
               </button>
             </div>
           )}
@@ -996,9 +1010,16 @@ export const LabView: React.FC = () => {
                 </button>
                 <button
                   type="submit"
-                  className="btn-primary-gradient px-6 py-3 text-xs uppercase tracking-wider cursor-pointer"
+                  disabled={isViewer}
+                  title={isViewer ? 'Viewer Mode: Saving lab test reports is locked (Read-Only)' : 'Save & Issue Paper Test Report'}
+                  className={`px-6 py-3 text-xs uppercase tracking-wider font-black flex items-center justify-center gap-2 rounded-2xl transition ${
+                    isViewer
+                      ? 'bg-slate-200 dark:bg-slate-800 text-slate-400 dark:text-slate-500 cursor-not-allowed border border-slate-300 dark:border-slate-700 shadow-none'
+                      : 'btn-primary-gradient cursor-pointer'
+                  }`}
                 >
-                  Save & Issue Paper Test Report
+                  {isViewer ? <Lock className="h-4 w-4 text-amber-500" /> : null}
+                  <span>{isViewer ? 'Save & Issue Paper Test Report (Locked)' : 'Save & Issue Paper Test Report'}</span>
                 </button>
               </div>
 

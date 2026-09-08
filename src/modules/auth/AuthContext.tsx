@@ -13,6 +13,8 @@ interface AuthContextType {
   isSimulating: boolean;
   simulatedBy: string | null;
   hasAccess: (module: string) => boolean;
+  isViewer: boolean;
+  canEdit: boolean;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -42,6 +44,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     return null;
   });
   const isSimulating = Boolean(simulatedBy);
+  const isViewer = Boolean(
+    user && (user.role === 'Viewer' || (user.roles && user.roles.includes('Viewer')) || user.username.toLowerCase() === 'viewer')
+  );
+  const canEdit = !isViewer;
 
   const clearSession = () => {
     setUser(null);
@@ -256,6 +262,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     // Super Admin has master authority across all endpoints
     if (user.role === 'Admin') return true;
 
+    // Viewer has observational access across ALL 13 ERP modules
+    if (user.role === 'Viewer' || (user.roles && user.roles.includes('Viewer')) || user.username.toLowerCase() === 'viewer') {
+      return true;
+    }
+
     // Custom assigned modules configured by Admin in Role Management
     const custom = user.customModules && Array.isArray(user.customModules)
       ? user.customModules
@@ -319,7 +330,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   }
 
   return (
-    <AuthContext.Provider value={{ user, login, logout, resetPin, updateUserProfile, simulateWorkerLogin, exitSimulation, isSimulating, simulatedBy, hasAccess }}>
+    <AuthContext.Provider value={{ user, login, logout, resetPin, updateUserProfile, simulateWorkerLogin, exitSimulation, isSimulating, simulatedBy, hasAccess, isViewer, canEdit }}>
       {children}
     </AuthContext.Provider>
   );

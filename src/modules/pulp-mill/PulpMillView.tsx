@@ -29,6 +29,7 @@ import {
   MoreVertical,
   Pencil,
   Trash2,
+  Lock,
 } from 'lucide-react';
 
 interface DowntimeLog {
@@ -43,7 +44,7 @@ import { useDateFilter, isDateInTimeframe } from '../../context/DateFilterContex
 
 export const PulpMillView: React.FC = () => {
   const { t } = useTranslation();
-  const { user } = useAuth();
+  const { user, isViewer } = useAuth();
   const { timeframe, selectedDate } = useDateFilter();
   const [showAllHistory, setShowAllHistory] = useState(false);
 
@@ -203,6 +204,11 @@ export const PulpMillView: React.FC = () => {
     setSuccessMsg('');
     setErrorMsg('');
 
+    if (isViewer) {
+      setErrorMsg('Viewer Mode: Saving formulas & chemical rates is locked. You have read-only monitoring access.');
+      return;
+    }
+
     if (!dateStr) {
       setErrorMsg('Date is required');
       return;
@@ -232,6 +238,10 @@ export const PulpMillView: React.FC = () => {
 
   const handleAddDowntime = (e: React.FormEvent) => {
     e.preventDefault();
+    if (isViewer) {
+      setErrorMsg('Viewer Mode: Recording downtime is locked.');
+      return;
+    }
     if (!downtimeMinutes || !downtimeReason.trim()) return;
 
     const newLog: DowntimeLog = {
@@ -559,10 +569,16 @@ export const PulpMillView: React.FC = () => {
           <div className="pt-4 border-t border-slate-100 dark:border-slate-800 flex justify-end">
             <button
               type="submit"
-              className="btn-primary-gradient px-6 py-3 text-xs uppercase tracking-wider cursor-pointer flex items-center justify-center gap-2"
+              disabled={isViewer}
+              title={isViewer ? 'Viewer Mode: Saving formulas & chemical rates is locked (Read-Only)' : 'Save Formula & Chemical Rates'}
+              className={`px-6 py-3 text-xs uppercase tracking-wider flex items-center justify-center gap-2 rounded-2xl font-black transition ${
+                isViewer
+                  ? 'bg-slate-200 dark:bg-slate-800 text-slate-400 dark:text-slate-500 cursor-not-allowed border border-slate-300 dark:border-slate-700 shadow-none'
+                  : 'btn-primary-gradient cursor-pointer'
+              }`}
             >
-              <Save className="h-4 w-4" />
-              <span>Save Formula & Chemical Rates</span>
+              {isViewer ? <Lock className="h-4 w-4 text-amber-500" /> : <Save className="h-4 w-4" />}
+              <span>{isViewer ? 'Save Formula & Chemical Rates (Locked)' : 'Save Formula & Chemical Rates'}</span>
             </button>
           </div>
         </div>
@@ -600,10 +616,16 @@ export const PulpMillView: React.FC = () => {
           />
           <button
             type="submit"
-            className="btn-primary-gradient px-5 py-2.5 text-xs uppercase tracking-wider cursor-pointer flex items-center justify-center gap-1.5"
+            disabled={isViewer}
+            title={isViewer ? 'Viewer Mode: Recording downtime is locked (Read-Only)' : 'Record Downtime'}
+            className={`px-5 py-2.5 text-xs uppercase tracking-wider flex items-center justify-center gap-1.5 rounded-2xl font-black transition ${
+              isViewer
+                ? 'bg-slate-200 dark:bg-slate-800 text-slate-400 dark:text-slate-500 cursor-not-allowed border border-slate-300 dark:border-slate-700 shadow-none'
+                : 'btn-primary-gradient cursor-pointer'
+            }`}
           >
-            <Plus className="h-4 w-4" />
-            <span>Record Downtime</span>
+            {isViewer ? <Lock className="h-4 w-4 text-amber-500" /> : <Plus className="h-4 w-4" />}
+            <span>{isViewer ? 'Record Downtime (Locked)' : 'Record Downtime'}</span>
           </button>
         </form>
 

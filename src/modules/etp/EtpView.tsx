@@ -15,11 +15,12 @@ import {
   Calendar,
   ChevronDown,
   ChevronUp,
+  Lock,
 } from 'lucide-react';
 
 export const EtpView: React.FC = () => {
   const { t } = useTranslation();
-  const { user } = useAuth();
+  const { user, isViewer } = useAuth();
 
   const [logs, setLogs] = useState<EtpLog[]>(() => getEtpLogs());
   const [searchTerm, setSearchTerm] = useState('');
@@ -58,6 +59,11 @@ export const EtpView: React.FC = () => {
     e.preventDefault();
     setFormSuccess('');
     setFormError('');
+
+    if (isViewer) {
+      setFormError('Viewer Mode: Logging ETP consumption is locked. You have read-only access.');
+      return;
+    }
 
     const flockLiq = parseFloat(flockLiqStr);
     const flockMaster = parseFloat(flockMasterStr);
@@ -194,10 +200,16 @@ export const EtpView: React.FC = () => {
           <div className="pt-2 flex justify-end">
             <button
               type="submit"
-              className="btn-primary-gradient w-full sm:w-auto px-6 py-3 text-xs uppercase tracking-wider flex items-center justify-center gap-2 cursor-pointer"
+              disabled={isViewer}
+              title={isViewer ? 'Viewer Mode: Logging ETP consumption is locked (Read-Only)' : 'Log ETP Consumption'}
+              className={`w-full sm:w-auto px-6 py-3 text-xs uppercase tracking-wider flex items-center justify-center gap-2 rounded-2xl font-black transition ${
+                isViewer
+                  ? 'bg-slate-200 dark:bg-slate-800 text-slate-400 dark:text-slate-500 cursor-not-allowed border border-slate-300 dark:border-slate-700 shadow-none'
+                  : 'btn-primary-gradient cursor-pointer'
+              }`}
             >
-              <Plus className="h-4 w-4" />
-              <span>Log ETP Consumption</span>
+              {isViewer ? <Lock className="h-4 w-4 text-amber-500" /> : <Plus className="h-4 w-4" />}
+              <span>{isViewer ? 'Log ETP Consumption (Locked)' : 'Log ETP Consumption'}</span>
             </button>
           </div>
         </form>

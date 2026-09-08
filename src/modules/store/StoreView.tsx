@@ -3,11 +3,11 @@ import { useAuth } from '../auth/AuthContext';
 import { useTranslation } from 'react-i18next';
 import { getStoreItems, saveStoreItem, adjustStoreItemStock } from '../../data/index';
 import type { StoreItem } from '../../data/types';
-import { Settings, Plus, Minus, Warehouse, Disc, Search, ListFilter } from 'lucide-react';
+import { Settings, Plus, Minus, Warehouse, Disc, Search, ListFilter, Lock } from 'lucide-react';
 
 export const StoreView: React.FC = () => {
   const { t } = useTranslation();
-  const { user } = useAuth();
+  const { user, isViewer } = useAuth();
 
   const [items, setItems] = useState<StoreItem[]>(() => getStoreItems());
   const [activeTab, setActiveTab] = useState<'bearings' | 'vbelts'>('bearings');
@@ -36,6 +36,11 @@ export const StoreView: React.FC = () => {
     e.preventDefault();
     setSuccessMsg('');
     setErrorMsg('');
+
+    if (isViewer) {
+      setErrorMsg('Viewer Mode: Adding store items is locked. You have read-only access.');
+      return;
+    }
 
     if (!bearingNo || !bearingPcs || !bearingUsage) {
       setErrorMsg('All bearing fields are required');
@@ -69,6 +74,11 @@ export const StoreView: React.FC = () => {
     e.preventDefault();
     setSuccessMsg('');
     setErrorMsg('');
+
+    if (isViewer) {
+      setErrorMsg('Viewer Mode: Adding store items is locked. You have read-only access.');
+      return;
+    }
 
     if (!beltSize.trim() || !beltPcs.trim()) {
       setErrorMsg('V-Belt size code and pieces are required');
@@ -105,6 +115,10 @@ export const StoreView: React.FC = () => {
 
   const handleAdjustStock = (e: React.FormEvent) => {
     e.preventDefault();
+    if (isViewer) {
+      setErrorMsg('Viewer Mode: Adjusting stock is locked.');
+      return;
+    }
     if (!adjustingItem) return;
     const qty = parseInt(adjustAmount);
     if (isNaN(qty) || qty === 0) {
@@ -494,9 +508,16 @@ export const StoreView: React.FC = () => {
 
               <button
                 type="submit"
-                className="btn-primary-gradient w-full py-3 text-xs uppercase tracking-wider cursor-pointer"
+                disabled={isViewer}
+                title={isViewer ? 'Viewer Mode: Saving spares is locked (Read-Only)' : 'Save Bearing Spares'}
+                className={`w-full py-3 text-xs uppercase tracking-wider rounded-2xl font-black transition flex items-center justify-center gap-2 ${
+                  isViewer
+                    ? 'bg-slate-200 dark:bg-slate-800 text-slate-400 dark:text-slate-500 cursor-not-allowed border border-slate-300 dark:border-slate-700 shadow-none'
+                    : 'btn-primary-gradient cursor-pointer'
+                }`}
               >
-                Save Bearing Spares
+                {isViewer ? <Lock className="h-4 w-4 text-amber-500" /> : null}
+                <span>{isViewer ? 'Save Bearing Spares (Locked)' : 'Save Bearing Spares'}</span>
               </button>
             </form>
           )}
@@ -570,9 +591,16 @@ export const StoreView: React.FC = () => {
 
               <button
                 type="submit"
-                className="btn-primary-gradient w-full py-3 text-xs uppercase tracking-wider cursor-pointer"
+                disabled={isViewer}
+                title={isViewer ? 'Viewer Mode: Saving spares is locked (Read-Only)' : 'Save V-Belt Spares'}
+                className={`w-full py-3 text-xs uppercase tracking-wider rounded-2xl font-black transition flex items-center justify-center gap-2 ${
+                  isViewer
+                    ? 'bg-slate-200 dark:bg-slate-800 text-slate-400 dark:text-slate-500 cursor-not-allowed border border-slate-300 dark:border-slate-700 shadow-none'
+                    : 'btn-primary-gradient cursor-pointer'
+                }`}
               >
-                Save V-Belt Spares
+                {isViewer ? <Lock className="h-4 w-4 text-amber-500" /> : null}
+                <span>{isViewer ? 'Save V-Belt Spares (Locked)' : 'Save V-Belt Spares'}</span>
               </button>
             </form>
           )}
@@ -613,9 +641,16 @@ export const StoreView: React.FC = () => {
 
               <button
                 type="submit"
-                className="w-full bg-primary hover:bg-blue-800 text-white font-semibold py-2 rounded-md text-xs transition shadow"
+                disabled={isViewer}
+                title={isViewer ? 'Viewer Mode: Stock adjustments are locked (Read-Only)' : 'Log Adjustment'}
+                className={`w-full font-semibold py-2 rounded-md text-xs transition shadow flex items-center justify-center gap-1.5 ${
+                  isViewer
+                    ? 'bg-slate-200 dark:bg-slate-800 text-slate-400 dark:text-slate-500 cursor-not-allowed border border-slate-300 dark:border-slate-700 shadow-none'
+                    : 'bg-primary hover:bg-blue-800 text-white cursor-pointer'
+                }`}
               >
-                Log Adjustment
+                {isViewer ? <Lock className="h-3.5 w-3.5 text-amber-500" /> : null}
+                <span>{isViewer ? 'Log Adjustment (Locked)' : 'Log Adjustment'}</span>
               </button>
             </form>
           </div>

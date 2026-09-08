@@ -20,6 +20,7 @@ import {
   Check,
   Eye,
   Beaker,
+  Lock,
 } from 'lucide-react';
 import { WorkflowStepBadge, WORKFLOW_STEPS } from '../../components/WorkflowStepBadge';
 import { useBodyScrollLock } from '../../hooks/useBodyScrollLock';
@@ -31,7 +32,7 @@ interface FinishStockViewProps {
 
 export const FinishStockView: React.FC<FinishStockViewProps> = ({ hideHeader = false }) => {
   const { t } = useTranslation();
-  const { user } = useAuth();
+  const { user, isViewer } = useAuth();
 
   const [reels, setReels] = useState<Reel[]>(() => getReels());
   const [activeTab, setActiveTab] = useState<'all' | 'in_stock' | 'pending_qc'>('all');
@@ -225,6 +226,7 @@ export const FinishStockView: React.FC<FinishStockViewProps> = ({ hideHeader = f
 
   // 1-Click Bulk QC Approval
   const handleBulkApproveAll = () => {
+    if (isViewer) return;
     const pending = reels.filter(r => r.status === 'QC_PENDING' || !r.qcGrade || r.qcGrade === 'PENDING');
     if (pending.length === 0) return;
     pending.forEach(r => {
@@ -325,6 +327,11 @@ export const FinishStockView: React.FC<FinishStockViewProps> = ({ hideHeader = f
   const handleInspectSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     setQcError('');
+
+    if (isViewer) {
+      setQcError('Viewer Mode: Data modification is locked (Read-Only)');
+      return;
+    }
 
     if (!inspectingReel) return;
 
@@ -496,10 +503,16 @@ export const FinishStockView: React.FC<FinishStockViewProps> = ({ hideHeader = f
             <button
               type="button"
               onClick={handleBulkApproveAll}
-              className="btn-primary-gradient w-full sm:w-auto px-5 py-2.5 text-xs uppercase tracking-wider flex items-center justify-center gap-2 cursor-pointer"
+              disabled={isViewer}
+              title={isViewer ? 'Viewer Mode: 1-Click QC approval is locked (Read-Only)' : '1-Click Approve All'}
+              className={`w-full sm:w-auto px-5 py-2.5 text-xs uppercase tracking-wider flex items-center justify-center gap-2 rounded-2xl font-black transition ${
+                isViewer
+                  ? 'bg-slate-200 dark:bg-slate-800 text-slate-400 dark:text-slate-500 cursor-not-allowed border border-slate-300 dark:border-slate-700 shadow-none'
+                  : 'btn-primary-gradient cursor-pointer'
+              }`}
             >
-              <CheckSquare className="h-4 w-4" />
-              <span>✨ 1-Click Approve All</span>
+              {isViewer ? <Lock className="h-4 w-4 text-amber-500" /> : <CheckSquare className="h-4 w-4" />}
+              <span>{isViewer ? '1-Click Approve All (Locked)' : '✨ 1-Click Approve All'}</span>
             </button>
           </div>
         </div>
@@ -862,7 +875,7 @@ export const FinishStockView: React.FC<FinishStockViewProps> = ({ hideHeader = f
                               </td>
                               <td className="py-3 px-3 text-right">
                                 {reel.status === 'QC_PENDING' ? (
-                                  hasQcWriteAccess ? (
+                                  hasQcWriteAccess || isViewer ? (
                                     <button
                                       onClick={() => {
                                         setInspectingReel(reel);
@@ -871,7 +884,7 @@ export const FinishStockView: React.FC<FinishStockViewProps> = ({ hideHeader = f
                                       }}
                                       className="px-3.5 py-1.5 bg-[#008163] hover:bg-[#006e54] text-white rounded-xl text-[10px] font-black uppercase tracking-wider shadow-sm cursor-pointer"
                                     >
-                                      QC Test
+                                      {isViewer ? 'QC View' : 'QC Test'}
                                     </button>
                                   ) : (
                                     <span className="text-[10px] text-purple-600 dark:text-purple-300 font-black uppercase bg-purple-100 dark:bg-purple-950/40 px-2.5 py-1 rounded-full border border-purple-200 dark:border-purple-800">
@@ -963,7 +976,7 @@ export const FinishStockView: React.FC<FinishStockViewProps> = ({ hideHeader = f
 
                           <div className="pt-2 border-t border-slate-100 dark:border-slate-800 flex justify-end items-center">
                             {reel.status === 'QC_PENDING' ? (
-                              hasQcWriteAccess ? (
+                              hasQcWriteAccess || isViewer ? (
                                 <button
                                   onClick={() => {
                                     setInspectingReel(reel);
@@ -972,7 +985,7 @@ export const FinishStockView: React.FC<FinishStockViewProps> = ({ hideHeader = f
                                   }}
                                   className="px-3.5 py-1.5 bg-[#008163] hover:bg-[#006e54] text-white rounded-xl text-[10px] font-black uppercase shadow-xs cursor-pointer"
                                 >
-                                  QC Test
+                                  {isViewer ? 'QC View' : 'QC Test'}
                                 </button>
                               ) : (
                                 <span className="text-[10px] text-purple-600 dark:text-purple-300 font-black uppercase bg-purple-100 dark:bg-purple-950/40 px-2.5 py-0.5 rounded-full">
@@ -1324,10 +1337,16 @@ export const FinishStockView: React.FC<FinishStockViewProps> = ({ hideHeader = f
 
               <button
                 type="submit"
-                className="btn-primary-gradient w-full py-3 text-xs uppercase tracking-wider cursor-pointer flex items-center justify-center gap-2"
+                disabled={isViewer}
+                title={isViewer ? 'Viewer Mode: Submitting QC inspection is locked (Read-Only)' : 'Submit Quality Inspection Log'}
+                className={`w-full py-3 text-xs uppercase tracking-wider flex items-center justify-center gap-2 rounded-2xl font-black transition ${
+                  isViewer
+                    ? 'bg-slate-200 dark:bg-slate-800 text-slate-400 dark:text-slate-500 cursor-not-allowed border border-slate-300 dark:border-slate-700 shadow-none'
+                    : 'btn-primary-gradient cursor-pointer'
+                }`}
               >
-                <Check className="h-4 w-4" />
-                <span>Submit Quality Inspection Log</span>
+                {isViewer ? <Lock className="h-4 w-4 text-amber-500" /> : <Check className="h-4 w-4" />}
+                <span>{isViewer ? 'Submit Quality Inspection Log (Locked)' : 'Submit Quality Inspection Log'}</span>
               </button>
             </form>
           </div>

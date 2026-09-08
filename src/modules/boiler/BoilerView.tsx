@@ -16,12 +16,13 @@ import {
   Thermometer,
   CheckCircle2,
   AlertCircle,
+  Lock,
 } from 'lucide-react';
 import { DataFilterBar } from '../../components/DataFilterBar';
 
 export const BoilerView: React.FC = () => {
   const { t } = useTranslation();
-  const { user } = useAuth();
+  const { user, isViewer } = useAuth();
 
   const [logs, setLogs] = useState<BoilerLog[]>(() => getBoilerLogs());
   const [searchTerm, setSearchTerm] = useState('');
@@ -79,6 +80,11 @@ export const BoilerView: React.FC = () => {
     e.preventDefault();
     setFormSuccess('');
     setFormError('');
+
+    if (isViewer) {
+      setFormError('Viewer Mode: Logging boiler shift readings is locked. You have read-only access.');
+      return;
+    }
 
     const wood = parseFloat(woodStr);
     const water = parseFloat(waterStr);
@@ -296,10 +302,16 @@ export const BoilerView: React.FC = () => {
           <div className="pt-2 flex justify-end">
             <button
               type="submit"
-              className="w-full sm:w-auto px-6 py-3 bg-gradient-to-r from-orange-600 via-amber-600 to-orange-700 hover:from-orange-700 hover:to-amber-700 text-white font-black rounded-2xl text-xs uppercase tracking-wider shadow-md shadow-orange-500/25 transition cursor-pointer flex items-center justify-center gap-2"
+              disabled={isViewer}
+              title={isViewer ? 'Viewer Mode: Logging boiler shift readings is locked (Read-Only)' : 'Log Shift Readings'}
+              className={`w-full sm:w-auto px-6 py-3 font-black rounded-2xl text-xs uppercase tracking-wider transition flex items-center justify-center gap-2 ${
+                isViewer
+                  ? 'bg-slate-200 dark:bg-slate-800 text-slate-400 dark:text-slate-500 cursor-not-allowed border border-slate-300 dark:border-slate-700 shadow-none'
+                  : 'bg-gradient-to-r from-orange-600 via-amber-600 to-orange-700 hover:from-orange-700 hover:to-amber-700 text-white shadow-md shadow-orange-500/25 cursor-pointer'
+              }`}
             >
-              <Flame className="h-4 w-4" />
-              <span>Log Shift Readings</span>
+              {isViewer ? <Lock className="h-4 w-4 text-amber-500" /> : <Flame className="h-4 w-4" />}
+              <span>{isViewer ? 'Log Shift Readings (Locked)' : 'Log Shift Readings'}</span>
             </button>
           </div>
         </form>

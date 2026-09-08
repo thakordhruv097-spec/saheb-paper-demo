@@ -29,6 +29,7 @@ import {
   X,
   Calendar,
   ChevronDown,
+  Lock,
 } from 'lucide-react';
 import { QRCodeSVG } from 'qrcode.react';
 import { WorkflowStepBadge, WORKFLOW_STEPS } from '../../components/WorkflowStepBadge';
@@ -36,7 +37,7 @@ import { useBodyScrollLock } from '../../hooks/useBodyScrollLock';
 import { useDateFilter, isDateInTimeframe } from '../../context/DateFilterContext';
 
 export const RawMaterialView: React.FC = () => {
-  const { user } = useAuth();
+  const { user, isViewer } = useAuth();
   const { t } = useTranslation();
   const { timeframe, selectedDate } = useDateFilter();
 
@@ -94,6 +95,11 @@ export const RawMaterialView: React.FC = () => {
     e.preventDefault();
     setInwardSuccess('');
     setInwardError('');
+
+    if (isViewer) {
+      setInwardError('Viewer Mode: Inward stock addition is locked. You have read-only access to all data.');
+      return;
+    }
 
     if (!selectedMaterialId || !qtyStr || !selectedVendorId) {
       setInwardError('Please select material item, supplier vendor, and enter quantity');
@@ -257,7 +263,7 @@ export const RawMaterialView: React.FC = () => {
           <div className="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-3">
             <div className="flex items-center gap-2.5">
               <div className="p-2 rounded-xl bg-blue-50 dark:bg-blue-950/40 text-blue-600 dark:text-blue-400">
-                <Plus className="h-4 w-4" />
+                {isViewer ? <Lock className="h-4 w-4 text-amber-500" /> : <Plus className="h-4 w-4" />}
               </div>
               <div>
                 <h3 className="text-xs sm:text-sm font-black text-slate-900 dark:text-white uppercase tracking-wider font-heading">
@@ -268,6 +274,11 @@ export const RawMaterialView: React.FC = () => {
                 </p>
               </div>
             </div>
+            {isViewer && (
+              <span className="px-2.5 py-1 rounded-full bg-amber-50 dark:bg-amber-950/60 text-amber-600 dark:text-amber-400 text-[10px] font-black uppercase border border-amber-200 dark:border-amber-800 flex items-center gap-1">
+                <Lock className="h-3 w-3" /> Viewer (Read-Only)
+              </span>
+            )}
           </div>
 
           {inwardError && (
@@ -419,10 +430,16 @@ export const RawMaterialView: React.FC = () => {
             <div className="flex justify-end pt-1">
               <button
                 type="submit"
-                className="btn-primary-gradient w-full sm:w-auto px-8 py-3 text-xs uppercase tracking-wider cursor-pointer flex items-center justify-center gap-2"
+                disabled={isViewer}
+                title={isViewer ? 'Viewer Mode: Adding inward shipment is locked (Read-Only)' : 'Confirm Inward'}
+                className={`w-full sm:w-auto px-8 py-3 text-xs uppercase tracking-wider flex items-center justify-center gap-2 rounded-2xl font-black transition ${
+                  isViewer
+                    ? 'bg-slate-200 dark:bg-slate-800 text-slate-400 dark:text-slate-500 cursor-not-allowed border border-slate-300 dark:border-slate-700 shadow-none'
+                    : 'btn-primary-gradient cursor-pointer'
+                }`}
               >
-                <Plus className="h-4 w-4" />
-                <span>Confirm Inward</span>
+                {isViewer ? <Lock className="h-4 w-4 text-amber-500" /> : <Plus className="h-4 w-4" />}
+                <span>{isViewer ? 'Confirm Inward (Locked)' : 'Confirm Inward'}</span>
               </button>
             </div>
           </form>

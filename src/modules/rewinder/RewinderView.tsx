@@ -24,6 +24,7 @@ import {
   RotateCcw,
   AlertTriangle,
   Check,
+  Lock,
 } from 'lucide-react';
 import { COMPANY_CONFIG } from '../../config/company';
 
@@ -33,7 +34,7 @@ import { useDateFilter, isDateInTimeframe } from '../../context/DateFilterContex
 
 export const RewinderView: React.FC = () => {
   const { t } = useTranslation();
-  const { user } = useAuth();
+  const { user, isViewer } = useAuth();
   const { timeframe, selectedDate } = useDateFilter();
 
   const [rolls] = useState<MachineRoll[]>(() => getRolls());
@@ -394,6 +395,11 @@ export const RewinderView: React.FC = () => {
   const handleSaveSingleReel = (e: React.FormEvent) => {
     e.preventDefault();
     setModalError('');
+
+    if (isViewer) {
+      setModalError('Viewer Mode: Saving reel conversion is locked. You have read-only access.');
+      return;
+    }
 
     const availableRolls = getRolls();
     if (availableRolls.length === 0) {
@@ -1332,9 +1338,16 @@ export const RewinderView: React.FC = () => {
                 </button>
                 <button
                   type="submit"
-                  className="btn-primary-gradient px-6 py-2.5 text-xs uppercase tracking-wider cursor-pointer active:scale-95"
+                  disabled={isViewer}
+                  title={isViewer ? 'Viewer Mode: Reel entry saving is locked (Read-Only)' : 'Save Reel Entry'}
+                  className={`px-6 py-2.5 text-xs uppercase tracking-wider rounded-xl font-black transition flex items-center justify-center gap-1.5 ${
+                    isViewer
+                      ? 'bg-slate-200 dark:bg-slate-800 text-slate-400 dark:text-slate-500 cursor-not-allowed border border-slate-300 dark:border-slate-700 shadow-none'
+                      : 'btn-primary-gradient cursor-pointer active:scale-95'
+                  }`}
                 >
-                  Save Reel Entry
+                  {isViewer ? <Lock className="h-4 w-4 text-amber-500" /> : null}
+                  <span>{isViewer ? 'Save Reel Entry (Locked)' : 'Save Reel Entry'}</span>
                 </button>
               </div>
             </form>
