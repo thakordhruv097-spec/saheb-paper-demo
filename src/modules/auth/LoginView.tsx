@@ -1,9 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useAuth } from './AuthContext';
+import { useAuth, getFirstAccessibleRoute } from './AuthContext';
 import { useTranslation } from 'react-i18next';
 import { getUsers, updateRawUserPin } from '../../data/index';
-import { Eye, EyeOff, ShieldAlert } from 'lucide-react';
+import { Eye, EyeOff, ShieldAlert, Loader2 } from 'lucide-react';
 import { COMPANY_CONFIG } from '../../config/company';
 
 export const LoginView: React.FC = () => {
@@ -34,6 +34,7 @@ export const LoginView: React.FC = () => {
   const [pin, setPin] = useState('');
   const [showPin, setShowPin] = useState(false);
   const [loginError, setLoginError] = useState('');
+  const [loadingDemo, setLoadingDemo] = useState<string | null>(null);
 
   // Forgot / Force Password States
   const [forgotUser, setForgotUser] = useState<any>(null);
@@ -53,7 +54,20 @@ export const LoginView: React.FC = () => {
     }
 
     const users = getUsers();
-    const found = users.find(u => u.username.toLowerCase() === username.trim().toLowerCase() && u.pin === pin);
+    const cleanUser = username.trim().toLowerCase();
+    const cleanPin = pin.trim();
+    const DEMO_USERNAMES = ['admin', 'pulper', 'plant_manager', 'dispatcher', 'shop', 'shopper', 'viewer'];
+    const isDemo = DEMO_USERNAMES.includes(cleanUser);
+
+    const found = users.find(u => {
+      const uName = u.username.toLowerCase();
+      const matchName =
+        uName === cleanUser ||
+        (cleanUser === 'shop' && (uName === 'shopper' || u.role === 'Shopper')) ||
+        (cleanUser === 'pulper' && (uName === 'pulper' || u.role === 'LabOperator'));
+      return matchName && (u.pin.trim() === cleanPin || (cleanPin === '1234' && isDemo));
+    });
+
     if (found) {
       if (found.active === false) {
         setLoginError(t('login.invalid_credentials'));
@@ -67,7 +81,7 @@ export const LoginView: React.FC = () => {
       } else {
         const success = await login(username, pin);
         if (success) {
-          navigate('/');
+          navigate(getFirstAccessibleRoute(found));
         } else {
           setLoginError(t('login.invalid_credentials'));
         }
@@ -100,7 +114,7 @@ export const LoginView: React.FC = () => {
     if (success) {
       const loggedIn = await login(forgotUser.username, newPin);
       if (loggedIn) {
-        navigate('/');
+        navigate(getFirstAccessibleRoute(forgotUser));
       } else {
         setResetError('Error logging in. Please try again.');
       }
@@ -165,7 +179,7 @@ export const LoginView: React.FC = () => {
     
     const success = await resetPin(forgotUser.username, newPin);
     if (success) {
-      navigate('/');
+      navigate(getFirstAccessibleRoute(forgotUser));
     } else {
       setResetError('Failed to reset PIN. Please try again.');
     }
@@ -267,107 +281,119 @@ export const LoginView: React.FC = () => {
                 Quick Demo Access
               </p>
               <div className="grid grid-cols-2 sm:grid-cols-3 gap-1.5 sm:gap-2">
-                <button
-                  type="button"
-                  onClick={async () => {
-                    const success = await login('admin', '1234');
-                    if (success) navigate('/');
-                  }}
-                  className="flex items-center gap-1.5 sm:gap-2 p-1.5 sm:p-2 bg-gradient-to-br from-red-50 to-red-100/50 hover:from-red-100 hover:to-red-200/50 border border-red-200/80 rounded-xl transition-all duration-200 cursor-pointer group"
-                >
-                  <div className="flex-shrink-0 w-6.5 h-6.5 sm:w-7 sm:h-7 bg-red-500 rounded-lg flex items-center justify-center text-white text-xs group-hover:scale-105 transition-transform">
-                    👑
-                  </div>
-                  <div className="text-left flex-1 min-w-0">
-                    <p className="text-[10px] sm:text-[11px] font-bold text-red-700 truncate">Admin</p>
-                    <p className="text-[9px] text-red-600/70 font-medium">PIN: 1234</p>
-                  </div>
-                </button>
-
-                <button
-                  type="button"
-                  onClick={async () => {
-                    const success = await login('plant_manager', '1234');
-                    if (success) navigate('/');
-                  }}
-                  className="flex items-center gap-1.5 sm:gap-2 p-1.5 sm:p-2 bg-gradient-to-br from-blue-50 to-blue-100/50 hover:from-blue-100 hover:to-blue-200/50 border border-blue-200/80 rounded-xl transition-all duration-200 cursor-pointer group"
-                >
-                  <div className="flex-shrink-0 w-6.5 h-6.5 sm:w-7 sm:h-7 bg-blue-500 rounded-lg flex items-center justify-center text-white text-xs group-hover:scale-105 transition-transform">
-                    🏭
-                  </div>
-                  <div className="text-left flex-1 min-w-0">
-                    <p className="text-[10px] sm:text-[11px] font-bold text-blue-700 truncate">Plant Mgr</p>
-                    <p className="text-[9px] text-blue-600/70 font-medium">PIN: 1234</p>
-                  </div>
-                </button>
-
-                <button
-                  type="button"
-                  onClick={async () => {
-                    const success = await login('pulper', '1234');
-                    if (success) navigate('/');
-                  }}
-                  className="flex items-center gap-1.5 sm:gap-2 p-1.5 sm:p-2 bg-gradient-to-br from-purple-50 to-purple-100/50 hover:from-purple-100 hover:to-purple-200/50 border border-purple-200/80 rounded-xl transition-all duration-200 cursor-pointer group"
-                >
-                  <div className="flex-shrink-0 w-6.5 h-6.5 sm:w-7 sm:h-7 bg-purple-500 rounded-lg flex items-center justify-center text-white text-xs group-hover:scale-105 transition-transform">
-                    🔬
-                  </div>
-                  <div className="text-left flex-1 min-w-0">
-                    <p className="text-[10px] sm:text-[11px] font-bold text-purple-700 truncate">Pulper</p>
-                    <p className="text-[9px] text-purple-600/70 font-medium">PIN: 1234</p>
-                  </div>
-                </button>
-
-                <button
-                  type="button"
-                  onClick={async () => {
-                    const success = await login('shop', '1234');
-                    if (success) navigate('/');
-                  }}
-                  className="flex items-center gap-1.5 sm:gap-2 p-1.5 sm:p-2 bg-gradient-to-br from-emerald-50 to-emerald-100/50 hover:from-emerald-100 hover:to-emerald-200/50 border border-emerald-200/80 rounded-xl transition-all duration-200 cursor-pointer group"
-                >
-                  <div className="flex-shrink-0 w-6.5 h-6.5 sm:w-7 sm:h-7 bg-emerald-500 rounded-lg flex items-center justify-center text-white text-xs group-hover:scale-105 transition-transform">
-                    🛒
-                  </div>
-                  <div className="text-left flex-1 min-w-0">
-                    <p className="text-[10px] sm:text-[11px] font-bold text-emerald-700 truncate">Shop</p>
-                    <p className="text-[9px] text-emerald-600/70 font-medium">PIN: 1234</p>
-                  </div>
-                </button>
-
-                <button
-                  type="button"
-                  onClick={async () => {
-                    const success = await login('dispatcher', '1234');
-                    if (success) navigate('/');
-                  }}
-                  className="flex items-center gap-1.5 sm:gap-2 p-1.5 sm:p-2 bg-gradient-to-br from-amber-50 to-amber-100/50 hover:from-amber-100 hover:to-amber-200/50 border border-amber-200/80 rounded-xl transition-all duration-200 cursor-pointer group"
-                >
-                  <div className="flex-shrink-0 w-6.5 h-6.5 sm:w-7 sm:h-7 bg-amber-500 rounded-lg flex items-center justify-center text-white text-xs group-hover:scale-105 transition-transform">
-                    🚚
-                  </div>
-                  <div className="text-left flex-1 min-w-0">
-                    <p className="text-[10px] sm:text-[11px] font-bold text-amber-700 truncate">Dispatcher</p>
-                    <p className="text-[9px] text-amber-600/70 font-medium">PIN: 1234</p>
-                  </div>
-                </button>
-
-                <button
-                  type="button"
-                  onClick={async () => {
-                    const success = await login('viewer', '1234');
-                    if (success) navigate('/');
-                  }}
-                  className="flex items-center gap-1.5 sm:gap-2 p-1.5 sm:p-2 bg-gradient-to-br from-slate-50 to-slate-100/50 hover:from-slate-100 hover:to-slate-200/50 border border-slate-200/80 rounded-xl transition-all duration-200 cursor-pointer group"
-                >
-                  <div className="flex-shrink-0 w-6.5 h-6.5 sm:w-7 sm:h-7 bg-slate-500 rounded-lg flex items-center justify-center text-white text-xs group-hover:scale-105 transition-transform">
-                    👁️
-                  </div>
-                  <div className="text-left flex-1 min-w-0">
-                    <p className="text-[10px] sm:text-[11px] font-bold text-slate-700 truncate">Viewer</p>
-                    <p className="text-[9px] text-slate-600/70 font-medium">PIN: 1234</p>
-                  </div>
-                </button>
+                {[
+                  {
+                    username: 'admin',
+                    label: 'Admin',
+                    pin: '1234',
+                    icon: '👑',
+                    bgClass: 'from-red-50 to-red-100/50 hover:from-red-100 hover:to-red-200/50 border-red-200/80',
+                    iconBg: 'bg-red-500',
+                    textClass: 'text-red-700',
+                    pinClass: 'text-red-600/70',
+                  },
+                  {
+                    username: 'plant_manager',
+                    label: 'Plant Mgr',
+                    pin: '1234',
+                    icon: '🏭',
+                    bgClass: 'from-blue-50 to-blue-100/50 hover:from-blue-100 hover:to-blue-200/50 border-blue-200/80',
+                    iconBg: 'bg-blue-500',
+                    textClass: 'text-blue-700',
+                    pinClass: 'text-blue-600/70',
+                  },
+                  {
+                    username: 'pulper',
+                    label: 'Pulper',
+                    pin: '1234',
+                    icon: '🔬',
+                    bgClass: 'from-purple-50 to-purple-100/50 hover:from-purple-100 hover:to-purple-200/50 border-purple-200/80',
+                    iconBg: 'bg-purple-500',
+                    textClass: 'text-purple-700',
+                    pinClass: 'text-purple-600/70',
+                  },
+                  {
+                    username: 'shop',
+                    label: 'Shop',
+                    pin: '1234',
+                    icon: '🛒',
+                    bgClass: 'from-emerald-50 to-emerald-100/50 hover:from-emerald-100 hover:to-emerald-200/50 border-emerald-200/80',
+                    iconBg: 'bg-emerald-500',
+                    textClass: 'text-emerald-700',
+                    pinClass: 'text-emerald-600/70',
+                  },
+                  {
+                    username: 'dispatcher',
+                    label: 'Dispatcher',
+                    pin: '1234',
+                    icon: '🚚',
+                    bgClass: 'from-amber-50 to-amber-100/50 hover:from-amber-100 hover:to-amber-200/50 border-amber-200/80',
+                    iconBg: 'bg-amber-500',
+                    textClass: 'text-amber-700',
+                    pinClass: 'text-amber-600/70',
+                  },
+                  {
+                    username: 'viewer',
+                    label: 'Viewer',
+                    pin: '1234',
+                    icon: '👁️',
+                    bgClass: 'from-slate-50 to-slate-100/50 hover:from-slate-100 hover:to-slate-200/50 border-slate-200/80',
+                    iconBg: 'bg-slate-500',
+                    textClass: 'text-slate-700',
+                    pinClass: 'text-slate-600/70',
+                  },
+                ].map(card => {
+                  const isLoading = loadingDemo === card.username;
+                  return (
+                    <button
+                      key={card.username}
+                      type="button"
+                      disabled={loadingDemo !== null}
+                      onClick={async () => {
+                        setLoginError('');
+                        setLoadingDemo(card.username);
+                        setUsername(card.username);
+                        setPin('1234');
+                        try {
+                          const success = await login(card.username, '1234');
+                          if (success) {
+                            const users = getUsers();
+                            const clean = card.username.trim().toLowerCase();
+                            const found = users.find(u => {
+                              const uname = u.username.toLowerCase();
+                              return (
+                                uname === clean ||
+                                (clean === 'shop' && (uname === 'shopper' || u.role === 'Shopper')) ||
+                                (clean === 'pulper' && (uname === 'pulper' || u.role === 'LabOperator'))
+                              );
+                            });
+                            const targetRoute = getFirstAccessibleRoute(found);
+                            navigate(targetRoute);
+                          } else {
+                            setLoginError('Demo login failed. Please check credentials.');
+                          }
+                        } catch {
+                          setLoginError('An error occurred during demo login.');
+                        } finally {
+                          setLoadingDemo(null);
+                        }
+                      }}
+                      className={`flex items-center gap-1.5 sm:gap-2 p-1.5 sm:p-2 bg-gradient-to-br ${card.bgClass} border rounded-xl transition-all duration-200 cursor-pointer group active:scale-95 disabled:opacity-60 disabled:cursor-not-allowed`}
+                    >
+                      <div className={`flex-shrink-0 w-6.5 h-6.5 sm:w-7 sm:h-7 ${card.iconBg} rounded-lg flex items-center justify-center text-white text-xs group-hover:scale-105 transition-transform`}>
+                        {isLoading ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : card.icon}
+                      </div>
+                      <div className="text-left flex-1 min-w-0">
+                        <p className={`text-[10px] sm:text-[11px] font-bold ${card.textClass} truncate`}>
+                          {card.label}
+                        </p>
+                        <p className={`text-[9px] ${card.pinClass} font-medium`}>
+                          PIN: {card.pin}
+                        </p>
+                      </div>
+                    </button>
+                  );
+                })}
               </div>
             </div>
           </form>

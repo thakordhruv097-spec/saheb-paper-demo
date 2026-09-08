@@ -16,9 +16,9 @@ export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children, module
   }
 
   if (!hasAccess(moduleName)) {
-    // If worker simulation is active, immediately redirect to the worker's accessible route
-    // to prevent any jarring "Access Denied" flash on route switches
-    if (isSimulating) {
+    // If navigating to root / dashboard without dashboard access, or during worker simulation,
+    // seamlessly redirect to the user's primary accessible module to prevent "Access Denied"
+    if (moduleName === 'dashboard' || isSimulating) {
       return <Navigate to={getFirstAccessibleRoute(user)} replace />;
     }
 
@@ -59,10 +59,10 @@ export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children, module
               </button>
             ) : (
               <button
-                onClick={() => navigate('/profile')}
+                onClick={() => navigate(getFirstAccessibleRoute(user))}
                 className="btn-primary-gradient px-5 py-2.5 text-xs uppercase tracking-wider cursor-pointer"
               >
-                Go to Profile
+                Go to Accessible Workspace
               </button>
             )}
           </div>

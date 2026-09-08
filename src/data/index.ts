@@ -494,6 +494,14 @@ export function addLog(module: string, action: string, details: string, user: st
 // --- USERS / AUTH ---
 export function getUsers(): User[] {
   const users = getJSON<User[]>(KEYS.USERS, DEFAULT_USERS);
+
+  // Guarantee all 6 canonical demo users exist in the active user list
+  for (const defUser of DEFAULT_USERS) {
+    if (!users.some(u => u.username.toLowerCase() === defUser.username.toLowerCase())) {
+      users.push({ ...defUser });
+    }
+  }
+
   const validRoles: UserRole[] = ['Admin', 'PlantManager', 'LabOperator', 'Viewer', 'Shopper', 'Dispatcher'];
 
   const mapped = users.map(u => {
