@@ -156,6 +156,7 @@ export const DateFilterProvider: React.FC<{ children: React.ReactNode }> = ({ ch
     if (timeframe === 'day') dt.setDate(dt.getDate() - 1);
     else if (timeframe === 'week') dt.setDate(dt.getDate() - 7);
     else if (timeframe === 'month') dt.setMonth(dt.getMonth() - 1);
+    else if (timeframe === 'all') dt.setFullYear(dt.getFullYear() - 1);
 
     const prevStr = `${dt.getFullYear()}-${String(dt.getMonth() + 1).padStart(2, '0')}-${String(dt.getDate()).padStart(2, '0')}`;
     handleSetSelectedDate(prevStr);
@@ -173,6 +174,7 @@ export const DateFilterProvider: React.FC<{ children: React.ReactNode }> = ({ ch
     if (timeframe === 'day') dt.setDate(dt.getDate() + 1);
     else if (timeframe === 'week') dt.setDate(dt.getDate() + 7);
     else if (timeframe === 'month') dt.setMonth(dt.getMonth() + 1);
+    else if (timeframe === 'all') dt.setFullYear(dt.getFullYear() + 1);
 
     const nextStr = `${dt.getFullYear()}-${String(dt.getMonth() + 1).padStart(2, '0')}-${String(dt.getDate()).padStart(2, '0')}`;
     handleSetSelectedDate(nextStr > todayStr ? todayStr : nextStr);

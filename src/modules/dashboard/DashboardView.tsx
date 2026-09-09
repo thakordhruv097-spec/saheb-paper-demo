@@ -49,7 +49,7 @@ import {
   Search,
 } from 'lucide-react';
 
-import { useDateFilter } from '../../context/DateFilterContext';
+import { useDateFilter, getDateRangeForTimeframe } from '../../context/DateFilterContext';
 import { useBodyScrollLock } from '../../hooks/useBodyScrollLock';
 
 export const DashboardView: React.FC = () => {
@@ -58,7 +58,6 @@ export const DashboardView: React.FC = () => {
   const navigate = useNavigate();
   const { timeframe, setTimeframe, selectedDate, dateTick, systemToday } = useDateFilter();
 
-  const [period, setPeriod] = useState<'month' | 'year'>('month');
   const [refreshKey, setRefreshKey] = useState(0);
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [isActivityModalOpen, setIsActivityModalOpen] = useState(false);
@@ -76,16 +75,10 @@ export const DashboardView: React.FC = () => {
     };
   }, []);
 
-  // Re-sync data when selectedDate, timeframe, or dateTick changes
+  // Re-sync data when dateTick increments (midnight rollover or manual sync)
   useEffect(() => {
-    setIsRefreshing(true);
-    const timer = setTimeout(() => {
-      setRefreshKey(prev => prev + 1);
-      setIsRefreshing(false);
-    }, 200);
-
-    return () => clearTimeout(timer);
-  }, [selectedDate, timeframe, dateTick]);
+    setRefreshKey(prev => prev + 1);
+  }, [dateTick]);
 
   // Re-sync all data when refreshKey increments
   const materials = useMemo(() => getRawMaterials(), [refreshKey]);
@@ -232,9 +225,99 @@ export const DashboardView: React.FC = () => {
     }, 300);
   };
 
-  // Dynamic Analytics Breakdown for "This Month" vs "This Year"
+  // Dynamic Analytics Breakdown based on selected timeframe (Day / Week / Month / All)
   const analyticsData = useMemo(() => {
-    if (period === 'month') {
+    // 1. TIMEFRAME: DAY (Shift & Operational Breakdown for selectedDate)
+    if (timeframe === 'day') {
+      const shiftARolls = rolls.filter(r => r.date === selectedDate && r.shift === 'A');
+      const shiftBRolls = rolls.filter(r => r.date === selectedDate && r.shift === 'B');
+      const dayReels = reels.filter(r => (r.productionDate?.substring(0, 10) === selectedDate));
+      const dayDispatchedReels = reels.filter(r => r.status === 'DISPATCHED' && (r.dispatchDetails?.dispatchDate === selectedDate || r.productionDate?.substring(0, 10) === selectedDate));
+      const daySlips = packingSlips.filter(s => s.date === selectedDate || s.dispatchDate === selectedDate);
+
+      const shiftAWeight = shiftARolls.reduce((sum, r) => sum + r.weight, 0);
+      const shiftBWeight = shiftBRolls.reduce((sum, r) => sum + r.weight, 0);
+      const rewinderWeight = dayReels.reduce((sum, r) => sum + r.weight, 0);
+      const dispatchedWeight = dayDispatchedReels.reduce((sum, r) => sum + r.weight, 0);
+
+      const segments = [
+        {
+          label: 'Shift A Machine Output',
+          orders: shiftARolls.length,
+          weight: shiftAWeight,
+        },
+        {
+          label: 'Shift B Machine Output',
+          orders: shiftBRolls.length,
+          weight: shiftBWeight,
+        },
+        {
+          label: 'Rewinder Reel Conversion',
+          orders: dayReels.length,
+          weight: rewinderWeight,
+        },
+        {
+          label: 'Dispatched Goods Outflow',
+          orders: daySlips.length || dayDispatchedReels.length,
+          weight: dispatchedWeight,
+        },
+      ];
+
+      const totalWeight = segments.reduce((sum, c) => sum + c.weight, 0);
+      const maxW = Math.max(...segments.map(c => c.weight), 1);
+      return segments.map(c => {
+        const share = totalWeight > 0 ? ((c.weight / totalWeight) * 100).toFixed(1) : '0.0';
+        const trend = c.weight > 0 ? `+${share}% share` : '0 kg / pending';
+        return {
+          ...c,
+          trend,
+          progress: c.weight > 0 ? Math.min(100, Math.max(12, Math.round((c.weight / maxW) * 100))) : 0,
+        };
+      });
+    }
+
+    // 2. TIMEFRAME: WEEK (7-day daily progression ending on selectedDate)
+    if (timeframe === 'week') {
+      const parts = selectedDate.split('-').map(Number);
+      const [y, m, d] = parts;
+      const days = [];
+      for (let i = 6; i >= 0; i--) {
+        const dt = new Date(y, m - 1, d - i);
+        const dtStr = `${dt.getFullYear()}-${String(dt.getMonth() + 1).padStart(2, '0')}-${String(dt.getDate()).padStart(2, '0')}`;
+        const weekday = dt.toLocaleDateString('en-US', { weekday: 'short' });
+        const dayMonth = dt.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+        days.push({
+          dateStr: dtStr,
+          label: `${weekday}, ${dayMonth}${dtStr === selectedDate ? ' (Current)' : ''}`,
+        });
+      }
+
+      const calculated = days.map(d => {
+        const dRolls = rolls.filter(r => r.date === d.dateStr);
+        const weight = dRolls.reduce((sum, r) => sum + r.weight, 0);
+        const orderCount = packingSlips.filter(s => s.date === d.dateStr).length;
+        return {
+          label: d.label,
+          orders: orderCount || dRolls.length,
+          weight,
+        };
+      });
+
+      const totalWeight = calculated.reduce((sum, c) => sum + c.weight, 0);
+      const maxW = Math.max(...calculated.map(c => c.weight), 1);
+      return calculated.map(c => {
+        const share = totalWeight > 0 ? ((c.weight / totalWeight) * 100).toFixed(1) : '0.0';
+        const trend = c.weight > 0 ? `+${share}% share` : '0 kg / pending';
+        return {
+          ...c,
+          trend,
+          progress: c.weight > 0 ? Math.min(100, Math.max(12, Math.round((c.weight / maxW) * 100))) : 0,
+        };
+      });
+    }
+
+    // 3. TIMEFRAME: MONTH (Weekly breakdown for selected month)
+    if (timeframe === 'month') {
       const monthPrefix = selectedDate.substring(0, 7);
       const [y, m] = monthPrefix.split('-').map(Number);
       const lastDay = new Date(y, m, 0).getDate();
@@ -266,7 +349,7 @@ export const DashboardView: React.FC = () => {
       });
     }
 
-    // Period Year
+    // 4. TIMEFRAME: ALL (Monthly breakdown for the year of selectedDate)
     const yearStr = selectedDate.substring(0, 4);
     const monthNames = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
     const calculated = monthNames.map((mName, idx) => {
@@ -292,7 +375,7 @@ export const DashboardView: React.FC = () => {
         progress: c.weight > 0 ? Math.min(100, Math.max(8, Math.round((c.weight / maxW) * 100))) : 0,
       };
     });
-  }, [period, selectedDate, rolls, packingSlips]);
+  }, [timeframe, selectedDate, rolls, reels, packingSlips]);
 
   const analyticsSummary = useMemo(() => {
     const totalWeight = analyticsData.reduce((sum, item) => sum + item.weight, 0);
@@ -300,24 +383,28 @@ export const DashboardView: React.FC = () => {
     const activeItemsCount = analyticsData.filter(item => item.weight > 0).length || 1;
     const avgOutput = Math.round(totalWeight / activeItemsCount);
 
+    const avgUnit = timeframe === 'day' ? 'shift' : timeframe === 'week' ? 'day' : timeframe === 'month' ? 'wk' : 'mo';
+    const growthLabel = timeframe === 'day' ? 'Vs Prev Day' : timeframe === 'week' ? 'Vs Prev Week' : timeframe === 'month' ? 'Vs Last Month' : 'All-Time Scale';
+
     return {
       totalProd: totalWeight >= 1000000 ? `${(totalWeight / 1000000).toFixed(2)}M kg` : `${Math.round(totalWeight / 1000)}K kg`,
       growth: '+14.8%',
-      avgOutput: avgOutput >= 1000 ? `${Math.round(avgOutput / 1000)}K kg/${period === 'month' ? 'wk' : 'mo'}` : `${avgOutput} kg`,
+      growthLabel,
+      avgOutput: avgOutput >= 1000 ? `${Math.round(avgOutput / 1000)}K kg/${avgUnit}` : `${avgOutput} kg/${avgUnit}`,
       totalReels: totalOrders.toLocaleString(),
     };
-  }, [analyticsData, period]);;
+  }, [analyticsData, timeframe]);
 
   return (
     <div className="space-y-6 font-sans pb-8 relative">
 
       {/* --- ROLE 1: BOILER OPERATOR DASHBOARD --- */}
       {user?.role === 'BoilerOperator' && (() => {
-        const todayBoilerLogs = boilerLogs.filter(l => l.date === todayStr);
-        const totalWoodToday = todayBoilerLogs.reduce((sum, l) => sum + l.woodUsed, 0);
-        const totalWaterToday = todayBoilerLogs.reduce((sum, l) => sum + l.waterUsed, 0);
-        const avgPressure = todayBoilerLogs.length > 0
-          ? (todayBoilerLogs.reduce((sum, l) => sum + l.pressure, 0) / todayBoilerLogs.length).toFixed(1)
+        const inFilterBoilerLogs = boilerLogs.filter(l => isDateInFilter(l.date));
+        const totalWoodToday = inFilterBoilerLogs.reduce((sum, l) => sum + l.woodUsed, 0);
+        const totalWaterToday = inFilterBoilerLogs.reduce((sum, l) => sum + l.waterUsed, 0);
+        const avgPressure = inFilterBoilerLogs.length > 0
+          ? (inFilterBoilerLogs.reduce((sum, l) => sum + l.pressure, 0) / inFilterBoilerLogs.length).toFixed(1)
           : '14.5';
 
         return (
@@ -334,8 +421,8 @@ export const DashboardView: React.FC = () => {
                       <h1 className="text-xl sm:text-2xl font-black tracking-tight font-heading text-slate-900 dark:text-white">
                         Boiler Operations Dashboard
                       </h1>
-                      <span className="px-3 py-1 rounded-full bg-amber-50 dark:bg-amber-950/60 text-amber-700 dark:text-amber-300 border border-amber-200/80 dark:border-amber-800/80 text-xs font-bold">
-                        {new Date().toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' })}
+                      <span className="px-3 py-1 rounded-full bg-amber-50 dark:bg-amber-950/60 text-amber-700 dark:text-amber-300 border border-amber-200/80 dark:border-amber-800/80 text-xs font-bold font-mono">
+                        {timeframe === 'day' ? selectedDate : `${timeframe.toUpperCase()}: ${selectedDate}`}
                       </span>
                     </div>
                     <p className="text-xs sm:text-sm text-slate-500 dark:text-slate-400 font-medium mt-0.5">
@@ -496,8 +583,8 @@ export const DashboardView: React.FC = () => {
                       <h1 className="text-xl sm:text-2xl font-black tracking-tight font-heading text-slate-900 dark:text-white">
                         Pulp Mill Operations Dashboard
                       </h1>
-                      <span className="px-3 py-1 rounded-full bg-blue-50 dark:bg-blue-950/60 text-primary dark:text-blue-400 border border-blue-200/80 dark:border-blue-800/80 text-xs font-bold">
-                        {new Date().toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' })}
+                      <span className="px-3 py-1 rounded-full bg-blue-50 dark:bg-blue-950/60 text-primary dark:text-blue-400 border border-blue-200/80 dark:border-blue-800/80 text-xs font-bold font-mono">
+                        {timeframe === 'day' ? selectedDate : `${timeframe.toUpperCase()}: ${selectedDate}`}
                       </span>
                     </div>
                     <p className="text-xs sm:text-sm text-slate-500 dark:text-slate-400 font-medium mt-0.5">
@@ -600,8 +687,8 @@ export const DashboardView: React.FC = () => {
                       <h1 className="text-xl sm:text-2xl font-black tracking-tight font-heading text-slate-900 dark:text-white">
                         Rewinder &amp; Reel Conversion Dashboard
                       </h1>
-                      <span className="px-3 py-1 rounded-full bg-blue-50 dark:bg-blue-950/60 text-primary dark:text-blue-400 border border-blue-200/80 dark:border-blue-800/80 text-xs font-bold">
-                        {new Date().toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' })}
+                      <span className="px-3 py-1 rounded-full bg-blue-50 dark:bg-blue-950/60 text-primary dark:text-blue-400 border border-blue-200/80 dark:border-blue-800/80 text-xs font-bold font-mono">
+                        {timeframe === 'day' ? selectedDate : `${timeframe.toUpperCase()}: ${selectedDate}`}
                       </span>
                     </div>
                     <p className="text-xs sm:text-sm text-slate-500 dark:text-slate-400 font-medium mt-0.5">
@@ -729,8 +816,8 @@ export const DashboardView: React.FC = () => {
                       <h1 className="text-xl sm:text-2xl font-black tracking-tight font-heading text-slate-900 dark:text-white">
                         Paper Machine Operations Dashboard
                       </h1>
-                      <span className="px-3 py-1 rounded-full bg-blue-50 dark:bg-blue-950/60 text-primary dark:text-blue-400 border border-blue-200/80 dark:border-blue-800/80 text-xs font-bold">
-                        {new Date().toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' })}
+                      <span className="px-3 py-1 rounded-full bg-blue-50 dark:bg-blue-950/60 text-primary dark:text-blue-400 border border-blue-200/80 dark:border-blue-800/80 text-xs font-bold font-mono">
+                        {timeframe === 'day' ? selectedDate : `${timeframe.toUpperCase()}: ${selectedDate}`}
                       </span>
                     </div>
                     <p className="text-xs sm:text-sm text-slate-500 dark:text-slate-400 font-medium mt-0.5">
@@ -804,8 +891,8 @@ export const DashboardView: React.FC = () => {
                       <h1 className="text-xl sm:text-2xl font-black tracking-tight font-heading text-slate-900 dark:text-white">
                         Finished Goods &amp; Dispatch Dashboard
                       </h1>
-                      <span className="px-3 py-1 rounded-full bg-blue-50 dark:bg-blue-950/60 text-primary dark:text-blue-400 border border-blue-200/80 dark:border-blue-800/80 text-xs font-bold">
-                        {new Date().toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' })}
+                      <span className="px-3 py-1 rounded-full bg-blue-50 dark:bg-blue-950/60 text-primary dark:text-blue-400 border border-blue-200/80 dark:border-blue-800/80 text-xs font-bold font-mono">
+                        {timeframe === 'day' ? selectedDate : `${timeframe.toUpperCase()}: ${selectedDate}`}
                       </span>
                     </div>
                     <p className="text-xs sm:text-sm text-slate-500 dark:text-slate-400 font-medium mt-0.5">
@@ -927,8 +1014,8 @@ export const DashboardView: React.FC = () => {
                       <h1 className="text-xl sm:text-2xl font-black tracking-tight font-heading text-slate-900 dark:text-white">
                         Spare Parts &amp; Store Operations Dashboard
                       </h1>
-                      <span className="px-3 py-1 rounded-full bg-blue-50 dark:bg-blue-950/60 text-primary dark:text-blue-400 border border-blue-200/80 dark:border-blue-800/80 text-xs font-bold">
-                        {new Date().toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' })}
+                      <span className="px-3 py-1 rounded-full bg-blue-50 dark:bg-blue-950/60 text-primary dark:text-blue-400 border border-blue-200/80 dark:border-blue-800/80 text-xs font-bold font-mono">
+                        {timeframe === 'day' ? selectedDate : `${timeframe.toUpperCase()}: ${selectedDate}`}
                       </span>
                     </div>
                     <p className="text-xs sm:text-sm text-slate-500 dark:text-slate-400 font-medium mt-0.5">
@@ -989,8 +1076,8 @@ export const DashboardView: React.FC = () => {
                       <h1 className="text-xl sm:text-2xl font-black tracking-tight font-heading text-slate-900 dark:text-white">
                         ETP &amp; Water Treatment Operations Dashboard
                       </h1>
-                      <span className="px-3 py-1 rounded-full bg-blue-50 dark:bg-blue-950/60 text-primary dark:text-blue-400 border border-blue-200/80 dark:border-blue-800/80 text-xs font-bold">
-                        {new Date().toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' })}
+                      <span className="px-3 py-1 rounded-full bg-blue-50 dark:bg-blue-950/60 text-primary dark:text-blue-400 border border-blue-200/80 dark:border-blue-800/80 text-xs font-bold font-mono">
+                        {timeframe === 'day' ? selectedDate : `${timeframe.toUpperCase()}: ${selectedDate}`}
                       </span>
                     </div>
                     <p className="text-xs sm:text-sm text-slate-500 dark:text-slate-400 font-medium mt-0.5">
@@ -1313,33 +1400,33 @@ export const DashboardView: React.FC = () => {
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b pb-4 dark:border-slate-700">
                   <div>
                     <h3 className="text-sm sm:text-base font-bold text-slate-900 dark:text-white">Production Performance Analytics</h3>
-                    <p className="text-xs text-slate-400 mt-0.5">Comprehensive mill output metrics &amp; historical breakdown</p>
+                    <p className="text-xs text-slate-400 mt-0.5">
+                      {timeframe === 'day'
+                        ? `Shift & operational breakdown for ${selectedDate}`
+                        : timeframe === 'week'
+                        ? `7-day output progression ending ${selectedDate}`
+                        : timeframe === 'month'
+                        ? `Weekly output breakdown for ${selectedDate.substring(0, 7)}`
+                        : `Historical monthly output breakdown for ${selectedDate.substring(0, 4)}`}
+                    </p>
                   </div>
 
-                  {/* DYNAMIC THIS MONTH / THIS YEAR TOGGLE BUTTONS */}
-                  <div className="flex items-center gap-1.5 bg-slate-100 dark:bg-slate-800 p-1.5 rounded-xl border border-slate-200 dark:border-slate-700 self-start sm:self-auto">
-                    <button
-                      type="button"
-                      onClick={() => setPeriod('month')}
-                      className={`px-3.5 py-1.5 text-xs font-bold rounded-lg transition cursor-pointer ${
-                        period === 'month'
-                          ? 'bg-[#6C4FE0] text-white shadow-md shadow-[#6C4FE0]/25'
-                          : 'text-slate-700 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700'
-                      }`}
-                    >
-                      This Month
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => setPeriod('year')}
-                      className={`px-3.5 py-1.5 text-xs font-bold rounded-lg transition cursor-pointer ${
-                        period === 'year'
-                          ? 'bg-[#6C4FE0] text-white shadow-md shadow-[#6C4FE0]/25'
-                          : 'text-slate-700 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700'
-                      }`}
-                    >
-                      This Year
-                    </button>
+                  {/* DYNAMIC TIMEFRAME SYNCED TOGGLE BUTTONS */}
+                  <div className="flex items-center gap-1 bg-slate-100 dark:bg-slate-800 p-1 rounded-xl border border-slate-200 dark:border-slate-700 self-start sm:self-auto">
+                    {(['day', 'week', 'month', 'all'] as const).map(tf => (
+                      <button
+                        key={tf}
+                        type="button"
+                        onClick={() => setTimeframe(tf)}
+                        className={`px-3 py-1 text-xs font-bold rounded-lg capitalize transition cursor-pointer ${
+                          timeframe === tf
+                            ? 'bg-[#6C4FE0] text-white shadow-md shadow-[#6C4FE0]/25'
+                            : 'text-slate-700 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700'
+                        }`}
+                      >
+                        {tf === 'day' ? 'Day' : tf === 'week' ? 'Week' : tf === 'month' ? 'Month' : 'All'}
+                      </button>
+                    ))}
                   </div>
                 </div>
 
@@ -1382,7 +1469,7 @@ export const DashboardView: React.FC = () => {
                     </div>
                   </div>
 
-                  {/* Card 2: Vs Last Month */}
+                  {/* Card 2: Growth / Run-rate */}
                   <div className="bg-white dark:bg-slate-900/80 rounded-2xl p-3 sm:p-3.5 flex items-center gap-3 shadow-[4px_4px_14px_rgba(163,163,196,0.18),-4px_-4px_14px_rgba(255,255,255,0.9)] dark:shadow-[0_4px_12px_rgba(0,0,0,0.3)] transition-all hover:translate-y-[-1px]">
                     <div className="w-10 h-10 rounded-xl bg-[#F4F5FB] dark:bg-slate-800 flex items-center justify-center shrink-0 shadow-[2px_2px_5px_rgba(163,163,196,0.22),-2px_-2px_5px_rgba(255,255,255,0.95)] dark:shadow-[inset_1px_1px_3px_rgba(255,255,255,0.1)] text-[#6C4FE0] dark:text-purple-400">
                       <Inbox className="w-4 h-4 stroke-[2.5]" />
@@ -1392,7 +1479,7 @@ export const DashboardView: React.FC = () => {
                         {analyticsSummary.growth}
                       </div>
                       <div className="text-[11px] text-slate-400 dark:text-slate-400 font-medium whitespace-nowrap mt-0.5 leading-tight">
-                        Vs Last Month
+                        {analyticsSummary.growthLabel}
                       </div>
                     </div>
                   </div>
@@ -1407,7 +1494,7 @@ export const DashboardView: React.FC = () => {
                         {analyticsSummary.avgOutput}
                       </div>
                       <div className="text-[11px] text-slate-400 dark:text-slate-400 font-medium whitespace-nowrap mt-0.5 leading-tight">
-                        Avg Production
+                        Avg Output
                       </div>
                     </div>
                   </div>
@@ -1466,7 +1553,7 @@ export const DashboardView: React.FC = () => {
                 {/* Stream Feed */}
                 <div
                   className="space-y-3 flex-1 min-h-0 overflow-y-auto pr-1.5 transition-all duration-300 dashboard-custom-scrollbar"
-                  style={{ maxHeight: period === 'month' ? '280px' : '360px' }}
+                  style={{ maxHeight: timeframe === 'month' || timeframe === 'day' ? '300px' : '380px' }}
                 >
                   {unifiedActivityStream.length === 0 ? (
                     <div className="py-10 px-4 text-center space-y-3 rounded-2xl bg-[#F8F8FC] dark:bg-slate-900/40 shadow-[inset_2px_2px_6px_rgba(163,163,196,0.15),inset_-2px_-2px_6px_rgba(255,255,255,0.8)]">
@@ -1711,7 +1798,15 @@ export const DashboardView: React.FC = () => {
                       <h3 className="text-base font-extrabold text-slate-900 dark:text-white">
                         Shift Output Allocation
                       </h3>
-                      <p className="text-xs text-slate-500 dark:text-slate-400 font-medium">Production split across Shift A &amp; B for {selectedDate}</p>
+                      <p className="text-xs text-slate-500 dark:text-slate-400 font-medium">
+                        {timeframe === 'day'
+                          ? `Production split across Shift A & B for ${selectedDate}`
+                          : timeframe === 'week'
+                          ? `Production split across Shift A & B for 7-day period (${getDateRangeForTimeframe(selectedDate, 'week').startStr} ~ ${selectedDate})`
+                          : timeframe === 'month'
+                          ? `Production split across Shift A & B for month (${selectedDate.substring(0, 7)})`
+                          : `All-time production split across Shift A & B`}
+                      </p>
                     </div>
                   </div>
                   <span className="px-2.5 py-1 rounded-full bg-slate-100 dark:bg-slate-800 text-[10px] font-black text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-slate-700 font-mono">
@@ -1884,31 +1979,47 @@ export const DashboardView: React.FC = () => {
                 </div>
 
                 <div className="space-y-3">
-                  {packingSlips.slice(0, 3).map((slip, idx) => (
-                    <div key={slip.slipNo || idx} className="p-3.5 rounded-2xl bg-slate-50/70 dark:bg-slate-900/60 border border-slate-200/60 dark:border-slate-800 space-y-2">
-                      <div className="flex items-center justify-between text-xs">
-                        <div className="flex items-center gap-2 min-w-0">
-                          <span className="px-2 py-0.5 rounded-md text-[10px] font-black uppercase tracking-wider bg-blue-100 dark:bg-blue-950/80 text-blue-700 dark:text-blue-300 shrink-0">
-                            {slip.status || 'DISPATCHED'}
-                          </span>
-                          <span className="font-bold text-slate-700 dark:text-slate-300 truncate">
-                            {parties.find(p => p.id === slip.partyId)?.name || 'PackWell Packaging Ltd'}
-                          </span>
+                  {(() => {
+                    const filteredSlips = packingSlips.filter(slip => isDateInFilter(slip.date || slip.dispatchDate || ''));
+                    if (filteredSlips.length === 0) {
+                      return (
+                        <div className="p-4 rounded-2xl bg-slate-50 dark:bg-slate-900/50 border border-slate-200 dark:border-slate-800 text-center">
+                          <p className="text-xs text-slate-400 font-medium">
+                            No dispatch challans found for {timeframe === 'day' ? selectedDate : timeframe}
+                          </p>
                         </div>
-                        <span className="font-mono font-black text-slate-900 dark:text-white shrink-0">
-                          {(2400 + idx * 350).toLocaleString()} kg
-                        </span>
-                      </div>
-                      <div className="w-full bg-slate-200/70 dark:bg-slate-800 h-2.5 rounded-full overflow-hidden">
-                        <div className="bg-blue-500 h-full rounded-full transition-all duration-500" style={{ width: '100%' }} />
-                      </div>
-                    </div>
-                  ))}
-                  {packingSlips.length === 0 && (
-                    <div className="p-4 rounded-2xl bg-slate-50 dark:bg-slate-900/50 border border-slate-200 dark:border-slate-800 text-center">
-                      <p className="text-xs text-slate-400 font-medium">No recent dispatch challans created today</p>
-                    </div>
-                  )}
+                      );
+                    }
+                    return filteredSlips.slice(0, 4).map((slip, idx) => {
+                      const slipWeight = slip.reelNos && slip.reelNos.length > 0
+                        ? slip.reelNos.reduce((sum, rNo) => {
+                            const reel = reels.find(r => r.reelNo === rNo);
+                            return sum + (reel?.weight || 0);
+                          }, 0)
+                        : 0;
+
+                      return (
+                        <div key={slip.slipNo || idx} className="p-3.5 rounded-2xl bg-slate-50/70 dark:bg-slate-900/60 border border-slate-200/60 dark:border-slate-800 space-y-2">
+                          <div className="flex items-center justify-between text-xs">
+                            <div className="flex items-center gap-2 min-w-0">
+                              <span className="px-2 py-0.5 rounded-md text-[10px] font-black uppercase tracking-wider bg-blue-100 dark:bg-blue-950/80 text-blue-700 dark:text-blue-300 shrink-0">
+                                {slip.status || 'DISPATCHED'}
+                              </span>
+                              <span className="font-bold text-slate-700 dark:text-slate-300 truncate">
+                                {parties.find(p => p.id === slip.partyId)?.name || 'PackWell Packaging Ltd'}
+                              </span>
+                            </div>
+                            <span className="font-mono font-black text-slate-900 dark:text-white shrink-0">
+                              {slipWeight > 0 ? `${slipWeight.toLocaleString()} kg` : `${slip.reelNos?.length || 0} reels`}
+                            </span>
+                          </div>
+                          <div className="w-full bg-slate-200/70 dark:bg-slate-800 h-2.5 rounded-full overflow-hidden">
+                            <div className="bg-blue-500 h-full rounded-full transition-all duration-500" style={{ width: '100%' }} />
+                          </div>
+                        </div>
+                      );
+                    });
+                  })()}
                 </div>
               </div>
             </div>
