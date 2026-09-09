@@ -28,7 +28,7 @@ export const LoginView: React.FC = () => {
 
   // Mode: 'login' or 'forgot_step_1' or 'forgot_step_2' or 'forgot_step_3' or 'force_reset_pin'
   const [mode, setMode] = useState<'login' | 'forgot_step_1' | 'forgot_step_2' | 'forgot_step_3' | 'force_reset_pin'>('login');
-  
+
   // Login Form States
   const [username, setUsername] = useState('');
   const [pin, setPin] = useState('');
@@ -47,7 +47,7 @@ export const LoginView: React.FC = () => {
   const handleLoginSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoginError('');
-    
+
     if (!username || !pin) {
       setLoginError('Username and PIN are required');
       return;
@@ -126,18 +126,18 @@ export const LoginView: React.FC = () => {
   const handleForgotStep1Submit = (e: React.FormEvent) => {
     e.preventDefault();
     setResetError('');
-    
+
     if (!contactInput.trim()) {
       setResetError('Email or registered mobile number is required');
       return;
     }
-    
+
     const users = getUsers();
-    const found = users.find(u => 
+    const found = users.find(u =>
       (u.email && u.email.toLowerCase() === contactInput.trim().toLowerCase()) ||
       (u.phone && u.phone.replace(/\s+/g, '') === contactInput.trim().replace(/\s+/g, ''))
     );
-    
+
     if (found) {
       const otp = String(Math.floor(100000 + Math.random() * 900000));
       setGeneratedOtp(otp);
@@ -153,12 +153,12 @@ export const LoginView: React.FC = () => {
   const handleOtpVerifySubmit = (e: React.FormEvent) => {
     e.preventDefault();
     setResetError('');
-    
+
     if (otpInput.trim() !== generatedOtp) {
       setResetError('Invalid 6-digit OTP code. Please try again.');
       return;
     }
-    
+
     setResetError('');
     setMode('forgot_step_3');
   };
@@ -166,17 +166,17 @@ export const LoginView: React.FC = () => {
   const handleNewPinSaveSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setResetError('');
-    
+
     if (!newPin.trim()) {
       setResetError('New PIN is required');
       return;
     }
-    
+
     if (newPin.length !== 4 || isNaN(Number(newPin))) {
       setResetError('PIN must be exactly 4 digits');
       return;
     }
-    
+
     const success = await resetPin(forgotUser.username, newPin);
     if (success) {
       navigate(getFirstAccessibleRoute(forgotUser));
@@ -187,16 +187,16 @@ export const LoginView: React.FC = () => {
 
   return (
     <div className="login-page-container fixed inset-0 h-screen h-[100dvh] w-screen w-full bg-gradient-to-br from-[#6C4FE0] via-[#7C3AED] to-[#5B3DC9] flex items-center justify-center p-3 sm:p-4 md:p-6 font-sans z-50 overflow-hidden select-none overscroll-none touch-none">
-      
+
       {/* Background Decorative Circles */}
       <div className="absolute -top-16 -left-16 w-64 h-64 rounded-full bg-white/10 blur-sm pointer-events-none" />
       <div className="absolute top-1/4 right-8 w-16 h-16 rounded-full bg-white/15 blur-xs pointer-events-none" />
       <div className="absolute bottom-12 left-10 w-24 h-24 rounded-full bg-white/15 blur-xs pointer-events-none" />
       <div className="absolute -bottom-20 -right-20 w-80 h-80 rounded-full bg-sky-300/20 blur-md pointer-events-none" />
-      
+
       {/* Main Floating White Card - Rock-solid static placement */}
       <div className="w-full max-w-[340px] sm:max-w-[370px] md:max-w-[400px] lg:max-w-[410px] max-h-[95vh] max-h-[95dvh] overflow-y-auto no-scrollbar bg-white rounded-[20px] sm:rounded-[24px] md:rounded-[26px] shadow-[8px_8px_24px_rgba(0,0,0,0.18)] p-4 sm:p-5 md:p-6 relative z-10 my-auto">
-        
+
         {/* Title & Subtitle with Official Logo */}
         <div className="flex items-center justify-between mb-3 sm:mb-3.5 md:mb-4 border-b border-slate-100 pb-2.5 sm:pb-3">
           <div>
