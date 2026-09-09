@@ -1,7 +1,7 @@
 import React, { useState, useMemo, useEffect } from 'react';
 import { useAuth } from '../auth/AuthContext';
 import { useTranslation } from 'react-i18next';
-import { getRolls, getReels, getProducts, saveSingleReel, saveReelsFromRoll } from '../../data/index';
+import { getRolls, getReels, getProducts, saveSingleReel, saveReelsFromRoll, markRollAsConsumed } from '../../data/index';
 import type { MachineRoll, Reel } from '../../data/types';
 import { CustomSearchableSelect } from '../../components/CustomSearchableSelect';
 import { QRCodeSVG } from 'qrcode.react';
@@ -37,9 +37,52 @@ export const RewinderView: React.FC = () => {
   const { user, isViewer } = useAuth();
   const { timeframe, selectedDate } = useDateFilter();
 
-  const [rolls] = useState<MachineRoll[]>(() => getRolls());
+  const [rolls, setRolls] = useState<MachineRoll[]>(() => getRolls());
   const [reels, setReels] = useState<Reel[]>(() => getReels());
   const masterProducts = useMemo(() => getProducts(), []);
+
+  // Listen for storage / data update events to keep rolls and reels in sync
+  useEffect(() => {
+    const handleSync = () => {
+      setRolls(getRolls());
+      setReels(getReels());
+    };
+    window.addEventListener('saheb_data_updated', handleSync);
+    window.addEventListener('storage', handleSync);
+    return () => {
+      window.removeEventListener('saheb_data_updated', handleSync);
+      window.removeEventListener('storage', handleSync);
+    };
+  }, []);
+
+  // Set of parent roll numbers already consumed/rewound into reels
+  const usedRollNos = useMemo(() => {
+    const set = new Set<string>();
+    reels.forEach(r => {
+      if (r.parentRollNo) {
+        const parts = r.parentRollNo.split('/').map(p => p.trim().toLowerCase());
+        parts.forEach(p => {
+          if (p) set.add(p);
+        });
+      }
+    });
+    return set;
+  }, [reels]);
+
+  // Only rolls that have not yet been consumed or rewound
+  const availableRolls = useMemo(() => {
+    return rolls.filter(r => {
+      if (!r || !r.rollNo) return false;
+      const cleanNo = r.rollNo.trim().toLowerCase();
+      if ((r as any).status === 'CONSUMED' || (r as any).status === 'REWOUND' || (r as any).isRewound === true) {
+        return false;
+      }
+      if (usedRollNos.has(cleanNo)) {
+        return false;
+      }
+      return true;
+    });
+  }, [rolls, usedRollNos]);
 
   // Filter State
   const [selectedProductFilter, setSelectedProductFilter] = useState('all');
@@ -93,21 +136,52 @@ export const RewinderView: React.FC = () => {
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [reelForm, setReelForm] = useState({
     reelNo: getInitialReelNo(getReels(), 0),
-    runningRollNo: 'M-001',
-    runningRollNo2: 'M-002',
-    runningRollNo3: 'M-003',
-    runningSize: '165',
+    runningRollNo: '',
+    runningRollNo2: '',
+    runningRollNo3: '',
+    runningSize: '',
     productName: masterProducts[0]?.name || 'Napkin Tissue',
-    gsm: '16',
+    gsm: '',
     size: '30',
-    ply: '2',
-    dia: '1150',
+    ply: '1',
+    dia: '',
     joint: '0',
     weightKg: '',
     brokeKg: '0',
   });
 
-  const [reelsCutCount, setReelsCutCount] = useState<number>(3);
+  const rollOptions1 = useMemo(() => {
+    return availableRolls.map(roll => ({
+      value: roll.rollNo,
+      label: roll.rollNo,
+      sublabel: `${roll.product} • ${roll.gsm} GSM • Width: ${roll.width}mm • Shift ${roll.shift}`,
+      badge: `${roll.weight} kg`,
+    }));
+  }, [availableRolls]);
+
+  const rollOptionsForPly2Roll1 = useMemo(() => {
+    return availableRolls
+      .filter(r => r.rollNo.trim().toLowerCase() !== (reelForm.runningRollNo2 || '').trim().toLowerCase())
+      .map(roll => ({
+        value: roll.rollNo,
+        label: roll.rollNo,
+        sublabel: `${roll.product} • ${roll.gsm} GSM • Width: ${roll.width}mm • Shift ${roll.shift}`,
+        badge: `${roll.weight} kg`,
+      }));
+  }, [availableRolls, reelForm.runningRollNo2]);
+
+  const rollOptionsForPly2Roll2 = useMemo(() => {
+    return availableRolls
+      .filter(r => r.rollNo.trim().toLowerCase() !== (reelForm.runningRollNo || '').trim().toLowerCase())
+      .map(roll => ({
+        value: roll.rollNo,
+        label: roll.rollNo,
+        sublabel: `${roll.product} • ${roll.gsm} GSM • Width: ${roll.width}mm • Shift ${roll.shift}`,
+        badge: `${roll.weight} kg`,
+      }));
+  }, [availableRolls, reelForm.runningRollNo]);
+
+  const [reelsCutCount, setReelsCutCount] = useState<number>(1);
   const [cutReels, setCutReels] = useState<Array<{ id: string; reelNo: string; product?: string; size: string; weightKg: string; joint: string }>>([]);
 
   const [modalError, setModalError] = useState('');
@@ -335,60 +409,55 @@ export const RewinderView: React.FC = () => {
   const handleOpenAddModal = () => {
     setModalError('');
     const latestReels = getReels();
-    const availableRolls = getRolls();
+    const latestRolls = getRolls();
+    setReels(latestReels);
+    setRolls(latestRolls);
     const nextNo = getInitialReelNo(latestReels, 0);
 
-    // Dynamically generate unique sequential cut reels
-    let curNo = nextNo;
-    const initialItems = [];
-    for (let i = 0; i < reelsCutCount; i++) {
-      initialItems.push({
-        id: `cut-${i}-${Date.now()}`,
-        reelNo: curNo,
-        size: '30 cm',
-        weightKg: '',
-        joint: '',
-      });
-      curNo = parseAndIncrementReelNo(curNo);
-    }
+    // Compute used roll numbers
+    const usedNos = new Set<string>();
+    latestReels.forEach(r => {
+      if (r.parentRollNo) {
+        const parts = r.parentRollNo.split('/').map(p => p.trim().toLowerCase());
+        parts.forEach(p => { if (p) usedNos.add(p); });
+      }
+    });
+
+    // Fresh available rolls
+    const freshAvailableRolls = latestRolls.filter(r => {
+      if (!r || !r.rollNo) return false;
+      const cleanNo = r.rollNo.trim().toLowerCase();
+      if ((r as any).status === 'CONSUMED' || (r as any).status === 'REWOUND' || (r as any).isRewound === true) return false;
+      if (usedNos.has(cleanNo)) return false;
+      return true;
+    });
+
+    // Reset Reels Cut to 1 reel by default
+    setReelsCutCount(1);
+    const initialItems = [{
+      id: `cut-0-${Date.now()}`,
+      reelNo: nextNo,
+      size: '30 cm',
+      weightKg: '',
+      joint: '',
+    }];
     setCutReels(initialItems);
 
-    if (availableRolls.length > 0) {
-      const firstRoll = availableRolls[0];
-      const secondRoll = availableRolls[1] || firstRoll;
-      const thirdRoll = availableRolls[2] || firstRoll;
-      setReelForm({
-        reelNo: nextNo,
-        runningRollNo: firstRoll.rollNo,
-        runningRollNo2: secondRoll.rollNo,
-        runningRollNo3: thirdRoll.rollNo,
-        productName: firstRoll.product,
-        gsm: String(firstRoll.gsm),
-        runningSize: formatRunningSize(firstRoll.width),
-        weightKg: String(firstRoll.weight),
-        size: '30 cm',
-        ply: '1',
-        dia: '900',
-        joint: '',
-        brokeKg: '0',
-      });
-    } else {
-      setReelForm({
-        reelNo: nextNo,
-        runningRollNo: 'M-001',
-        runningRollNo2: 'M-002',
-        runningRollNo3: 'M-003',
-        productName: masterProducts[0]?.name || 'Napkin Tissue',
-        gsm: '16',
-        runningSize: '',
-        weightKg: '',
-        size: '30 cm',
-        ply: '1',
-        dia: '900',
-        joint: '',
-        brokeKg: '0',
-      });
-    }
+    setReelForm({
+      reelNo: nextNo,
+      runningRollNo: '',
+      runningRollNo2: '',
+      runningRollNo3: '',
+      productName: masterProducts[0]?.name || 'Napkin Tissue',
+      gsm: '',
+      runningSize: '',
+      weightKg: '',
+      size: '30 cm',
+      ply: '1',
+      dia: '',
+      joint: '',
+      brokeKg: '0',
+    });
     setIsAddModalOpen(true);
   };
 
@@ -401,21 +470,20 @@ export const RewinderView: React.FC = () => {
       return;
     }
 
-    const availableRolls = getRolls();
     if (availableRolls.length === 0) {
-      setModalError('Roll not in stock');
+      setModalError('No available machine rolls in stock. Please produce rolls in Machine Production first.');
       return;
     }
 
     if (!reelForm.runningRollNo.trim()) {
-      setModalError('Please enter Roll No');
+      setModalError('Please select a Running Roll No');
       return;
     }
 
     const plyVal = parseInt(reelForm.ply) || 1;
     if (plyVal === 2) {
       if (!reelForm.runningRollNo2.trim()) {
-        setModalError('Please enter Running Roll No 2');
+        setModalError('Please select Running Roll No 2');
         return;
       }
       if (reelForm.runningRollNo.trim().toLowerCase() === reelForm.runningRollNo2.trim().toLowerCase()) {
@@ -474,11 +542,19 @@ export const RewinderView: React.FC = () => {
         saveSingleReel(rec, idx === savedRecords.length - 1 ? brokeKg : 0, user?.displayName || 'System');
       });
 
+      // Mark running roll(s) as consumed in storage so they immediately disappear
+      markRollAsConsumed(reelForm.runningRollNo);
+      if (plyVal === 2 && reelForm.runningRollNo2) {
+        markRollAsConsumed(reelForm.runningRollNo2);
+      }
+
       const updatedReels = getReels();
+      const updatedRolls = getRolls();
       setReels(updatedReels);
+      setRolls(updatedRolls);
 
       setIsAddModalOpen(false);
-      setToastMsg(`${savedRecords.length} Cut Reels logged successfully!`);
+      setToastMsg(`${savedRecords.length} Cut Reels logged successfully! Running roll ${parentRollStr} consumed.`);
       setTimeout(() => setToastMsg(''), 4000);
     } catch (err: any) {
       setModalError(err.message || 'Error saving cut reel entries.');
@@ -912,6 +988,13 @@ export const RewinderView: React.FC = () => {
                 </div>
               )}
 
+              {availableRolls.length === 0 && (
+                <div className="px-3 py-2 bg-amber-50 dark:bg-amber-950/80 border border-amber-200 dark:border-amber-800 text-amber-800 dark:text-amber-200 rounded-xl text-xs font-bold flex items-center gap-2">
+                  <AlertTriangle className="h-4 w-4 shrink-0 text-amber-500" />
+                  <span>No available machine rolls found. Rolls added in Machine Production will appear here.</span>
+                </div>
+              )}
+
               {/* Row 1: Ply (1st), Running Roll No (2nd - dynamic 1 or 2 boxes), Reels Cut (3rd - 1 to 20 Max) */}
               <div className="space-y-3">
                 <div className={`grid grid-cols-1 ${reelForm.ply === '1' ? 'sm:grid-cols-3' : 'sm:grid-cols-4'} gap-3 items-start`}>
@@ -923,14 +1006,17 @@ export const RewinderView: React.FC = () => {
                     <CustomSearchableSelect
                       value={reelForm.ply}
                       onChange={newPly => {
-                        const availableRolls = getRolls();
                         let newWeight = reelForm.weightKg;
+                        let newRoll2 = reelForm.runningRollNo2;
                         if (newPly === '2') {
                           const r1 = availableRolls.find(r => r.rollNo === reelForm.runningRollNo);
                           const r2 = availableRolls.find(r => r.rollNo === reelForm.runningRollNo2);
-                          if (r1 && r2) {
-                            newWeight = String((r1.weight || 0) + (r2.weight || 0));
-                          }
+                          newRoll2 = r2 ? r2.rollNo : '';
+                          const combWeight = (r1?.weight || 0) + (r2?.weight || 0);
+                          if (combWeight > 0) newWeight = String(combWeight);
+                        } else if (newPly === '1') {
+                          const r1 = availableRolls.find(r => r.rollNo === reelForm.runningRollNo);
+                          if (r1) newWeight = String(r1.weight);
                         }
                         const maxAllowedCut = newPly === '1' ? 17 : 20;
                         if (reelsCutCount > maxAllowedCut) {
@@ -951,7 +1037,7 @@ export const RewinderView: React.FC = () => {
                           }
                           setCutReels(items);
                         }
-                        setReelForm({ ...reelForm, ply: newPly, weightKg: newWeight });
+                        setReelForm({ ...reelForm, ply: newPly, runningRollNo2: newRoll2, weightKg: newWeight });
                       }}
                       options={[
                         { value: '1', label: '1 Ply' },
@@ -961,38 +1047,35 @@ export const RewinderView: React.FC = () => {
                     />
                   </div>
 
-                  {/* 2nd: Running Roll No (Dynamic 1 or 2 boxes) */}
+                  {/* 2nd: Running Roll No (Dynamic 1 or 2 boxes with CustomSearchableSelect) */}
                   {reelForm.ply === '1' ? (
                     <div>
                       <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">
                         Running Roll No
                       </label>
-                      <input
-                        type="text"
-                        required
-                        list="running-rolls-list-all"
+                      <CustomSearchableSelect
                         value={reelForm.runningRollNo}
-                        onChange={e => {
-                          const selectedNo = e.target.value;
-                          const rollsList = getRolls();
-                          const matched = rollsList.find(
-                            r => r.rollNo.trim().toLowerCase() === selectedNo.trim().toLowerCase()
+                        onChange={val => {
+                          const matched = availableRolls.find(
+                            r => r.rollNo.trim().toLowerCase() === val.trim().toLowerCase()
                           );
                           if (matched) {
                             setReelForm(prev => ({
                               ...prev,
                               runningRollNo: matched.rollNo,
                               productName: matched.product,
-                              gsm: String(matched.gsm),
+                              gsm: String(matched.gsm || ''),
+                              dia: String(matched.dia || ''),
                               runningSize: formatRunningSize(matched.width),
                               weightKg: String(matched.weight),
                             }));
                           } else {
-                            setReelForm(prev => ({ ...prev, runningRollNo: selectedNo }));
+                            setReelForm(prev => ({ ...prev, runningRollNo: val }));
                           }
                         }}
-                        className="w-full p-2.5 bg-slate-50 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white rounded-xl text-xs font-bold focus:ring-2 focus:ring-primary focus:outline-none"
-                        placeholder="e.g. M-001"
+                        options={rollOptions1}
+                        placeholder={rollOptions1.length === 0 ? 'No rolls available' : 'Select Roll No...'}
+                        hideSearch={rollOptions1.length <= 5}
                       />
                     </div>
                   ) : (
@@ -1001,59 +1084,51 @@ export const RewinderView: React.FC = () => {
                         <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">
                           Running Roll No 1
                         </label>
-                        <input
-                          type="text"
-                          required
-                          list="running-rolls-list-1"
+                        <CustomSearchableSelect
                           value={reelForm.runningRollNo}
-                          onChange={e => {
-                            const selectedNo = e.target.value;
-                            const rollsList = getRolls();
-                            const matched = rollsList.find(
-                              r => r.rollNo.trim().toLowerCase() === selectedNo.trim().toLowerCase()
+                          onChange={val => {
+                            const matched = availableRolls.find(
+                              r => r.rollNo.trim().toLowerCase() === val.trim().toLowerCase()
                             );
                             if (matched) {
-                              const matched2 = rollsList.find(r => r.rollNo === reelForm.runningRollNo2);
+                              const matched2 = availableRolls.find(r => r.rollNo === reelForm.runningRollNo2);
                               const combWeight = (matched.weight || 0) + (matched2?.weight || 0);
                               setReelForm(prev => ({
                                 ...prev,
                                 runningRollNo: matched.rollNo,
                                 productName: matched.product,
-                                gsm: String(matched.gsm),
+                                gsm: String(matched.gsm || ''),
+                                dia: String(matched.dia || ''),
                                 runningSize: formatRunningSize(matched.width),
                                 weightKg: combWeight > 0 ? String(combWeight) : String(matched.weight),
                               }));
                             } else {
-                              setReelForm(prev => ({ ...prev, runningRollNo: selectedNo }));
+                              setReelForm(prev => ({ ...prev, runningRollNo: val }));
                             }
                           }}
-                          className="w-full p-2.5 bg-slate-50 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white rounded-xl text-xs font-bold focus:ring-2 focus:ring-primary focus:outline-none"
-                          placeholder="Roll #1 (e.g. M-001)"
+                          options={rollOptionsForPly2Roll1}
+                          placeholder={rollOptionsForPly2Roll1.length === 0 ? 'No rolls' : 'Select Roll #1...'}
+                          hideSearch={rollOptionsForPly2Roll1.length <= 5}
                         />
                       </div>
                       <div>
                         <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">
                           Running Roll No 2
                         </label>
-                        <input
-                          type="text"
-                          required
-                          list="running-rolls-list-2"
+                        <CustomSearchableSelect
                           value={reelForm.runningRollNo2}
-                          onChange={e => {
-                            const selectedNo = e.target.value;
-                            if (selectedNo && selectedNo.trim().toLowerCase() === reelForm.runningRollNo.trim().toLowerCase()) {
-                              setModalError(`Roll ${selectedNo} is already selected in Roll #1!`);
+                          onChange={val => {
+                            if (val && val.trim().toLowerCase() === reelForm.runningRollNo.trim().toLowerCase()) {
+                              setModalError(`Roll ${val} is already selected in Roll #1!`);
                               setReelForm(prev => ({ ...prev, runningRollNo2: '' }));
                               return;
                             }
                             setModalError('');
-                            const rollsList = getRolls();
-                            const matched2 = rollsList.find(
-                              r => r.rollNo.trim().toLowerCase() === selectedNo.trim().toLowerCase()
+                            const matched2 = availableRolls.find(
+                              r => r.rollNo.trim().toLowerCase() === val.trim().toLowerCase()
                             );
                             if (matched2) {
-                              const matched1 = rollsList.find(r => r.rollNo === reelForm.runningRollNo);
+                              const matched1 = availableRolls.find(r => r.rollNo === reelForm.runningRollNo);
                               const combWeight = (matched1?.weight || 0) + (matched2.weight || 0);
                               setReelForm(prev => ({
                                 ...prev,
@@ -1061,43 +1136,16 @@ export const RewinderView: React.FC = () => {
                                 weightKg: combWeight > 0 ? String(combWeight) : prev.weightKg,
                               }));
                             } else {
-                              setReelForm(prev => ({ ...prev, runningRollNo2: selectedNo }));
+                              setReelForm(prev => ({ ...prev, runningRollNo2: val }));
                             }
                           }}
-                          className="w-full p-2.5 bg-slate-50 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white rounded-xl text-xs font-bold focus:ring-2 focus:ring-primary focus:outline-none"
-                          placeholder="Roll #2 (e.g. M-002)"
+                          options={rollOptionsForPly2Roll2}
+                          placeholder={rollOptionsForPly2Roll2.length === 0 ? 'No rolls' : 'Select Roll #2...'}
+                          hideSearch={rollOptionsForPly2Roll2.length <= 5}
                         />
                       </div>
                     </>
                   )}
-
-                  <datalist id="running-rolls-list-all">
-                    {getRolls().map(roll => (
-                      <option key={roll.rollNo} value={roll.rollNo}>
-                        {roll.rollNo} ({roll.product} &bull; {roll.gsm} GSM &bull; {roll.weight}kg)
-                      </option>
-                    ))}
-                  </datalist>
-
-                  <datalist id="running-rolls-list-1">
-                    {getRolls()
-                      .filter(roll => roll.rollNo.trim().toLowerCase() !== reelForm.runningRollNo2.trim().toLowerCase())
-                      .map(roll => (
-                        <option key={roll.rollNo} value={roll.rollNo}>
-                          {roll.rollNo} ({roll.product} &bull; {roll.gsm} GSM &bull; {roll.weight}kg)
-                        </option>
-                      ))}
-                  </datalist>
-
-                  <datalist id="running-rolls-list-2">
-                    {getRolls()
-                      .filter(roll => roll.rollNo.trim().toLowerCase() !== reelForm.runningRollNo.trim().toLowerCase())
-                      .map(roll => (
-                        <option key={roll.rollNo} value={roll.rollNo}>
-                          {roll.rollNo} ({roll.product} &bull; {roll.gsm} GSM &bull; {roll.weight}kg)
-                        </option>
-                      ))}
-                  </datalist>
 
                   {/* 3rd: Reels Cut (1 to 17 Max for 1 Ply, 1 to 20 Max for 2 Ply) */}
                   {(() => {
@@ -1141,8 +1189,8 @@ export const RewinderView: React.FC = () => {
                   })()}
                 </div>
 
-                {/* Row 2: Running Size (4th), Product (5th), Total Weight (6th), GSM (7th), DIA (8th) */}
-                <div className="grid grid-cols-2 sm:grid-cols-5 gap-3">
+                {/* Row 2: Running Size, Product, Total Weight */}
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                   <div>
                     <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">
                       Running Size (cm)
@@ -1152,7 +1200,7 @@ export const RewinderView: React.FC = () => {
                       value={reelForm.runningSize}
                       onChange={e => setReelForm({ ...reelForm, runningSize: e.target.value })}
                       className="w-full p-2.5 bg-slate-50 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white rounded-xl text-xs font-bold focus:ring-2 focus:ring-primary focus:outline-none"
-                      placeholder="e.g. 2300"
+                      placeholder="e.g. 230"
                     />
                   </div>
                   <div>
@@ -1181,32 +1229,6 @@ export const RewinderView: React.FC = () => {
                       value={reelForm.weightKg}
                       onChange={e => setReelForm({ ...reelForm, weightKg: e.target.value })}
                       className="w-full p-2.5 bg-slate-50 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white rounded-xl text-xs font-bold font-mono focus:ring-2 focus:ring-primary focus:outline-none"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">
-                      GSM
-                    </label>
-                    <input
-                      type="number"
-                      required
-                      value={reelForm.gsm}
-                      onChange={e => setReelForm({ ...reelForm, gsm: e.target.value })}
-                      className="w-full p-2.5 bg-slate-50 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white rounded-xl text-xs font-bold font-mono focus:ring-2 focus:ring-primary focus:outline-none"
-                      placeholder="16"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">
-                      DIA (mm)
-                    </label>
-                    <input
-                      type="number"
-                      required
-                      value={reelForm.dia}
-                      onChange={e => setReelForm({ ...reelForm, dia: e.target.value })}
-                      className="w-full p-2.5 bg-slate-50 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white rounded-xl text-xs font-bold font-mono focus:ring-2 focus:ring-primary focus:outline-none"
-                      placeholder="1150"
                     />
                   </div>
                 </div>

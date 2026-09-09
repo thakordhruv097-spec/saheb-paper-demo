@@ -1016,6 +1016,23 @@ export function saveRoll(roll: MachineRoll, user: string): MachineRoll {
   return roll;
 }
 
+export function markRollAsConsumed(rollNo: string): void {
+  if (!rollNo) return;
+  const rolls = getRolls();
+  const clean = rollNo.trim().toLowerCase();
+  let modified = false;
+  const updated = rolls.map(r => {
+    if (r.rollNo.trim().toLowerCase() === clean) {
+      modified = true;
+      return { ...r, status: 'CONSUMED' as const, isRewound: true };
+    }
+    return r;
+  });
+  if (modified) {
+    setJSON(KEYS.ROLLS, updated);
+  }
+}
+
 // --- REWINDER ---
 export const DEFAULT_REELS: Reel[] = [];
 
@@ -1129,6 +1146,7 @@ export function saveReelsFromRoll(
 
   setJSON(KEYS.REELS, currentReels);
   pushUpsertToCloud('rewinder_production', currentReels.map(reelToDb));
+  markRollAsConsumed(rollNo);
   addLog(
     'Rewinder',
     'Roll Rewound',
@@ -1175,6 +1193,13 @@ export function saveSingleReel(
   currentReels.push(newReelObj);
   setJSON(KEYS.REELS, currentReels);
   pushUpsertToCloud('rewinder_production', reelToDb(newReelObj));
+
+  if (reel.parentRollNo) {
+    const parts = reel.parentRollNo.split('/').map(p => p.trim());
+    parts.forEach(p => {
+      if (p) markRollAsConsumed(p);
+    });
+  }
 
   addLog(
     'Rewinder',

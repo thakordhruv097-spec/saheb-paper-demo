@@ -243,6 +243,8 @@ export interface MachineRoll {
   downtimeReason: string;
   date: string; // YYYY-MM-DD
   formulaId: string; // references PulpFormula.id
+  status?: 'AVAILABLE' | 'CONSUMED' | 'REWOUND';
+  isRewound?: boolean;
 }
 
 export type ReelStatus =
