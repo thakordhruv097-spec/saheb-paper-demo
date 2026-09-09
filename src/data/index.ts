@@ -646,6 +646,7 @@ export function updateRawUserPin(username: string, pin: string): boolean {
     user.pin = pin;
     user.needsPinReset = false; // cleared on custom set
     setJSON(KEYS.USERS, users);
+    pushUpsertToCloud('users', userToDb(user));
     addLog('Auth', 'Password Reset', `PIN updated for user: ${username}`, username);
     return true;
   }
@@ -714,7 +715,7 @@ export function saveRawMaterial(material: RawMaterialItem): RawMaterialItem {
     materials.push(material);
   }
   setJSON(KEYS.RAW_MATERIALS, materials);
-  pushUpsertToCloud('raw_material_stock', rawMaterialToDb(material));
+  pushUpsertToCloud('raw_materials', rawMaterialToDb(material));
   return material;
 }
 
@@ -722,7 +723,7 @@ export function deleteRawMaterial(id: string): void {
   const materials = getRawMaterials();
   const updated = materials.filter(m => m.id !== id);
   setJSON(KEYS.RAW_MATERIALS, updated);
-  pushDeleteToCloud('raw_material_stock', 'id', id);
+  pushDeleteToCloud('raw_materials', 'id', id);
 }
 
 export function getRawMaterialLots(): RawMaterialLot[] {
@@ -747,7 +748,7 @@ export function updateRawMaterialStock(
   if (material) {
     material.stock = Math.max(0, parseFloat((material.stock + amount).toFixed(3)));
     setJSON(KEYS.RAW_MATERIALS, materials);
-    pushUpsertToCloud('raw_material_stock', rawMaterialToDb(material));
+    pushUpsertToCloud('raw_materials', rawMaterialToDb(material));
 
     let lotNo = '';
     if (amount >= 0) {
@@ -930,7 +931,7 @@ export function saveFormula(formula: PulpFormula, user: string): PulpFormula {
     formulas.push(formula);
   }
   setJSON(KEYS.FORMULAS, formulas);
-  pushUpsertToCloud('pulp_mill_operations', formulaToDb(formula));
+  pushUpsertToCloud('pulp_formulas', formulaToDb(formula));
   addLog(
     'Pulp Mill',
     'Formula Logged',
@@ -944,7 +945,7 @@ export function deleteFormula(formulaId: string, user: string): void {
   const formulas = getFormulas();
   const filtered = formulas.filter(f => f.id !== formulaId);
   setJSON(KEYS.FORMULAS, filtered);
-  pushDeleteToCloud('pulp_mill_operations', 'id', formulaId);
+  pushDeleteToCloud('pulp_formulas', 'id', formulaId);
   addLog('Pulp Mill', 'Formula Deleted', `Formula ${formulaId} deleted.`, user);
 }
 
@@ -1004,7 +1005,7 @@ export function saveRoll(roll: MachineRoll, user: string): MachineRoll {
   roll.formulaId = formula.id;
   rolls.push(roll);
   setJSON(KEYS.ROLLS, rolls);
-  pushUpsertToCloud('machine_production', machineRollToDb(roll));
+  pushUpsertToCloud('machine_rolls', machineRollToDb(roll));
 
   addLog(
     'Machine',
@@ -1144,8 +1145,7 @@ export function saveReelsFromRoll(
     currentReels.push({ ...newReel, reelNo: finalReelNo });
   });
 
-  setJSON(KEYS.REELS, currentReels);
-  pushUpsertToCloud('rewinder_production', currentReels.map(reelToDb));
+  pushUpsertToCloud('reels', currentReels.map(reelToDb));
   markRollAsConsumed(rollNo);
   addLog(
     'Rewinder',
@@ -1192,7 +1192,7 @@ export function saveSingleReel(
   const newReelObj = { ...reel, reelNo: finalReelNo };
   currentReels.push(newReelObj);
   setJSON(KEYS.REELS, currentReels);
-  pushUpsertToCloud('rewinder_production', reelToDb(newReelObj));
+  pushUpsertToCloud('reels', reelToDb(newReelObj));
 
   if (reel.parentRollNo) {
     const parts = reel.parentRollNo.split('/').map(p => p.trim());
@@ -1218,7 +1218,7 @@ export function saveReel(reel: Reel, user: string): Reel {
     currentReels.unshift(reel);
   }
   setJSON(KEYS.REELS, currentReels);
-  pushUpsertToCloud('rewinder_production', reelToDb(reel));
+  pushUpsertToCloud('reels', reelToDb(reel));
   addLog('Rewinder', 'Reel Updated', `Updated Reel #${reel.reelNo} specs`, user);
   return reel;
 }
@@ -1243,7 +1243,7 @@ export function updateReelQC(
     reel.qcTimestamp = new Date().toISOString();
 
     setJSON(KEYS.REELS, reels);
-    pushUpsertToCloud('rewinder_production', reelToDb(reel));
+    pushUpsertToCloud('reels', reelToDb(reel));
     addLog(
       'QC Inspection',
       `QC_${qcGrade === 'A' ? 'PASS' : 'FAIL'}`,
@@ -1264,7 +1264,7 @@ export function saveBoilerLog(log: BoilerLog, user: string): BoilerLog {
   const logs = getBoilerLogs();
   logs.push(log);
   setJSON(KEYS.BOILER_LOGS, logs);
-  pushUpsertToCloud('boiler_operations', boilerLogToDb(log));
+  pushUpsertToCloud('boiler_logs', boilerLogToDb(log));
 
   // Deduct wood from raw materials if it's logged
   if (log.woodUsed > 0) {
@@ -1293,7 +1293,7 @@ export function saveEtpLog(log: EtpLog, user: string): EtpLog {
   const logs = getEtpLogs();
   logs.push(log);
   setJSON(KEYS.ETP_LOGS, logs);
-  pushUpsertToCloud('etp_operations', etpLogToDb(log));
+  pushUpsertToCloud('etp_logs', etpLogToDb(log));
 
   addLog(
     'ETP',
@@ -1313,7 +1313,7 @@ export function saveElectricityLog(log: ElectricityLog, user: string): Electrici
   const logs = getElectricityLogs();
   logs.push(log);
   setJSON(KEYS.ELECTRICITY_LOGS, logs);
-  pushUpsertToCloud('power_grid_operations', electricityLogToDb(log));
+  pushUpsertToCloud('electricity_logs', electricityLogToDb(log));
 
   addLog(
     'Electricity',
@@ -1448,7 +1448,7 @@ export function savePendingOrder(order: PendingOrder, user: string): PendingOrde
     orders.push(order);
   }
   setJSON(KEYS.PENDING_ORDERS, orders);
-  pushUpsertToCloud('order_booking', pendingOrderToDb(order));
+  pushUpsertToCloud('pending_orders', pendingOrderToDb(order));
   return order;
 }
 
@@ -1569,11 +1569,11 @@ export function savePackingSlip(slip: PackingSlip, user: string): PackingSlip {
 
   if (reelsChanged) {
     setJSON(KEYS.REELS, reels);
-    pushUpsertToCloud('rewinder_production', reels.map(reelToDb));
+    pushUpsertToCloud('reels', reels.map(reelToDb));
   }
 
   setJSON(KEYS.PACKING_SLIPS, slips);
-  pushUpsertToCloud('dispatch_receipt', packingSlipToDb(slip));
+  pushUpsertToCloud('packing_slips', packingSlipToDb(slip));
 
   // Automatically recalculate and sync pending orders
   syncOrdersWithDispatches();
@@ -1606,12 +1606,12 @@ export function deletePackingSlip(slipId: string, user: string): boolean {
       }
     });
     setJSON(KEYS.REELS, reels);
-    pushUpsertToCloud('rewinder_production', reels.map(reelToDb));
+    pushUpsertToCloud('reels', reels.map(reelToDb));
   }
 
   slips.splice(slipIndex, 1);
   setJSON(KEYS.PACKING_SLIPS, slips);
-  pushDeleteToCloud('dispatch_receipt', 'id', slipId);
+  pushDeleteToCloud('packing_slips', 'id', slipId);
 
   // Recalculate pending orders
   syncOrdersWithDispatches();
@@ -1709,7 +1709,7 @@ export function saveStoreItem(item: StoreItem, user: string): StoreItem {
     items.push(item);
   }
   setJSON(KEYS.STORE_ITEMS, items);
-  pushUpsertToCloud('spares_store', storeItemToDb(item));
+  pushUpsertToCloud('store_items', storeItemToDb(item));
   return item;
 }
 
@@ -1719,7 +1719,7 @@ export function adjustStoreItemStock(id: string, amount: number, user: string): 
   if (item) {
     item.pcs = Math.max(0, item.pcs + amount);
     setJSON(KEYS.STORE_ITEMS, items);
-    pushUpsertToCloud('spares_store', storeItemToDb(item));
+    pushUpsertToCloud('store_items', storeItemToDb(item));
     addLog(
       'Store Spares',
       'Inventory Adjust',
@@ -1811,7 +1811,7 @@ export function saveLabReport(report: PaperTestReport, user: string): PaperTestR
     reports.unshift(report);
   }
   setJSON(KEYS.LAB_REPORTS, reports);
-  pushUpsertToCloud('lab_quality_control', labReportToDb(report));
+  pushUpsertToCloud('paper_test_reports', labReportToDb(report));
   addLog('Lab QC', 'Paper Test Report Saved', `Lab Test Report #${report.id} saved for Roll #${report.rollNo} (${report.product})`, user);
   return report;
 }
@@ -1820,7 +1820,7 @@ export function deleteLabReport(id: string, user: string): void {
   const reports = getLabReports();
   const updated = reports.filter(r => r.id !== id);
   setJSON(KEYS.LAB_REPORTS, updated);
-  pushDeleteToCloud('lab_quality_control', 'id', id);
+  pushDeleteToCloud('paper_test_reports', 'id', id);
   addLog('Lab QC', 'Paper Test Report Deleted', `Lab Test Report #${id} deleted`, user);
 }
 

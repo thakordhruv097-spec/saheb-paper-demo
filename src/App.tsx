@@ -1,35 +1,40 @@
-import React from 'react';
+import React, { Suspense, lazy } from 'react';
 import { HashRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider } from './modules/auth/AuthContext';
 import { ProtectedRoute } from './modules/auth/ProtectedRoute';
 import { Layout } from './components/Layout';
 import { LoginView } from './modules/auth/LoginView';
-import { DashboardView } from './modules/dashboard/DashboardView';
-import { RawMaterialView } from './modules/raw-material/RawMaterialView';
-import { PulpMillView } from './modules/pulp-mill/PulpMillView';
-import { MachineView } from './modules/machine/MachineView';
-import { RewindingReelConversionView } from './modules/rewinder/RewindingReelConversionView';
-import { UtilitiesEtpView } from './modules/boiler/UtilitiesEtpView';
-import { FinishedStockDispatchView } from './modules/dispatch/FinishedStockDispatchView';
-import { StoreView } from './modules/store/StoreView';
-import { ReportsView } from './modules/reports/ReportsView';
-import { LabelStudioView } from './modules/label-studio/LabelStudioView';
-import { AdminMasters } from './modules/admin/AdminMasters';
-import { UserManagementView } from './modules/admin/UserManagementView';
-import { QRScannerView } from './modules/rewinder/QRScannerView';
-import { QRTraceabilityView } from './modules/rewinder/QRTraceabilityView';
-import { OrdersView } from './modules/orders/OrdersView';
-import { LabView } from './modules/lab/LabView';
-import { DispatchView } from './modules/dispatch/DispatchView';
-
-
 import { DateFilterProvider } from './context/DateFilterContext';
-
-import { OperatorProfileView } from './modules/profile/OperatorProfileView';
-import { AdminProfileView } from './modules/profile/AdminProfileView';
-import { RoleManagementView } from './modules/profile/RoleManagementView';
-import { MobileProfileView } from './modules/profile/MobileProfileView';
 import { useAuth } from './modules/auth/AuthContext';
+
+// Dynamic route-level code-splitting for optimal bundle performance
+const DashboardView = lazy(() => import('./modules/dashboard/DashboardView').then(m => ({ default: m.DashboardView })));
+const RawMaterialView = lazy(() => import('./modules/raw-material/RawMaterialView').then(m => ({ default: m.RawMaterialView })));
+const PulpMillView = lazy(() => import('./modules/pulp-mill/PulpMillView').then(m => ({ default: m.PulpMillView })));
+const MachineView = lazy(() => import('./modules/machine/MachineView').then(m => ({ default: m.MachineView })));
+const RewindingReelConversionView = lazy(() => import('./modules/rewinder/RewindingReelConversionView').then(m => ({ default: m.RewindingReelConversionView })));
+const UtilitiesEtpView = lazy(() => import('./modules/boiler/UtilitiesEtpView').then(m => ({ default: m.UtilitiesEtpView })));
+const FinishedStockDispatchView = lazy(() => import('./modules/dispatch/FinishedStockDispatchView').then(m => ({ default: m.FinishedStockDispatchView })));
+const StoreView = lazy(() => import('./modules/store/StoreView').then(m => ({ default: m.StoreView })));
+const ReportsView = lazy(() => import('./modules/reports/ReportsView').then(m => ({ default: m.ReportsView })));
+const LabelStudioView = lazy(() => import('./modules/label-studio/LabelStudioView').then(m => ({ default: m.LabelStudioView })));
+const AdminMasters = lazy(() => import('./modules/admin/AdminMasters').then(m => ({ default: m.AdminMasters })));
+const UserManagementView = lazy(() => import('./modules/admin/UserManagementView').then(m => ({ default: m.UserManagementView })));
+const QRScannerView = lazy(() => import('./modules/rewinder/QRScannerView').then(m => ({ default: m.QRScannerView })));
+const QRTraceabilityView = lazy(() => import('./modules/rewinder/QRTraceabilityView').then(m => ({ default: m.QRTraceabilityView })));
+const OrdersView = lazy(() => import('./modules/orders/OrdersView').then(m => ({ default: m.OrdersView })));
+const LabView = lazy(() => import('./modules/lab/LabView').then(m => ({ default: m.LabView })));
+const DispatchView = lazy(() => import('./modules/dispatch/DispatchView').then(m => ({ default: m.DispatchView })));
+const OperatorProfileView = lazy(() => import('./modules/profile/OperatorProfileView').then(m => ({ default: m.OperatorProfileView })));
+const AdminProfileView = lazy(() => import('./modules/profile/AdminProfileView').then(m => ({ default: m.AdminProfileView })));
+const RoleManagementView = lazy(() => import('./modules/profile/RoleManagementView').then(m => ({ default: m.RoleManagementView })));
+const MobileProfileView = lazy(() => import('./modules/profile/MobileProfileView').then(m => ({ default: m.MobileProfileView })));
+
+const RouteLoadingFallback = () => (
+  <div className="min-h-[50vh] flex items-center justify-center p-8">
+    <div className="w-8 h-8 border-3 border-[#5E3BE8] border-t-transparent rounded-full animate-spin"></div>
+  </div>
+);
 
 function ProfileRouteWrapper({ defaultTab }: { defaultTab?: 'profile' | 'roles' | 'users' }) {
   const { user } = useAuth();
@@ -68,9 +73,10 @@ export default function App() {
     <Router>
       <AuthProvider>
         <DateFilterProvider>
-          <Routes>
-            {/* Public Login Route */}
-            <Route path="/login" element={<LoginView />} />
+          <Suspense fallback={<RouteLoadingFallback />}>
+            <Routes>
+              {/* Public Login Route */}
+              <Route path="/login" element={<LoginView />} />
 
             {/* Protected Routes inside Layout Shell */}
             <Route
@@ -398,8 +404,9 @@ export default function App() {
             {/* Wildcard Fallback */}
             <Route path="*" element={<Navigate to="/" replace />} />
           </Routes>
-        </DateFilterProvider>
-      </AuthProvider>
-    </Router>
+        </Suspense>
+      </DateFilterProvider>
+    </AuthProvider>
+  </Router>
   );
 }

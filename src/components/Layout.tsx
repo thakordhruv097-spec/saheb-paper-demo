@@ -555,7 +555,7 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
 
           {/* Mobile Only Header Logo */}
           <div className="flex md:hidden items-center gap-2.5 cursor-pointer group select-none min-w-0" onClick={() => navigate('/')}>
-            <img src={`${import.meta.env.BASE_URL}logo.png`} alt="Saheb Paper Logo" className="h-8 w-8 object-contain rounded-xl shadow-xs border border-slate-200 dark:border-slate-700 bg-white p-0.5 shrink-0" />
+            <img src={`${import.meta.env.BASE_URL}saheb-logo-official.png`} alt="Saheb Paper Logo" className="h-8 w-auto max-w-[48px] object-contain shrink-0" />
             <div className="min-w-0">
               <div className="flex items-center gap-1.5">
                 <span className="text-xs sm:text-sm font-black text-slate-900 dark:text-white leading-none tracking-tight truncate font-heading">
@@ -804,13 +804,13 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
 
             {/* Top Header Card / Pill */}
             <div
-              className="bg-white dark:bg-[#1a2544] p-2 rounded-2xl flex items-center gap-2 shadow-[3px_3px_8px_rgba(163,163,196,0.14),-3px_-3px_8px_rgba(255,255,255,0.95)] dark:shadow-none mb-2 shrink-0 cursor-pointer group select-none transition-all hover:scale-[1.01]"
+              className="bg-white dark:bg-[#1a2544] p-2 rounded-2xl flex items-center gap-2.5 shadow-[3px_3px_8px_rgba(163,163,196,0.14),-3px_-3px_8px_rgba(255,255,255,0.95)] dark:shadow-none mb-2 shrink-0 cursor-pointer group select-none transition-all hover:scale-[1.01]"
               onClick={() => navigate('/')}
             >
               <img
-                src={`${import.meta.env.BASE_URL}logo.png`}
+                src={`${import.meta.env.BASE_URL}saheb-logo-official.png`}
                 alt="Saheb Paper Logo"
-                className="h-8 w-8 object-contain rounded-xl shadow-xs border border-slate-200/80 dark:border-slate-700 bg-white p-0.5 shrink-0"
+                className="h-8 w-auto max-w-[48px] object-contain shrink-0"
               />
               <div className="min-w-0 flex-1">
                 <div className="flex items-center gap-1.5">

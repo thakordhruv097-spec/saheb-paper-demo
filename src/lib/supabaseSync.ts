@@ -686,7 +686,7 @@ export async function pushLocalTableToCloud(tableName: string): Promise<void> {
       case 'raw_material_stock':
       case 'raw_materials': {
         const local = getLocal<RawMaterialItem[]>(KEYS.RAW_MATERIALS, []);
-        if (local.length > 0) await pushUpsertToCloud('raw_material_stock', local.map(rawMaterialToDb));
+        if (local.length > 0) await pushUpsertToCloud('raw_materials', local.map(rawMaterialToDb));
         break;
       }
       case 'products': {
@@ -712,7 +712,7 @@ export async function pushLocalTableToCloud(tableName: string): Promise<void> {
       case 'spares_store':
       case 'store_items': {
         const local = getLocal<StoreItem[]>(KEYS.STORE_ITEMS, []);
-        if (local.length > 0) await pushUpsertToCloud('spares_store', local.map(storeItemToDb));
+        if (local.length > 0) await pushUpsertToCloud('store_items', local.map(storeItemToDb));
         break;
       }
     }
@@ -762,23 +762,23 @@ export async function initSupabaseSync(): Promise<void> {
 
   const tables = [
     'users',
-    'raw_material_stock',
+    'raw_materials',
     'raw_material_lots',
     'products',
     'parties',
     'vendors',
     'vehicles',
-    'pulp_mill_operations',
-    'machine_production',
-    'rewinder_production',
+    'pulp_formulas',
+    'machine_rolls',
+    'reels',
     'transaction_logs',
-    'boiler_operations',
-    'etp_operations',
-    'power_grid_operations',
-    'order_booking',
-    'dispatch_receipt',
-    'spares_store',
-    'lab_quality_control',
+    'boiler_logs',
+    'etp_logs',
+    'electricity_logs',
+    'pending_orders',
+    'packing_slips',
+    'store_items',
+    'paper_test_reports',
   ];
 
   // 1. Initial parallel fetch from cloud
@@ -798,12 +798,12 @@ export async function initSupabaseSync(): Promise<void> {
     console.warn('Could not subscribe to Supabase realtime changes:', err);
   }
 
-  // 3. Heartbeat polling (every 6s when tab is active) to guarantee zero missed events
+  // 3. Heartbeat polling (every 45s when tab is active) to guarantee zero missed events without network congestion
   setInterval(() => {
     if (typeof document !== 'undefined' && document.visibilityState === 'visible') {
       tables.forEach(table => syncTableFromCloud(table));
     }
-  }, 6000);
+  }, 45000);
 
   // 4. Instant re-sync whenever user focuses or switches back to the tab
   if (typeof window !== 'undefined') {

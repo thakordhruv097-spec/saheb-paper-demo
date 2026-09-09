@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import type { User, UserRole } from '../../data/types';
 import { getUsers, updateRawUserPin, addLog, saveUser } from '../../data/index';
+import { hashPin, isPinHashed, generateSecureToken } from '../../lib/security';
 
 interface AuthContextType {
   user: User | null;
@@ -184,6 +185,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     const DEMO_USERNAMES = ['admin', 'pulper', 'plant_manager', 'dispatcher', 'shop', 'shopper', 'viewer'];
     const isDemo = DEMO_USERNAMES.includes(cleanUser);
 
+    const hashedPin = await hashPin(cleanPin);
+
     const foundUser = users.find(u => {
       const uName = u.username.toLowerCase();
       const matchName =
@@ -192,7 +195,15 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         (cleanUser === 'shopper' && (uName === 'shop' || u.role === 'Shopper')) ||
         (cleanUser === 'pulper' && (uName === 'pulper' || u.role === 'LabOperator')) ||
         (cleanUser === 'lab_operator' && (uName === 'pulper' || u.role === 'LabOperator'));
-      return matchName && (u.pin.trim() === cleanPin || (cleanPin === '1234' && isDemo));
+
+      if (!matchName) return false;
+
+      // Smart Dual-Check: Verify against SHA-256 hashed PIN or plaintext (legacy) or demo fallback
+      const matchesHash = u.pin === hashedPin;
+      const matchesPlain = u.pin.trim() === cleanPin;
+      const matchesDemo = cleanPin === '1234' && isDemo;
+
+      return matchesHash || matchesPlain || matchesDemo;
     });
 
     if (foundUser) {
@@ -201,8 +212,14 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         return false;
       }
 
-      const token = `token_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`;
-      const expiresAt = Date.now() + 8 * 60 * 60 * 1000; // 8 hours duration
+      // Seamless Auto-Migration: If stored PIN is still plaintext, upgrade to hashed PIN immediately
+      if (!isPinHashed(foundUser.pin)) {
+        foundUser.pin = hashedPin;
+        saveUser(foundUser);
+      }
+
+      const token = generateSecureToken('token');
+      const expiresAt = Date.now() + SESSION_DURATION_MS; // 8 hours duration
 
       const session: SessionData = {
         token,
@@ -231,7 +248,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     const userToReset = users.find(u => u.username.toLowerCase() === username.toLowerCase());
     if (!userToReset) return false;
 
-    return updateRawUserPin(userToReset.username, newPin);
+    const hashed = await hashPin(newPin);
+    return updateRawUserPin(userToReset.username, hashed);
   };
 
   const updateUserProfile = async (updates: Partial<User>): Promise<boolean> => {
@@ -239,6 +257,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     const users = getUsers();
     const idx = users.findIndex(u => u.username.toLowerCase() === user.username.toLowerCase());
     if (idx === -1) return false;
+
+    if (updates.pin && !isPinHashed(updates.pin)) {
+      updates.pin = await hashPin(updates.pin);
+    }
 
     const updatedUser: User = { ...users[idx], ...updates };
     saveUser(updatedUser);
@@ -265,8 +287,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     const targetUser = users.find(u => u.username.toLowerCase() === username.toLowerCase());
     if (!targetUser) return false;
 
-    const token = `token_sim_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`;
-    const expiresAt = Date.now() + 8 * 60 * 60 * 1000;
+    const token = generateSecureToken('token_sim');
+    const expiresAt = Date.now() + SESSION_DURATION_MS;
     const adminUsername = (user && user.role === 'Admin') ? user.username : (simulatedBy || 'admin');
 
     const session: SessionData = {
@@ -295,8 +317,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
     if (!adminUser) return false;
 
-    const token = `token_admin_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`;
-    const expiresAt = Date.now() + 8 * 60 * 60 * 1000;
+    const token = generateSecureToken('token_admin');
+    const expiresAt = Date.now() + SESSION_DURATION_MS;
 
     const session: SessionData = {
       token,

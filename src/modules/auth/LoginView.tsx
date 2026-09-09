@@ -3,15 +3,28 @@ import { useNavigate } from 'react-router-dom';
 import { useAuth, getFirstAccessibleRoute } from './AuthContext';
 import { useTranslation } from 'react-i18next';
 import { getUsers, updateRawUserPin } from '../../data/index';
-import { Eye, EyeOff, ShieldAlert, Loader2 } from 'lucide-react';
-import { COMPANY_CONFIG } from '../../config/company';
+import {
+  User,
+  Lock,
+  Eye,
+  EyeOff,
+  ArrowRight,
+  MapPin,
+  Phone,
+  Globe,
+  BarChart2,
+  FileText,
+  ShieldCheck,
+  Leaf,
+  Loader2,
+} from 'lucide-react';
 
 export const LoginView: React.FC = () => {
   const { login, resetPin } = useAuth();
   const { t } = useTranslation();
   const navigate = useNavigate();
 
-  // Completely disable window/body scrollbar while on the login page
+  // Disable page scrollbars on login screen
   useEffect(() => {
     document.documentElement.classList.add('login-active');
     document.body.classList.add('login-active');
@@ -26,15 +39,17 @@ export const LoginView: React.FC = () => {
     };
   }, []);
 
-  // Mode: 'login' or 'forgot_step_1' or 'forgot_step_2' or 'forgot_step_3' or 'force_reset_pin'
-  const [mode, setMode] = useState<'login' | 'forgot_step_1' | 'forgot_step_2' | 'forgot_step_3' | 'force_reset_pin'>('login');
+  // Mode: 'login' | 'forgot_step_1' | 'forgot_step_2' | 'forgot_step_3' | 'force_reset_pin'
+  const [mode, setMode] = useState<
+    'login' | 'forgot_step_1' | 'forgot_step_2' | 'forgot_step_3' | 'force_reset_pin'
+  >('login');
 
-  // Login Form States
+  // Form States
   const [username, setUsername] = useState('');
   const [pin, setPin] = useState('');
   const [showPin, setShowPin] = useState(false);
   const [loginError, setLoginError] = useState('');
-  const [loadingDemo, setLoadingDemo] = useState<string | null>(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   // Forgot / Force Password States
   const [forgotUser, setForgotUser] = useState<any>(null);
@@ -49,45 +64,59 @@ export const LoginView: React.FC = () => {
     setLoginError('');
 
     if (!username || !pin) {
-      setLoginError('Username and PIN are required');
+      setLoginError('Username and Password/PIN are required');
       return;
     }
 
-    const users = getUsers();
-    const cleanUser = username.trim().toLowerCase();
-    const cleanPin = pin.trim();
-    const DEMO_USERNAMES = ['admin', 'pulper', 'plant_manager', 'dispatcher', 'shop', 'shopper', 'viewer'];
-    const isDemo = DEMO_USERNAMES.includes(cleanUser);
+    setIsSubmitting(true);
+    try {
+      const users = getUsers();
+      const cleanUser = username.trim().toLowerCase();
+      const cleanPin = pin.trim();
+      const DEMO_USERNAMES = [
+        'admin',
+        'pulper',
+        'plant_manager',
+        'dispatcher',
+        'shop',
+        'shopper',
+        'viewer',
+      ];
+      const isDemo = DEMO_USERNAMES.includes(cleanUser);
 
-    const found = users.find(u => {
-      const uName = u.username.toLowerCase();
-      const matchName =
-        uName === cleanUser ||
-        (cleanUser === 'shop' && (uName === 'shopper' || u.role === 'Shopper')) ||
-        (cleanUser === 'pulper' && (uName === 'pulper' || u.role === 'LabOperator'));
-      return matchName && (u.pin.trim() === cleanPin || (cleanPin === '1234' && isDemo));
-    });
+      const found = users.find(u => {
+        const uName = u.username.toLowerCase();
+        const matchName =
+          uName === cleanUser ||
+          (cleanUser === 'shop' && (uName === 'shopper' || u.role === 'Shopper')) ||
+          (cleanUser === 'pulper' && (uName === 'pulper' || u.role === 'LabOperator'));
+        return matchName && (u.pin.trim() === cleanPin || (cleanPin === '1234' && isDemo));
+      });
 
-    if (found) {
-      if (found.active === false) {
-        setLoginError(t('login.invalid_credentials'));
-        return;
-      }
-      if (found.needsPinReset) {
-        setForgotUser(found);
-        setNewPin('');
-        setResetError('');
-        setMode('force_reset_pin');
-      } else {
-        const success = await login(username, pin);
-        if (success) {
-          navigate(getFirstAccessibleRoute(found));
-        } else {
+      if (found) {
+        if (found.active === false) {
           setLoginError(t('login.invalid_credentials'));
+          setIsSubmitting(false);
+          return;
         }
+        if (found.needsPinReset) {
+          setForgotUser(found);
+          setNewPin('');
+          setResetError('');
+          setMode('force_reset_pin');
+        } else {
+          const success = await login(username, pin);
+          if (success) {
+            navigate(getFirstAccessibleRoute(found));
+          } else {
+            setLoginError(t('login.invalid_credentials'));
+          }
+        }
+      } else {
+        setLoginError(t('login.invalid_credentials'));
       }
-    } else {
-      setLoginError(t('login.invalid_credentials'));
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -106,7 +135,7 @@ export const LoginView: React.FC = () => {
     }
 
     if (newPin === pin) {
-      setResetError('New PIN cannot be the same as the current temporary PIN.');
+      setResetError('New PIN cannot be the same as current temporary PIN.');
       return;
     }
 
@@ -133,9 +162,10 @@ export const LoginView: React.FC = () => {
     }
 
     const users = getUsers();
-    const found = users.find(u =>
-      (u.email && u.email.toLowerCase() === contactInput.trim().toLowerCase()) ||
-      (u.phone && u.phone.replace(/\s+/g, '') === contactInput.trim().replace(/\s+/g, ''))
+    const found = users.find(
+      u =>
+        (u.email && u.email.toLowerCase() === contactInput.trim().toLowerCase()) ||
+        (u.phone && u.phone.replace(/\s+/g, '') === contactInput.trim().replace(/\s+/g, ''))
     );
 
     if (found) {
@@ -185,449 +215,657 @@ export const LoginView: React.FC = () => {
     }
   };
 
+  const logoUrl = `${import.meta.env.BASE_URL}logo.png`;
+  const warehouseBgUrl = `${import.meta.env.BASE_URL}login_paper_rolls_bg.jpg`;
+
   return (
-    <div className="login-page-container fixed inset-0 h-screen h-[100dvh] w-screen w-full bg-gradient-to-br from-[#6C4FE0] via-[#7C3AED] to-[#5B3DC9] flex items-center justify-center p-3 sm:p-4 md:p-6 font-sans z-50 overflow-hidden select-none overscroll-none touch-none">
-
-      {/* Background Decorative Circles */}
-      <div className="absolute -top-16 -left-16 w-64 h-64 rounded-full bg-white/10 blur-sm pointer-events-none" />
-      <div className="absolute top-1/4 right-8 w-16 h-16 rounded-full bg-white/15 blur-xs pointer-events-none" />
-      <div className="absolute bottom-12 left-10 w-24 h-24 rounded-full bg-white/15 blur-xs pointer-events-none" />
-      <div className="absolute -bottom-20 -right-20 w-80 h-80 rounded-full bg-sky-300/20 blur-md pointer-events-none" />
-
-      {/* Main Floating White Card - Rock-solid static placement */}
-      <div className="w-full max-w-[340px] sm:max-w-[370px] md:max-w-[400px] lg:max-w-[410px] max-h-[95vh] max-h-[95dvh] overflow-y-auto no-scrollbar bg-white rounded-[20px] sm:rounded-[24px] md:rounded-[26px] shadow-[8px_8px_24px_rgba(0,0,0,0.18)] p-4 sm:p-5 md:p-6 relative z-10 my-auto">
-
-        {/* Title & Subtitle with Official Logo */}
-        <div className="flex items-center justify-between mb-3 sm:mb-3.5 md:mb-4 border-b border-slate-100 pb-2.5 sm:pb-3">
+    <div className="login-page-container fixed inset-0 h-screen h-[100dvh] w-screen w-full bg-[#EFEFFD] flex items-center justify-center p-0 lg:p-4 xl:p-8 font-sans z-50 overflow-hidden select-none">
+      
+      {/* =========================================================================
+          DESKTOP VIEW (EXACT MATCH TO LAPTOP MOCKUP IN REFERENCE IMAGE)
+          ========================================================================= */}
+      <div className="hidden lg:flex w-full max-w-[1400px] h-[90vh] max-h-[860px] bg-white rounded-[36px] shadow-[0_25px_70px_rgba(94,59,232,0.14)] overflow-hidden relative border border-[#E5E3FB]">
+        
+        {/* Left Branding & Content Area */}
+        <div className="w-[52%] xl:w-[50%] h-full p-8 xl:p-12 2xl:p-14 flex flex-col justify-between relative z-10 bg-gradient-to-br from-white via-[#FCFBFF] to-[#F5F3FF]">
+          
+          {/* Top Logo */}
           <div>
-            <h2 className="text-lg sm:text-xl md:text-2xl font-black text-[#1E293B] tracking-tight">
-              {COMPANY_CONFIG.name}
-            </h2>
-            <p className="text-[11px] sm:text-xs text-slate-500 font-bold tracking-wide mt-0.5">
-              Paper Mill Management System
-            </p>
+            <img
+              src={logoUrl}
+              alt="Saheb Paper Pvt. Ltd."
+              className="h-14 xl:h-16 w-auto object-contain drop-shadow-xs"
+            />
           </div>
-          <img src={`${import.meta.env.BASE_URL}logo.png`} alt={`${COMPANY_CONFIG.shortName} Logo`} className="h-8 w-8 sm:h-9 sm:w-9 md:h-10 md:w-10 object-contain rounded-xl shadow-xs border border-slate-200/80 bg-white p-0.5 shrink-0" />
+
+          {/* Main Headline & Description */}
+          <div className="space-y-4 xl:space-y-5 my-auto max-w-[500px]">
+            <h1 className="text-3xl xl:text-4xl 2xl:text-[44px] font-black text-[#1E1B4B] leading-[1.12] tracking-tight font-heading">
+              Efficient<br />
+              Paper Management<br />
+              <span className="text-[#5E3BE8]">for a Brighter</span><br />
+              <span className="text-[#5E3BE8]">Tomorrow</span>
+            </h1>
+
+            <p className="text-xs xl:text-sm text-slate-500 font-medium leading-relaxed">
+              Streamline your operations, track production, manage inventory and empower your business
+              with Saheb Paper's smart management system.
+            </p>
+
+            {/* 3 Feature Pills / Badges */}
+            <div className="grid grid-cols-3 gap-3 pt-2">
+              <div className="flex flex-col items-center text-center p-3 rounded-2xl bg-white border border-[#EAE7FA] shadow-xs">
+                <div className="w-10 h-10 rounded-xl bg-[#F0EEFF] text-[#5E3BE8] flex items-center justify-center mb-2">
+                  <BarChart2 className="w-5 h-5" />
+                </div>
+                <span className="text-[11px] font-bold text-[#1E1B4B] leading-tight">
+                  Real-time<br />Tracking
+                </span>
+              </div>
+
+              <div className="flex flex-col items-center text-center p-3 rounded-2xl bg-white border border-[#EAE7FA] shadow-xs">
+                <div className="w-10 h-10 rounded-xl bg-[#F0EEFF] text-[#5E3BE8] flex items-center justify-center mb-2">
+                  <FileText className="w-5 h-5" />
+                </div>
+                <span className="text-[11px] font-bold text-[#1E1B4B] leading-tight">
+                  Better<br />Productivity
+                </span>
+              </div>
+
+              <div className="flex flex-col items-center text-center p-3 rounded-2xl bg-white border border-[#EAE7FA] shadow-xs">
+                <div className="w-10 h-10 rounded-xl bg-[#F0EEFF] text-[#5E3BE8] flex items-center justify-center mb-2">
+                  <ShieldCheck className="w-5 h-5" />
+                </div>
+                <span className="text-[11px] font-bold text-[#1E1B4B] leading-tight">
+                  Secure<br />&amp; Reliable
+                </span>
+              </div>
+            </div>
+          </div>
+
+          {/* Bottom Handwritten Script Accent */}
+          <div className="pt-2">
+            <div
+              className="text-3xl xl:text-4xl text-[#5E3BE8] font-bold select-none"
+              style={{ fontFamily: "'Caveat', 'Dancing Script', cursive, sans-serif" }}
+            >
+              Grow with Paper
+            </div>
+            <div className="w-20 h-0.5 bg-[#5E3BE8] rounded-full mt-1 ml-1"></div>
+          </div>
         </div>
 
-        {/* 1. Login Mode */}
-        {mode === 'login' && (
-          <form onSubmit={handleLoginSubmit} className="space-y-2.5 sm:space-y-3 md:space-y-4">
-            {loginError && (
-              <div className="p-2.5 bg-red-50 text-red-600 text-xs rounded-xl border border-red-200 text-center font-medium">
-                {loginError}
-              </div>
-            )}
+        {/* Right Area: Warehouse Image Background + Floating Login Card */}
+        <div className="w-[48%] xl:w-[50%] h-full relative flex items-center justify-center p-6 xl:p-10 overflow-hidden">
+          
+          {/* Background Warehouse Photo with Subtle Purple Glass Tint */}
+          <div
+            className="absolute inset-0 bg-cover bg-center bg-no-repeat"
+            style={{ backgroundImage: `url(${warehouseBgUrl})` }}
+          >
+            {/* Soft periwinkle gradient overlay & organic curves */}
+            <div className="absolute inset-0 bg-gradient-to-r from-white via-white/40 to-transparent" />
+            <div className="absolute inset-0 bg-[#5E3BE8]/10 backdrop-blur-[0.5px]" />
+          </div>
 
-            {/* Username Pill Input */}
+          {/* Top Right Slogan */}
+          <div className="absolute top-8 right-10 text-right z-10 select-none">
+            <div className="text-xs font-semibold text-slate-600 tracking-wide">Turning Paper</div>
+            <div className="text-xs font-bold text-[#5E3BE8] tracking-wide">Into Possibilities</div>
+            <div className="w-10 h-0.5 bg-[#5E3BE8] rounded-full mt-1.5 ml-auto"></div>
+          </div>
+
+          {/* Bottom Right Slogan */}
+          <div className="absolute bottom-8 right-10 flex items-center gap-2 z-10 select-none text-right">
             <div>
-              <input
-                type="text"
-                value={username}
-                onChange={e => setUsername(e.target.value)}
-                className="w-full px-4 py-2 sm:px-5 sm:py-2.5 md:px-6 md:py-3 bg-white border-2 border-[#6C4FE0]/40 focus:border-[#7C3AED] rounded-full text-xs sm:text-sm text-slate-800 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-[#6C4FE0]/30 transition"
-                placeholder="Username"
-                autoComplete="username"
-              />
+              <div className="text-[11px] font-black tracking-wider text-[#1E1B4B]">PAPER</div>
+              <div className="text-[9px] font-bold tracking-widest text-[#5E3BE8]">FOR A BETTER TOMORROW</div>
+            </div>
+            <Leaf className="w-4 h-4 text-emerald-600 shrink-0" />
+          </div>
+
+          {/* Floating White Login Card */}
+          <div className="w-full max-w-[400px] xl:max-w-[420px] bg-white rounded-3xl shadow-[0_20px_60px_-15px_rgba(94,59,232,0.22)] p-7 xl:p-8 border border-white/80 relative z-20">
+            
+            {/* Card Header */}
+            <div className="flex items-start justify-between mb-5">
+              <div>
+                <span className="text-xs font-extrabold text-[#5E3BE8] tracking-wider uppercase">
+                  Welcome Back
+                </span>
+                <h2 className="text-base xl:text-lg font-black text-[#1E1B4B] tracking-tight mt-0.5">
+                  SAHEB PAPER PVT. LTD.
+                </h2>
+                <p className="text-xs text-slate-500 font-medium mt-0.5">
+                  Paper Mill Management System
+                </p>
+              </div>
+
+              <div className="w-11 h-11 rounded-xl bg-white border border-slate-200/80 shadow-xs flex items-center justify-center p-1 shrink-0">
+                <img src={logoUrl} alt="Logo" className="w-full h-full object-contain" />
+              </div>
             </div>
 
-            {/* Password / PIN Pill Input */}
-            <div>
-              <div className="relative">
+            {/* Main Form Mode */}
+            {mode === 'login' && (
+              <form onSubmit={handleLoginSubmit} className="space-y-3.5">
+                {loginError && (
+                  <div className="p-2.5 bg-red-50 text-red-600 text-xs rounded-xl border border-red-200 text-center font-semibold">
+                    {loginError}
+                  </div>
+                )}
+
+                {/* Username Pill Input */}
+                <div className="relative flex items-center">
+                  <User className="w-4 h-4 text-[#5E3BE8] absolute left-4.5 pointer-events-none" />
+                  <input
+                    type="text"
+                    value={username}
+                    onChange={e => setUsername(e.target.value)}
+                    className="w-full pl-11 pr-4 py-3 bg-[#F8F8FD] border border-[#E2E0F8] focus:border-[#5E3BE8] focus:bg-white rounded-full text-xs xl:text-sm text-slate-800 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-[#5E3BE8]/20 transition"
+                    placeholder="Username"
+                    autoComplete="username"
+                  />
+                </div>
+
+                {/* Password Pill Input */}
+                <div className="relative flex items-center">
+                  <Lock className="w-4 h-4 text-[#5E3BE8] absolute left-4.5 pointer-events-none" />
+                  <input
+                    type={showPin ? 'text' : 'password'}
+                    value={pin}
+                    onChange={e => setPin(e.target.value)}
+                    className="w-full pl-11 pr-11 py-3 bg-[#F8F8FD] border border-[#E2E0F8] focus:border-[#5E3BE8] focus:bg-white rounded-full text-xs xl:text-sm text-slate-800 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-[#5E3BE8]/20 tracking-wider transition"
+                    placeholder="Password"
+                    autoComplete="current-password"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowPin(!showPin)}
+                    className="absolute right-4 text-slate-400 hover:text-slate-600 transition cursor-pointer p-1"
+                    title={showPin ? 'Hide Password' : 'Show Password'}
+                  >
+                    {showPin ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                  </button>
+                </div>
+
+                {/* Forgot Password Link */}
+                <div className="flex justify-end">
+                  <button
+                    type="button"
+                    onClick={() => setMode('forgot_step_1')}
+                    className="text-[#5E3BE8] hover:text-[#4A28D1] text-xs font-bold transition cursor-pointer"
+                  >
+                    Forgot Password?
+                  </button>
+                </div>
+
+                {/* Submit Login Button */}
+                <button
+                  type="submit"
+                  disabled={isSubmitting}
+                  className="w-full py-3.5 px-6 rounded-full bg-gradient-to-r from-[#5E3BE8] to-[#4E27E0] hover:from-[#522fd6] hover:to-[#431fc9] text-white font-bold text-sm tracking-wide shadow-lg shadow-[#5E3BE8]/25 hover:shadow-[#5E3BE8]/35 transition-all flex items-center justify-center gap-2 cursor-pointer active:scale-[0.99]"
+                >
+                  {isSubmitting ? (
+                    <Loader2 className="w-4 h-4 animate-spin text-white" />
+                  ) : (
+                    <>
+                      <span>Login</span>
+                      <ArrowRight className="w-4 h-4 text-white" />
+                    </>
+                  )}
+                </button>
+              </form>
+            )}
+
+            {/* Forgot Password Step 1: Input Mobile/Email */}
+            {mode === 'forgot_step_1' && (
+              <form onSubmit={handleForgotStep1Submit} className="space-y-3">
+                <div className="text-center pb-1">
+                  <h3 className="text-sm font-bold text-[#1E1B4B]">Forgot Password / PIN</h3>
+                  <p className="text-[11px] text-slate-500">Enter your registered email or phone</p>
+                </div>
+
+                {resetError && (
+                  <div className="p-2 bg-red-50 text-red-600 text-xs rounded-xl border border-red-200 text-center font-medium">
+                    {resetError}
+                  </div>
+                )}
+
                 <input
-                  type={showPin ? 'text' : 'password'}
-                  value={pin}
-                  onChange={e => setPin(e.target.value)}
-                  maxLength={4}
-                  className="w-full px-4 py-2 sm:px-5 sm:py-2.5 md:px-6 md:py-3 bg-white border-2 border-[#6C4FE0]/40 focus:border-[#7C3AED] rounded-full text-xs sm:text-sm text-slate-800 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-[#6C4FE0]/30 tracking-wider transition pr-10 md:pr-12"
-                  placeholder="Password"
-                  inputMode="numeric"
-                  autoComplete="current-password"
+                  type="text"
+                  value={contactInput}
+                  onChange={e => setContactInput(e.target.value)}
+                  placeholder="Email or Mobile Number"
+                  className="w-full px-4 py-2.5 bg-[#F8F8FD] border border-[#E2E0F8] focus:border-[#5E3BE8] focus:bg-white rounded-full text-xs text-slate-800 placeholder-slate-400 focus:outline-none"
                 />
-                <button
-                  type="button"
-                  onClick={() => setShowPin(!showPin)}
-                  className="absolute inset-y-0 right-0 pr-3.5 flex items-center text-slate-400 hover:text-slate-600"
-                >
-                  {showPin ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-                </button>
-              </div>
 
-              {/* Forgot Password Link Right Aligned */}
-              <div className="text-right mt-1.5">
-                <button
-                  type="button"
-                  onClick={() => setMode('forgot_step_1')}
-                  className="text-[11px] sm:text-xs text-[#2563EB] hover:underline font-semibold"
-                >
-                  Forgot Password?
-                </button>
-              </div>
-            </div>
+                <div className="flex gap-2 pt-1">
+                  <button
+                    type="button"
+                    onClick={() => setMode('login')}
+                    className="w-1/2 py-2.5 rounded-full border border-slate-200 text-xs font-bold text-slate-600 hover:bg-slate-50"
+                  >
+                    Back
+                  </button>
+                  <button
+                    type="submit"
+                    className="w-1/2 py-2.5 rounded-full bg-[#5E3BE8] text-white text-xs font-bold hover:bg-[#4E27E0]"
+                  >
+                    Send OTP
+                  </button>
+                </div>
+              </form>
+            )}
 
-            {/* Pill Login Button */}
-            <div className="pt-1.5">
-              <button
-                type="submit"
-                className="w-full bg-gradient-to-r from-[#6C4FE0] to-[#7C3AED] hover:from-[#5B3DC9] hover:to-[#6C4FE0] text-white font-bold py-2.5 sm:py-3 px-5 sm:px-6 rounded-full shadow-md shadow-[#6C4FE0]/25 transition duration-200 text-xs sm:text-sm tracking-wide cursor-pointer"
+            {/* Forgot Password Step 2: Verify OTP */}
+            {mode === 'forgot_step_2' && (
+              <form onSubmit={handleOtpVerifySubmit} className="space-y-3">
+                <div className="text-center pb-1">
+                  <h3 className="text-sm font-bold text-[#1E1B4B]">Verify 6-Digit OTP</h3>
+                  <p className="text-[11px] text-slate-500">
+                    OTP sent (Demo Code: <span className="font-mono font-bold text-[#5E3BE8]">{generatedOtp}</span>)
+                  </p>
+                </div>
+
+                {resetError && (
+                  <div className="p-2 bg-red-50 text-red-600 text-xs rounded-xl border border-red-200 text-center font-medium">
+                    {resetError}
+                  </div>
+                )}
+
+                <input
+                  type="text"
+                  value={otpInput}
+                  onChange={e => setOtpInput(e.target.value)}
+                  maxLength={6}
+                  placeholder="Enter 6-digit OTP"
+                  className="w-full text-center tracking-widest font-mono text-sm px-4 py-2.5 bg-[#F8F8FD] border border-[#E2E0F8] focus:border-[#5E3BE8] rounded-full"
+                />
+
+                <div className="flex gap-2 pt-1">
+                  <button
+                    type="button"
+                    onClick={() => setMode('forgot_step_1')}
+                    className="w-1/2 py-2.5 rounded-full border border-slate-200 text-xs font-bold text-slate-600 hover:bg-slate-50"
+                  >
+                    Back
+                  </button>
+                  <button
+                    type="submit"
+                    className="w-1/2 py-2.5 rounded-full bg-[#5E3BE8] text-white text-xs font-bold hover:bg-[#4E27E0]"
+                  >
+                    Verify OTP
+                  </button>
+                </div>
+              </form>
+            )}
+
+            {/* Forgot Password Step 3: Enter New 4-Digit PIN */}
+            {(mode === 'forgot_step_3' || mode === 'force_reset_pin') && (
+              <form
+                onSubmit={mode === 'force_reset_pin' ? handleForceResetSubmit : handleNewPinSaveSubmit}
+                className="space-y-3"
               >
-                Login
-              </button>
-            </div>
+                <div className="text-center pb-1">
+                  <h3 className="text-sm font-bold text-[#1E1B4B]">Create New 4-Digit PIN</h3>
+                  <p className="text-[11px] text-slate-500">Enter a secure 4-digit PIN for your account</p>
+                </div>
 
-            {/* Quick Demo Credentials - Dynamic Responsive Grid */}
-            <div className="pt-3.5 sm:pt-4 border-t border-slate-100">
-              <p className="text-[11px] sm:text-xs font-bold text-slate-400 text-center mb-2">
-                Quick Demo Access
-              </p>
-              <div className="grid grid-cols-2 sm:grid-cols-3 gap-1.5 sm:gap-2">
-                {[
-                  {
-                    username: 'admin',
-                    label: 'Admin',
-                    pin: '1234',
-                    icon: '👑',
-                    bgClass: 'from-red-50 to-red-100/50 hover:from-red-100 hover:to-red-200/50 border-red-200/80',
-                    iconBg: 'bg-red-500',
-                    textClass: 'text-red-700',
-                    pinClass: 'text-red-600/70',
-                  },
-                  {
-                    username: 'plant_manager',
-                    label: 'Plant Mgr',
-                    pin: '1234',
-                    icon: '🏭',
-                    bgClass: 'from-blue-50 to-blue-100/50 hover:from-blue-100 hover:to-blue-200/50 border-blue-200/80',
-                    iconBg: 'bg-blue-500',
-                    textClass: 'text-blue-700',
-                    pinClass: 'text-blue-600/70',
-                  },
-                  {
-                    username: 'pulper',
-                    label: 'Pulper',
-                    pin: '1234',
-                    icon: '🔬',
-                    bgClass: 'from-purple-50 to-purple-100/50 hover:from-purple-100 hover:to-purple-200/50 border-purple-200/80',
-                    iconBg: 'bg-purple-500',
-                    textClass: 'text-purple-700',
-                    pinClass: 'text-purple-600/70',
-                  },
-                  {
-                    username: 'shop',
-                    label: 'Shop',
-                    pin: '1234',
-                    icon: '🛒',
-                    bgClass: 'from-emerald-50 to-emerald-100/50 hover:from-emerald-100 hover:to-emerald-200/50 border-emerald-200/80',
-                    iconBg: 'bg-emerald-500',
-                    textClass: 'text-emerald-700',
-                    pinClass: 'text-emerald-600/70',
-                  },
-                  {
-                    username: 'dispatcher',
-                    label: 'Dispatcher',
-                    pin: '1234',
-                    icon: '🚚',
-                    bgClass: 'from-amber-50 to-amber-100/50 hover:from-amber-100 hover:to-amber-200/50 border-amber-200/80',
-                    iconBg: 'bg-amber-500',
-                    textClass: 'text-amber-700',
-                    pinClass: 'text-amber-600/70',
-                  },
-                  {
-                    username: 'viewer',
-                    label: 'Viewer',
-                    pin: '1234',
-                    icon: '👁️',
-                    bgClass: 'from-slate-50 to-slate-100/50 hover:from-slate-100 hover:to-slate-200/50 border-slate-200/80',
-                    iconBg: 'bg-slate-500',
-                    textClass: 'text-slate-700',
-                    pinClass: 'text-slate-600/70',
-                  },
-                ].map(card => {
-                  const isLoading = loadingDemo === card.username;
-                  return (
+                {resetError && (
+                  <div className="p-2 bg-red-50 text-red-600 text-xs rounded-xl border border-red-200 text-center font-medium">
+                    {resetError}
+                  </div>
+                )}
+
+                <input
+                  type="password"
+                  value={newPin}
+                  onChange={e => setNewPin(e.target.value)}
+                  maxLength={4}
+                  placeholder="4-digit PIN"
+                  className="w-full text-center tracking-widest font-mono text-sm px-4 py-2.5 bg-[#F8F8FD] border border-[#E2E0F8] focus:border-[#5E3BE8] rounded-full"
+                />
+
+                <div className="flex gap-2 pt-1">
+                  {mode !== 'force_reset_pin' && (
                     <button
-                      key={card.username}
                       type="button"
-                      disabled={loadingDemo !== null}
-                      onClick={async () => {
-                        setLoginError('');
-                        setLoadingDemo(card.username);
-                        setUsername(card.username);
-                        setPin('1234');
-                        try {
-                          const success = await login(card.username, '1234');
-                          if (success) {
-                            const users = getUsers();
-                            const clean = card.username.trim().toLowerCase();
-                            const found = users.find(u => {
-                              const uname = u.username.toLowerCase();
-                              return (
-                                uname === clean ||
-                                (clean === 'shop' && (uname === 'shopper' || u.role === 'Shopper')) ||
-                                (clean === 'pulper' && (uname === 'pulper' || u.role === 'LabOperator'))
-                              );
-                            });
-                            const targetRoute = getFirstAccessibleRoute(found);
-                            navigate(targetRoute);
-                          } else {
-                            setLoginError('Demo login failed. Please check credentials.');
-                          }
-                        } catch {
-                          setLoginError('An error occurred during demo login.');
-                        } finally {
-                          setLoadingDemo(null);
-                        }
-                      }}
-                      className={`flex items-center gap-1.5 sm:gap-2 p-1.5 sm:p-2 bg-gradient-to-br ${card.bgClass} border rounded-xl transition-all duration-200 cursor-pointer group active:scale-95 disabled:opacity-60 disabled:cursor-not-allowed`}
+                      onClick={() => setMode('forgot_step_2')}
+                      className="w-1/2 py-2.5 rounded-full border border-slate-200 text-xs font-bold text-slate-600 hover:bg-slate-50"
                     >
-                      <div className={`flex-shrink-0 w-6.5 h-6.5 sm:w-7 sm:h-7 ${card.iconBg} rounded-lg flex items-center justify-center text-white text-xs group-hover:scale-105 transition-transform`}>
-                        {isLoading ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : card.icon}
-                      </div>
-                      <div className="text-left flex-1 min-w-0">
-                        <p className={`text-[10px] sm:text-[11px] font-bold ${card.textClass} truncate`}>
-                          {card.label}
-                        </p>
-                        <p className={`text-[9px] ${card.pinClass} font-medium`}>
-                          PIN: {card.pin}
-                        </p>
-                      </div>
+                      Back
                     </button>
-                  );
-                })}
+                  )}
+                  <button
+                    type="submit"
+                    className="w-full py-2.5 rounded-full bg-[#5E3BE8] text-white text-xs font-bold hover:bg-[#4E27E0]"
+                  >
+                    Save &amp; Login
+                  </button>
+                </div>
+              </form>
+            )}
+
+            {/* Card Footer: Address & Contacts */}
+            <div className="mt-6 pt-4 border-t border-slate-100 text-center space-y-1.5 text-slate-500 text-[10px] xl:text-[11px]">
+              <a
+                href="https://maps.app.goo.gl/fvPzeoVKC9BTmmYH6"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex items-center justify-center gap-1.5 font-medium hover:text-[#5E3BE8] transition cursor-pointer"
+              >
+                <MapPin className="w-3.5 h-3.5 text-[#5E3BE8] shrink-0" />
+                <span>Chandsar, Palanpur, Gujarat - 385510</span>
+              </a>
+              <div className="flex items-center justify-center gap-2 font-medium flex-wrap">
+                <a
+                  href="tel:+918000563666"
+                  className="flex items-center gap-1 hover:text-[#5E3BE8] transition cursor-pointer"
+                >
+                  <Phone className="w-3.5 h-3.5 text-[#5E3BE8] shrink-0" />
+                  <span>+91 80005 63666</span>
+                </a>
+                <span className="text-slate-300">|</span>
+                <a
+                  href="https://www.sahebpaper.com"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex items-center gap-1 hover:text-[#5E3BE8] transition cursor-pointer"
+                >
+                  <Globe className="w-3.5 h-3.5 text-[#5E3BE8] shrink-0" />
+                  <span>www.sahebpaper.com</span>
+                </a>
               </div>
             </div>
-          </form>
-        )}
 
-        {/* 2. Forgot Password Step 1 */}
-        {mode === 'forgot_step_1' && (
-          <form onSubmit={handleForgotStep1Submit} className="space-y-4">
-            <div className="text-left space-y-1 mb-4">
-              <h3 className="text-sm font-bold text-slate-800 uppercase tracking-wider">
-                Reset Password Request
-              </h3>
-              <p className="text-xs text-slate-500">
-                Enter your registered email or mobile number to receive an OTP code.
+          </div>
+        </div>
+      </div>
+
+      {/* =========================================================================
+          MOBILE VIEW (EXACT MATCH TO SMARTPHONE MOCKUP IN REFERENCE IMAGE)
+          ========================================================================= */}
+      <div className="lg:hidden w-full h-full min-h-screen min-h-[100dvh] flex flex-col justify-between bg-[#EFEFFD] overflow-y-auto no-scrollbar">
+        
+        {/* Top Hero Banner with Paper Rolls Graphic & Logo */}
+        <div className="w-full relative pt-6 pb-4 px-5 text-center overflow-hidden">
+          
+          {/* Subtle Background warehouse photo with curved mask */}
+          <div
+            className="absolute inset-0 bg-cover bg-center opacity-30 pointer-events-none"
+            style={{ backgroundImage: `url(${warehouseBgUrl})` }}
+          />
+          <div className="absolute inset-0 bg-gradient-to-b from-[#EFEFFD]/60 via-[#EFEFFD]/90 to-[#EFEFFD]" />
+
+          {/* Top Brand Bar */}
+          <div className="relative z-10 flex items-center justify-between gap-2 max-w-[360px] mx-auto">
+            <div className="flex-1 text-left">
+              <img src={logoUrl} alt="Logo" className="h-10 w-auto object-contain" />
+            </div>
+            <div className="flex items-center gap-1 text-right">
+              <div>
+                <div className="text-[9px] font-black tracking-wider text-[#1E1B4B]">PAPER</div>
+                <div className="text-[7px] font-bold tracking-widest text-[#5E3BE8]">FOR A BETTER TOMORROW</div>
+              </div>
+              <Leaf className="w-3 h-3 text-emerald-600 shrink-0" />
+            </div>
+          </div>
+        </div>
+
+        {/* Mobile Login Card / Sheet */}
+        <div className="w-full max-w-[380px] mx-auto px-4 my-auto relative z-10">
+          <div className="bg-white rounded-3xl shadow-[0_15px_40px_rgba(94,59,232,0.16)] p-6 border border-white">
+            
+            {/* Card Header (Centered on Mobile) */}
+            <div className="text-center mb-5">
+              <span className="text-xs font-extrabold text-[#5E3BE8] tracking-wider uppercase">
+                Welcome Back
+              </span>
+              <h2 className="text-base font-black text-[#1E1B4B] tracking-tight mt-0.5">
+                SAHEB PAPER PVT. LTD.
+              </h2>
+              <p className="text-[11px] text-slate-500 font-medium mt-0.5">
+                Paper Mill Management System
               </p>
             </div>
 
-            {resetError && (
-              <div className="p-3 bg-red-50 text-red-600 text-xs rounded-xl border border-red-200 text-center font-medium">
-                {resetError}
-              </div>
+            {/* Form */}
+            {mode === 'login' && (
+              <form onSubmit={handleLoginSubmit} className="space-y-3.5">
+                {loginError && (
+                  <div className="p-2.5 bg-red-50 text-red-600 text-xs rounded-xl border border-red-200 text-center font-semibold">
+                    {loginError}
+                  </div>
+                )}
+
+                {/* Username Input */}
+                <div className="relative flex items-center">
+                  <User className="w-4 h-4 text-[#5E3BE8] absolute left-4 pointer-events-none" />
+                  <input
+                    type="text"
+                    value={username}
+                    onChange={e => setUsername(e.target.value)}
+                    className="w-full pl-10 pr-4 py-2.5 bg-[#F8F8FD] border border-[#E2E0F8] focus:border-[#5E3BE8] focus:bg-white rounded-full text-xs text-slate-800 placeholder-slate-400 focus:outline-none"
+                    placeholder="Username"
+                    autoComplete="username"
+                  />
+                </div>
+
+                {/* Password Input */}
+                <div className="relative flex items-center">
+                  <Lock className="w-4 h-4 text-[#5E3BE8] absolute left-4 pointer-events-none" />
+                  <input
+                    type={showPin ? 'text' : 'password'}
+                    value={pin}
+                    onChange={e => setPin(e.target.value)}
+                    className="w-full pl-10 pr-10 py-2.5 bg-[#F8F8FD] border border-[#E2E0F8] focus:border-[#5E3BE8] focus:bg-white rounded-full text-xs text-slate-800 placeholder-slate-400 focus:outline-none tracking-wider"
+                    placeholder="Password"
+                    autoComplete="current-password"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowPin(!showPin)}
+                    className="absolute right-3.5 text-slate-400 hover:text-slate-600 p-1"
+                  >
+                    {showPin ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
+                  </button>
+                </div>
+
+                {/* Forgot Password */}
+                <div className="flex justify-end">
+                  <button
+                    type="button"
+                    onClick={() => setMode('forgot_step_1')}
+                    className="text-[#5E3BE8] text-[11px] font-bold"
+                  >
+                    Forgot Password?
+                  </button>
+                </div>
+
+                {/* Submit Button */}
+                <button
+                  type="submit"
+                  disabled={isSubmitting}
+                  className="w-full py-3 px-5 rounded-full bg-gradient-to-r from-[#5E3BE8] to-[#4E27E0] text-white font-bold text-xs tracking-wide shadow-md shadow-[#5E3BE8]/25 flex items-center justify-center gap-2"
+                >
+                  {isSubmitting ? (
+                    <Loader2 className="w-4 h-4 animate-spin text-white" />
+                  ) : (
+                    <>
+                      <span>Login</span>
+                      <ArrowRight className="w-3.5 h-3.5 text-white" />
+                    </>
+                  )}
+                </button>
+              </form>
             )}
 
-            <div>
-              <input
-                type="text"
-                value={contactInput}
-                onChange={e => {
-                  const val = e.target.value;
-                  // If user is typing numeric phone number, cap at 10 digits
-                  if (/^\d+$/.test(val)) {
-                    setContactInput(val.slice(0, 10));
-                  } else {
-                    setContactInput(val);
-                  }
-                }}
-                maxLength={50}
-                className="w-full px-6 py-3.5 bg-white border-2 border-[#6C4FE0]/40 focus:border-[#7C3AED] rounded-full text-sm text-slate-800 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-[#6C4FE0]/30 transition"
-                placeholder="Email or Mobile Number (10 Digits)"
-                required
-              />
-            </div>
-
-            <div className="flex gap-2 pt-2">
-              <button
-                type="button"
-                onClick={() => {
-                  setMode('login');
-                  setResetError('');
-                  setContactInput('');
-                }}
-                className="flex-1 border border-slate-300 hover:bg-slate-50 text-slate-600 font-semibold py-3 px-4 rounded-full text-xs transition"
-              >
-                Cancel
-              </button>
-              <button
-                type="submit"
-                className="flex-1 bg-gradient-to-r from-[#6C4FE0] to-[#7C3AED] hover:from-[#5B3DC9] hover:to-[#6C4FE0] text-white font-bold py-3 px-4 rounded-full text-xs shadow-md transition"
-              >
-                Send OTP
-              </button>
-            </div>
-          </form>
-        )}
-
-        {/* 3. Forgot Password Step 2: OTP Verification Input */}
-        {mode === 'forgot_step_2' && forgotUser && (
-          <form onSubmit={handleOtpVerifySubmit} className="space-y-4">
-            <div className="text-left space-y-1 mb-2">
-              <h3 className="text-sm font-bold text-slate-800 uppercase tracking-wider">
-                Verify OTP
-              </h3>
-              <p className="text-xs text-slate-500">
-                Enter the 6-digit verification code sent to your contact details.
-              </p>
-            </div>
-
-            <div className="p-3 bg-emerald-50 text-emerald-800 rounded-2xl border border-emerald-200 text-xs text-left leading-relaxed">
-              🔑 **SIMULATION OTP CODE**: <span className="font-mono font-bold tracking-widest bg-white px-2 py-0.5 rounded shadow-xs">{generatedOtp}</span>
-            </div>
-
-            {resetError && (
-              <div className="p-3 bg-red-50 text-red-600 text-xs rounded-xl border border-red-200 text-center font-medium">
-                {resetError}
-              </div>
+            {/* Forgot Password Mobile */}
+            {mode === 'forgot_step_1' && (
+              <form onSubmit={handleForgotStep1Submit} className="space-y-3">
+                <div className="text-center pb-1">
+                  <h3 className="text-sm font-bold text-[#1E1B4B]">Forgot Password</h3>
+                  <p className="text-[11px] text-slate-500">Enter registered email or phone</p>
+                </div>
+                {resetError && (
+                  <div className="p-2 bg-red-50 text-red-600 text-xs rounded-xl border border-red-200 text-center font-medium">
+                    {resetError}
+                  </div>
+                )}
+                <input
+                  type="text"
+                  value={contactInput}
+                  onChange={e => setContactInput(e.target.value)}
+                  placeholder="Email or Mobile"
+                  className="w-full px-4 py-2.5 bg-[#F8F8FD] border border-[#E2E0F8] rounded-full text-xs text-slate-800 focus:outline-none"
+                />
+                <div className="flex gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setMode('login')}
+                    className="w-1/2 py-2.5 rounded-full border border-slate-200 text-xs font-bold text-slate-600"
+                  >
+                    Back
+                  </button>
+                  <button
+                    type="submit"
+                    className="w-1/2 py-2.5 rounded-full bg-[#5E3BE8] text-white text-xs font-bold"
+                  >
+                    Send OTP
+                  </button>
+                </div>
+              </form>
             )}
 
-            <div>
-              <input
-                type="text"
-                maxLength={6}
-                value={otpInput}
-                onChange={e => setOtpInput(e.target.value)}
-                className="w-full px-6 py-3.5 bg-white border-2 border-[#2563EB]/80 text-center tracking-widest font-mono font-bold text-slate-800 focus:outline-none rounded-full text-base"
-                placeholder="000000"
-                inputMode="numeric"
-                required
-              />
-            </div>
-
-            <div className="flex gap-2 pt-2">
-              <button
-                type="button"
-                onClick={() => {
-                  setMode('forgot_step_1');
-                  setResetError('');
-                  setOtpInput('');
-                }}
-                className="flex-1 border border-slate-300 hover:bg-slate-50 text-slate-600 font-semibold py-3 px-4 rounded-full text-xs transition"
-              >
-                Back
-              </button>
-              <button
-                type="submit"
-                className="flex-1 bg-gradient-to-r from-[#6C4FE0] to-[#7C3AED] hover:from-[#5B3DC9] hover:to-[#6C4FE0] text-white font-bold py-3 px-4 rounded-full text-xs shadow-md transition"
-              >
-                Verify Code
-              </button>
-            </div>
-          </form>
-        )}
-
-        {/* 4. Forgot Password Step 3: Set New PIN */}
-        {mode === 'forgot_step_3' && forgotUser && (
-          <form onSubmit={handleNewPinSaveSubmit} className="space-y-4">
-            <div className="text-left space-y-1 mb-2">
-              <h3 className="text-sm font-bold text-slate-800 uppercase tracking-wider">
-                Set New Password
-              </h3>
-              <p className="text-xs text-slate-500">
-                OTP verified for <span className="font-bold">@{forgotUser.username}</span>. Enter your new 4-digit PIN below.
-              </p>
-            </div>
-
-            {resetError && (
-              <div className="p-3 bg-red-50 text-red-600 text-xs rounded-xl border border-red-200 text-center font-medium">
-                {resetError}
-              </div>
+            {mode === 'forgot_step_2' && (
+              <form onSubmit={handleOtpVerifySubmit} className="space-y-3">
+                <div className="text-center pb-1">
+                  <h3 className="text-sm font-bold text-[#1E1B4B]">Verify OTP</h3>
+                  <p className="text-[11px] text-slate-500">
+                    Demo OTP: <span className="font-mono font-bold text-[#5E3BE8]">{generatedOtp}</span>
+                  </p>
+                </div>
+                {resetError && (
+                  <div className="p-2 bg-red-50 text-red-600 text-xs rounded-xl border border-red-200 text-center font-medium">
+                    {resetError}
+                  </div>
+                )}
+                <input
+                  type="text"
+                  value={otpInput}
+                  onChange={e => setOtpInput(e.target.value)}
+                  maxLength={6}
+                  placeholder="Enter 6-digit OTP"
+                  className="w-full text-center tracking-widest font-mono text-sm px-4 py-2.5 bg-[#F8F8FD] border border-[#E2E0F8] rounded-full"
+                />
+                <div className="flex gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setMode('forgot_step_1')}
+                    className="w-1/2 py-2.5 rounded-full border border-slate-200 text-xs font-bold text-slate-600"
+                  >
+                    Back
+                  </button>
+                  <button
+                    type="submit"
+                    className="w-1/2 py-2.5 rounded-full bg-[#5E3BE8] text-white text-xs font-bold"
+                  >
+                    Verify
+                  </button>
+                </div>
+              </form>
             )}
 
-            <div>
-              <input
-                type="password"
-                maxLength={4}
-                value={newPin}
-                onChange={e => setNewPin(e.target.value)}
-                className="w-full px-6 py-3.5 bg-white border-2 border-[#2563EB]/80 tracking-widest text-center text-slate-800 focus:outline-none rounded-full text-base"
-                placeholder="••••"
-                inputMode="numeric"
-                required
-              />
-            </div>
-
-            <button
-              type="submit"
-              className="w-full bg-gradient-to-r from-[#6C4FE0] to-[#7C3AED] hover:from-[#5B3DC9] hover:to-[#6C4FE0] text-white font-bold py-3.5 px-6 rounded-full shadow-lg text-xs tracking-wide transition"
-            >
-              Reset Password & Log In
-            </button>
-          </form>
-        )}
-
-        {/* 5. Force Reset PIN Mode */}
-        {mode === 'force_reset_pin' && forgotUser && (
-          <form onSubmit={handleForceResetSubmit} className="space-y-4">
-            <div className="text-center space-y-1 mb-2">
-              <ShieldAlert className="h-9 w-9 text-amber-500 mx-auto mb-1 animate-bounce" />
-              <h3 className="text-sm font-bold text-slate-800">
-                Password Change Required
-              </h3>
-              <p className="text-xs text-slate-500">
-                Your PIN was reset by an admin. Please set your new personal 4-digit PIN.
-              </p>
-            </div>
-
-            {resetError && (
-              <div className="p-3 bg-red-50 text-red-600 text-xs rounded-xl border border-red-200 text-center font-medium">
-                {resetError}
-              </div>
+            {(mode === 'forgot_step_3' || mode === 'force_reset_pin') && (
+              <form
+                onSubmit={mode === 'force_reset_pin' ? handleForceResetSubmit : handleNewPinSaveSubmit}
+                className="space-y-3"
+              >
+                <div className="text-center pb-1">
+                  <h3 className="text-sm font-bold text-[#1E1B4B]">New 4-Digit PIN</h3>
+                  <p className="text-[11px] text-slate-500">Set a new personal PIN</p>
+                </div>
+                {resetError && (
+                  <div className="p-2 bg-red-50 text-red-600 text-xs rounded-xl border border-red-200 text-center font-medium">
+                    {resetError}
+                  </div>
+                )}
+                <input
+                  type="password"
+                  value={newPin}
+                  onChange={e => setNewPin(e.target.value)}
+                  maxLength={4}
+                  placeholder="4-digit PIN"
+                  className="w-full text-center tracking-widest font-mono text-sm px-4 py-2.5 bg-[#F8F8FD] border border-[#E2E0F8] rounded-full"
+                />
+                <div className="flex gap-2">
+                  {mode !== 'force_reset_pin' && (
+                    <button
+                      type="button"
+                      onClick={() => setMode('forgot_step_2')}
+                      className="w-1/2 py-2.5 rounded-full border border-slate-200 text-xs font-bold text-slate-600"
+                    >
+                      Back
+                    </button>
+                  )}
+                  <button
+                    type="submit"
+                    className="w-full py-2.5 rounded-full bg-[#5E3BE8] text-white text-xs font-bold"
+                  >
+                    Save &amp; Login
+                  </button>
+                </div>
+              </form>
             )}
 
-            <div>
-              <input
-                type="password"
-                maxLength={4}
-                value={newPin}
-                onChange={e => setNewPin(e.target.value)}
-                className="w-full px-6 py-3.5 bg-white border-2 border-[#2563EB]/80 tracking-widest text-center text-slate-800 focus:outline-none rounded-full text-base"
-                placeholder="••••"
-                inputMode="numeric"
-                required
-              />
+            {/* Contact Footer */}
+            <div className="mt-5 pt-3.5 border-t border-slate-100 text-center space-y-1 text-slate-500 text-[10px]">
+              <a
+                href="https://maps.app.goo.gl/fvPzeoVKC9BTmmYH6"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex items-center justify-center gap-1 font-medium hover:text-[#5E3BE8] transition cursor-pointer"
+              >
+                <MapPin className="w-3 h-3 text-[#5E3BE8] shrink-0" />
+                <span>Chandsar, Palanpur, Gujarat - 385510</span>
+              </a>
+              <div className="flex items-center justify-center gap-1.5 font-medium flex-wrap">
+                <a
+                  href="tel:+918000563666"
+                  className="flex items-center gap-0.5 hover:text-[#5E3BE8] transition cursor-pointer"
+                >
+                  <Phone className="w-3 h-3 text-[#5E3BE8] shrink-0" />
+                  <span>+91 80005 63666</span>
+                </a>
+                <span className="text-slate-300">|</span>
+                <a
+                  href="https://www.sahebpaper.com"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex items-center gap-0.5 hover:text-[#5E3BE8] transition cursor-pointer"
+                >
+                  <Globe className="w-3 h-3 text-[#5E3BE8] shrink-0" />
+                  <span>www.sahebpaper.com</span>
+                </a>
+              </div>
             </div>
 
-            <div className="flex gap-2 pt-2">
-              <button
-                type="button"
-                onClick={() => {
-                  setMode('login');
-                  setResetError('');
-                  setForgotUser(null);
-                  setNewPin('');
-                }}
-                className="flex-1 border border-slate-300 hover:bg-slate-50 text-slate-600 font-semibold py-3 px-4 rounded-full text-xs transition"
-              >
-                Back
-              </button>
-              <button
-                type="submit"
-                className="flex-1 bg-gradient-to-r from-[#6C4FE0] to-[#7C3AED] hover:from-[#5B3DC9] hover:to-[#6C4FE0] text-white font-bold py-3 px-4 rounded-full text-xs shadow-md transition"
-              >
-                Save & Enter
-              </button>
-            </div>
-          </form>
-        )}
+          </div>
+        </div>
 
-        {/* Company Verified Contact & Address Footer */}
-        <div className="mt-4 pt-3 border-t border-slate-100 text-center space-y-1">
-          <p className="text-[10px] text-slate-500 font-medium leading-tight">
-            {COMPANY_CONFIG.shortAddress}
-          </p>
-          <div className="flex items-center justify-center gap-2.5 text-[10px] text-slate-500 font-semibold">
-            <span>Ph: {COMPANY_CONFIG.phone}</span>
-            <span>•</span>
-            <a href={COMPANY_CONFIG.websiteUrl} target="_blank" rel="noreferrer" className="text-primary hover:underline font-bold">
-              {COMPANY_CONFIG.website}
-            </a>
+        {/* Mobile Bottom Handwritten Accent */}
+        <div className="w-full text-center py-4 relative z-10">
+          <div
+            className="text-2xl sm:text-3xl text-[#5E3BE8] font-bold select-none"
+            style={{ fontFamily: "'Caveat', 'Dancing Script', cursive, sans-serif" }}
+          >
+            Grow with Paper
           </div>
         </div>
 
       </div>
+
     </div>
   );
 };
-
-export default LoginView;
