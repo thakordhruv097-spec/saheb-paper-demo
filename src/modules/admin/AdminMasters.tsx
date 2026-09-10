@@ -40,9 +40,9 @@ import type {
   UserRole,
 } from '../../data/types';
 import * as XLSX from 'xlsx';
-import { Settings, Plus, Users, Truck, ShoppingBag, Database, ShieldAlert, FileSpreadsheet, Download, Upload, Search, RotateCw, MoreVertical, Trash2, CheckCircle2, Pencil, Eye, X, ListFilter, Boxes, Building2, Sparkles } from 'lucide-react';
+import { Settings, Plus, Users, Truck, ShoppingBag, Database, ShieldAlert, FileSpreadsheet, Download, Upload, Search, RotateCw, MoreVertical, Trash2, CheckCircle2, Pencil, Eye, X, ListFilter, Boxes, Building2, Sparkles, Globe, Phone, Mail, MapPin, RotateCcw } from 'lucide-react';
 import { RoleManagementView } from '../profile/RoleManagementView';
-import { COMPANY_CONFIG } from '../../config/company';
+import { getCompanyConfig, saveCompanyConfig, resetCompanyConfig, COMPANY_CONFIG, type CompanyConfig } from '../../config/company';
 import { APP_VERSION, APP_BUILD_DATE } from '../../config/version';
 import { AppUpdateModal } from '../../components/AppUpdateModal';
 
@@ -53,10 +53,10 @@ export const AdminMasters: React.FC = () => {
 
   const [isUpdateModalOpen, setIsUpdateModalOpen] = useState(false);
 
-  const [activeTab, setActiveTab] = useState<'products' | 'raw_materials' | 'parties' | 'vendors' | 'users' | 'roles' | 'backup' | 'logs'>(() => {
+  const [activeTab, setActiveTab] = useState<'products' | 'raw_materials' | 'parties' | 'vendors' | 'users' | 'roles' | 'backup' | 'logs' | 'company'>(() => {
     const params = new URLSearchParams(location.search);
     const queryTab = params.get('tab');
-    if (queryTab && ['products', 'raw_materials', 'parties', 'vendors', 'users', 'roles', 'backup', 'logs'].includes(queryTab)) {
+    if (queryTab && ['products', 'raw_materials', 'parties', 'vendors', 'users', 'roles', 'backup', 'logs', 'company'].includes(queryTab)) {
       return queryTab as any;
     }
     if (location.state && (location.state as any).tab) {
@@ -68,7 +68,7 @@ export const AdminMasters: React.FC = () => {
   useEffect(() => {
     const params = new URLSearchParams(location.search);
     const queryTab = params.get('tab');
-    if (queryTab && ['products', 'raw_materials', 'parties', 'vendors', 'users', 'roles', 'backup', 'logs'].includes(queryTab)) {
+    if (queryTab && ['products', 'raw_materials', 'parties', 'vendors', 'users', 'roles', 'backup', 'logs', 'company'].includes(queryTab)) {
       setActiveTab(queryTab as any);
       return;
     }
@@ -86,6 +86,17 @@ export const AdminMasters: React.FC = () => {
   const [logs, setLogs] = useState<TransactionLog[]>(() => getLogs());
   const [usersList, setUsersList] = useState<User[]>(() => getUsers());
   const [mastersSearchQuery, setMastersSearchQuery] = useState('');
+
+  // Company Profile Settings States
+  const [companyConfig, setCompanyConfig] = useState<CompanyConfig>(() => getCompanyConfig());
+  const [compName, setCompName] = useState(companyConfig.name);
+  const [compLegalName, setCompLegalName] = useState(companyConfig.legalName);
+  const [compPhone, setCompPhone] = useState(companyConfig.phone);
+  const [compEmail, setCompEmail] = useState(companyConfig.email);
+  const [compWebsite, setCompWebsite] = useState(companyConfig.website);
+  const [compGstin, setCompGstin] = useState(companyConfig.gstin || '');
+  const [compAddress, setCompAddress] = useState(companyConfig.address);
+  const [compTagline, setCompTagline] = useState(companyConfig.tagline);
 
   // Factory Reset Modal States
   const [isFactoryResetModalOpen, setIsFactoryResetModalOpen] = useState(false);
@@ -762,6 +773,114 @@ export const AdminMasters: React.FC = () => {
     XLSX.writeFile(workbook, `Saheb_Paper_System_Logs_${new Date().toISOString().substring(0, 10)}.xlsx`);
   };
 
+  // --- EXPORT ALL MASTERS TO COMPREHENSIVE EXCEL WORKBOOK ---
+  const handleExportAllMastersExcel = () => {
+    try {
+      const wb = XLSX.utils.book_new();
+
+      // 1. Products Sheet
+      const prodData = products.map(p => ({
+        'Product ID': p.id,
+        'Product Name': p.name,
+        'QC Grade': p.grade,
+        'GSM': p.gsm,
+        'Size (cm)': p.size,
+        'Ply': p.ply,
+      }));
+      XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(prodData), "Products");
+
+      // 2. Raw Materials Sheet
+      const rmData = rawMaterials.map(rm => ({
+        'Material ID': rm.id,
+        'Name': rm.name,
+        'Category': rm.category,
+        'Current Stock (kg)': rm.stock,
+        'Min Threshold (kg)': rm.minThreshold,
+        'Status': rm.active !== false ? 'ACTIVE' : 'INACTIVE',
+      }));
+      XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(rmData), "Raw Materials");
+
+      // 3. Customer Parties Sheet
+      const partyData = parties.map(pt => ({
+        'Party ID': pt.id,
+        'Customer Name': pt.name,
+        'Contact Number': pt.contact,
+        'Address': pt.address,
+      }));
+      XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(partyData), "Customers");
+
+      // 4. Supplier Vendors Sheet
+      const vendorData = vendors.map(v => ({
+        'Vendor ID': v.id,
+        'Vendor Name': v.name,
+        'Contact Number': v.contact,
+        'Address': v.address,
+      }));
+      XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(vendorData), "Suppliers");
+
+      // 5. System Users Sheet
+      const userData = usersList.map(u => ({
+        'Employee ID': u.empId || u.username,
+        'Username': u.username,
+        'Display Name': u.displayName,
+        'System Role': u.role,
+        'Email': u.email || '',
+        'Phone': u.phone || '',
+        'Status': u.active !== false ? 'ACTIVE' : 'INACTIVE',
+      }));
+      XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(userData), "Staff Users");
+
+      XLSX.writeFile(wb, `Saheb_Paper_All_Masters_${new Date().toISOString().substring(0, 10)}.xlsx`);
+      setSuccessMsg('All 5 Master registries exported successfully into a single Excel workbook!');
+    } catch (err: any) {
+      setErrorMsg('Failed to export master data: ' + err.message);
+    }
+  };
+
+  // --- COMPANY PROFILE FORM HANDLERS ---
+  const handleCompanySubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    setSuccessMsg('');
+    setErrorMsg('');
+
+    if (!compName.trim() || !compPhone.trim() || !compEmail.trim()) {
+      setErrorMsg('Company Name, Phone, and Email are required.');
+      return;
+    }
+
+    const updated = saveCompanyConfig({
+      name: compName.trim(),
+      legalName: compLegalName.trim(),
+      phone: compPhone.trim(),
+      whatsapp: compPhone.trim(),
+      email: compEmail.trim(),
+      website: compWebsite.trim(),
+      websiteUrl: compWebsite.trim().startsWith('http') ? compWebsite.trim() : `https://${compWebsite.trim()}`,
+      gstin: compGstin.trim(),
+      address: compAddress.trim(),
+      tagline: compTagline.trim(),
+    });
+
+    setCompanyConfig(updated);
+    setSuccessMsg('Company & Mill Profile updated successfully! Changes apply across all screens, PDFs, and invoices.');
+  };
+
+  const handleResetCompany = () => {
+    if (confirm('Are you sure you want to restore company details to official factory defaults?')) {
+      const reset = resetCompanyConfig();
+      setCompanyConfig(reset);
+      setCompName(reset.name);
+      setCompLegalName(reset.legalName);
+      setCompPhone(reset.phone);
+      setCompEmail(reset.email);
+      setCompWebsite(reset.website);
+      setCompGstin(reset.gstin || '');
+      setCompAddress(reset.address);
+      setCompTagline(reset.tagline);
+      setSuccessMsg('Company profile restored to official defaults.');
+    }
+  };
+
   if (user?.role !== 'Admin' && user?.username.toLowerCase() !== 'admin') {
     if (isSimulating) {
       return <Navigate to={getFirstAccessibleRoute(user)} replace />;
@@ -782,8 +901,8 @@ export const AdminMasters: React.FC = () => {
   return (
     <div className="space-y-6 font-sans pb-12">
 
-      {/* 1. CLEAN MINIMAL HEADER CARD (OPTION A) */}
-      <div className="bg-white dark:bg-[#131d38] rounded-2xl sm:rounded-3xl p-4 sm:p-5 text-slate-900 dark:text-white shadow-xs">
+      {/* 1. CLEAN MINIMAL HEADER CARD WITH MASTERS OVERVIEW & EXCEL EXPORT */}
+      <div className="bg-white dark:bg-[#131d38] rounded-2xl sm:rounded-3xl p-4 sm:p-5 text-slate-900 dark:text-white shadow-xs space-y-4">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div className="flex items-center gap-3.5">
             <div className="p-2.5 sm:p-3 rounded-2xl bg-blue-50 dark:bg-blue-950/60 border border-blue-200/60 dark:border-blue-900/50 text-primary dark:text-blue-400 shadow-2xs shrink-0">
@@ -795,13 +914,47 @@ export const AdminMasters: React.FC = () => {
                   {t('masters.title')}
                 </h1>
                 <span className="px-3 py-1 rounded-full bg-blue-50 dark:bg-blue-950/60 text-primary dark:text-blue-400 border border-blue-200/80 dark:border-blue-800/80 text-xs font-bold">
-                  System Admin
+                  System Admin Panel
                 </span>
               </div>
               <p className="text-xs sm:text-sm text-slate-500 dark:text-slate-400 font-medium mt-0.5">
-                Maintain registry listings, manage system backups, and review audit trails.
+                Maintain registry listings, manage company profile, backups, and review audit trails.
               </p>
             </div>
+          </div>
+
+          <button
+            type="button"
+            onClick={handleExportAllMastersExcel}
+            className="px-4 py-2.5 rounded-2xl bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white font-black text-xs uppercase tracking-wider shadow-md shadow-emerald-500/20 flex items-center justify-center gap-2 transition-all active:scale-[0.98] cursor-pointer shrink-0"
+            title="Download full master database as multi-sheet Excel file"
+          >
+            <FileSpreadsheet className="h-4 w-4" />
+            <span>Export All Masters (.xlsx)</span>
+          </button>
+        </div>
+
+        {/* Live Masters Counter Chips */}
+        <div className="grid grid-cols-2 sm:grid-cols-5 gap-2 pt-2 border-t border-slate-100 dark:border-slate-800/80 text-xs font-medium">
+          <div className="p-2.5 rounded-xl bg-slate-50 dark:bg-slate-900/60 border border-slate-200/60 dark:border-slate-800/60 flex items-center justify-between">
+            <span className="text-slate-500 dark:text-slate-400 text-[11px] font-bold">Products</span>
+            <span className="font-mono font-black text-primary dark:text-blue-400">{products.length}</span>
+          </div>
+          <div className="p-2.5 rounded-xl bg-slate-50 dark:bg-slate-900/60 border border-slate-200/60 dark:border-slate-800/60 flex items-center justify-between">
+            <span className="text-slate-500 dark:text-slate-400 text-[11px] font-bold">Raw Mat</span>
+            <span className="font-mono font-black text-emerald-600 dark:text-emerald-400">{rawMaterials.length}</span>
+          </div>
+          <div className="p-2.5 rounded-xl bg-slate-50 dark:bg-slate-900/60 border border-slate-200/60 dark:border-slate-800/60 flex items-center justify-between">
+            <span className="text-slate-500 dark:text-slate-400 text-[11px] font-bold">Customers</span>
+            <span className="font-mono font-black text-purple-600 dark:text-purple-400">{parties.length}</span>
+          </div>
+          <div className="p-2.5 rounded-xl bg-slate-50 dark:bg-slate-900/60 border border-slate-200/60 dark:border-slate-800/60 flex items-center justify-between">
+            <span className="text-slate-500 dark:text-slate-400 text-[11px] font-bold">Vendors</span>
+            <span className="font-mono font-black text-amber-600 dark:text-amber-400">{vendors.length}</span>
+          </div>
+          <div className="p-2.5 rounded-xl bg-slate-50 dark:bg-slate-900/60 border border-slate-200/60 dark:border-slate-800/60 flex items-center justify-between col-span-2 sm:col-span-1">
+            <span className="text-slate-500 dark:text-slate-400 text-[11px] font-bold">Staff Users</span>
+            <span className="font-mono font-black text-blue-600 dark:text-blue-300">{usersList.length}</span>
           </div>
         </div>
       </div>
@@ -842,6 +995,15 @@ export const AdminMasters: React.FC = () => {
         </button>
 
         <button
+          onClick={() => { setActiveTab('company'); setSuccessMsg(''); setErrorMsg(''); }}
+          className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer whitespace-nowrap shrink-0 ${activeTab === 'company' ? 'bg-primary text-white shadow-xs' : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
+            }`}
+        >
+          <Building2 className="h-4 w-4" />
+          <span>Company &amp; Plant Settings</span>
+        </button>
+
+        <button
           onClick={() => { setActiveTab('roles'); setSuccessMsg(''); setErrorMsg(''); }}
           className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer whitespace-nowrap shrink-0 ${activeTab === 'roles' ? 'bg-primary text-white shadow-xs' : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
             }`}
@@ -870,8 +1032,8 @@ export const AdminMasters: React.FC = () => {
       {/* Main Grid View */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 items-start">
 
-        {/* List Pane (2/3 width for master forms, 3/3 full width for roles/backup/logs) */}
-        <div className={activeTab === 'backup' || activeTab === 'logs' || activeTab === 'roles' ? 'lg:col-span-3 space-y-4' : 'lg:col-span-2 space-y-4'}>
+        {/* List Pane (2/3 width for master forms, 3/3 full width for roles/backup/logs/company) */}
+        <div className={activeTab === 'backup' || activeTab === 'logs' || activeTab === 'roles' || activeTab === 'company' ? 'lg:col-span-3 space-y-4' : 'lg:col-span-2 space-y-4'}>
 
           {successMsg && (
             <div className="p-3.5 bg-emerald-50 dark:bg-emerald-950/20 text-emerald-600 dark:text-emerald-400 text-xs rounded-2xl border border-emerald-200 dark:border-emerald-800 font-bold">
@@ -887,7 +1049,7 @@ export const AdminMasters: React.FC = () => {
           <div className="neumorphic-card p-6">
 
             {/* Live Search Box */}
-            {activeTab !== 'backup' && activeTab !== 'logs' && activeTab !== 'roles' && (
+            {activeTab !== 'backup' && activeTab !== 'logs' && activeTab !== 'roles' && activeTab !== 'company' && (
               <div className="mb-5 bg-slate-50 dark:bg-slate-900 rounded-2xl p-3 flex items-center gap-3 border border-slate-200/70 dark:border-slate-800 focus-within:border-primary/50 focus-within:ring-2 focus-within:ring-primary/10 transition-all">
                 <Search className="h-4 w-4 text-slate-400 shrink-0" />
                 <input
@@ -1811,6 +1973,207 @@ export const AdminMasters: React.FC = () => {
               <RoleManagementView />
             )}
 
+            {/* Company & Plant Settings Panel */}
+            {activeTab === 'company' && (
+              <div className="space-y-6">
+                {/* Live Preview Card */}
+                <div className="bg-gradient-to-br from-blue-50/70 via-indigo-50/40 to-slate-50 dark:from-slate-900/90 dark:via-blue-950/40 dark:to-slate-900 border border-blue-200/80 dark:border-blue-900/60 rounded-3xl p-6 space-y-4">
+                  <div className="flex items-center justify-between border-b border-blue-200/60 dark:border-blue-800/60 pb-3">
+                    <div className="flex items-center gap-3">
+                      <div className="p-2.5 rounded-2xl bg-primary text-white shadow-md shadow-blue-500/20">
+                        <Building2 className="h-5 w-5" />
+                      </div>
+                      <div>
+                        <h4 className="text-sm font-black text-slate-900 dark:text-white uppercase tracking-wider font-heading">
+                          {companyConfig.name}
+                        </h4>
+                        <p className="text-xs font-semibold text-slate-500 dark:text-slate-400">
+                          {companyConfig.legalName} • {companyConfig.tagline}
+                        </p>
+                      </div>
+                    </div>
+                    <span className="px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-wider bg-emerald-100 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300 border border-emerald-300/40">
+                      Active Configuration
+                    </span>
+                  </div>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 text-xs">
+                    <div className="p-3 bg-white/80 dark:bg-slate-800/70 rounded-2xl border border-slate-200/60 dark:border-slate-700/60">
+                      <span className="text-[10px] font-bold uppercase text-slate-400 block mb-0.5">Phone / WhatsApp</span>
+                      <span className="font-mono font-bold text-slate-800 dark:text-white">{companyConfig.phone}</span>
+                    </div>
+                    <div className="p-3 bg-white/80 dark:bg-slate-800/70 rounded-2xl border border-slate-200/60 dark:border-slate-700/60">
+                      <span className="text-[10px] font-bold uppercase text-slate-400 block mb-0.5">Email Address</span>
+                      <span className="font-semibold text-slate-800 dark:text-white">{companyConfig.email}</span>
+                    </div>
+                    <div className="p-3 bg-white/80 dark:bg-slate-800/70 rounded-2xl border border-slate-200/60 dark:border-slate-700/60">
+                      <span className="text-[10px] font-bold uppercase text-slate-400 block mb-0.5">Official Website</span>
+                      <a href={companyConfig.websiteUrl} target="_blank" rel="noreferrer" className="text-primary hover:underline font-bold">
+                        {companyConfig.website}
+                      </a>
+                    </div>
+                    {companyConfig.gstin && (
+                      <div className="p-3 bg-white/80 dark:bg-slate-800/70 rounded-2xl border border-slate-200/60 dark:border-slate-700/60">
+                        <span className="text-[10px] font-bold uppercase text-slate-400 block mb-0.5">GSTIN</span>
+                        <span className="font-mono font-bold text-slate-800 dark:text-white">{companyConfig.gstin}</span>
+                      </div>
+                    )}
+                    <div className="p-3 bg-white/80 dark:bg-slate-800/70 rounded-2xl border border-slate-200/60 dark:border-slate-700/60 sm:col-span-2 md:col-span-3">
+                      <span className="text-[10px] font-bold uppercase text-slate-400 block mb-0.5">Physical Plant &amp; Registered Office Address</span>
+                      <span className="font-medium text-slate-700 dark:text-slate-200">{companyConfig.address}</span>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Edit Form */}
+                <form onSubmit={handleCompanySubmit} className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl p-6 sm:p-7 space-y-5 shadow-xs">
+                  <div className="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-4">
+                    <div className="flex items-center gap-3">
+                      <div className="p-2.5 rounded-2xl bg-blue-100 dark:bg-blue-950/60 text-primary dark:text-blue-400">
+                        <Pencil className="h-5 w-5" />
+                      </div>
+                      <div>
+                        <h3 className="text-sm font-black text-slate-900 dark:text-white uppercase tracking-wider">
+                          Update Company &amp; Mill Details
+                        </h3>
+                        <p className="text-xs text-slate-500 dark:text-slate-400 font-medium">
+                          Modify company profile, contact details, GSTIN, and plant address dynamically without changing source code.
+                        </p>
+                      </div>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={handleResetCompany}
+                      className="px-3.5 py-2 rounded-xl border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-800 text-slate-600 dark:text-slate-300 text-xs font-bold flex items-center gap-2 transition cursor-pointer"
+                      title="Reset all fields to factory defaults"
+                    >
+                      <RotateCcw className="h-3.5 w-3.5" />
+                      <span>Restore Defaults</span>
+                    </button>
+                  </div>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-[11px] font-black text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-1.5">
+                        Brand / Short Name <span className="text-rose-500">*</span>
+                      </label>
+                      <input
+                        type="text"
+                        required
+                        value={compName}
+                        onChange={e => setCompName(e.target.value)}
+                        className="block w-full py-2.5 px-3.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl text-xs font-bold focus:outline-none focus:ring-2 focus:ring-primary dark:text-white"
+                        placeholder="e.g. Saheb Paper"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-[11px] font-black text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-1.5">
+                        Legal Registered Entity Name
+                      </label>
+                      <input
+                        type="text"
+                        value={compLegalName}
+                        onChange={e => setCompLegalName(e.target.value)}
+                        className="block w-full py-2.5 px-3.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl text-xs font-bold focus:outline-none focus:ring-2 focus:ring-primary dark:text-white"
+                        placeholder="e.g. Saheb Paper Mill Private Limited"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-[11px] font-black text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-1.5">
+                        Phone / WhatsApp Number <span className="text-rose-500">*</span>
+                      </label>
+                      <input
+                        type="text"
+                        required
+                        value={compPhone}
+                        onChange={e => setCompPhone(e.target.value)}
+                        className="block w-full py-2.5 px-3.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl text-xs font-bold font-mono focus:outline-none focus:ring-2 focus:ring-primary dark:text-white"
+                        placeholder="e.g. +91 98250 12345"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-[11px] font-black text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-1.5">
+                        Official Email Address <span className="text-rose-500">*</span>
+                      </label>
+                      <input
+                        type="email"
+                        required
+                        value={compEmail}
+                        onChange={e => setCompEmail(e.target.value)}
+                        className="block w-full py-2.5 px-3.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl text-xs font-bold focus:outline-none focus:ring-2 focus:ring-primary dark:text-white"
+                        placeholder="e.g. info@sahebpaper.com"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-[11px] font-black text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-1.5">
+                        Official Website URL
+                      </label>
+                      <input
+                        type="text"
+                        value={compWebsite}
+                        onChange={e => setCompWebsite(e.target.value)}
+                        className="block w-full py-2.5 px-3.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl text-xs font-bold focus:outline-none focus:ring-2 focus:ring-primary dark:text-white"
+                        placeholder="e.g. www.sahebpaper.com"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-[11px] font-black text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-1.5">
+                        GSTIN / Tax Identification
+                      </label>
+                      <input
+                        type="text"
+                        value={compGstin}
+                        onChange={e => setCompGstin(e.target.value)}
+                        className="block w-full py-2.5 px-3.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl text-xs font-bold font-mono uppercase focus:outline-none focus:ring-2 focus:ring-primary dark:text-white"
+                        placeholder="e.g. 24AAAAA0000A1Z5"
+                      />
+                    </div>
+
+                    <div className="sm:col-span-2">
+                      <label className="block text-[11px] font-black text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-1.5">
+                        Tagline / Industry Subtitle
+                      </label>
+                      <input
+                        type="text"
+                        value={compTagline}
+                        onChange={e => setCompTagline(e.target.value)}
+                        className="block w-full py-2.5 px-3.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl text-xs font-bold focus:outline-none focus:ring-2 focus:ring-primary dark:text-white"
+                        placeholder="e.g. Premium Kraft Paper &amp; Industrial Packaging Solutions"
+                      />
+                    </div>
+
+                    <div className="sm:col-span-2">
+                      <label className="block text-[11px] font-black text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-1.5">
+                        Plant &amp; Registered Office Address
+                      </label>
+                      <textarea
+                        rows={3}
+                        value={compAddress}
+                        onChange={e => setCompAddress(e.target.value)}
+                        className="block w-full py-2.5 px-3.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl text-xs font-medium focus:outline-none focus:ring-2 focus:ring-primary dark:text-white"
+                        placeholder="e.g. Survey No. 123/P, Near Industrial Estate, Morbi-Rajkot Highway..."
+                      />
+                    </div>
+                  </div>
+
+                  <div className="flex items-center justify-end gap-3 pt-3 border-t border-slate-100 dark:border-slate-800">
+                    <button
+                      type="submit"
+                      className="btn-primary-gradient px-6 py-3 text-xs uppercase tracking-wider flex items-center gap-2 cursor-pointer shadow-lg shadow-blue-500/25 active:scale-98"
+                    >
+                      <CheckCircle2 className="h-4 w-4" />
+                      <span>Save Company Settings</span>
+                    </button>
+                  </div>
+                </form>
+              </div>
+            )}
+
             {/* Backup / Restore Controls */}
             {activeTab === 'backup' && (
               <div className="space-y-6">
@@ -2050,8 +2413,8 @@ export const AdminMasters: React.FC = () => {
           </div>
         </div>
 
-        {/* Right Action Panel (1/3 width) - Only show if adding Masters (not backup/logs/roles) */}
-        {activeTab !== 'backup' && activeTab !== 'logs' && activeTab !== 'roles' && (
+        {/* Right Action Panel (1/3 width) - Only show if adding Masters (not backup/logs/roles/company) */}
+        {activeTab !== 'backup' && activeTab !== 'logs' && activeTab !== 'roles' && activeTab !== 'company' && (
           <div className="neumorphic-card p-6">
 
             {/* Add User Form */}
