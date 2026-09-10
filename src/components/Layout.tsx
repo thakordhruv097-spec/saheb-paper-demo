@@ -4,6 +4,8 @@ import { useAuth } from '../modules/auth/AuthContext';
 import { useTranslation } from 'react-i18next';
 import { useDateFilter } from '../context/DateFilterContext';
 import { CustomDatePickerModal } from './CustomDatePickerModal';
+import { PrivacyConsentModal } from './PrivacyConsentModal';
+import { PrivacyPolicyModal } from './PrivacyPolicyModal';
 import { getRawMaterials, getReels, getPendingOrders } from '../data/index';
 import {
   LayoutDashboard,
@@ -74,8 +76,9 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
   const { timeframe, setTimeframe, selectedDate, setSelectedDate, handlePrevDate, handleNextDate, systemToday } = useDateFilter();
   const [isDatePickerModalOpen, setIsDatePickerModalOpen] = useState(false);
 
-  // Profile Modal state
+  // Profile & Privacy Modals state
   const [isProfileModalOpen, setIsProfileModalOpen] = useState(false);
+  const [isPrivacyPolicyModalOpen, setIsPrivacyPolicyModalOpen] = useState(false);
   const [profileDisplayName, setProfileDisplayName] = useState('');
   const [profileEmail, setProfileEmail] = useState('');
   const [profilePhone, setProfilePhone] = useState('');
@@ -1189,6 +1192,13 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
           </div>
         </div>
       )}
+
+      {/* Privacy Policy & Data Consent Modals */}
+      <PrivacyConsentModal />
+      <PrivacyPolicyModal
+        isOpen={isPrivacyPolicyModalOpen}
+        onClose={() => setIsPrivacyPolicyModalOpen(false)}
+      />
 
     </div>
   );

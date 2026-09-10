@@ -30,6 +30,7 @@ import {
   Info,
 } from 'lucide-react';
 import { COMPANY_CONFIG } from '../../config/company';
+import { PrivacyPolicyModal } from '../../components/PrivacyPolicyModal';
 
 export const MobileProfileView: React.FC = () => {
   const { user, updateUserProfile, logout } = useAuth();
@@ -721,50 +722,12 @@ export const MobileProfileView: React.FC = () => {
       )}
 
       {/* ======================================================== */}
-      {/* MODAL 5: PRIVACY & SECURITY */}
+      {/* MODAL 5: PRIVACY POLICY & DPDP ACT COMPLIANCE */}
       {/* ======================================================== */}
-      {activeModal === 'privacy' && (
-        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-end sm:items-center justify-center p-0 sm:p-4 animate-in fade-in">
-          <div className="bg-white dark:bg-surface-dark w-full sm:max-w-md rounded-t-3xl sm:rounded-3xl p-6 shadow-2xl border border-slate-200 dark:border-slate-700 space-y-4">
-            <div className="flex items-center justify-between border-b pb-3 dark:border-slate-700">
-              <div className="flex items-center gap-2">
-                <Lock className="h-4 w-4 text-primary" />
-                <h3 className="text-sm font-black text-slate-900 dark:text-white uppercase tracking-wider">
-                  Privacy &amp; Session Security
-                </h3>
-              </div>
-              <button
-                onClick={() => setActiveModal(null)}
-                className="p-1 rounded-lg text-slate-400 hover:text-slate-600 dark:hover:text-white"
-              >
-                <X className="h-4 w-4" />
-              </button>
-            </div>
-
-            <div className="space-y-2.5 text-xs text-slate-600 dark:text-slate-300">
-              <div className="p-3 bg-slate-50 dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 flex justify-between items-center">
-                <span className="font-bold">Active Role:</span>
-                <span className="font-black text-primary">{user.role}</span>
-              </div>
-              <div className="p-3 bg-slate-50 dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 flex justify-between items-center">
-                <span className="font-bold">Session Mode:</span>
-                <span className="font-mono text-emerald-600 font-bold">Encrypted Localhost</span>
-              </div>
-              <div className="p-3 bg-slate-50 dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 flex justify-between items-center">
-                <span className="font-bold">Audit Logging:</span>
-                <span className="font-mono text-blue-500 font-bold">Continuous Stream Active</span>
-              </div>
-            </div>
-
-            <button
-              onClick={() => setActiveModal(null)}
-              className="w-full py-2.5 bg-primary text-white font-black rounded-xl text-xs shadow-md mt-2"
-            >
-              Close
-            </button>
-          </div>
-        </div>
-      )}
+      <PrivacyPolicyModal
+        isOpen={activeModal === 'privacy'}
+        onClose={() => setActiveModal(null)}
+      />
 
       {/* ======================================================== */}
       {/* MODAL 6: HELP & SUPPORT */}

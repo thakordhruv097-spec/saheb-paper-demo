@@ -17,7 +17,9 @@ import {
   ShieldCheck,
   Leaf,
   Loader2,
+  Shield,
 } from 'lucide-react';
+import { PrivacyPolicyModal } from '../../components/PrivacyPolicyModal';
 
 export const LoginView: React.FC = () => {
   const { login, resetPin } = useAuth();
@@ -58,6 +60,7 @@ export const LoginView: React.FC = () => {
   const [generatedOtp, setGeneratedOtp] = useState('');
   const [newPin, setNewPin] = useState('');
   const [resetError, setResetError] = useState('');
+  const [isPrivacyModalOpen, setIsPrivacyModalOpen] = useState(false);
 
   const handleLoginSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -556,7 +559,6 @@ export const LoginView: React.FC = () => {
                   <Phone className="w-3.5 h-3.5 text-[#5E3BE8] shrink-0" />
                   <span>+91 80005 63666</span>
                 </a>
-                <span className="text-slate-300">|</span>
                 <a
                   href="https://www.sahebpaper.com"
                   target="_blank"
@@ -566,6 +568,15 @@ export const LoginView: React.FC = () => {
                   <Globe className="w-3.5 h-3.5 text-[#5E3BE8] shrink-0" />
                   <span>www.sahebpaper.com</span>
                 </a>
+                <span className="text-slate-300">|</span>
+                <button
+                  type="button"
+                  onClick={() => setIsPrivacyModalOpen(true)}
+                  className="flex items-center gap-1 hover:text-[#5E3BE8] transition cursor-pointer text-[#5E3BE8] font-bold"
+                >
+                  <Shield className="w-3.5 h-3.5" />
+                  <span>Privacy Policy</span>
+                </button>
               </div>
             </div>
 
@@ -829,15 +840,14 @@ export const LoginView: React.FC = () => {
                   <span>+91 80005 63666</span>
                 </a>
                 <span className="text-slate-300">|</span>
-                <a
-                  href="https://www.sahebpaper.com"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="flex items-center gap-0.5 hover:text-[#5E3BE8] transition cursor-pointer"
+                <button
+                  type="button"
+                  onClick={() => setIsPrivacyModalOpen(true)}
+                  className="flex items-center gap-0.5 hover:text-[#5E3BE8] transition cursor-pointer text-[#5E3BE8] font-bold"
                 >
-                  <Globe className="w-3 h-3 text-[#5E3BE8] shrink-0" />
-                  <span>www.sahebpaper.com</span>
-                </a>
+                  <Shield className="w-3 h-3" />
+                  <span>Privacy Policy</span>
+                </button>
               </div>
             </div>
 
@@ -855,6 +865,11 @@ export const LoginView: React.FC = () => {
         </div>
 
       </div>
+
+      <PrivacyPolicyModal
+        isOpen={isPrivacyModalOpen}
+        onClose={() => setIsPrivacyModalOpen(false)}
+      />
 
     </div>
   );
