@@ -18,13 +18,17 @@ import {
   MapPin,
   ChevronRight,
   Info,
-  ShieldCheck
+  ShieldCheck,
+  Sparkles,
 } from 'lucide-react';
 import { COMPANY_CONFIG } from '../../config/company';
+import { APP_VERSION } from '../../config/version';
+import { AppUpdateModal } from '../../components/AppUpdateModal';
 
 export const AdminProfileView: React.FC = () => {
   const { user, updateUserProfile, logout } = useAuth();
 
+  const [isUpdateModalOpen, setIsUpdateModalOpen] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
   const [displayName, setDisplayName] = useState(user?.displayName || 'Rajesh Sharma');
   const [email, setEmail] = useState(user?.email || 'admin@sahebpaper.com');
@@ -310,7 +314,14 @@ export const AdminProfileView: React.FC = () => {
                 <Info className="w-3.5 h-3.5 text-[#94A3B8]" />
                 <span>Last login: 19 Aug 2026, 10:24 AM</span>
               </div>
-              <span>Saheb Paper ERP &nbsp; v1.0.0</span>
+              <button
+                type="button"
+                onClick={() => setIsUpdateModalOpen(true)}
+                className="inline-flex items-center gap-1.5 font-bold text-[#2563EB] dark:text-blue-400 hover:underline cursor-pointer"
+              >
+                <Sparkles className="h-3 w-3" />
+                <span>Saheb Paper ERP v{APP_VERSION}</span>
+              </button>
             </div>
           </div>
         ) : (
@@ -416,6 +427,11 @@ export const AdminProfileView: React.FC = () => {
           </form>
         )}
       </div>
+
+      <AppUpdateModal
+        isOpen={isUpdateModalOpen}
+        onClose={() => setIsUpdateModalOpen(false)}
+      />
 
     </div>
   );

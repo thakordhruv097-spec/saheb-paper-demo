@@ -5,6 +5,8 @@ import { useTranslation } from 'react-i18next';
 import { User, Edit3, ShieldCheck, Mail, Phone, Lock, HelpCircle, CheckCircle2, Eye, EyeOff, X, KeyRound, Sparkles, LogOut, Building2 } from 'lucide-react';
 import { COMPANY_CONFIG } from '../../config/company';
 import { MODULES_13 } from '../../data/types';
+import { APP_VERSION } from '../../config/version';
+import { AppUpdateModal } from '../../components/AppUpdateModal';
 
 interface OperatorProfileViewProps {
   defaultTab?: 'profile';
@@ -15,6 +17,7 @@ export const OperatorProfileView: React.FC<OperatorProfileViewProps> = () => {
   const { t } = useTranslation();
   const location = useLocation();
 
+  const [isUpdateModalOpen, setIsUpdateModalOpen] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
   const [showPin, setShowPin] = useState(false);
   const [saveSuccess, setSaveSuccess] = useState(false);
@@ -263,13 +266,24 @@ export const OperatorProfileView: React.FC<OperatorProfileViewProps> = () => {
 
           {/* UPDATE PROFILE & LOGOUT CTA BUTTONS */}
           <div className="pt-6 border-t border-slate-200/80 dark:border-slate-700/80 flex flex-col sm:flex-row items-center justify-between gap-3">
-            <button
-              onClick={handleStartEdit}
-              className="w-full sm:w-auto px-8 py-3.5 rounded-2xl bg-primary hover:bg-primary-dark text-white font-extrabold text-xs uppercase tracking-wider shadow-lg shadow-primary/25 hover:shadow-primary/40 hover:scale-[1.01] active:scale-[0.99] transition-all cursor-pointer flex items-center justify-center gap-2"
-            >
-              <Edit3 className="h-4 w-4" />
-              <span>Update My Profile Details</span>
-            </button>
+            <div className="flex flex-wrap items-center gap-3 w-full sm:w-auto">
+              <button
+                onClick={handleStartEdit}
+                className="w-full sm:w-auto px-8 py-3.5 rounded-2xl bg-primary hover:bg-primary-dark text-white font-extrabold text-xs uppercase tracking-wider shadow-lg shadow-primary/25 hover:shadow-primary/40 hover:scale-[1.01] active:scale-[0.99] transition-all cursor-pointer flex items-center justify-center gap-2"
+              >
+                <Edit3 className="h-4 w-4" />
+                <span>Update My Profile Details</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => setIsUpdateModalOpen(true)}
+                className="w-full sm:w-auto px-6 py-3.5 rounded-2xl bg-blue-50 hover:bg-blue-100 dark:bg-blue-950/40 dark:hover:bg-blue-900/60 text-[#2563EB] dark:text-blue-300 font-extrabold text-xs uppercase tracking-wider border border-blue-200/80 dark:border-blue-800 transition-all flex items-center justify-center gap-2 cursor-pointer shadow-2xs"
+              >
+                <Sparkles className="h-4 w-4" />
+                <span>Check Updates (v{APP_VERSION})</span>
+              </button>
+            </div>
 
             <button
               onClick={logout}
@@ -462,6 +476,11 @@ export const OperatorProfileView: React.FC<OperatorProfileViewProps> = () => {
 
         </div>
       )}
+
+      <AppUpdateModal
+        isOpen={isUpdateModalOpen}
+        onClose={() => setIsUpdateModalOpen(false)}
+      />
 
     </div>
   );

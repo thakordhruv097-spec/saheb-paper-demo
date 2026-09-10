@@ -28,14 +28,19 @@ import {
   Sun,
   Moon,
   Info,
+  Sparkles,
 } from 'lucide-react';
 import { COMPANY_CONFIG } from '../../config/company';
+import { APP_VERSION } from '../../config/version';
+import { AppUpdateModal } from '../../components/AppUpdateModal';
 import { PrivacyPolicyModal } from '../../components/PrivacyPolicyModal';
 
 export const MobileProfileView: React.FC = () => {
   const { user, updateUserProfile, logout } = useAuth();
   const { t, i18n } = useTranslation();
   const navigate = useNavigate();
+
+  const [isUpdateModalOpen, setIsUpdateModalOpen] = useState(false);
 
   // Modals & Bottom Sheets
   const [activeModal, setActiveModal] = useState<
@@ -406,6 +411,29 @@ export const MobileProfileView: React.FC = () => {
           <ChevronRight className="h-4 w-4 text-slate-400 group-hover:translate-x-0.5 transition-transform" />
         </button>
 
+        {/* 9. App Updates & Changelog */}
+        <button
+          type="button"
+          onClick={() => setIsUpdateModalOpen(true)}
+          className="w-full flex items-center justify-between p-4 hover:bg-slate-50 dark:hover:bg-slate-800/50 transition cursor-pointer text-left group"
+        >
+          <div className="flex items-center gap-3.5">
+            <div className="p-2 rounded-xl bg-blue-50 dark:bg-blue-950/60 text-[#2563EB] dark:text-blue-400 group-hover:scale-105 transition">
+              <Sparkles className="h-4 w-4" />
+            </div>
+            <div>
+              <div className="text-xs font-black text-slate-900 dark:text-white flex items-center gap-2">
+                <span>System Updates</span>
+                <span className="px-1.5 py-0.2 rounded-md bg-blue-100 dark:bg-blue-900 text-[9px] font-mono font-black text-blue-700 dark:text-blue-300">
+                  v{APP_VERSION}
+                </span>
+              </div>
+              <div className="text-[11px] text-slate-400 font-medium">Version history &amp; release changelogs</div>
+            </div>
+          </div>
+          <ChevronRight className="h-4 w-4 text-slate-400 group-hover:translate-x-0.5 transition-transform" />
+        </button>
+
       </div>
 
       {/* 4. RED LOGOUT BUTTON (Bottom Action) */}
@@ -421,8 +449,12 @@ export const MobileProfileView: React.FC = () => {
       </div>
 
       {/* App Version Info Footer */}
-      <div className="text-center text-[10px] text-slate-400 font-mono">
-        {COMPANY_CONFIG.name} ERP &bull; v2.4.0 (Mobile)
+      <div
+        onClick={() => setIsUpdateModalOpen(true)}
+        className="text-center text-[10px] text-slate-400 font-mono flex items-center justify-center gap-1.5 cursor-pointer hover:text-blue-600 dark:hover:text-blue-400 transition"
+      >
+        <Sparkles className="h-3 w-3 text-blue-500" />
+        <span>{COMPANY_CONFIG.name} ERP &bull; v{APP_VERSION} (Mobile)</span>
       </div>
 
       {/* ======================================================== */}
@@ -813,6 +845,12 @@ export const MobileProfileView: React.FC = () => {
           </div>
         </div>
       )}
+
+      {/* App Update Modal */}
+      <AppUpdateModal
+        isOpen={isUpdateModalOpen}
+        onClose={() => setIsUpdateModalOpen(false)}
+      />
 
     </div>
   );

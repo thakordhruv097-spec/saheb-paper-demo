@@ -40,14 +40,18 @@ import type {
   UserRole,
 } from '../../data/types';
 import * as XLSX from 'xlsx';
-import { Settings, Plus, Users, Truck, ShoppingBag, Database, ShieldAlert, FileSpreadsheet, Download, Upload, Search, RotateCw, MoreVertical, Trash2, CheckCircle2, Pencil, Eye, X, ListFilter, Boxes, Building2 } from 'lucide-react';
+import { Settings, Plus, Users, Truck, ShoppingBag, Database, ShieldAlert, FileSpreadsheet, Download, Upload, Search, RotateCw, MoreVertical, Trash2, CheckCircle2, Pencil, Eye, X, ListFilter, Boxes, Building2, Sparkles } from 'lucide-react';
 import { RoleManagementView } from '../profile/RoleManagementView';
 import { COMPANY_CONFIG } from '../../config/company';
+import { APP_VERSION, APP_BUILD_DATE } from '../../config/version';
+import { AppUpdateModal } from '../../components/AppUpdateModal';
 
 export const AdminMasters: React.FC = () => {
   const { t } = useTranslation();
   const { user, isSimulating } = useAuth();
   const location = useLocation();
+
+  const [isUpdateModalOpen, setIsUpdateModalOpen] = useState(false);
 
   const [activeTab, setActiveTab] = useState<'products' | 'raw_materials' | 'parties' | 'vendors' | 'users' | 'roles' | 'backup' | 'logs'>(() => {
     const params = new URLSearchParams(location.search);
@@ -1915,7 +1919,40 @@ export const AdminMasters: React.FC = () => {
                   </form>
                 </div>
 
-                {/* 3. Factory Reset Production Danger Card */}
+                {/* 3. Live System Version & Releases Card */}
+                <div className="bg-blue-50/70 dark:bg-blue-950/30 border border-blue-200 dark:border-blue-900/60 rounded-3xl p-6 sm:p-7 space-y-4">
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                    <div className="flex items-start gap-4">
+                      <div className="p-3 rounded-2xl bg-blue-100 dark:bg-blue-900/60 text-[#2563EB] dark:text-blue-300 shrink-0">
+                        <Sparkles className="h-6 w-6" />
+                      </div>
+                      <div>
+                        <div className="flex items-center gap-2">
+                          <h4 className="text-sm font-black text-slate-900 dark:text-white uppercase tracking-wider">
+                            System Version &amp; Release History
+                          </h4>
+                          <span className="px-2.5 py-0.5 rounded-full bg-blue-200/80 dark:bg-blue-900/80 text-[#1D4ED8] dark:text-blue-300 text-[10px] font-mono font-black">
+                            v{APP_VERSION}
+                          </span>
+                        </div>
+                        <p className="text-xs text-slate-600 dark:text-slate-300 font-medium mt-1 leading-relaxed">
+                          Saheb Paper ERP release build <strong className="font-mono">{APP_BUILD_DATE}</strong>. Production security enhancements, camera barcode scanner permissions, RLS cloud policies, and version audit trail.
+                        </p>
+                      </div>
+                    </div>
+
+                    <button
+                      type="button"
+                      onClick={() => setIsUpdateModalOpen(true)}
+                      className="px-5 py-2.5 bg-[#2563EB] hover:bg-[#1D4ED8] text-white rounded-2xl text-xs font-black uppercase tracking-wider shadow-lg shadow-blue-500/25 transition-all active:scale-[0.98] flex items-center justify-center gap-2 cursor-pointer shrink-0"
+                    >
+                      <Sparkles className="h-4 w-4" />
+                      <span>Check Updates &amp; Changelogs</span>
+                    </button>
+                  </div>
+                </div>
+
+                {/* 4. Factory Reset Production Danger Card */}
                 <div className="bg-rose-50/70 dark:bg-rose-950/30 border-2 border-rose-300 dark:border-rose-900/60 rounded-3xl p-6 sm:p-7 space-y-4">
                   <div className="flex items-start gap-4">
                     <div className="p-3 rounded-2xl bg-rose-100 dark:bg-rose-900/60 text-rose-600 dark:text-rose-300 shrink-0">
@@ -2865,6 +2902,12 @@ export const AdminMasters: React.FC = () => {
           </div>
         </div>
       )}
+
+      {/* App Update Modal */}
+      <AppUpdateModal
+        isOpen={isUpdateModalOpen}
+        onClose={() => setIsUpdateModalOpen(false)}
+      />
 
     </div>
   );
