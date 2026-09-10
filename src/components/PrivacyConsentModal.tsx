@@ -3,12 +3,15 @@ import { ShieldCheck, Shield, ExternalLink, ArrowRight } from 'lucide-react';
 import { useAuth } from '../modules/auth/AuthContext';
 import { PrivacyPolicyModal } from './PrivacyPolicyModal';
 import { addLog } from '../data/index';
+import { useBodyScrollLock } from '../hooks/useBodyScrollLock';
 
 export const PrivacyConsentModal: React.FC = () => {
   const { user } = useAuth();
   const [isOpen, setIsOpen] = useState(false);
   const [agreed, setAgreed] = useState(false);
   const [isPolicyModalOpen, setIsPolicyModalOpen] = useState(false);
+
+  useBodyScrollLock(isOpen);
 
   useEffect(() => {
     if (!user) {

@@ -1,5 +1,6 @@
 import React from 'react';
 import { Shield, X, Lock, FileText, CheckCircle2, Building2, Printer, MapPin, Mail, Phone, ExternalLink } from 'lucide-react';
+import { useBodyScrollLock } from '../hooks/useBodyScrollLock';
 
 interface PrivacyPolicyModalProps {
   isOpen: boolean;
@@ -7,6 +8,8 @@ interface PrivacyPolicyModalProps {
 }
 
 export const PrivacyPolicyModal: React.FC<PrivacyPolicyModalProps> = ({ isOpen, onClose }) => {
+  useBodyScrollLock(isOpen);
+
   if (!isOpen) return null;
 
   const handlePrint = () => {

@@ -6,6 +6,7 @@ import { useDateFilter } from '../context/DateFilterContext';
 import { CustomDatePickerModal } from './CustomDatePickerModal';
 import { PrivacyConsentModal } from './PrivacyConsentModal';
 import { PrivacyPolicyModal } from './PrivacyPolicyModal';
+import { useBodyScrollLock } from '../hooks/useBodyScrollLock';
 import { getRawMaterials, getReels, getPendingOrders } from '../data/index';
 import {
   LayoutDashboard,
@@ -79,6 +80,8 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
   // Profile & Privacy Modals state
   const [isProfileModalOpen, setIsProfileModalOpen] = useState(false);
   const [isPrivacyPolicyModalOpen, setIsPrivacyPolicyModalOpen] = useState(false);
+
+  useBodyScrollLock(isProfileModalOpen || mobileMenuOpen || isPrivacyPolicyModalOpen);
   const [profileDisplayName, setProfileDisplayName] = useState('');
   const [profileEmail, setProfileEmail] = useState('');
   const [profilePhone, setProfilePhone] = useState('');
