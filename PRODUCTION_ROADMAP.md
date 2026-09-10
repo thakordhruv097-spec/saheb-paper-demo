@@ -90,41 +90,40 @@
 
 ---
 
-### Phase 3: Android Permissions ⏱️ 2-3 Hours
-> **Priority: 🟡 MEDIUM**
-
-**Problem:** App ko Camera (QR scan), Internet, aur Storage access chahiye — properly declare karna padega.
+### Phase 3: Android Permissions ⏱️ Complete
+> **Status: ✅ COMPLETED**
 
 **Tasks:**
-- [ ] `android/app/src/main/AndroidManifest.xml` verify + update:
+- [x] `android/app/src/main/AndroidManifest.xml` verify + update:
   ```xml
   <uses-permission android:name="android.permission.INTERNET" />
-  <uses-permission android:name="android.permission.CAMERA" />
-  <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" />
-  <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" />
   <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
+  <uses-permission android:name="android.permission.ACCESS_WIFI_STATE" />
+  <uses-permission android:name="android.permission.CAMERA" />
+  <uses-permission android:name="android.permission.FLASHLIGHT" />
+  <uses-permission android:name="android.permission.VIBRATE" />
+  <uses-permission android:name="android.permission.WAKE_LOCK" />
+  <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" android:maxSdkVersion="32" />
+  <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" android:maxSdkVersion="32" />
+  <uses-permission android:name="android.permission.READ_MEDIA_IMAGES" />
   ```
-- [ ] Runtime permission handling for Camera (QR scanner)
-- [ ] Capacitor camera plugin properly configured
-- [ ] Test on real device
+- [x] Runtime permission handling for Camera (QR scanner)
+- [x] Capacitor Android assets synchronized (`npx cap sync android`)
+- [x] Flashlight / Torch feature enabled for low-light industrial areas
 
 **Result:** ✅ QR scan, file save, internet access properly working
 
 ---
 
-### Phase 4: In-App Privacy Policy ⏱️ 1-2 Hours
-> **Priority: 🟡 MEDIUM**
-
-**Problem:** Privacy Policy file bani hai (`PRIVACY_POLICY.md`) par app ke andar accessible nahi hai.
+### Phase 4: In-App Privacy Policy ⏱️ Complete
+> **Status: ✅ COMPLETED**
 
 **Tasks:**
-- [ ] Settings/Profile me "Privacy Policy" page add karna
-- [ ] Privacy Policy content render karna (scrollable view)
-- [ ] First-time app open hone par consent popup:
-  - "I agree to the Privacy Policy" checkbox
-  - Accept button
-- [ ] Consent status save karna (per user)
-- [ ] Footer me Privacy Policy link
+- [x] Settings/Profile me "Privacy Policy" page add karna (`PrivacyPolicyModal.tsx`)
+- [x] Privacy Policy content render karna (scrollable modal with body scroll lock)
+- [x] First-time app open hone par consent popup (`PrivacyConsentModal.tsx` DPDP Act 2023)
+- [x] Consent status save karna (per user in localStorage + Supabase)
+- [x] Footer & menu me Privacy Policy link
 
 **Result:** ✅ Legal compliance, DPDP Act ready
 
