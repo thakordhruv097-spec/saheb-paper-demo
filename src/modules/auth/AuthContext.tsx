@@ -182,8 +182,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     const users = getUsers();
     const cleanUser = username.trim().toLowerCase();
     const cleanPin = pin.trim();
-    const DEMO_USERNAMES = ['admin', 'pulper', 'plant_manager', 'dispatcher', 'shop', 'shopper', 'viewer'];
-    const isDemo = DEMO_USERNAMES.includes(cleanUser);
 
     const hashedPin = await hashPin(cleanPin);
 
@@ -198,12 +196,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
       if (!matchName) return false;
 
-      // Smart Dual-Check: Verify against SHA-256 hashed PIN or plaintext (legacy) or demo fallback
+      // Smart Dual-Check: Verify against SHA-256 hashed PIN or plaintext (legacy)
       const matchesHash = u.pin === hashedPin;
       const matchesPlain = u.pin.trim() === cleanPin;
-      const matchesDemo = cleanPin === '1234' && isDemo;
 
-      return matchesHash || matchesPlain || matchesDemo;
+      return matchesHash || matchesPlain;
     });
 
     if (foundUser) {

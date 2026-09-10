@@ -246,8 +246,12 @@ export const MachineView: React.FC = () => {
       return;
     }
 
-    // Get pulp mill recipe formula for target date (with automatic fallback)
+    // Get pulp mill recipe formula for target date
     const formula = getFormulaForDate(dateStr);
+    if (!formula) {
+      setErrorMsg('No active Pulp Mill recipe found for this date. Please log a recipe in Pulp Mill before recording machine production.');
+      return;
+    }
 
     const grossMin = calculateWorkingMinutes(startTime, offTime);
     const netWorkingMin = Math.max(0, grossMin - totalDowntimeMinutes);
@@ -424,6 +428,28 @@ export const MachineView: React.FC = () => {
                 </div>
               </div>
             </div>
+
+            {/* Formula Status Banner */}
+            {!formulaInfo.formula ? (
+              <div className="p-3.5 bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-800/60 rounded-2xl flex items-center justify-between gap-3 text-xs text-amber-800 dark:text-amber-200">
+                <div className="flex items-center gap-2">
+                  <AlertTriangle className="h-4 w-4 text-amber-600 shrink-0" />
+                  <span className="font-semibold">No Pulp Mill recipe logged for this date. Please log a formula first.</span>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => navigate('/pulp-mill-operations')}
+                  className="px-3 py-1 bg-amber-600 hover:bg-amber-700 text-white rounded-xl text-[11px] font-bold shrink-0 transition"
+                >
+                  Go to Pulp Mill
+                </button>
+              </div>
+            ) : formulaInfo.isPreviousDay ? (
+              <div className="p-3 bg-blue-50 dark:bg-blue-950/40 border border-blue-200 dark:border-blue-800/60 rounded-2xl flex items-center gap-2 text-xs text-blue-800 dark:text-blue-200">
+                <Info className="h-4 w-4 text-blue-600 shrink-0" />
+                <span>Active Recipe: Using Pulp Mill formula from <strong className="font-bold">{formulaInfo.formulaDate}</strong></span>
+              </div>
+            ) : null}
 
             {/* 1. Roll Data Section */}
             <div className="border border-slate-200 dark:border-slate-800 rounded-3xl p-5 space-y-4">

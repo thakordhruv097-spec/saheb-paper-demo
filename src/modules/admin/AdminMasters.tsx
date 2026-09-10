@@ -20,6 +20,7 @@ import {
   getUsers,
   saveUser,
   clearAllDemoData,
+  performFactoryReset,
   deleteProduct,
   deleteParty,
   deleteVendor,
@@ -81,6 +82,11 @@ export const AdminMasters: React.FC = () => {
   const [logs, setLogs] = useState<TransactionLog[]>(() => getLogs());
   const [usersList, setUsersList] = useState<User[]>(() => getUsers());
   const [mastersSearchQuery, setMastersSearchQuery] = useState('');
+
+  // Factory Reset Modal States
+  const [isFactoryResetModalOpen, setIsFactoryResetModalOpen] = useState(false);
+  const [resetConfirmationInput, setResetConfirmationInput] = useState('');
+  const [isResetting, setIsResetting] = useState(false);
 
   const filteredProducts = useMemo(() => {
     const q = mastersSearchQuery.toLowerCase().trim();
@@ -719,18 +725,21 @@ export const AdminMasters: React.FC = () => {
     }
   };
 
-  const handleResetDemoData = () => {
-    if (!window.confirm("Are you sure you want to clear all transactions and reset all databases back to default seed data? This cannot be undone.")) {
+  const handleExecuteFactoryReset = () => {
+    if (resetConfirmationInput.trim() !== 'RESET') {
       return;
     }
+    setIsResetting(true);
     try {
-      clearAllDemoData();
-      setSuccessMsg("Demo data cleared successfully! Restoring defaults and reloading...");
+      performFactoryReset();
+      setSuccessMsg("Factory Reset executed successfully! All storage wiped clean. Reloading app in 1.5 seconds...");
+      setIsFactoryResetModalOpen(false);
       setTimeout(() => {
-        window.location.reload();
+        window.location.href = '/';
       }, 1500);
     } catch (err: any) {
-      setErrorMsg("Failed to reset database: " + err.message);
+      setErrorMsg("Failed to execute Factory Reset: " + err.message);
+      setIsResetting(false);
     }
   };
 
@@ -1906,27 +1915,43 @@ export const AdminMasters: React.FC = () => {
                   </form>
                 </div>
 
-                {/* 3. Reset Seeds Danger Card */}
-                <div className="bg-rose-50/60 dark:bg-rose-950/20 border border-rose-200/80 dark:border-rose-900/40 rounded-3xl p-6 space-y-3">
-                  <div className="flex items-center gap-3">
-                    <div className="p-2.5 rounded-2xl bg-rose-100 dark:bg-rose-950/60 text-rose-600 dark:text-rose-400">
-                      <RotateCw className="h-5 w-5" />
+                {/* 3. Factory Reset Production Danger Card */}
+                <div className="bg-rose-50/70 dark:bg-rose-950/30 border-2 border-rose-300 dark:border-rose-900/60 rounded-3xl p-6 sm:p-7 space-y-4">
+                  <div className="flex items-start gap-4">
+                    <div className="p-3 rounded-2xl bg-rose-100 dark:bg-rose-900/60 text-rose-600 dark:text-rose-300 shrink-0">
+                      <ShieldAlert className="h-6 w-6" />
                     </div>
                     <div>
-                      <h4 className="text-xs font-black text-rose-700 dark:text-rose-300 uppercase tracking-wider">Reset Demo Data</h4>
-                      <p className="text-xs text-rose-900/80 dark:text-rose-200/80 font-medium mt-0.5">
-                        Restores all databases (User accounts, Raw Materials, Converted Reels, Formulas, Boiler logs) back to default seed data.
+                      <div className="flex items-center gap-2">
+                        <h4 className="text-sm font-black text-rose-800 dark:text-rose-200 uppercase tracking-wider">
+                          Factory Reset (Production Launch Wipe)
+                        </h4>
+                        <span className="px-2 py-0.5 rounded-full bg-rose-200 dark:bg-rose-900/80 text-rose-800 dark:text-rose-200 text-[10px] font-black uppercase tracking-wider">
+                          Irreversible
+                        </span>
+                      </div>
+                      <p className="text-xs text-rose-900/80 dark:text-rose-300/80 font-medium mt-1 leading-relaxed">
+                        Permanently wipes ALL transaction history, daily production rolls, reels, customer orders, dispatch challans, formulas, raw materials, store spares, and non-admin users from local storage. Leaves the app in a genuinely clean, zero-state ready for real plant data entry.
                       </p>
                     </div>
                   </div>
 
-                  <button
-                    onClick={handleResetDemoData}
-                    className="px-5 py-3 bg-gradient-to-r from-rose-600 via-red-600 to-rose-700 hover:from-rose-700 hover:to-red-700 text-white rounded-2xl text-xs font-black uppercase tracking-wider shadow-lg shadow-rose-500/25 transition-all hover:scale-[1.01] active:scale-[0.99] flex items-center gap-2 cursor-pointer"
-                  >
-                    <RotateCw className="h-4 w-4 text-white" />
-                    <span>Reset All Data to Seeds</span>
-                  </button>
+                  <div className="pt-2 flex items-center justify-between flex-wrap gap-3 border-t border-rose-200/60 dark:border-rose-900/40">
+                    <span className="text-[11px] font-bold text-rose-700 dark:text-rose-400">
+                      Requires typing &quot;RESET&quot; to confirm
+                    </span>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setResetConfirmationInput('');
+                        setIsFactoryResetModalOpen(true);
+                      }}
+                      className="px-5 py-2.5 bg-rose-600 hover:bg-rose-700 text-white rounded-2xl text-xs font-black uppercase tracking-wider shadow-lg shadow-rose-600/30 transition-all active:scale-[0.98] flex items-center gap-2 cursor-pointer"
+                    >
+                      <Trash2 className="h-4 w-4" />
+                      <span>Factory Reset</span>
+                    </button>
+                  </div>
                 </div>
               </div>
             )}
@@ -2730,6 +2755,86 @@ export const AdminMasters: React.FC = () => {
                 className="px-4 py-2 border border-slate-200 dark:border-slate-700 rounded-lg text-xs font-semibold text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 cursor-pointer"
               >
                 Close Details
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Factory Reset Confirmation Modal */}
+      {isFactoryResetModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/75 backdrop-blur-xs animate-in fade-in duration-150">
+          <div className="bg-white dark:bg-slate-900 rounded-3xl max-w-lg w-full border border-rose-200 dark:border-rose-900 shadow-2xl p-6 sm:p-7 space-y-5">
+            <div className="flex items-start justify-between gap-3 border-b border-slate-100 dark:border-slate-800 pb-4">
+              <div className="flex items-center gap-3">
+                <div className="p-2.5 rounded-2xl bg-rose-100 dark:bg-rose-950/60 text-rose-600 dark:text-rose-400">
+                  <ShieldAlert className="h-6 w-6" />
+                </div>
+                <div>
+                  <h3 className="text-base font-black text-slate-900 dark:text-white uppercase tracking-wider">
+                    Confirm Factory Reset
+                  </h3>
+                  <span className="text-xs text-rose-600 dark:text-rose-400 font-bold">
+                    Destructive Action — Zero Data State
+                  </span>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => setIsFactoryResetModalOpen(false)}
+                className="p-1.5 rounded-xl text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 transition cursor-pointer"
+              >
+                <X className="h-5 w-5" />
+              </button>
+            </div>
+
+            <div className="space-y-3 text-xs text-slate-600 dark:text-slate-300 leading-relaxed bg-rose-50/50 dark:bg-rose-950/20 p-4 rounded-2xl border border-rose-100 dark:border-rose-900/30">
+              <p className="font-bold text-rose-900 dark:text-rose-200">
+                Are you absolutely sure you want to perform a Factory Reset?
+              </p>
+              <ul className="list-disc pl-4 space-y-1 text-slate-600 dark:text-slate-400">
+                <li>All production rolls, reels, and QC test logs will be permanently deleted.</li>
+                <li>All raw material stock, lots, and formulas will be reset to empty.</li>
+                <li>All dispatch challans and customer orders will be cleared.</li>
+                <li>All audit transaction logs will be cleared.</li>
+                <li>All user accounts except the primary Super Admin (<strong className="font-bold">admin</strong>) will be removed.</li>
+              </ul>
+            </div>
+
+            <div className="space-y-2">
+              <label className="block text-xs font-bold text-slate-700 dark:text-slate-300">
+                To confirm, type <span className="font-mono text-rose-600 font-black">RESET</span> below:
+              </label>
+              <input
+                type="text"
+                value={resetConfirmationInput}
+                onChange={e => setResetConfirmationInput(e.target.value)}
+                placeholder="Type RESET to confirm"
+                className="w-full px-4 py-3 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl text-xs font-mono font-bold text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-rose-500/30"
+              />
+            </div>
+
+            <div className="flex items-center justify-end gap-3 pt-2">
+              <button
+                type="button"
+                disabled={isResetting}
+                onClick={() => setIsFactoryResetModalOpen(false)}
+                className="px-4 py-2.5 rounded-2xl border border-slate-200 dark:border-slate-700 text-xs font-bold text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 transition cursor-pointer"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                disabled={resetConfirmationInput.trim() !== 'RESET' || isResetting}
+                onClick={handleExecuteFactoryReset}
+                className={`px-5 py-2.5 rounded-2xl text-xs font-black uppercase tracking-wider flex items-center gap-2 transition cursor-pointer ${
+                  resetConfirmationInput.trim() === 'RESET' && !isResetting
+                    ? 'bg-rose-600 hover:bg-rose-700 text-white shadow-lg shadow-rose-600/30 active:scale-98'
+                    : 'bg-slate-200 dark:bg-slate-800 text-slate-400 dark:text-slate-600 cursor-not-allowed'
+                }`}
+              >
+                <Trash2 className="h-4 w-4" />
+                <span>{isResetting ? 'Wiping System...' : 'Wipe & Reset Everything'}</span>
               </button>
             </div>
           </div>

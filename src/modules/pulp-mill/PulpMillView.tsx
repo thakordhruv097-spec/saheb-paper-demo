@@ -67,10 +67,7 @@ export const PulpMillView: React.FC = () => {
   // Downtime state
   const [downtimeLogs, setDowntimeLogs] = useState<DowntimeLog[]>(() => {
     const saved = localStorage.getItem('saheb_pulp_downtimes');
-    return saved ? JSON.parse(saved) : [
-      { id: 'dt-1', durationMinutes: 25, reason: 'Hydrapulper rotor belt inspection', timestamp: '2026-08-08 11:30' },
-      { id: 'dt-2', durationMinutes: 15, reason: 'Pulp pump valve cleaning', timestamp: '2026-08-08 14:15' },
-    ];
+    return saved ? JSON.parse(saved) : [];
   });
   const [downtimeMinutes, setDowntimeMinutes] = useState('');
   const [downtimeReason, setDowntimeReason] = useState('');
@@ -120,29 +117,13 @@ export const PulpMillView: React.FC = () => {
     return ['DSR', 'WSR', 'OBA', 'Hydrogen Peroxide', 'Hypo', 'Bleaching Powder', 'Caustic', 'Washing Powder'];
   }, []);
 
-  // 6 Waste Mix items
-  const [wasteMix, setWasteMix] = useState<Record<string, number | string>>({
-    'Indian Tissue Waste': 50,
-    'Imported Tissue Waste': 0,
-    SMK: 20,
-    Cupstock: 0,
-    'Pulp Sheet': 10,
-    Broke: 20,
-  });
+  // Waste Mix items
+  const [wasteMix, setWasteMix] = useState<Record<string, number | string>>({});
 
-  // Top Chemical items (DSR, WSR, OBA, Hydrogen Peroxide, Hypo, Bleaching Powder, Caustic, Washing Powder)
-  const [chemicals, setChemicals] = useState<Record<string, number | string>>({
-    DSR: 10,
-    WSR: 15,
-    OBA: 0,
-    'Hydrogen Peroxide': 0,
-    Hypo: 0,
-    'Bleaching Powder': 0,
-    Caustic: 0,
-    'Washing Powder': 0,
-  });
+  // Chemical items
+  const [chemicals, setChemicals] = useState<Record<string, number | string>>({});
 
-  // Load formula if already exists for dateStr
+  // Load formula if already exists for dateStr or initialize to clean 0
   useEffect(() => {
     const existing = formulas.find(f => f.date === dateStr);
     if (existing) {
@@ -160,6 +141,18 @@ export const PulpMillView: React.FC = () => {
         });
         setChemicals(fullChems);
       }
+    } else {
+      const emptyMix: Record<string, number | string> = {};
+      availableWastePapers.forEach(name => {
+        emptyMix[name] = 0;
+      });
+      setWasteMix(emptyMix);
+
+      const emptyChems: Record<string, number | string> = {};
+      availablePulpChemicals.forEach(name => {
+        emptyChems[name] = 0;
+      });
+      setChemicals(emptyChems);
     }
   }, [dateStr, formulas, availableWastePapers, availablePulpChemicals]);
 

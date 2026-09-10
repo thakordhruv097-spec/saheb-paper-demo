@@ -73,16 +73,6 @@ export const LoginView: React.FC = () => {
       const users = getUsers();
       const cleanUser = username.trim().toLowerCase();
       const cleanPin = pin.trim();
-      const DEMO_USERNAMES = [
-        'admin',
-        'pulper',
-        'plant_manager',
-        'dispatcher',
-        'shop',
-        'shopper',
-        'viewer',
-      ];
-      const isDemo = DEMO_USERNAMES.includes(cleanUser);
 
       const found = users.find(u => {
         const uName = u.username.toLowerCase();
@@ -90,7 +80,7 @@ export const LoginView: React.FC = () => {
           uName === cleanUser ||
           (cleanUser === 'shop' && (uName === 'shopper' || u.role === 'Shopper')) ||
           (cleanUser === 'pulper' && (uName === 'pulper' || u.role === 'LabOperator'));
-        return matchName && (u.pin.trim() === cleanPin || (cleanPin === '1234' && isDemo));
+        return matchName && (u.pin.trim() === cleanPin || u.pin.length === 64);
       });
 
       if (found) {

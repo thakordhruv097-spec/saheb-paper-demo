@@ -299,31 +299,19 @@ export const ReportsView: React.FC = () => {
 
       const map: Record<string, { date: string; shortDate: string; prodWeight: number; dispWeight: number; downtimeMin: number; downtimeReason: string }> = {};
 
-      const organicProdProfile = [11800, 12950, 10400, 13600, 11500, 12800, 10900];
-      const organicDispProfile = [8400, 11800, 4200, 12600, 9500, 13900, 7800];
-
-      weekDates.forEach((fullDate, idx) => {
+      weekDates.forEach((fullDate) => {
         const shortDate = fullDate.substring(5); // MM-DD
         const pEntry = dailyProdData.find(p => p.date === fullDate);
         const dEntry = dailyDispData.find(d => d.date === fullDate);
 
-        let prod = pEntry ? pEntry.totalWeight : 0;
-        let disp = dEntry ? dEntry.totalWeight : 0;
-
-        // Replace flat static seed values (<= 2200kg) with organic paper mill daily operating curves
-        if (prod <= 2200) {
-          prod = organicProdProfile[idx % 7] + ((fullDate.charCodeAt(fullDate.length - 1) * 31) % 700) - 350;
-        }
-
-        if (disp <= 2200) {
-          disp = organicDispProfile[idx % 7] + ((fullDate.charCodeAt(fullDate.length - 1) * 19) % 500) - 250;
-        }
+        const prod = pEntry ? pEntry.totalWeight : 0;
+        const disp = dEntry ? dEntry.totalWeight : 0;
 
         map[fullDate] = {
           date: shortDate,
           shortDate,
-          prodWeight: Math.max(8000, prod),
-          dispWeight: Math.max(0, disp),
+          prodWeight: prod,
+          dispWeight: disp,
           downtimeMin: 0,
           downtimeReason: '',
         };

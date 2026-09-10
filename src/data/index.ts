@@ -268,82 +268,47 @@ function seedOneMonthData(): void {
 
 // Initialize Storage if empty
 export function initializeStorage() {
-  if (!localStorage.getItem(KEYS.USERS)) setJSON(KEYS.USERS, DEFAULT_USERS);
-  if (!localStorage.getItem(KEYS.RAW_MATERIALS)) setJSON(KEYS.RAW_MATERIALS, DEFAULT_RAW_MATERIALS);
-  if (!localStorage.getItem(KEYS.PRODUCTS)) setJSON(KEYS.PRODUCTS, DEFAULT_PRODUCTS);
-  if (!localStorage.getItem(KEYS.PARTIES)) setJSON(KEYS.PARTIES, DEFAULT_PARTIES);
-  if (!localStorage.getItem(KEYS.VENDORS)) setJSON(KEYS.VENDORS, DEFAULT_VENDORS);
-  if (!localStorage.getItem(KEYS.VEHICLES)) setJSON(KEYS.VEHICLES, DEFAULT_VEHICLES);
+  if (!localStorage.getItem(KEYS.USERS)) setJSON(KEYS.USERS, [DEFAULT_USERS[0]]);
+  if (!localStorage.getItem(KEYS.RAW_MATERIALS)) setJSON(KEYS.RAW_MATERIALS, []);
+  if (!localStorage.getItem(KEYS.PRODUCTS)) setJSON(KEYS.PRODUCTS, []);
+  if (!localStorage.getItem(KEYS.PARTIES)) setJSON(KEYS.PARTIES, []);
+  if (!localStorage.getItem(KEYS.VENDORS)) setJSON(KEYS.VENDORS, []);
+  if (!localStorage.getItem(KEYS.VEHICLES)) setJSON(KEYS.VEHICLES, []);
   if (!localStorage.getItem(KEYS.FORMULAS)) setJSON(KEYS.FORMULAS, []);
   if (!localStorage.getItem(KEYS.ROLLS)) setJSON(KEYS.ROLLS, []);
   if (!localStorage.getItem(KEYS.REELS)) setJSON(KEYS.REELS, []);
   if (!localStorage.getItem(KEYS.LOGS)) setJSON(KEYS.LOGS, []);
-
   if (!localStorage.getItem(KEYS.BOILER_LOGS)) setJSON(KEYS.BOILER_LOGS, []);
   if (!localStorage.getItem(KEYS.ETP_LOGS)) setJSON(KEYS.ETP_LOGS, []);
   if (!localStorage.getItem(KEYS.ELECTRICITY_LOGS)) setJSON(KEYS.ELECTRICITY_LOGS, []);
-  if (!localStorage.getItem(KEYS.PENDING_ORDERS)) setJSON(KEYS.PENDING_ORDERS, DEFAULT_PENDING_ORDERS);
+  if (!localStorage.getItem(KEYS.PENDING_ORDERS)) setJSON(KEYS.PENDING_ORDERS, []);
   if (!localStorage.getItem(KEYS.PACKING_SLIPS)) setJSON(KEYS.PACKING_SLIPS, []);
-  if (!localStorage.getItem(KEYS.STORE_ITEMS)) setJSON(KEYS.STORE_ITEMS, DEFAULT_STORE_ITEMS);
+  if (!localStorage.getItem(KEYS.STORE_ITEMS)) setJSON(KEYS.STORE_ITEMS, []);
+  if (!localStorage.getItem(KEYS.RAW_MATERIAL_LOTS)) setJSON(KEYS.RAW_MATERIAL_LOTS, []);
+  if (!localStorage.getItem(KEYS.LAB_REPORTS)) setJSON(KEYS.LAB_REPORTS, []);
 
-  // Always fix users to ensure empId, designation, and customModules exist
+  // Ensure Admin user has valid structure and permissions
   try {
-    const rawUsers = getJSON<User[]>(KEYS.USERS, DEFAULT_USERS);
+    const rawUsers = getJSON<User[]>(KEYS.USERS, [DEFAULT_USERS[0]]);
+    const validKeys = [
+      'dashboard', 'raw_material_stock', 'pulp_mill_operations', 'machine_production', 'rewinding_reel_conversion',
+      'boiler', 'etp', 'electricity', 'orders', 'finished_stock_dispatch', 'dispatch', 'spareparts_management', 'monthly_yearly_reporting'
+    ];
     let updated = false;
     const fixedUsers = rawUsers.map(u => {
-      const defaultMatch = DEFAULT_USERS.find(d => d.username.toLowerCase() === u.username.toLowerCase());
-      let modified = false;
-      let newU = { ...u };
-
       if (u.username === 'admin') {
-        if (u.role !== 'Admin' || !u.roles || u.roles[0] !== 'Admin') {
-          newU.role = 'Admin' as UserRole;
-          newU.roles = ['Admin' as UserRole];
-          modified = true;
+        if (u.role !== 'Admin' || !u.roles || u.roles[0] !== 'Admin' || !u.customModules || u.customModules.length !== validKeys.length) {
+          u.role = 'Admin';
+          u.roles = ['Admin'];
+          u.customModules = [...validKeys];
+          updated = true;
         }
       }
-
-      if (defaultMatch) {
-        if (!newU.empId && defaultMatch.empId) {
-          newU.empId = defaultMatch.empId;
-          modified = true;
-        }
-        if (!newU.designation && defaultMatch.designation) {
-          newU.designation = defaultMatch.designation;
-          modified = true;
-        }
-        if ((!newU.customModules || newU.customModules.length === 0) && defaultMatch.customModules) {
-          newU.customModules = defaultMatch.customModules;
-          modified = true;
-        }
-        if (defaultMatch.displayName && newU.displayName !== defaultMatch.displayName) {
-          newU.displayName = defaultMatch.displayName;
-          modified = true;
-        }
-      }
-
-      if (
-        u.username.toLowerCase() === 'pulper' ||
-        u.username.toLowerCase() === 'lab' ||
-        u.displayName.toLowerCase().includes('lab') ||
-        (u.designation && u.designation.toLowerCase().includes('lab')) ||
-        u.role === 'LabOperator'
-      ) {
-        newU.displayName = 'Pulper';
-        newU.designation = 'Pulper (Pulp Mill Operator)';
-        newU.empId = 'EMP-002';
-        newU.username = 'pulper';
-        newU.role = 'LabOperator';
-        newU.roles = ['LabOperator'];
-        modified = true;
-      }
-
-      if (modified) updated = true;
-      return newU;
+      return u;
     });
 
     if (updated) {
-      setJSON(KEYS.USERS, sortUsersByHierarchy(fixedUsers));
+      setJSON(KEYS.USERS, fixedUsers);
     }
 
     // Fix active session if @admin session was corrupted
@@ -353,127 +318,13 @@ export function initializeStorage() {
       if (session.user && session.user.username === 'admin') {
         session.user.role = 'Admin';
         session.user.roles = ['Admin'];
+        session.user.customModules = [...validKeys];
         localStorage.setItem('saheb_session', JSON.stringify(session));
         localStorage.setItem('saheb_active_user', JSON.stringify(session.user));
       }
     }
   } catch (e) {
     console.error(e);
-  }
-
-  // Operational data clean reset: ensure browser cache is cleared of test/demo records
-  if (!localStorage.getItem('saheb_operational_cleared_v5')) {
-    setJSON(KEYS.FORMULAS, []);
-    setJSON(KEYS.ROLLS, []);
-    setJSON(KEYS.REELS, []);
-    setJSON(KEYS.LOGS, []);
-    setJSON(KEYS.BOILER_LOGS, []);
-    setJSON(KEYS.ETP_LOGS, []);
-    setJSON(KEYS.ELECTRICITY_LOGS, []);
-    setJSON(KEYS.PENDING_ORDERS, []);
-    setJSON(KEYS.PACKING_SLIPS, []);
-    setJSON(KEYS.RAW_MATERIAL_LOTS, []);
-    setJSON(KEYS.LAB_REPORTS, []);
-    const rawMats = getJSON<RawMaterialItem[]>(KEYS.RAW_MATERIALS, []);
-    if (rawMats.length > 0) {
-      setJSON(KEYS.RAW_MATERIALS, rawMats.map(m => ({ ...m, stock: 0 })));
-    }
-    const stores = getJSON<StoreItem[]>(KEYS.STORE_ITEMS, []);
-    if (stores.length > 0) {
-      setJSON(KEYS.STORE_ITEMS, stores.map(s => ({ ...s, pcs: 0 })));
-    }
-    localStorage.setItem('saheb_operational_cleared_v5', 'true');
-  }
-
-  // Refresh user cache to exact 6 configured roles in guaranteed fixed order
-  if (!localStorage.getItem('saheb_users_fixed_order_v10')) {
-    setJSON(KEYS.USERS, sortUsersByHierarchy(DEFAULT_USERS));
-    localStorage.setItem('saheb_users_fixed_order_v10', 'true');
-  }
-
-  // Migration: Clean customModules to strictly the 13 canonical ERP modules & assign default role modules
-  if (!localStorage.getItem('saheb_clean_13_modules_v3')) {
-    try {
-      const rawUsers = getJSON<User[]>(KEYS.USERS, DEFAULT_USERS);
-      const validKeys = [
-        'dashboard', 'raw_material_stock', 'pulp_mill_operations', 'machine_production', 'rewinding_reel_conversion',
-        'boiler', 'etp', 'electricity', 'orders', 'finished_stock_dispatch', 'dispatch', 'spareparts_management', 'monthly_yearly_reporting'
-      ];
-      const cleanedUsers = rawUsers.map(u => {
-        let custom = u.customModules || [];
-        custom = custom.filter(k => validKeys.includes(k));
-        const defaultMatch = DEFAULT_USERS.find(d => d.username.toLowerCase() === u.username.toLowerCase());
-        if (custom.length === 0 && defaultMatch?.customModules && defaultMatch.customModules.length > 0) {
-          custom = [...defaultMatch.customModules];
-        }
-        if (u.role === 'Admin' || u.username === 'admin') {
-          custom = [...validKeys];
-        }
-        return { ...u, customModules: custom };
-      });
-      setJSON(KEYS.USERS, sortUsersByHierarchy(cleanedUsers));
-
-      // Also clean active session if present
-      const rawSession = localStorage.getItem('saheb_session');
-      if (rawSession) {
-        const session = JSON.parse(rawSession);
-        if (session.user) {
-          if (session.user.role === 'Admin' || session.user.username === 'admin') {
-            session.user.customModules = [...validKeys];
-          } else {
-            const defaultMatch = DEFAULT_USERS.find(d => d.username.toLowerCase() === session.user.username?.toLowerCase());
-            let userMods = (session.user.customModules || []).filter((k: string) => validKeys.includes(k));
-            if (userMods.length === 0 && defaultMatch?.customModules) {
-              userMods = [...defaultMatch.customModules];
-            }
-            session.user.customModules = userMods;
-          }
-          localStorage.setItem('saheb_session', JSON.stringify(session));
-          localStorage.setItem('saheb_active_user', JSON.stringify(session.user));
-        }
-      }
-    } catch (err) {
-      console.error('Error during 13 modules cleanup migration:', err);
-    }
-    localStorage.setItem('saheb_clean_13_modules_v3', 'true');
-  }
-
-  // Migration v4: Grant Viewer all 13 modules & permanently lock Admin with all 13 modules
-  if (!localStorage.getItem('saheb_viewer_admin_lock_v4')) {
-    try {
-      const rawUsers = getJSON<User[]>(KEYS.USERS, DEFAULT_USERS);
-      const validKeys = [
-        'dashboard', 'raw_material_stock', 'pulp_mill_operations', 'machine_production', 'rewinding_reel_conversion',
-        'boiler', 'etp', 'electricity', 'orders', 'finished_stock_dispatch', 'dispatch', 'spareparts_management', 'monthly_yearly_reporting'
-      ];
-      const migrated = rawUsers.map(u => {
-        const uname = (u.username || '').toLowerCase();
-        if (u.role === 'Admin' || uname === 'admin') {
-          return { ...u, customModules: [...validKeys] };
-        }
-        if (u.role === 'Viewer' || uname === 'viewer') {
-          return { ...u, customModules: [...validKeys] };
-        }
-        return u;
-      });
-      setJSON(KEYS.USERS, sortUsersByHierarchy(migrated));
-
-      const rawSession = localStorage.getItem('saheb_session');
-      if (rawSession) {
-        const session = JSON.parse(rawSession);
-        if (session.user) {
-          const uname = (session.user.username || '').toLowerCase();
-          if (session.user.role === 'Admin' || uname === 'admin' || session.user.role === 'Viewer' || uname === 'viewer') {
-            session.user.customModules = [...validKeys];
-            localStorage.setItem('saheb_session', JSON.stringify(session));
-            localStorage.setItem('saheb_active_user', JSON.stringify(session.user));
-          }
-        }
-      }
-    } catch (e) {
-      console.error(e);
-    }
-    localStorage.setItem('saheb_viewer_admin_lock_v4', 'true');
   }
 }
 
@@ -503,13 +354,9 @@ export function addLog(module: string, action: string, details: string, user: st
 
 // --- USERS / AUTH ---
 export function getUsers(): User[] {
-  const users = getJSON<User[]>(KEYS.USERS, DEFAULT_USERS);
-
-  // Guarantee all 6 canonical demo users exist in the active user list
-  for (const defUser of DEFAULT_USERS) {
-    if (!users.some(u => u.username.toLowerCase() === defUser.username.toLowerCase())) {
-      users.push({ ...defUser });
-    }
+  let users = getJSON<User[]>(KEYS.USERS, [DEFAULT_USERS[0]]);
+  if (!users || users.length === 0) {
+    users = [{ ...DEFAULT_USERS[0] }];
   }
 
   const validRoles: UserRole[] = ['Admin', 'PlantManager', 'LabOperator', 'Viewer', 'Shopper', 'Dispatcher'];
@@ -681,29 +528,7 @@ export function resetUserPin(username: string, newPin: string, operator: string)
 
 // --- RAW MATERIALS ---
 export function getRawMaterials(): RawMaterialItem[] {
-  const materials = getJSON<RawMaterialItem[]>(KEYS.RAW_MATERIALS, []);
-  if (!materials || materials.length === 0) {
-    setJSON(KEYS.RAW_MATERIALS, DEFAULT_RAW_MATERIALS);
-    return DEFAULT_RAW_MATERIALS;
-  }
-
-  // Ensure all 23 default items exist in storage and have unified WASTE_PAPER category
-  let updated = false;
-  DEFAULT_RAW_MATERIALS.forEach(defItem => {
-    const existing = materials.find(m => m.id === defItem.id || m.name === defItem.name);
-    if (!existing) {
-      materials.push(defItem);
-      updated = true;
-    } else if (defItem.category === 'WASTE_PAPER' && existing.category !== 'WASTE_PAPER') {
-      existing.category = 'WASTE_PAPER';
-      updated = true;
-    }
-  });
-
-  if (updated) {
-    setJSON(KEYS.RAW_MATERIALS, materials);
-  }
-  return materials;
+  return getJSON<RawMaterialItem[]>(KEYS.RAW_MATERIALS, []);
 }
 
 export function saveRawMaterial(material: RawMaterialItem): RawMaterialItem {
@@ -782,23 +607,7 @@ export function updateRawMaterialStock(
 
 // --- MASTER DATA ---
 export function getProducts(): ProductItem[] {
-  const existing = getJSON<ProductItem[]>(KEYS.PRODUCTS, []);
-  if (!existing || existing.length === 0) {
-    setJSON(KEYS.PRODUCTS, DEFAULT_PRODUCTS);
-    return DEFAULT_PRODUCTS;
-  }
-  let modified = false;
-  const merged = [...existing];
-  DEFAULT_PRODUCTS.forEach(dp => {
-    if (!merged.some(p => p.id === dp.id || p.name.toLowerCase() === dp.name.toLowerCase())) {
-      merged.push(dp);
-      modified = true;
-    }
-  });
-  if (modified) {
-    setJSON(KEYS.PRODUCTS, merged);
-  }
-  return merged;
+  return getJSON<ProductItem[]>(KEYS.PRODUCTS, []);
 }
 
 export function saveProduct(product: ProductItem): ProductItem {
@@ -871,7 +680,7 @@ export function getFormulas(): PulpFormula[] {
 }
 
 export interface FormulaDateResult {
-  formula: PulpFormula;
+  formula: PulpFormula | null;
   isPreviousDay: boolean;
   formulaDate: string;
 }
@@ -899,17 +708,11 @@ export function getFormulaInfoForDate(dateStr: string): FormulaDateResult {
     return { formula: sortedAll[0], isPreviousDay: true, formulaDate: sortedAll[0].date };
   }
 
-  // 4. Default 100% Indian Tissue Waste Formula
-  const defaultFormula: PulpFormula = {
-    id: `formula-default-${dateStr}`,
-    date: dateStr,
-    wasteMix: { 'Indian Tissue Waste': 100 },
-    chemicals: { 'DSR': 2, 'WSR': 2 },
-  };
-  return { formula: defaultFormula, isPreviousDay: false, formulaDate: dateStr };
+  // 4. No formula exists in system
+  return { formula: null, isPreviousDay: false, formulaDate: '' };
 }
 
-export function getFormulaForDate(dateStr: string): PulpFormula {
+export function getFormulaForDate(dateStr: string): PulpFormula | null {
   return getFormulaInfoForDate(dateStr).formula;
 }
 
@@ -958,7 +761,7 @@ export function saveRoll(roll: MachineRoll, user: string): MachineRoll {
   // 1. Locate formula active on or before roll production date
   const formula = getFormulaForDate(roll.date);
   if (!formula) {
-    throw new Error("Enter today's formula first");
+    throw new Error("No active pulp mill recipe found for this date. Please log a formula in Pulp Mill first.");
   }
 
   // 2. Perform Real-time Stock Deductions
@@ -1762,15 +1565,62 @@ export function restoreBackup(backupJson: string, user: string): void {
   }
 }
 
+export function performFactoryReset(): void {
+  // 1. Wipe all localStorage items completely
+  localStorage.clear();
+
+  // 2. Set only default Admin user
+  const adminUser: User = {
+    username: 'admin',
+    role: 'Admin',
+    roles: ['Admin'],
+    pin: '1234',
+    displayName: 'Administrator',
+    email: 'admin@sahebpaper.com',
+    phone: '9876543210',
+    securityQuestion: 'What is your favorite color?',
+    securityAnswer: 'blue',
+    empId: 'EMP-001',
+    designation: 'Admin / Owner',
+    customModules: [
+      'dashboard', 'raw_material_stock', 'pulp_mill_operations', 'machine_production', 'rewinding_reel_conversion',
+      'boiler', 'etp', 'electricity', 'orders', 'finished_stock_dispatch', 'dispatch', 'spareparts_management', 'monthly_yearly_reporting'
+    ],
+    active: true
+  };
+
+  setJSON(KEYS.USERS, [adminUser]);
+  setJSON(KEYS.RAW_MATERIALS, []);
+  setJSON(KEYS.PRODUCTS, []);
+  setJSON(KEYS.PARTIES, []);
+  setJSON(KEYS.VENDORS, []);
+  setJSON(KEYS.VEHICLES, []);
+  setJSON(KEYS.FORMULAS, []);
+  setJSON(KEYS.ROLLS, []);
+  setJSON(KEYS.REELS, []);
+  setJSON(KEYS.LOGS, []);
+  setJSON(KEYS.BOILER_LOGS, []);
+  setJSON(KEYS.ETP_LOGS, []);
+  setJSON(KEYS.ELECTRICITY_LOGS, []);
+  setJSON(KEYS.PENDING_ORDERS, []);
+  setJSON(KEYS.PACKING_SLIPS, []);
+  setJSON(KEYS.STORE_ITEMS, []);
+  setJSON(KEYS.RAW_MATERIAL_LOTS, []);
+  setJSON(KEYS.LAB_REPORTS, []);
+
+  // 3. Keep active session as Admin
+  const adminSession = {
+    token: `token_${Date.now()}_admin`,
+    user: adminUser,
+    expiresAt: Date.now() + 8 * 60 * 60 * 1000,
+  };
+  localStorage.setItem('saheb_session', JSON.stringify(adminSession));
+  localStorage.setItem('saheb_active_user', JSON.stringify(adminUser));
+  localStorage.setItem('saheb_production_ready', 'true');
+}
+
 export function clearAllDemoData(): void {
-  const keysToRemove: string[] = [];
-  for (let i = 0; i < localStorage.length; i++) {
-    const key = localStorage.key(i);
-    if (key && key.startsWith('saheb_')) {
-      keysToRemove.push(key);
-    }
-  }
-  keysToRemove.forEach(k => localStorage.removeItem(k));
+  performFactoryReset();
 }
 
 export function deleteProduct(id: string): void {
