@@ -900,24 +900,6 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
               ))}
             </div>
 
-            {/* Sidebar Bottom Version & Updates Pill */}
-            <div className="pt-2 pb-0.5 px-1 border-t border-slate-100 dark:border-slate-800 shrink-0">
-              <button
-                type="button"
-                onClick={() => setIsUpdateModalOpen(true)}
-                className="w-full py-1.5 px-2.5 rounded-xl bg-slate-50 hover:bg-blue-50 dark:bg-slate-900/60 dark:hover:bg-slate-800/80 border border-slate-200/60 dark:border-slate-800 text-slate-500 hover:text-blue-600 dark:text-slate-400 dark:hover:text-blue-300 transition-all flex items-center justify-between text-[11px] font-semibold cursor-pointer group"
-                title="System Version & Updates"
-              >
-                <div className="flex items-center gap-1.5">
-                  <Sparkles className="h-3.5 w-3.5 text-blue-500 group-hover:scale-110 transition-transform" />
-                  <span className="font-mono font-bold">v{APP_VERSION}</span>
-                </div>
-                <span className="text-[10px] font-bold text-blue-600 dark:text-blue-400 opacity-80 group-hover:opacity-100">
-                  Updates
-                </span>
-              </button>
-            </div>
-
           </aside>
         )}
 
