@@ -99,7 +99,6 @@ export const MobileProfileView: React.FC = () => {
       displayName: displayName.trim(),
       email: email.trim(),
       phone: phone.trim(),
-      pin: pin.trim(),
       securityQuestion,
       securityAnswer: securityAnswer.trim(),
     });
@@ -114,25 +113,29 @@ export const MobileProfileView: React.FC = () => {
 
   const handleSaveSecurity = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (pin && (pin.length !== 4 || isNaN(Number(pin)))) {
+    const pinTrimmed = pin.trim();
+    if (pinTrimmed && (pinTrimmed.length !== 4 || isNaN(Number(pinTrimmed)))) {
       showToast('Security PIN must be exactly 4 numeric digits', 'error');
       return;
     }
 
-    const updated = await updateUserProfile({
+    const payload = {
       displayName: user.displayName,
       email: user.email || '',
       phone: user.phone || '',
-      pin: pin.trim(),
       securityQuestion,
       securityAnswer: securityAnswer.trim(),
-    });
+      ...(pinTrimmed ? { pin: pinTrimmed } : {}),
+    };
+
+    const updated = await updateUserProfile(payload);
 
     if (updated) {
       showToast('Security settings updated successfully!', 'success');
       setActiveModal(null);
+      setPin('');
     } else {
-      showToast('Failed to update security PIN', 'error');
+      showToast('Failed to update security settings', 'error');
     }
   };
 
@@ -144,7 +147,7 @@ export const MobileProfileView: React.FC = () => {
   };
 
   const openSecurityModal = () => {
-    setPin(user.pin || '');
+    setPin('');
     setSecurityQuestion(user.securityQuestion || 'What is your favorite color?');
     setSecurityAnswer(user.securityAnswer || '');
     setActiveModal('security');
@@ -525,15 +528,15 @@ export const MobileProfileView: React.FC = () => {
             <form onSubmit={handleSaveSecurity} className="space-y-3 text-left">
               <div>
                 <label className="block text-[11px] font-black text-slate-500 uppercase tracking-wider mb-1">
-                  4-Digit Quick PIN
+                  4-Digit Quick PIN <span className="text-[9px] text-slate-400 font-normal lowercase">(leave blank to keep current)</span>
                 </label>
                 <div className="relative">
                   <input
                     type={showPin ? 'text' : 'password'}
                     maxLength={4}
                     value={pin}
-                    onChange={e => setPin(e.target.value)}
-                    placeholder="1234"
+                    onChange={e => setPin(e.target.value.replace(/\D/g, '').slice(0, 4))}
+                    placeholder="•••• (Unchanged)"
                     className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 text-sm font-black font-mono tracking-widest dark:text-white focus:outline-none focus:ring-2 focus:ring-primary"
                   />
                   <button

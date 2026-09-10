@@ -35,7 +35,7 @@ export const OperatorProfileView: React.FC<OperatorProfileViewProps> = () => {
       setDisplayName(user.displayName);
       setEmail(user.email || '');
       setPhone(user.phone || '');
-      setPin(user.pin || '');
+      setPin('');
       setSecurityQuestion(user.securityQuestion || 'What is your favorite color?');
       setSecurityAnswer(user.securityAnswer || '');
     }
@@ -59,19 +59,22 @@ export const OperatorProfileView: React.FC<OperatorProfileViewProps> = () => {
       return;
     }
 
-    if (pin && pin.length !== 4) {
-      setSaveError('Security PIN must be exactly 4 digits');
+    const pinTrimmed = pin.trim();
+    if (pinTrimmed && (pinTrimmed.length !== 4 || isNaN(Number(pinTrimmed)))) {
+      setSaveError('Security PIN must be exactly 4 numeric digits');
       return;
     }
 
-    const success = await updateUserProfile({
-      displayName,
-      email,
-      phone,
-      pin,
+    const payload = {
+      displayName: displayName.trim(),
+      email: email.trim(),
+      phone: phone.trim(),
       securityQuestion,
-      securityAnswer,
-    });
+      securityAnswer: securityAnswer.trim(),
+      ...(pinTrimmed ? { pin: pinTrimmed } : {}),
+    };
+
+    const success = await updateUserProfile(payload);
 
     if (success) {
       setSaveSuccess(true);
@@ -384,15 +387,15 @@ export const OperatorProfileView: React.FC<OperatorProfileViewProps> = () => {
               {/* Security PIN */}
               <div className="space-y-1 sm:col-span-2">
                 <label className="block text-xs font-bold text-slate-700 dark:text-slate-200 uppercase tracking-wider">
-                  Security PIN (4-Digits) *
+                  Security PIN (4-Digits) <span className="text-[10px] text-slate-400 font-normal lowercase">(leave blank to keep current)</span>
                 </label>
                 <div className="relative flex items-center">
                   <input
                     type={showPin ? 'text' : 'password'}
                     maxLength={4}
-                    required
                     value={pin}
-                    onChange={e => setPin(e.target.value)}
+                    placeholder="•••• (Unchanged)"
+                    onChange={e => setPin(e.target.value.replace(/\D/g, '').slice(0, 4))}
                     className="w-full px-4 py-3 bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded-2xl font-mono text-sm font-black tracking-widest text-slate-900 dark:text-white focus:ring-2 focus:ring-primary focus:outline-none transition shadow-2xs"
                   />
                   <button

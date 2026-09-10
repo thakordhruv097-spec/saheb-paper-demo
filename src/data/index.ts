@@ -20,6 +20,7 @@ import type {
   PaperTestReport,
 } from './types';
 import { sortUsersByHierarchy } from './types';
+import { hashPinSync, isPinHashed } from '../lib/security';
 import {
   pushUpsertToCloud,
   pushDeleteToCloud,
@@ -46,14 +47,14 @@ import {
 
 export { initSupabaseSync };
 
-// Helper functions for reading/writing localStorage
-const getJSON = <T>(key: string, defaultValue: T): T => {
-  const value = localStorage.getItem(key);
-  if (!value) return defaultValue;
+// Simple JSON storage helper
+const getJSON = <T>(key: string, fallback: T): T => {
   try {
-    return JSON.parse(value) as T;
-  } catch {
-    return defaultValue;
+    const item = localStorage.getItem(key);
+    return item ? JSON.parse(item) : fallback;
+  } catch (e) {
+    console.error(`Error reading ${key} from localStorage:`, e);
+    return fallback;
   }
 };
 
@@ -87,13 +88,13 @@ const KEYS = {
   LAB_REPORTS: 'saheb_lab_reports',
 };
 
-// 1. Initial Seeds
+// 1. Initial Seeds with SHA-256 Hashed PINs
 const DEFAULT_USERS: User[] = [
   {
     username: 'admin',
     role: 'Admin',
     roles: ['Admin'],
-    pin: '1234',
+    pin: hashPinSync('1234'),
     displayName: 'Rajesh Sharma (Admin)',
     email: 'admin@sahebpaper.com',
     phone: '9876543210',
@@ -110,7 +111,7 @@ const DEFAULT_USERS: User[] = [
     username: 'pulper',
     role: 'LabOperator',
     roles: ['LabOperator'],
-    pin: '1234',
+    pin: hashPinSync('1234'),
     displayName: 'Pulper Operator',
     email: 'pulper@sahebpaper.com',
     phone: '9876543220',
@@ -124,7 +125,7 @@ const DEFAULT_USERS: User[] = [
     username: 'plant_manager',
     role: 'PlantManager',
     roles: ['PlantManager'],
-    pin: '1234',
+    pin: hashPinSync('1234'),
     displayName: 'Plant Manager',
     email: 'manager@sahebpaper.com',
     phone: '9876543219',
@@ -138,7 +139,7 @@ const DEFAULT_USERS: User[] = [
     username: 'dispatcher',
     role: 'Dispatcher',
     roles: ['Dispatcher'],
-    pin: '1234',
+    pin: hashPinSync('1234'),
     displayName: 'Dispatcher',
     email: 'dispatch@sahebpaper.com',
     phone: '9876543222',
@@ -152,7 +153,7 @@ const DEFAULT_USERS: User[] = [
     username: 'shop',
     role: 'Shopper',
     roles: ['Shopper'],
-    pin: '1234',
+    pin: hashPinSync('1234'),
     displayName: 'Shop / Procurement',
     email: 'shop@sahebpaper.com',
     phone: '9876543221',
@@ -166,7 +167,7 @@ const DEFAULT_USERS: User[] = [
     username: 'viewer',
     role: 'Viewer',
     roles: ['Viewer'],
-    pin: '1234',
+    pin: hashPinSync('1234'),
     displayName: 'Viewer',
     email: 'viewer@sahebpaper.com',
     phone: '9876543223',
@@ -287,7 +288,7 @@ export function initializeStorage() {
   if (!localStorage.getItem(KEYS.RAW_MATERIAL_LOTS)) setJSON(KEYS.RAW_MATERIAL_LOTS, []);
   if (!localStorage.getItem(KEYS.LAB_REPORTS)) setJSON(KEYS.LAB_REPORTS, []);
 
-  // Ensure Admin user has valid structure and permissions
+  // Ensure Admin user has valid structure and permissions & all PINs are SHA-256 hashed
   try {
     const rawUsers = getJSON<User[]>(KEYS.USERS, [DEFAULT_USERS[0]]);
     const validKeys = [
@@ -296,6 +297,10 @@ export function initializeStorage() {
     ];
     let updated = false;
     const fixedUsers = rawUsers.map(u => {
+      if (u.pin && !isPinHashed(u.pin)) {
+        u.pin = hashPinSync(u.pin);
+        updated = true;
+      }
       if (u.username === 'admin') {
         if (u.role !== 'Admin' || !u.roles || u.roles[0] !== 'Admin' || !u.customModules || u.customModules.length !== validKeys.length) {
           u.role = 'Admin';
@@ -429,6 +434,9 @@ export function saveUser(user: User): User {
     user.role = 'Admin' as UserRole;
     user.roles = ['Admin' as UserRole];
   }
+  if (user.pin && !isPinHashed(user.pin)) {
+    user.pin = hashPinSync(user.pin);
+  }
   const users = getUsers();
   const existingIndex = users.findIndex(u => u.username === user.username);
   if (existingIndex > -1) {
@@ -490,7 +498,7 @@ export function updateRawUserPin(username: string, pin: string): boolean {
   const users = getUsers();
   const user = users.find(u => u.username === username);
   if (user) {
-    user.pin = pin;
+    user.pin = isPinHashed(pin) ? pin : hashPinSync(pin);
     user.needsPinReset = false; // cleared on custom set
     setJSON(KEYS.USERS, users);
     pushUpsertToCloud('users', userToDb(user));
@@ -517,9 +525,10 @@ export function resetUserPin(username: string, newPin: string, operator: string)
   const users = getUsers();
   const user = users.find(u => u.username === username);
   if (user) {
-    user.pin = newPin;
+    user.pin = isPinHashed(newPin) ? newPin : hashPinSync(newPin);
     user.needsPinReset = true; // force PIN change on next login
     setJSON(KEYS.USERS, users);
+    pushUpsertToCloud('users', userToDb(user));
     addLog('Admin', 'PIN Reset', `PIN reset for user "${username}" by ${operator}`, operator);
     return true;
   }

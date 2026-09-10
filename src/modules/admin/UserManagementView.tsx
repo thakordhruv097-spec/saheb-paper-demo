@@ -2,6 +2,7 @@ import React, { useState, useMemo } from 'react';
 import { Navigate } from 'react-router-dom';
 import { useAuth, getFirstAccessibleRoute } from '../auth/AuthContext';
 import { getUsers, saveUser, deactivateUser, addLog, deleteUser } from '../../data/index';
+import { isPinHashed } from '../../lib/security';
 import type { User, UserRole } from '../../data/types';
 import {
   Users,
@@ -135,7 +136,7 @@ export const UserManagementView: React.FC = () => {
     setFormData({
       username: u.username,
       displayName: u.displayName,
-      pin: u.pin || '1234',
+      pin: '',
       roles: existingRoles,
       email: u.email || '',
       phone: u.phone || '',
@@ -191,8 +192,8 @@ export const UserManagementView: React.FC = () => {
     if (!editingUser) return;
     setFormError('');
 
-    if (!formData.displayName.trim() || !formData.pin.trim()) {
-      setFormError('Display Name and PIN are required');
+    if (!formData.displayName.trim()) {
+      setFormError('Display Name is required');
       return;
     }
 
@@ -201,7 +202,8 @@ export const UserManagementView: React.FC = () => {
       return;
     }
 
-    if (formData.pin.length !== 4 || isNaN(Number(formData.pin))) {
+    const pinTrimmed = formData.pin.trim();
+    if (pinTrimmed && (pinTrimmed.length !== 4 || isNaN(Number(pinTrimmed)))) {
       setFormError('PIN must be exactly 4 numeric digits');
       return;
     }
@@ -212,7 +214,7 @@ export const UserManagementView: React.FC = () => {
       displayName: formData.displayName.trim(),
       role: isMasterAdmin ? 'Admin' : formData.roles[0],
       roles: isMasterAdmin ? ['Admin'] : formData.roles,
-      pin: formData.pin.trim(),
+      pin: pinTrimmed ? pinTrimmed : editingUser.pin,
       email: formData.email.trim(),
       phone: formData.phone.trim(),
     };
@@ -386,7 +388,7 @@ export const UserManagementView: React.FC = () => {
 
                   <td className="py-4 px-6">
                     <div className="flex items-center gap-2 font-mono text-xs font-bold text-slate-800 dark:text-slate-200">
-                      <span>{visiblePins[u.username] ? u.pin || '1234' : '••••'}</span>
+                      <span>{visiblePins[u.username] ? (isPinHashed(u.pin) ? 'SHA-256 (Protected)' : (u.pin || '1234')) : '••••'}</span>
                       <button
                         onClick={() => togglePinVisibility(u.username)}
                         className="p-1 text-slate-400 hover:text-indigo-600 transition cursor-pointer"
@@ -741,12 +743,12 @@ export const UserManagementView: React.FC = () => {
                   <Lock className="h-4.5 w-4.5" />
                 </div>
                 <div className="flex-1 min-w-0">
-                  <label className="text-[10px] font-bold text-slate-500 block leading-tight">4-Digit Security PIN</label>
+                  <label className="text-[10px] font-bold text-slate-500 block leading-tight">4-Digit Security PIN <span className="text-[9px] text-slate-400 font-normal">(Leave blank to keep current)</span></label>
                   <input
                     type="text"
                     maxLength={4}
-                    required
                     value={formData.pin}
+                    placeholder="•••• (Unchanged)"
                     onChange={e => setFormData({ ...formData, pin: e.target.value.replace(/\D/g, '').slice(0, 4) })}
                     className="w-full text-xs font-semibold text-slate-900 dark:text-white bg-transparent border-none focus:outline-none p-0 mt-0.5 font-mono tracking-wider"
                   />

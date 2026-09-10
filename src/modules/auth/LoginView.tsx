@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { useAuth, getFirstAccessibleRoute } from './AuthContext';
 import { useTranslation } from 'react-i18next';
 import { getUsers, updateRawUserPin } from '../../data/index';
+import { verifyPin } from '../../lib/security';
 import {
   User,
   Lock,
@@ -83,7 +84,7 @@ export const LoginView: React.FC = () => {
           uName === cleanUser ||
           (cleanUser === 'shop' && (uName === 'shopper' || u.role === 'Shopper')) ||
           (cleanUser === 'pulper' && (uName === 'pulper' || u.role === 'LabOperator'));
-        return matchName && (u.pin.trim() === cleanPin || u.pin.length === 64);
+        return matchName && verifyPin(cleanPin, u.pin);
       });
 
       if (found) {

@@ -96,7 +96,7 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
       setProfileDisplayName(user.displayName);
       setProfileEmail(user.email || '');
       setProfilePhone(user.phone || '');
-      setProfilePin(user.pin || '');
+      setProfilePin('');
       setProfileSecurityQuestion(user.securityQuestion || 'What is your favorite color?');
       setProfileSecurityAnswer(user.securityAnswer || '');
     }
@@ -108,20 +108,29 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
     e.preventDefault();
     if (!profileDisplayName.trim()) return;
 
-    const success = await updateUserProfile({
+    const pinTrimmed = profilePin.trim();
+    if (pinTrimmed && (pinTrimmed.length !== 4 || isNaN(Number(pinTrimmed)))) {
+      alert('Security PIN must be exactly 4 numeric digits');
+      return;
+    }
+
+    const payload = {
       displayName: profileDisplayName,
       email: profileEmail,
       phone: profilePhone,
-      pin: profilePin,
       securityQuestion: profileSecurityQuestion,
       securityAnswer: profileSecurityAnswer,
-    });
+      ...(pinTrimmed ? { pin: pinTrimmed } : {}),
+    };
+
+    const success = await updateUserProfile(payload);
 
     if (success) {
       setProfileSaveSuccess(true);
       setTimeout(() => {
         setProfileSaveSuccess(false);
         setIsProfileModalOpen(false);
+        setProfilePin('');
       }, 1000);
     }
   };
@@ -1128,14 +1137,16 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
               </div>
 
               <div>
-                <label className="block text-slate-700 dark:text-slate-200 font-bold mb-1">Security PIN (4-Digits)</label>
+                <label className="block text-slate-700 dark:text-slate-200 font-bold mb-1">
+                  Security PIN (4-Digits) <span className="text-[10px] text-slate-400 font-normal lowercase">(leave blank to keep current)</span>
+                </label>
                 <div className="relative">
                   <input
                     type={showPin ? "text" : "password"}
                     maxLength={4}
-                    required
                     value={profilePin}
-                    onChange={(e) => setProfilePin(e.target.value)}
+                    placeholder="•••• (Unchanged)"
+                    onChange={(e) => setProfilePin(e.target.value.replace(/\D/g, '').slice(0, 4))}
                     className="w-full px-3.5 py-2.5 bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded-xl font-mono text-base font-bold text-slate-900 dark:text-white focus:ring-2 focus:ring-primary focus:outline-none tracking-widest"
                   />
                   <button

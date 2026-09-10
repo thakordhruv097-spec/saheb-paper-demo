@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { useAuth } from '../auth/AuthContext';
+import { isPinHashed } from '../../lib/security';
 import {
   User,
   Mail,
@@ -28,7 +29,7 @@ export const AdminProfileView: React.FC = () => {
   const [displayName, setDisplayName] = useState(user?.displayName || 'Rajesh Sharma');
   const [email, setEmail] = useState(user?.email || 'admin@sahebpaper.com');
   const [phone, setPhone] = useState(user?.phone || '9876543210');
-  const [pin, setPin] = useState(user?.pin || '1234');
+  const [pin, setPin] = useState('');
   const [securityQuestion, setSecurityQuestion] = useState(user?.securityQuestion || 'What is your favorite color?');
   const [securityAnswer, setSecurityAnswer] = useState(user?.securityAnswer || '');
   const [showPin, setShowPin] = useState(false);
@@ -43,23 +44,27 @@ export const AdminProfileView: React.FC = () => {
     setSuccessMsg('');
     setErrorMsg('');
 
-    if (pin && (pin.length !== 4 || isNaN(Number(pin)))) {
+    const pinTrimmed = pin.trim();
+    if (pinTrimmed && (pinTrimmed.length !== 4 || isNaN(Number(pinTrimmed)))) {
       setErrorMsg('Security PIN must be exactly 4 numeric digits.');
       return;
     }
 
-    const updated = await updateUserProfile({
+    const payload = {
       displayName: displayName.trim(),
       email: email.trim(),
       phone: phone.trim(),
-      pin: pin.trim(),
       securityQuestion,
       securityAnswer: securityAnswer.trim(),
-    });
+      ...(pinTrimmed ? { pin: pinTrimmed } : {}),
+    };
+
+    const updated = await updateUserProfile(payload);
 
     if (updated) {
       setSuccessMsg('Master Admin Profile updated successfully!');
       setIsEditing(false);
+      setPin('');
     } else {
       setErrorMsg('Failed to update profile. Please try again.');
     }
@@ -185,7 +190,7 @@ export const AdminProfileView: React.FC = () => {
                 <div>
                   <span className="text-[11px] font-medium text-slate-400 dark:text-slate-400 block leading-tight">Security PIN</span>
                   <span className="text-sm font-bold font-mono tracking-widest text-slate-800 dark:text-white block mt-0.5 leading-tight">
-                    {showPin ? (user.pin || '1234') : '••••'}
+                    {showPin ? (isPinHashed(user.pin) ? 'SHA-256 (Protected)' : (user.pin || '1234')) : '••••'}
                   </span>
                 </div>
               </div>
@@ -353,13 +358,15 @@ export const AdminProfileView: React.FC = () => {
               </div>
 
               <div>
-                <label className="block text-[11px] font-semibold text-slate-700 dark:text-slate-300 mb-1">4-Digit Security PIN</label>
+                <label className="block text-[11px] font-semibold text-slate-700 dark:text-slate-300 mb-1">
+                  4-Digit Security PIN <span className="text-[10px] text-slate-400 font-normal">(leave blank to keep current)</span>
+                </label>
                 <input
                   type="password"
                   maxLength={4}
                   value={pin}
-                  onChange={e => setPin(e.target.value)}
-                  placeholder="e.g. 1234"
+                  onChange={e => setPin(e.target.value.replace(/\D/g, '').slice(0, 4))}
+                  placeholder="•••• (Unchanged)"
                   className="w-full px-3 py-2 bg-[#F8FAFC] dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-[10px] text-xs font-mono font-medium text-slate-900 dark:text-white focus:ring-2 focus:ring-[#2563EB] focus:outline-none"
                 />
               </div>
