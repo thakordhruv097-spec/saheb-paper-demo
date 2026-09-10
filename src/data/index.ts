@@ -1627,24 +1627,28 @@ export function deleteProduct(id: string): void {
   const products = getProducts();
   const updated = products.filter(p => p.id !== id);
   setJSON(KEYS.PRODUCTS, updated);
+  pushDeleteToCloud('products', 'id', id);
 }
 
 export function deleteParty(id: string): void {
   const parties = getParties();
   const updated = parties.filter(p => p.id !== id);
   setJSON(KEYS.PARTIES, updated);
+  pushDeleteToCloud('parties', 'id', id);
 }
 
 export function deleteVendor(id: string): void {
   const vendors = getVendors();
   const updated = vendors.filter(v => v.id !== id);
   setJSON(KEYS.VENDORS, updated);
+  pushDeleteToCloud('vendors', 'id', id);
 }
 
 export function deleteVehicle(id: string): void {
   const vehicles = getVehicles();
   const updated = vehicles.filter(v => v.id !== id);
   setJSON(KEYS.VEHICLES, updated);
+  pushDeleteToCloud('vehicles', 'id', id);
 }
 
 // --- LAB QUALITY REPORTS ---
